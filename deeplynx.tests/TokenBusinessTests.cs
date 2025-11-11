@@ -44,7 +44,7 @@ namespace deeplynx.tests
         public async Task CreateToken_ReturnsJwt_WhenVerifySucceeds_AndSecretExists()
         {
             // Act - Pass the PLAINTEXT secret to CreateToken
-            var jwt = _tokenBusiness.CreateToken(plaintextSecret1, apiKey1, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(plaintextSecret1, apiKey1, expiration: 5);
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(jwt));
@@ -70,7 +70,7 @@ namespace deeplynx.tests
             var wrongSecret = "wrong-secret";
 
             // Act & Assert
-            var ex = Assert.Throws<UnauthorizedAccessException>(() =>
+            var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
                 _tokenBusiness.CreateToken(wrongSecret, apiKey1, expiration: 5));
             Assert.Contains("Invalid API credentials", ex.Message);
         }
@@ -83,7 +83,7 @@ namespace deeplynx.tests
             var someSecret = "any-secret";
 
             // Act & Assert
-            var ex = Assert.Throws<KeyNotFoundException>(() =>
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _tokenBusiness.CreateToken(someSecret, nonExistentApiKey, expiration: 5));
             Assert.Contains("API key not found", ex.Message);
         }
@@ -109,7 +109,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() =>
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _tokenBusiness.CreateToken(plaintextSecret1, apiKey1, expiration: 5));
             Assert.Contains("archived", ex.Message);
         }
@@ -124,7 +124,7 @@ namespace deeplynx.tests
             // Arrange
             var apiKey = "revoke-test-key";
             var plaintextSecret = "revoke-secret";
-            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            var hashedSecret = _tokenBusiness.HashApiSecret(plaintextSecret);
             
             Context.ApiKeys.Add(new ApiKey 
             { 
@@ -135,7 +135,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -155,7 +155,7 @@ namespace deeplynx.tests
             // Arrange
             var apiKey = "already-revoked-key";
             var plaintextSecret = "already-revoked-secret";
-            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            var hashedSecret = _tokenBusiness.HashApiSecret(plaintextSecret);
             
             Context.ApiKeys.Add(new ApiKey 
             { 
@@ -166,7 +166,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -201,7 +201,7 @@ namespace deeplynx.tests
             // Arrange
             var apiKey = "check-revoked-key";
             var plaintextSecret = "check-revoked-secret";
-            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            var hashedSecret = _tokenBusiness.HashApiSecret(plaintextSecret);
             
             Context.ApiKeys.Add(new ApiKey 
             { 
@@ -212,7 +212,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -230,7 +230,7 @@ namespace deeplynx.tests
             // Arrange
             var apiKey = "revoked-check-key";
             var plaintextSecret = "revoked-check-secret";
-            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            var hashedSecret = _tokenBusiness.HashApiSecret(plaintextSecret);
             
             Context.ApiKeys.Add(new ApiKey 
             { 
@@ -241,7 +241,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -267,7 +267,7 @@ namespace deeplynx.tests
             {
                 var apiKey = $"bulk-revoke-key-{i}";
                 var plaintextSecret = $"bulk-revoke-secret-{i}";
-                var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+                var hashedSecret = _tokenBusiness.HashApiSecret(plaintextSecret);
                 
                 Context.ApiKeys.Add(new ApiKey 
                 { 
@@ -278,7 +278,7 @@ namespace deeplynx.tests
                 });
                 Context.SaveChanges();
 
-                var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+                var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
                 tokens.Add(jwt);
             }
 
@@ -304,7 +304,7 @@ namespace deeplynx.tests
             // Create token for first user
             var apiKey = "user1-key";
             var secret1 = "user1-secret";
-            var hashedSecret1 = _tokenBusiness.HashApiKey(secret1);
+            var hashedSecret1 = _tokenBusiness.HashApiSecret(secret1);
             Context.ApiKeys.Add(new ApiKey 
             { 
                 Key = apiKey, 
@@ -313,12 +313,12 @@ namespace deeplynx.tests
                 ApplicationId = applicationId
             });
             await Context.SaveChangesAsync();
-            var jwt1 = _tokenBusiness.CreateToken(secret1, apiKey, expiration: 5);
+            var jwt1 = await _tokenBusiness.CreateToken(secret1, apiKey, expiration: 5);
 
             // Create token for other user
             var apiKey2 = "user2-key";
             var secret2 = "user2-secret";
-            var hashedSecret2 = _tokenBusiness.HashApiKey(secret2);
+            var hashedSecret2 = _tokenBusiness.HashApiSecret(secret2);
             Context.ApiKeys.Add(new ApiKey 
             { 
                 Key = apiKey2, 
@@ -327,7 +327,7 @@ namespace deeplynx.tests
                 ApplicationId = applicationId
             });
             await Context.SaveChangesAsync();
-            var jwt2 = _tokenBusiness.CreateToken(secret2, apiKey2, expiration: 5);
+            var jwt2 = await _tokenBusiness.CreateToken(secret2, apiKey2, expiration: 5);
 
             // Act
             await _tokenBusiness.RevokeAllUserTokens(uid1);
@@ -388,7 +388,7 @@ namespace deeplynx.tests
         public async Task CreateApiKey_PersistsRow_And_ReturnsDto_WithVerifiableHash()
         {
             // Act
-            TokenResponseDto dto = _tokenBusiness.CreateApiKey(uid1, clientId);
+            TokenResponseDto dto = await _tokenBusiness.CreateApiKey(uid1, clientId);
 
             // Assert - DTO populated
             Assert.False(string.IsNullOrWhiteSpace(dto.apiKey));
@@ -413,7 +413,8 @@ namespace deeplynx.tests
             UserContextStorage.Email = "nouser@example.com";
 
             // Act & Assert
-            var ex = Assert.Throws<KeyNotFoundException>(() => _tokenBusiness.CreateApiKey(99999, clientId));
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+                _tokenBusiness.CreateApiKey(99999, clientId));
             Assert.Contains("User with id", ex.Message);
         }
 
@@ -421,7 +422,7 @@ namespace deeplynx.tests
         public async Task CreateApiKey_Throws_WhenApplicationNotFound()
         {
             // Act & Assert
-            var ex = Assert.Throws<KeyNotFoundException>(() => 
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
                 _tokenBusiness.CreateApiKey(uid1, "nonexistent-client-id"));
             Assert.Contains("OAuth application", ex.Message);
         }
@@ -434,7 +435,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act & Assert
-            var ex = Assert.Throws<KeyNotFoundException>(() => 
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
                 _tokenBusiness.CreateApiKey(uid1, clientId));
             Assert.Contains("archived", ex.Message);
         }
@@ -479,13 +480,13 @@ namespace deeplynx.tests
         #region Hash/Verify Tests
 
         [Fact]
-        public async Task HashApiKey_And_VerifyApiSecret_RoundTrip()
+        public async Task HashApiSecret_And_VerifyApiSecret_RoundTrip()
         {
             // Arrange
             var apiKey = "roundtrip-key";
 
             // Act
-            var hash = _tokenBusiness.HashApiKey(apiKey);
+            var hash = _tokenBusiness.HashApiSecret(apiKey);
 
             // Assert
             Assert.True(_tokenBusiness.VerifyApiSecret(apiKey, hash));
@@ -590,7 +591,7 @@ namespace deeplynx.tests
             plaintextSecret1 = "my-plaintext-secret";
 
             // Store the HASHED secret in the database
-            hashedSecret1 = HashApiKey(plaintextSecret1);
+            hashedSecret1 = HashApiSecret(plaintextSecret1);
             Context.ApiKeys.Add(new ApiKey 
             { 
                 Key = apiKey1, 
@@ -656,7 +657,7 @@ namespace deeplynx.tests
             return Convert.ToBase64String(hashBytes);
         }
         
-        public string HashApiKey(string apiKey)
+        public string HashApiSecret(string apiKey)
         {
             return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
         }

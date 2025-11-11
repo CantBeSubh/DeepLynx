@@ -35,12 +35,12 @@ public class TokenController : ControllerBase
     /// <returns>JWT token string</returns>
     [AllowAnonymous]
     [HttpPost("CreateToken", Name = "api_create_token")]
-    public IActionResult CreateToken([FromBody] CreateTokenDto tokenDto)
+    public async Task<IActionResult> CreateToken([FromBody] CreateTokenDto tokenDto)
     {
         try
         {
-            var token = _tokenBusiness.CreateToken(tokenDto.ApiSecret, tokenDto.ApiKey, tokenDto.ExpirationMinutes);
-            return Ok(new { token });
+            var token = await _tokenBusiness.CreateToken(tokenDto.ApiSecret, tokenDto.ApiKey, tokenDto.ExpirationMinutes);
+            return Ok(token);
         }
         catch (KeyNotFoundException ex)
         {
@@ -68,12 +68,12 @@ public class TokenController : ControllerBase
     /// <param name="clientId">Optional OAuth client ID to associate with the API key</param>
     /// <returns>API key and secret (secret only returned once)</returns>
     [HttpPost("CreateApiKey", Name = "api_create_api_key")]
-    public IActionResult CreateApiKey([FromQuery] string? clientId = null)
+    public async Task<IActionResult> CreateApiKey([FromQuery] string? clientId = null)
     {
         try
         {
             var userId = UserContextStorage.UserId;
-            var tokenDto = _tokenBusiness.CreateApiKey(userId, clientId);
+            var tokenDto = await _tokenBusiness.CreateApiKey(userId, clientId);
             return Ok(tokenDto);
         }
         catch (KeyNotFoundException ex)

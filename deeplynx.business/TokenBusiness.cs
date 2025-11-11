@@ -21,31 +21,37 @@ public class TokenBusiness : ITokenBusiness
         _context = context;
     }
 
-    public string CreateToken(string apiSecret, string apiKey, double? expiration)
+    /// <summary>
+    /// Create a JWT token given an API key and secret. Store in the DB.
+    /// </summary>
+    /// <param name="apiSecret">User-supplied secret</param>
+    /// <param name="apiKey">User-supplied key</param>
+    /// <param name="expiration">Expiry time in minutes</param>
+    /// <returns></returns>
+    /// <exception cref="KeyNotFoundException">Returned if key not found</exception>
+    /// <exception cref="InvalidOperationException">Returned if associated user not found</exception>
+    /// <exception cref="UnauthorizedAccessException">Returned if secret does not match stored hash</exception>
+    public async Task<string> CreateToken(string apiSecret, string apiKey, double? expiration)
     {
         // 1. Look up the API key record
-        var apiKeyRecord = _context.ApiKeys
-            .FirstOrDefault(x => x.Key == apiKey);
-
+        var apiKeyRecord = await _context.ApiKeys.FirstOrDefaultAsync(x => x.Key == apiKey);
         if (apiKeyRecord == null)
             throw new KeyNotFoundException("API key not found");
 
         // 2. Get the User Email for the Token
-        var user = _context.Users
-            .FirstOrDefault(x => x.Id == apiKeyRecord.UserId);
-
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == apiKeyRecord.UserId);
         if (user == null)
             throw new InvalidOperationException("Associated user not found");
 
-        // 3. Verify the PROVIDED plaintext secret against the STORED hash
+        // 3. Verify the provided plaintext secret against the stored hash
         if (!VerifyApiSecret(apiSecret, apiKeyRecord.Secret))
             throw new UnauthorizedAccessException("Invalid API credentials");
 
         // 4. Verify the application exists if ApplicationId is present
         if (apiKeyRecord.ApplicationId.HasValue)
         {
-            var oauthApp = _context.OauthApplications
-                .FirstOrDefault(app => app.Id == apiKeyRecord.ApplicationId.Value && !app.IsArchived);
+            var oauthApp = await _context.OauthApplications
+                .FirstOrDefaultAsync(app => app.Id == apiKeyRecord.ApplicationId.Value && !app.IsArchived);
         
             if (oauthApp == null)
             {
@@ -106,11 +112,17 @@ public class TokenBusiness : ITokenBusiness
             Revoked = false,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
         });
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         return tokenString;
     }
 
+    /// <summary>
+    /// Revoke a given token by identifier
+    /// </summary>
+    /// <param name="jti">identifier for the given JWT</param>
+    /// <returns></returns>
+    /// <exception cref="KeyNotFoundException">Returned if token not found</exception>
     public async Task<bool> RevokeToken(string jti)
     {
         var tokenHash = HashToken(jti);
@@ -128,6 +140,11 @@ public class TokenBusiness : ITokenBusiness
         return true;
     }
 
+    /// <summary>
+    /// Check if the given token has been revoked
+    /// </summary>
+    /// <param name="jti">identifier for the given JWT</param>
+    /// <returns></returns>
     public async Task<bool> IsTokenRevoked(string jti)
     {
         var tokenHash = HashToken(jti);
@@ -142,6 +159,11 @@ public class TokenBusiness : ITokenBusiness
         return token.Revoked;
     }
 
+    /// <summary>
+    /// Revoke all tokens for a given user
+    /// </summary>
+    /// <param name="userId">ID of the user for which to revoke tokens</param>
+    /// <returns></returns>
     public async Task<int> RevokeAllUserTokens(long userId)
     {
         var tokens = await _context.OauthTokens
@@ -157,6 +179,12 @@ public class TokenBusiness : ITokenBusiness
         return tokens.Count;
     }
 
+    /// <summary>
+    /// Get the full API key database object given a key
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    /// <exception cref="KeyNotFoundException"></exception>
     public async Task<ApiKey> GetApiKey(string key)
     {
             var apiKey = await _context.ApiKeys.FirstOrDefaultAsync(k => k.Key == key);
@@ -168,16 +196,23 @@ public class TokenBusiness : ITokenBusiness
             return apiKey;
     }
 
-    public TokenResponseDto CreateApiKey(long userId, string? clientId = null)
+    /// <summary>
+    /// Create a new api keypair for a given user
+    /// </summary>
+    /// <param name="userId">The ID of the requesting user</param>
+    /// <param name="clientId">(optional) the client ID of the oauth application requesting</param>
+    /// <returns></returns>
+    /// <exception cref="KeyNotFoundException">Returned if user or application not found</exception>
+    public async Task<TokenResponseDto> CreateApiKey(long userId, string? clientId = null)
     {
         // Generate random key and secret
         string apiKey = KeyGenerator.GenerateKeyBase64();
         string apiSecret = KeyGenerator.GenerateKeyBase64();
 
         // Hash the SECRET
-        string hashedSecret = HashApiKey(apiSecret);
+        string hashedSecret = HashApiSecret(apiSecret);
 
-        var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
         {
@@ -188,8 +223,8 @@ public class TokenBusiness : ITokenBusiness
         long? applicationId = null;
         if (!string.IsNullOrEmpty(clientId))
         {
-            var oauthApp = _context.OauthApplications
-                .FirstOrDefault(app => app.ClientId == clientId && !app.IsArchived);
+            var oauthApp = await _context.OauthApplications
+                .FirstOrDefaultAsync(app => app.ClientId == clientId && !app.IsArchived);
         
             if (oauthApp == null)
             {
@@ -208,7 +243,7 @@ public class TokenBusiness : ITokenBusiness
             Secret = hashedSecret,
             ApplicationId = applicationId
         });
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         // Return: plaintext key + plaintext secret to user
         return new TokenResponseDto
@@ -218,6 +253,13 @@ public class TokenBusiness : ITokenBusiness
         };
     }
 
+    /// <summary>
+    /// Delete the given API key
+    /// </summary>
+    /// <param name="userId">Authorizing user</param>
+    /// <param name="key">api key</param>
+    /// <returns></returns>
+    /// <exception cref="KeyNotFoundException">Returned if key not found</exception>
     public async Task<bool> DeleteApiKey(long userId, string key)
     {
         var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k => k.Key == key && k.UserId == userId);
@@ -231,17 +273,32 @@ public class TokenBusiness : ITokenBusiness
         return true;
     }
 
-    public string HashApiKey(string apiKey)
+    /// <summary>
+    /// Hash an api secret before storage
+    /// </summary>
+    /// <param name="rawSecret">The un-hashed API secret</param>
+    /// <returns></returns>
+    public string HashApiSecret(string rawSecret)
     {
-        return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
+        return BCrypt.Net.BCrypt.HashPassword(rawSecret, workFactor: 12);
     }
 
+    /// <summary>
+    /// Verify that a given key and hashed secret match
+    /// </summary>
+    /// <param name="providedKey">Api key</param>
+    /// <param name="storedHash">Hashed Api secret</param>
+    /// <returns></returns>
     public bool VerifyApiSecret(string providedKey, string storedHash)
     {
         return BCrypt.Net.BCrypt.Verify(providedKey, storedHash);
     }
 
-    // Hash the JTI (token identifier) for storage
+    /// <summary>
+    /// Hash the JTI (JWT identifier) for storage
+    /// </summary>
+    /// <param name="jti"></param>
+    /// <returns></returns>
     private string HashToken(string jti)
     {
         using var sha256 = SHA256.Create();
@@ -249,6 +306,11 @@ public class TokenBusiness : ITokenBusiness
         return Convert.ToBase64String(hashBytes);
     }
 
+    /// <summary>
+    /// List all API keys for a user
+    /// </summary>
+    /// <param name="userId">The ID of the user for which to list API keys</param>
+    /// <returns></returns>
     async Task<List<string>> ITokenBusiness.GetAllUserKeys(long userId)
     {
         // Query for existing records (excluding archived)
