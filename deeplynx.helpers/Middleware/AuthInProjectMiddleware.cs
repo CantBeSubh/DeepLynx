@@ -15,8 +15,8 @@ public class AuthInProjectAttribute : Attribute
         Resource = resource;
     }
 
-    public string Action { get; set; }
-    public string Resource { get; set; }
+    public string Action { get; set; } 
+    public string Resource { get; set; } 
 }
 
 public class AuthInProjectMiddleware
@@ -36,20 +36,20 @@ public class AuthInProjectMiddleware
             await _next(context);
             return;
         }
-
-
+        
+        
 
         // Get all AuthInProject attributes from the endpoint
         var authAttributes = endpoint.Metadata
             .GetOrderedMetadata<AuthInProjectAttribute>();
-
+        
         // If no auth attributes, return
         if (!authAttributes.Any())
         {
             await _next(context);
             return;
         }
-
+        
         var userId = UserContextStorage.UserId;
 
         if (userId <= 0)
@@ -58,7 +58,7 @@ public class AuthInProjectMiddleware
             await context.Response.WriteAsJsonAsync(new { error = "Unauthorized" });
             return;
         }
-
+        
         // 1. First try route values
         int projectId = 0;
         var routeProjectId = context.GetRouteValue("projectId")?.ToString();
@@ -67,12 +67,12 @@ public class AuthInProjectMiddleware
             // Found in route
         }
         // 2. Then try query parameters
-        else if (context.Request.Query.TryGetValue("projectId", out var queryProjectId)
+        else if (context.Request.Query.TryGetValue("projectId", out var queryProjectId) 
                  && int.TryParse(queryProjectId.FirstOrDefault(), out projectId))
         {
             // Found in query
         }
-        // 3. no project for you
+        // 3. no project for you 
         else
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;

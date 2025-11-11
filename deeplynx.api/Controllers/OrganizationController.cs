@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -30,7 +29,6 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
         /// <returns></returns>
         [HttpGet("GetAllOrganizations", Name = "api_get_all_organizations")]
-        [AuthInProject("read", "organization")]
         public async Task<ActionResult<IEnumerable<OrganizationResponseDto>>> GetAllOrganizations(
             [FromQuery] bool hideArchived = true)
         {
@@ -55,7 +53,6 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
         /// <returns></returns>
         [HttpGet("GetOrganization/{organizationId}", Name = "api_get_organization")]
-        [AuthInProject("read", "organization")]
         public async Task<ActionResult<OrganizationResponseDto>> GetOrganization(
             long organizationId, [FromQuery] bool hideArchived = true)
         {
@@ -78,7 +75,6 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Data structure of organization to create</param>
         /// <returns></returns>
         [HttpPost("CreateOrganization", Name = "api_create_organization")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult<OrganizationResponseDto>> CreateOrganization(
             [FromBody] CreateOrganizationRequestDto dto)
         {
@@ -102,7 +98,6 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Fields to update</param>
         /// <returns></returns>
         [HttpPut("UpdateOrganization/{organizationId}", Name = "api_update_organization")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult<OrganizationResponseDto>> UpdateOrganization(
             long organizationId,
             [FromBody] UpdateOrganizationRequestDto dto)
@@ -126,7 +121,6 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">ID of the organization to hard delete</param>
         /// <returns></returns>
         [HttpDelete("DeleteOrganization/{organizationId}", Name = "api_delete_organization")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult> DeleteOrganization(long organizationId)
         {
             try
@@ -148,7 +142,6 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">ID of the organization</param>
         /// <returns></returns>
         [HttpDelete("ArchiveOrganization/{organizationId}", Name = "api_archive_organization")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult> ArchiveOrganization(long organizationId)
         {
             try
@@ -163,14 +156,13 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
         /// <summary>
         /// Unarchive an Organization
         /// </summary>
         /// <param name="organizationId">ID of the organization</param>
         /// <returns></returns>
         [HttpPut("UnarchiveOrganization/{organizationId}", Name = "api_unarchive_organization")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult> UnarchiveOrganization(long organizationId)
         {
             try
@@ -194,9 +186,8 @@ namespace deeplynx.api.Controllers
         /// <param name="isAdmin"></param>
         /// <returns></returns>
         [HttpPost("AddUserToOrganization", Name = "api_add_user_to_organization")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult> AddUserToOrganization(
-            [FromQuery] long organizationId,
+            [FromQuery] long organizationId, 
             [FromQuery] long userId,
             [FromQuery] bool isAdmin = false)
         {
@@ -212,7 +203,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
         /// <summary>
         /// Set Admin Status for Organization User
         /// </summary>
@@ -221,9 +212,8 @@ namespace deeplynx.api.Controllers
         /// <param name="isAdmin">isAdmin status</param>
         /// <returns></returns>
         [HttpPut("SetOrganizationAdminStatus", Name = "api_update_organization_admin_status")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult> SetOrganizationAdminStatus(
-            [FromQuery] long organizationId,
+            [FromQuery] long organizationId, 
             [FromQuery] long userId,
             [FromQuery] bool isAdmin)
         {
@@ -239,7 +229,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
         /// <summary>
         /// Remove user from organization
         /// </summary>
@@ -247,9 +237,8 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user to be removed</param>
         /// <returns></returns>
         [HttpDelete("RemoveUserFromOrganization", Name = "api_remove_user_from_organization")]
-        [AuthInProject("write", "organization")]
         public async Task<ActionResult> RemoveUserFromOrganization(
-            [FromQuery] long organizationId,
+            [FromQuery] long organizationId, 
             [FromQuery] long userId)
         {
             try
