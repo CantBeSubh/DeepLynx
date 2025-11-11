@@ -21,6 +21,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Gets all the object storages for a project
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storages belong</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived ObjectStorages from the result </param>
     public async Task<List<ObjectStorageResponseDto>> GetAllObjectStorages(long? organizationId, long? projectId, bool hideArchived)
@@ -72,6 +73,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Gets a single object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived object storage from the result</param>
@@ -134,6 +136,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Gets default object storage for project
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <exception cref="KeyNotFoundException">Thrown when the object storage is not found or archived</exception>
     public async Task<ObjectStorageResponseDto> GetDefaultObjectStorage(long? organizationId, long? projectId)
@@ -186,6 +189,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Creates an object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="dto">A data transfer object with details on the new object storage to be created.</param>
     /// <param name = "makeDefault"> A boolean that tells whether to make the object storage default or not</param>
@@ -277,6 +281,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Updates an object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <param name="dto">A data transfer object with details on object storage fields to be updated</param>
@@ -338,6 +343,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Hard deletes an object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
@@ -386,6 +392,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Soft deletes (archives) a data storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
@@ -439,6 +446,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Unarchives a data storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
@@ -486,6 +494,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Changes the default object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">ID of the project in which the object storage belongs</param>
     /// <param name="objectStorageId">ID of the object storage to change to default</param>
     /// <returns></returns>
@@ -553,7 +562,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             IsArchived = defaultObjectStorage.IsArchived,
         };
     }
-
+    
     private async Task MakePreviousDefaultsFalse(long? organizationId, long? projectId, long defaultObjectStorageId)
     {
         var defaultsQuery = _context.ObjectStorages.Where(os => os.Default && os.Id != defaultObjectStorageId);

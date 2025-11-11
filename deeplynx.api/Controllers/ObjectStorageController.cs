@@ -25,7 +25,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all object storages
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storages belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storages belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="hidearchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
         /// <returns></returns>
@@ -53,7 +53,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get object storage
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="hidearchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
         /// <param name="objectStorageId">ID of object storage to retrieve</param>
@@ -81,7 +81,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get default object storage
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <returns></returns>
         [HttpGet("GetDefaultObjectStorage", Name = "api_get_default_object_storage")]
@@ -103,7 +103,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create object storage
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="dto">The dto of an object storage to be created</param>
         /// <param name="makeDefault"> Flag to indicate whether to make the created storage procedure default (Default Value = false)</param> 
@@ -131,7 +131,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update object storage
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="dto">The dto of an object storage to be created</param>
         /// <param name="objectStorageId">ID of object storage to retrieve</param> 
@@ -159,7 +159,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Delete object storage
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="objectStorageId">ID of object storage to delete</param> 
         /// <returns></returns>
@@ -185,7 +185,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive object storage
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="objectStorageId">ID of object storage to delete</param> 
         /// <returns></returns>
@@ -211,7 +211,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Unarchive object storage
         /// </summary>
-        /// /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+        /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="objectStorageId">ID of object storage to retrieve</param> 
         /// <returns></returns>
