@@ -2,6 +2,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -14,14 +15,14 @@ namespace deeplynx.api.Controllers
         private readonly ILogger<ObjectStorageController> _logger;
 
         public ObjectStorageController(
-            IObjectStorageBusiness objectStorageBusiness, 
+            IObjectStorageBusiness objectStorageBusiness,
             ILogger<ObjectStorageController> logger
             )
         {
             _objectStorageBusiness = objectStorageBusiness;
             _logger = logger;
         }
-        
+
         /// <summary>
         /// Get all object storages
         /// </summary>
@@ -29,15 +30,16 @@ namespace deeplynx.api.Controllers
         /// <param name="hidearchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
         /// <returns></returns>
         [HttpGet("GetAllObjectStorages", Name = "api_get_all_object_storages")]
+        [AuthInProject("read", "object_storage")]
         public async Task<ActionResult<IEnumerable<ObjectStorageResponseDto>>> GetAllObjectStorages(
             long projectId,
             [FromQuery] bool hidearchived = true)
         {
             try
             {
-                var objectStorages = 
+                var objectStorages =
                     await _objectStorageBusiness.GetAllObjectStorages(projectId, hidearchived);
-                
+
                 return Ok(objectStorages);
             }
             catch (Exception ex)
@@ -47,7 +49,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get object storage
         /// </summary>
@@ -56,6 +58,7 @@ namespace deeplynx.api.Controllers
         /// <param name="objectStorageId">ID of object storage to retrieve</param>
         /// <returns></returns>
         [HttpGet("GetObjectStorage/{objectStorageId}", Name = "api_get_object_storage")]
+        [AuthInProject("read", "object_storage")]
         public async Task<ActionResult<ObjectStorageResponseDto>> GetObjectStorage(
             long projectId,
             long objectStorageId,
@@ -73,13 +76,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get default object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <returns></returns>
         [HttpGet("GetDefaultObjectStorage", Name = "api_get_default_object_storage")]
+        [AuthInProject("read", "object_storage")]
         public async Task<ActionResult<ObjectStorageResponseDto>> GetDefaultObjectStorage(long projectId)
         {
             try
@@ -94,15 +98,16 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Create object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="dto">The dto of an object storage to be created</param>
-        /// <param name="makeDefault"> Flag to indicate whether to make the created storage procedure default (Default Value = false)</param> 
+        /// <param name="makeDefault"> Flag to indicate whether to make the created storage procedure default (Default Value = false)</param>
         /// <returns></returns>
         [HttpPost("CreateObjectStorage", Name = "api_create_object_storage")]
+        [AuthInProject("write", "object_storage")]
         public async Task<ActionResult<ObjectStorageResponseDto>> CreateObjectStorage(
             long projectId,
             [FromBody] CreateObjectStorageRequestDto dto,
@@ -120,15 +125,16 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Update object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="dto">The dto of an object storage to be created</param>
-        /// <param name="objectStorageId">ID of object storage to retrieve</param> 
+        /// <param name="objectStorageId">ID of object storage to retrieve</param>
         /// <returns></returns>
         [HttpPut("UpdateObjectStorage/{objectStorageId}", Name = "api_update_object_storage")]
+        [AuthInProject("write", "object_storage")]
         public async Task<ActionResult<ObjectStorageResponseDto>> UpdateObjectStorage(
             long projectId,
             long objectStorageId,
@@ -146,14 +152,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Delete object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
-        /// <param name="objectStorageId">ID of object storage to delete</param> 
+        /// <param name="objectStorageId">ID of object storage to delete</param>
         /// <returns></returns>
         [HttpDelete("DeleteObjectStorage/{objectStorageId}", Name = "api_delete_object_storage")]
+        [AuthInProject("write", "object_storage")]
         public async Task<ActionResult> DeleteObjectStorage(
             long projectId,
             long objectStorageId)
@@ -170,14 +177,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Archive object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
-        /// <param name="objectStorageId">ID of object storage to delete</param> 
+        /// <param name="objectStorageId">ID of object storage to delete</param>
         /// <returns></returns>
         [HttpDelete("ArchiveObjectStorage/{objectStorageId}", Name = "api_archive_object_storage")]
+        [AuthInProject("write", "object_storage")]
         public async Task<ActionResult> ArchiveObjectStorage(
             long projectId,
             long objectStorageId)
@@ -194,14 +202,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Unarchive object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
-        /// <param name="objectStorageId">ID of object storage to retrieve</param> 
+        /// <param name="objectStorageId">ID of object storage to retrieve</param>
         /// <returns></returns>
         [HttpPut("UnarchiveObjectStorage/{objectStorageId}", Name = "api_unarchive_object_storage")]
+        [AuthInProject("write", "object_storage")]
         public async Task<ActionResult<ObjectStorageResponseDto>> UnarchiveObjectStorage(
             long projectId,
             long objectStorageId)
@@ -218,14 +227,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Sets default object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
-        /// <param name="objectStorageId">ID of object storage to make default</param> 
+        /// <param name="objectStorageId">ID of object storage to make default</param>
         /// <returns></returns>
         [HttpPut("SetDefaultObjectStorage/{objectStorageId}", Name = "api_change_default_object_storage")]
+        [AuthInProject("write", "object_storage")]
         public async Task<ActionResult<ObjectStorageResponseDto>> SetDefaultObjectStorage(
             long projectId,
             long objectStorageId)

@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.DependencyModel;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
-    
+
     /// <summary>
     /// Controller for managing classes.
     /// </summary>
@@ -37,8 +39,9 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses", Name = "api_get_all_classes")]
+        [AuthInProject("read", "class")]
         public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
-            long projectId, 
+            long projectId,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -62,9 +65,10 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}", Name = "api_get_a_class")]
+        [AuthInProject("read", "class")]
         public async Task<ActionResult<ClassResponseDto>> GetClass(
-            long projectId, 
-            long classId, 
+            long projectId,
+            long classId,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -89,6 +93,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The request DTO for classes</param>
         /// <returns>Class response DTOs</returns>
         [HttpPost("CreateClass", Name = "api_create_a_class")]
+        [AuthInProject("write", "class")]
         public async Task<ActionResult<ClassResponseDto>> CreateClass(long projectId,
             [FromBody] CreateClassRequestDto dto)
         {
@@ -104,7 +109,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Create many classes
         /// </summary>
@@ -112,6 +117,7 @@ namespace deeplynx.api.Controllers
         /// <param name="classes">List of request DTOs for classes</param>
         /// <returns>Bulk class response DTOs</returns>
         [HttpPost("BulkCreateClasses", Name = "api_create_many_classes")]
+        [AuthInProject("write", "class")]
         public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
             long projectId,
             [FromBody] List<CreateClassRequestDto> classes)
@@ -128,7 +134,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Update a class
         /// </summary>
@@ -137,6 +143,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The request DTO for the class</param>
         /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}", Name = "api_update_a_class")]
+        [AuthInProject("write", "class")]
         public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] UpdateClassRequestDto dto)
         {
             try
@@ -159,6 +166,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
         /// <returns>A message stating the class was successfully deleted.</returns>
         [HttpDelete("DeleteClass/{classId}", Name = "api_delete_a_class")]
+        [AuthInProject("write", "class")]
         public async Task<IActionResult> DeleteClass(long projectId, long classId)
         {
             try
@@ -173,7 +181,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Archive a class
         /// </summary>
@@ -181,6 +189,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
         /// <returns>A message stating the class was successfully archived.</returns>
         [HttpDelete("ArchiveClass/{classId}", Name = "api_archive_a_class")]
+        [AuthInProject("write", "class")]
         public async Task<IActionResult> ArchiveClass(long projectId, long classId)
         {
             try
@@ -195,7 +204,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Unarchive a class
         /// </summary>
@@ -203,6 +212,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
         /// <returns>A message stating the class was successfully unarchived.</returns>
         [HttpPut("UnarchiveClass/{classId}", Name = "api_unarchive_a_class")]
+        [AuthInProject("write", "class")]
         public async Task<IActionResult> UnarchiveClass(long projectId, long classId)
         {
             try

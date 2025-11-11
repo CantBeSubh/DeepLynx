@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -31,6 +32,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived permissions</param>
         /// <returns></returns>
         [HttpGet("GetAllPermissions", Name = "api_get_all_permissions")]
+        [AuthInProject("read", "permission")]
         public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetAllPermissions(
             [FromQuery] long? labelId = null,
             [FromQuery] long? projectId = null,
@@ -57,6 +59,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived permissions</param>
         /// <returns></returns>
         [HttpGet("GetPermission/{permissionId}", Name = "api_get_permission")]
+        [AuthInProject("read", "permission")]
         public async Task<ActionResult<PermissionResponseDto>> GetPermission(
             long permissionId, [FromQuery] bool hideArchived = true)
         {
@@ -81,6 +84,7 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">(use this or org ID) ID of the organization to which the permission belongs</param>
         /// <returns></returns>
         [HttpPost("CreatePermission", Name = "api_create_permission")]
+        [AuthInProject("write", "permission")]
         public async Task<ActionResult<PermissionResponseDto>> CreatePermission(
             [FromBody] CreatePermissionRequestDto dto,
             [FromQuery] long? projectId = null,
@@ -106,6 +110,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Fields to update</param>
         /// <returns></returns>
         [HttpPut("UpdatePermission/{permissionId}", Name = "api_update_permission")]
+        [AuthInProject("write", "permission")]
         public async Task<ActionResult<PermissionResponseDto>> UpdatePermission(
             long permissionId,
             [FromBody] UpdatePermissionRequestDto dto)
@@ -129,6 +134,7 @@ namespace deeplynx.api.Controllers
         /// <param name="permissionId">ID of the permission to hard delete</param>
         /// <returns></returns>
         [HttpDelete("DeletePermission/{permissionId}", Name = "api_delete_permission")]
+        [AuthInProject("write", "permission")]
         public async Task<ActionResult> DeletePermission(long permissionId)
         {
             try
@@ -150,6 +156,7 @@ namespace deeplynx.api.Controllers
         /// <param name="permissionId">ID of the permission</param>
         /// <returns></returns>
         [HttpDelete("ArchivePermission/{permissionId}", Name = "api_archive_permission")]
+        [AuthInProject("write", "permission")]
         public async Task<ActionResult> ArchivePermission(long permissionId)
         {
             try
@@ -171,6 +178,7 @@ namespace deeplynx.api.Controllers
         /// <param name="permissionId">ID of the permission</param>
         /// <returns></returns>
         [HttpPut("UnarchivePermission/{permissionId}", Name = "api_unarchive_permission")]
+        [AuthInProject("write", "permission")]
         public async Task<ActionResult> UnarchivePermission(long permissionId)
         {
             try

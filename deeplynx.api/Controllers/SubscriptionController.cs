@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -38,6 +39,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>List of subscription response DTOs</returns>
         [HttpGet("GetAllSubscriptions", Name = "api_get_all_subscriptions")]
+        [AuthInProject("read", "subscription")]
         public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptions(
             long userId, long projectId, [FromQuery] bool hideArchived = true)
         {
@@ -63,6 +65,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>Subscription response DTO</returns>
         [HttpGet("GetSubscription/{subscriptionId}", Name = "api_get_a_subscription")]
+        [AuthInProject("read", "subscription")]
         public async Task<ActionResult<SubscriptionResponseDto>> GetSubscription(
             long userId, long projectId, long subscriptionId, [FromQuery] bool hideArchived = true)
         {
@@ -87,6 +90,7 @@ namespace deeplynx.api.Controllers
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
         /// <returns>Bulk subscription response DTOs</returns>
         [HttpPost("BulkCreateSubscriptions", Name = "api_create_many_subscriptions")]
+        [AuthInProject("write", "subscription")]
         public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkCreateSubscriptions(
             long userId, long projectId, [FromBody] List<CreateSubscriptionRequestDto> subscriptions)
         {
@@ -111,6 +115,7 @@ namespace deeplynx.api.Controllers
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
         /// <returns>Bulk subscription response DTOs</returns>
         [HttpPut("BulkUpdateSubscriptions", Name = "api_update_many_subscriptions")]
+        [AuthInProject("write", "subscription")]
         public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkUpdateSubscriptions(
             long userId, long projectId, [FromBody] List<UpdateSubscriptionRequestDto> subscriptions)
         {
@@ -135,6 +140,7 @@ namespace deeplynx.api.Controllers
         /// <param name="subscriptionIds">List of subscription IDs to delete</param>
         /// <returns>A message stating the subscriptions were successfully deleted.</returns>
         [HttpDelete("BulkDeleteSubscriptions", Name = "api_delete_many_subscriptions")]
+        [AuthInProject("write", "subscription")]
         public async Task<IActionResult> BulkDeleteSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
@@ -158,6 +164,7 @@ namespace deeplynx.api.Controllers
         /// <param name="subscriptionIds">List of subscription IDs to archive</param>
         /// <returns>A message stating the subscriptions were successfully archived.</returns>
         [HttpPut("BulkArchiveSubscriptions", Name = "api_archive_many_subscriptions")]
+        [AuthInProject("write", "subscription")]
         public async Task<IActionResult> BulkArchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
@@ -181,6 +188,7 @@ namespace deeplynx.api.Controllers
         /// <param name="subscriptionIds">List of subscription IDs to unarchive</param>
         /// <returns>A message stating the subscriptions were successfully unarchived.</returns>
         [HttpPut("BulkUnarchiveSubscriptions", Name = "api_unarchive_many_subscriptions")]
+        [AuthInProject("write", "subscription")]
         public async Task<IActionResult> BulkUnarchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
         {
             try

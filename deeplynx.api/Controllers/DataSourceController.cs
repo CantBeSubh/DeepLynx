@@ -2,6 +2,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -31,7 +32,8 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources", Name = "api_get_all_data_sources")]
-        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(long projectId, 
+        [AuthInProject("read", "data_source")]
+        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(long projectId,
            [FromQuery] bool hideArchived = true)
         {
             try
@@ -55,6 +57,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDataSource/{dataSourceId}", Name = "api_get_a_data_source")]
+        [AuthInProject("read", "data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
             long projectId,
             long dataSourceId,
@@ -72,13 +75,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get default data source
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDefaultDataSource", Name = "api_get_default_data_source")]
+        [AuthInProject("read", "data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> GetDefaultDataSource(
             long projectId)
         {
@@ -96,12 +100,13 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Create a data source 
+        /// Create a data source
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source</returns>
         [HttpPost("CreateDataSource", Name = "api_create_a_data_source")]
+        [AuthInProject("write", "data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(long projectId, [FromBody] CreateDataSourceRequestDto dto)
         {
             try
@@ -125,6 +130,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The data transfer object containing updated data source details</param>
         /// <returns>The newly updated data source</returns>
         [HttpPut("UpdateDataSource/{dataSourceId}", Name = "api_update_a_data_source")]
+        [AuthInProject("write", "data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
             long projectId,
             long dataSourceId,
@@ -150,6 +156,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <returns>A message stating the data source was successfully deleted.</returns>
         [HttpDelete("DeleteDataSource/{dataSourceId}", Name = "api_delete_a_data_source")]
+        [AuthInProject("write", "data_source")]
         public async Task<IActionResult> DeleteDataSource(
             long dataSourceId,
             long projectId)
@@ -166,16 +173,17 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Archive a data source 
+        /// Archive a data source
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to archive.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <returns>A message stating the data source was successfully archived.</returns>
         [HttpDelete("ArchiveDataSource/{dataSourceId}", Name = "api_archive_a_data_source")]
+        [AuthInProject("write", "data_source")]
         public async Task<IActionResult> ArchiveDataSource(
-            long dataSourceId, 
+            long dataSourceId,
             long projectId)
         {
             try
@@ -190,16 +198,17 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Unarchive a data source 
+        /// Unarchive a data source
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to unarchive.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <returns>A message stating the data source was successfully unarchived.</returns>
         [HttpPut("UnarchiveDataSource/{dataSourceId}", Name = "api_unarchive_a_data_source")]
+        [AuthInProject("write", "data_source")]
         public async Task<IActionResult> UnarchiveDataSource(
-            long dataSourceId, 
+            long dataSourceId,
             long projectId)
         {
             try
@@ -214,7 +223,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Set default data source
         /// </summary>
@@ -222,6 +231,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <returns>The newly updated data source</returns>
         [HttpPut("SetDefaultDataSource/{dataSourceId}", Name = "api_set_default_data_source")]
+        [AuthInProject("write", "data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
             long projectId,
             long dataSourceId)
