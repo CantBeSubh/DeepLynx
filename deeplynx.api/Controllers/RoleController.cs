@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -31,10 +30,9 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived roles</param>
         /// <returns></returns>
         [HttpGet("GetAllRoles", Name = "api_get_all_roles")]
-        [AuthInProject("read", "role")]
         public async Task<ActionResult<IEnumerable<RoleResponseDto>>> GetAllRoles(
             [FromQuery] long? projectId = null,
-            [FromQuery] long? organizationId = null,
+            [FromQuery] long? organizationId = null, 
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -57,7 +55,6 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived roles</param>
         /// <returns></returns>
         [HttpGet("GetRole/{roleId}", Name = "api_get_role")]
-        [AuthInProject("read", "role")]
         public async Task<ActionResult<RoleResponseDto>> GetRole(
             long roleId, [FromQuery] bool hideArchived = true)
         {
@@ -82,7 +79,6 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">(use this or project ID) ID of the organization to which the role belongs</param>
         /// <returns></returns>
         [HttpPost("CreateRole", Name = "api_create_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult<RoleResponseDto>> CreateRole(
             [FromBody] CreateRoleRequestDto dto,
             [FromQuery] long? projectId,
@@ -108,7 +104,6 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Fields to update</param>
         /// <returns></returns>
         [HttpPut("UpdateRole/{roleId}", Name = "api_update_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult<RoleResponseDto>> UpdateRole(
             long roleId,
             [FromBody] UpdateRoleRequestDto dto)
@@ -132,7 +127,6 @@ namespace deeplynx.api.Controllers
         /// <param name="roleId">ID of the role to hard delete</param>
         /// <returns></returns>
         [HttpDelete("DeleteRole/{roleId}", Name = "api_delete_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult> DeleteRole(long roleId)
         {
             try
@@ -154,7 +148,6 @@ namespace deeplynx.api.Controllers
         /// <param name="roleId">ID of the role</param>
         /// <returns></returns>
         [HttpDelete("ArchiveRole/{roleId}", Name = "api_archive_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult> ArchiveRole(long roleId)
         {
             try
@@ -176,7 +169,6 @@ namespace deeplynx.api.Controllers
         /// <param name="roleId">ID of the role</param>
         /// <returns></returns>
         [HttpPut("UnarchiveRole/{roleId}", Name = "api_unarchive_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult> UnarchiveRole(long roleId)
         {
             try
@@ -198,7 +190,6 @@ namespace deeplynx.api.Controllers
         /// <param name="roleId">ID of the role</param>
         /// <returns></returns>
         [HttpGet("GetPermissionsByRole/{roleId}", Name = "api_get_permissions_by_role")]
-        [AuthInProject("read", "role")]
         public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetPermissionsByRole(long roleId)
         {
             try
@@ -221,9 +212,8 @@ namespace deeplynx.api.Controllers
         /// <param name="permissionId">ID of the permission to be added</param>
         /// <returns></returns>
         [HttpPost("AddPermissionToRole", Name = "api_add_permission_to_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult> AddPermissionToRole(
-            [FromQuery] long roleId,
+            [FromQuery] long roleId, 
             [FromQuery] long permissionId)
         {
             try
@@ -246,9 +236,8 @@ namespace deeplynx.api.Controllers
         /// <param name="permissionId">ID of permission to be removed</param>
         /// <returns></returns>
         [HttpDelete("RemovePermissionFromRole", Name = "api_remove_permission_from_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult> RemovePermissionFromRole(
-            [FromQuery] long roleId,
+            [FromQuery] long roleId, 
             [FromQuery] long permissionId)
         {
             try
@@ -271,7 +260,6 @@ namespace deeplynx.api.Controllers
         /// <param name="permissionIds">Array of permission IDs to assign to the role</param>
         /// <returns></returns>
         [HttpPut("SetPermissionsForRole/{roleId}", Name = "api_set_permissions_for_role")]
-        [AuthInProject("write", "role")]
         public async Task<ActionResult> SetPermissionsForRole(
             long roleId,
             [FromBody] long[] permissionIds)

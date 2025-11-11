@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -33,7 +32,6 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">(Optional) ID of organization that users are associated with</param>
         /// <returns>List of user response DTOs</returns>
         [HttpGet("GetAllUsers", Name = "api_get_all_users")]
-        [AuthInProject("read", "user")]
         public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(
             [FromQuery] long? projectId,
             [FromQuery] long? organizationId)
@@ -58,7 +56,6 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user</param>
         /// <returns>User response DTO</returns>
         [HttpGet("GetUser/{userId}", Name = "api_get_a_user")]
-        [AuthInProject("read", "user")]
         public async Task<ActionResult<UserResponseDto>> GetUser(long userId)
         {
             try
@@ -79,7 +76,6 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <returns>User response DTO with the local dev user info</returns>
         [HttpGet("GetLocalDevUser", Name = "api_get_local_dev_user")]
-        [AuthInProject("read", "user")]
         public async Task<ActionResult<UserResponseDto>> GetLocalDevUser()
         {
             try
@@ -102,7 +98,6 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
         [HttpPost("CreateUser", Name = "api_create_a_user")]
-        [AuthInProject("write", "user")]
         public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] CreateUserRequestDto dto)
         {
             try
@@ -125,7 +120,6 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
         [HttpPut("UpdateUser/{userId}", Name = "api_update_a_user")]
-        [AuthInProject("write", "user")]
         public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UpdateUserRequestDto dto)
         {
             try
@@ -147,7 +141,6 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">The ID of the user to delete.</param>
         /// <returns>A message stating the user was successfully deleted.</returns>
         [HttpDelete("DeleteUser/{userId}", Name = "api_delete_a_user")]
-        [AuthInProject("write", "user")]
         public async Task<IActionResult> DeleteUser(long userId)
         {
             try
@@ -169,7 +162,6 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">The ID of the user to archive.</param>
         /// <returns>A message stating the user was successfully archived.</returns>
         [HttpDelete("ArchiveUser/{userId}", Name = "api_archive_a_user")]
-        [AuthInProject("write", "user")]
         public async Task<IActionResult> ArchiveUser(long userId)
         {
             try
@@ -191,7 +183,6 @@ namespace deeplynx.api.Controllers
         /// <param name="candidateId">ID of user to grant the sysadmin rights to </param>
         /// <returns>User response DTO</returns>
         [HttpGet("SetSysAdmin/{candidateID}", Name = "api_set_sys_admin")]
-        [AuthInProject("write", "user")]
         public async Task<ActionResult<UserResponseDto>> SetSysAdmin(long candidateId)
         {
             try
@@ -215,7 +206,6 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user</param>
         /// <returns>Data overview DTO</returns>
         [HttpGet("GetDataOverview/{userId}", Name = "api_get_a_user_overview")]
-        [AuthInProject("read", "user")]
         public async Task<ActionResult<DataOverviewDto>> GetDataOverview(long userId)
         {
             try
@@ -238,7 +228,6 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">The ID of the user to unarchive.</param>
         /// <returns>A message stating the user was successfully unarchived.</returns>
         [HttpPut("UnarchiveUser/{userId}", Name = "api_unarchive_a_user")]
-        [AuthInProject("write", "user")]
         public async Task<IActionResult> UnarchiveUser(long userId)
         {
             try
@@ -260,7 +249,6 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">Array of project ids</param>
         /// <returns>List of record response DTOs sorted by most recent</returns>
         [HttpGet("GetRecentlyAddedRecords", Name = "api_get_recent_records")]
-        [AuthInProject("read", "user")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords([FromQuery] long[] projectId)
         {
             try
@@ -281,7 +269,6 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <returns>User response DTO</returns>
         [HttpGet("GetCurrentUser", Name = "api_get_current_user")]
-        [AuthInProject("read", "user")]
         public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
         {
             try

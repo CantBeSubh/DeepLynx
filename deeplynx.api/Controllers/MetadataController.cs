@@ -2,7 +2,6 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -24,7 +23,7 @@ public class MetadataController : ControllerBase
         _metadataBusiness = metadataBusiness;
         _logger = logger;
     }
-
+    
     /// <summary>
     /// Parses metadata from raw JSON
     /// </summary>
@@ -32,9 +31,8 @@ public class MetadataController : ControllerBase
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="metadataRequestDto">The metadata data transfer object containing metadata details.</param>
     [HttpPost("CreateMetadata", Name = "api_create_metadata")]
-    [AuthInProject("write", "metadata")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(
-        long projectId,
+        long projectId, 
         long dataSourceId,
         [FromBody] CreateMetadataRequestDto metadataRequestDto)
     {
@@ -51,7 +49,7 @@ public class MetadataController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-
+    
     /// <summary>
     /// Parses metadata from a JSON file
     /// </summary>
@@ -59,9 +57,8 @@ public class MetadataController : ControllerBase
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="file">The .json file that contains the metadata.</param>
     [HttpPost("CreateMetadataFromFile", Name = "api_create_metadata_from_file")]
-    [AuthInProject("write", "metadata")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadataFromFile(
-        long projectId,
+        long projectId, 
         long dataSourceId,
         IFormFile file)
     {
