@@ -772,7 +772,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_oauth_applications_id");
 
-                    b.ToTable("oauth_applications");
+                    b.ToTable("oauth_applications", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.OauthToken", b =>
@@ -828,7 +828,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "UserId" }, "idx_oauth_tokens_user_id");
 
-                    b.ToTable("oauth_tokens");
+                    b.ToTable("oauth_tokens", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
@@ -901,6 +901,10 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<bool>("DefaultOrg")
+                        .HasColumnType("boolean")
+                        .HasColumnName("default_org");
+
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
@@ -933,6 +937,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasDatabaseName("idx_organizations_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_organizations_id");
+
+                    b.HasIndex(new[] { "Name" }, "unique_organization_name")
+                        .IsUnique();
 
                     b.ToTable("organizations", "deeplynx");
                 });
@@ -1099,7 +1106,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OrganizationId")
+                    b.Property<long>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
@@ -2075,7 +2082,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Projects")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("projects_organization_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");

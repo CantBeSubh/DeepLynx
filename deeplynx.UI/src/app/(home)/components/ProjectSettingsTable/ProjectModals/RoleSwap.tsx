@@ -1,5 +1,5 @@
 import { useLanguage } from "@/app/contexts/Language";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getAllRoles } from "@/app/lib/role_services.client";
 import { ProjectMembersDto } from "@/app/(home)/types/responseDTOs";
 interface Role {
@@ -37,6 +37,18 @@ const RoleSwap = ({
   const [roles, setRoles] = useState<Role[]>(rolesFromParent || []);
   const [loading, setLoading] = useState(false);
 
+  // Memoize fetchRoles to prevent it from changing on every render
+  const fetchRoles = useCallback(async () => {
+    if (!projectId) return;
+
+    try {
+      const rolesData = await getAllRoles(Number(projectId));
+      setRoles(rolesData);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+    }
+  }, [projectId]);
+
   useEffect(() => {
     // If roles are passed from parent, use them
     if (rolesFromParent) {
@@ -45,7 +57,7 @@ const RoleSwap = ({
       // Otherwise, fetch them
       fetchRoles();
     }
-  }, [isOpen, projectId, rolesFromParent]);
+  }, [isOpen, projectId, rolesFromParent, fetchRoles]);
 
   useEffect(() => {
     // Reset selected role when modal opens with a new member
@@ -53,15 +65,6 @@ const RoleSwap = ({
       setSelectedRoleId(currentMember.roleId || null);
     }
   }, [currentMember]);
-
-  const fetchRoles = async () => {
-    try {
-      const rolesData = await getAllRoles(Number(projectId));
-      setRoles(rolesData);
-    } catch (error) {
-      console.error("Error fetching roles:", error);
-    }
-  };
 
   const handleSave = async () => {
     if (!selectedRoleId) {

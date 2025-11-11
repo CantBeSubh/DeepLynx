@@ -924,8 +924,6 @@ namespace deeplynx.tests
         {
             // await CleanupTestData();
             await base.SeedTestDataAsync();
-            
-            await base.SeedTestDataAsync();
     
             // Create test user
             var user = new User
@@ -946,7 +944,7 @@ namespace deeplynx.tests
             oid = organization.Id;
 
             // create test project
-            var project = new Project { Name = "Test Project" };
+            var project = new Project { Name = "Test Project", OrganizationId = oid};
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;

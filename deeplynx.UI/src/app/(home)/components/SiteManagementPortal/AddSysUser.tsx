@@ -12,9 +12,7 @@ const AddSysUser = ({ isOpen, onClose }: AddSysUserProps) => {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
 
-  const handleInvite = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleInvite = async () => {
     try {
       await sendEmail(email);
       alert("Invitation sent successfully!");
@@ -34,24 +32,22 @@ const AddSysUser = ({ isOpen, onClose }: AddSysUserProps) => {
             <h3 className="font-bold text-lg mb-4 text-neutral">
               {t.translations.ADD_NEW_USER}
             </h3>
-            <form method="dialog" className="flex flex-col gap-4" onSubmit={handleInvite}>
-              <input
-                type="text"
-                placeholder="Email"
-                className="input input-primary w-full"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <div className="modal-action">
-                <button type="button" className="btn" onClick={onClose}>
-                  {t.translations.CANCEL}
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {t.translations.INVITE}
-                </button>
-              </div>
-            </form>
+            <input
+              type="text"
+              placeholder="Email"
+              className="input input-primary w-full"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <div className="modal-action">
+              <button type="button" className="btn" onClick={onClose}>
+                {t.translations.CANCEL}
+              </button>
+              <button type="submit" className="btn btn-primary" onClick={handleInvite}>
+                {t.translations.INVITE}
+              </button>
+            </div>
           </div>
         </dialog>
       )}

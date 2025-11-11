@@ -10,10 +10,16 @@ import {
   PresentationChartLineIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SearchInput from "./SearchInput";
 
-// Define the props for the GenericTable component
+type PaginationMetadata = {
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages?: number;
+};
+
 type GenericTableProps<T extends object> = {
   columns: Column<T>[];
   data: T[];
@@ -22,6 +28,8 @@ type GenericTableProps<T extends object> = {
   isAnyRowSelected?: boolean;
   deleteSelectedRows?: () => void;
   rowsPerPage?: number;
+  pageLengthOptions?: number[];
+  enablePageLengthChange?: boolean;
   enablePagination?: boolean;
   bordered?: boolean;
   searchBar?: boolean;
@@ -29,6 +37,11 @@ type GenericTableProps<T extends object> = {
   rowClassName?: string | ((row: T, index: number) => string);
   tableClassName?: string;
   gridView?: boolean;
+  // Backend pagination props
+  backendPagination?: boolean;
+  paginationMetadata?: PaginationMetadata;
+  onPageChange?: (pageNumber: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 };
 
 const GenericTable = <T extends object>({
@@ -39,6 +52,8 @@ const GenericTable = <T extends object>({
   isAnyRowSelected,
   deleteSelectedRows,
   rowsPerPage = 10,
+  pageLengthOptions = [10, 25, 50, 100, 500],
+  enablePageLengthChange = false,
   enablePagination = false,
   bordered = false,
   searchBar = false,
@@ -46,21 +61,35 @@ const GenericTable = <T extends object>({
   rowClassName,
   tableClassName,
   gridView = false,
+  backendPagination = false,
+  paginationMetadata,
+  onPageChange,
+  onPageSizeChange,
 }: GenericTableProps<T>) => {
   const { t } = useLanguage();
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [currentDisplayedRows, setCurrentDisplayedRows] = useState(rowsPerPage);
+
+  // Sync local page state with backend pagination metadata
+  useEffect(() => {
+    if (backendPagination && paginationMetadata) {
+      setCurrentPage(paginationMetadata.pageNumber);
+    }
+  }, [backendPagination, paginationMetadata]);
 
   // Filter data based on the search input
   const filteredData = React.useMemo(() => {
-    return data?.filter((row) =>
-      columns.some((column) =>
-        row[column.data as keyof T]
-          ?.toString()
-          .toLowerCase()
-          .includes(filterText.toLowerCase())
-      )
-    ) || [];
+    return (
+      data?.filter((row) =>
+        columns.some((column) =>
+          row[column.data as keyof T]
+            ?.toString()
+            .toLowerCase()
+            .includes(filterText.toLowerCase())
+        )
+      ) || []
+    );
   }, [data, columns, filterText]);
 
   // State and logic for column sorting
@@ -69,7 +98,7 @@ const GenericTable = <T extends object>({
     direction: "asc" | "desc";
   } | null>(null);
 
-  // Memoize sorted data to avoid unnecessary calculations
+  // Memoize sorted data to avoid unnecessary calculations (only for client-side)
   const sortedData = React.useMemo(() => {
     if (!sortConfig) return filteredData;
 
@@ -97,21 +126,30 @@ const GenericTable = <T extends object>({
   }, [filteredData, sortConfig]);
 
   // Calculate total pages for pagination
-  const totalPages = enablePagination
-    ? Math.ceil(filteredData.length / rowsPerPage)
-    : 1;
+  const totalPages =
+    backendPagination && paginationMetadata
+      ? paginationMetadata.totalPages ||
+        Math.ceil(paginationMetadata.totalCount / paginationMetadata.pageSize)
+      : enablePagination
+      ? Math.ceil(filteredData.length / rowsPerPage)
+      : 1;
 
   // Get data for the current page
-  const currentData = enablePagination
+  const currentData = backendPagination
+    ? sortedData // Now includes filtered data from current page
+    : enablePagination
     ? sortedData.slice(
-      (currentPage - 1) * rowsPerPage,
-      currentPage * rowsPerPage
-    )
+        (currentPage - 1) * rowsPerPage,
+        currentPage * rowsPerPage
+      )
     : sortedData;
 
   // Handle page click for pagination
   const handlePageClick = (pageNumber: number) => {
     setCurrentPage(pageNumber);
+    if (backendPagination && onPageChange) {
+      onPageChange(pageNumber);
+    }
   };
 
   // Create pagination buttons
@@ -123,8 +161,9 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "bg-dynamic-blue text-white" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -148,8 +187,9 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "bg-dynamic-blue text-white" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -166,7 +206,7 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={currentPage}
-            className="join-item btn btn-primary"
+            className="join-item btn bg-dynamic-blue text-white"
             onClick={() => handlePageClick(currentPage)}
           >
             {currentPage}
@@ -189,8 +229,9 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "bg-dynamic-blue text-white" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -214,20 +255,68 @@ const GenericTable = <T extends object>({
     return pagination;
   };
 
+  const handleRowLengthClick = (rowsNumber: number) => {
+    setCurrentDisplayedRows(rowsNumber);
+    setCurrentPage(1); // Reset to first page when changing rows per page
+    if (backendPagination && onPageSizeChange) {
+      onPageSizeChange(rowsNumber);
+    }
+  };
+
+  const rowNumberSelect = () => {
+    const rowOptions = [];
+
+    for (let i = 0; i < pageLengthOptions.length; i++) {
+      rowOptions.push(
+        <button
+          key={i}
+          className={`join-item btn ${
+            currentDisplayedRows === pageLengthOptions[i]
+              ? "bg-dynamic-blue text-white"
+              : ""
+          }`}
+          onClick={() => handleRowLengthClick(pageLengthOptions[i])}
+        >
+          {pageLengthOptions[i]}
+        </button>
+      );
+    }
+
+    return rowOptions;
+  };
+
+  // Determine if pagination should be shown
+  // Show pagination controls if enabled and there's data
+  const showPagination =
+    enablePagination &&
+    (backendPagination
+      ? paginationMetadata && paginationMetadata.totalCount > 0
+      : filteredData.length > 0);
+
+  // Show page navigation only if there are multiple pages
+  const showPageNavigation = backendPagination
+    ? paginationMetadata &&
+      paginationMetadata.totalCount > paginationMetadata.pageSize
+    : filteredData.length > currentDisplayedRows;
+
   return (
     <div
-      className={`overflow-x-auto ${bordered ? "rounded-box border border-base-300" : ""
-        } p-4`}
+      className={`overflow-x-auto ${
+        bordered ? "rounded-box border border-base-300" : ""
+      } p-4`}
     >
       {title && (
         <h2 className="text-xl font-bold text-base-content">{title}</h2>
       )}
       <div className="my-2 flex justify-between items-center">
         {searchBar && (
-          <SearchInput
-            placeholder={filterPlaceholder}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
+          <div>
+            {/* <p className="text-base-content">Search this page</p> */}
+            <SearchInput
+              placeholder={filterPlaceholder}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+          </div>
         )}
         {actionButtons && (
           <div className="p-2">
@@ -239,10 +328,11 @@ const GenericTable = <T extends object>({
             </button>
             <button
               onClick={deleteSelectedRows}
-              className={`transition-colors ${!isAnyRowSelected
-                ? "text-base-300 cursor-not-allowed"
-                : "text-error hover:text-error-focus cursor-pointer"
-                }`}
+              className={`transition-colors ${
+                !isAnyRowSelected
+                  ? "text-base-300 cursor-not-allowed"
+                  : "text-error hover:text-error-focus cursor-pointer"
+              }`}
               disabled={!isAnyRowSelected}
             >
               <TrashIcon className="size-6" />
@@ -251,25 +341,33 @@ const GenericTable = <T extends object>({
         )}
       </div>
       <table
-        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${tableClassName ?? ""
-          }`}
+        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${
+          tableClassName ?? ""
+        }`}
       >
         <thead>
-          <tr className="text-base-content bg-base-300">
+          <tr
+            className={`text-base-content bg-base-300 ${
+              gridView ? "border" : ""
+            }`}
+          >
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`${gridView ? "border border-base-300 bg-base-200" : ""
-                  } ${column.sortable !== false
+                className={`${
+                  gridView ? "border border-base-300 bg-base-200" : ""
+                } ${
+                  column.sortable !== false
                     ? "cursor-pointer select-none hover:bg-base-300 transition-colors"
                     : ""
-                  } ${column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
-                  }`}
+                } ${
+                  column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
+                }`}
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
                   const direction =
                     sortConfig?.key === column.data &&
-                      sortConfig?.direction === "asc"
+                    sortConfig?.direction === "asc"
                       ? "desc"
                       : "asc";
                   setSortConfig({ key: column.data as keyof T, direction });
@@ -303,21 +401,24 @@ const GenericTable = <T extends object>({
             return (
               <tr
                 key={rowIndex}
-                className={`${typeof rowClassName === "function"
-                  ? rowClassName(row, rowIndex)
-                  : rowClassName || ""
-                  } ${isPrivate
+                className={`${
+                  typeof rowClassName === "function"
+                    ? rowClassName(row, rowIndex)
+                    : rowClassName || ""
+                } ${
+                  isPrivate
                     ? "opacity-60 cursor-not-allowed"
                     : "hover:bg-base-200 transition-colors"
-                  }`}
+                }`}
               >
                 {columns.map((column, colIndex) => (
                   <td
                     key={colIndex}
-                    className={`text-base-content ${column.data === "id"
-                      ? "sticky left-0 z-10 bg-base-100"
-                      : ""
-                      } ${gridView ? "border border-base-300" : ""}`}
+                    className={`text-base-content ${
+                      column.data === "id"
+                        ? "sticky left-0 z-10 bg-base-100"
+                        : ""
+                    } ${gridView ? "border border-base-200" : ""}`}
                   >
                     {column.cell
                       ? column.cell(row, rowIndex)
@@ -337,11 +438,21 @@ const GenericTable = <T extends object>({
           })}
         </tbody>
       </table>
-      {enablePagination && filteredData.length > rowsPerPage && (
-        <div className="flex justify-center p-2">
-          <div className="join">{createPagination()}</div>
-        </div>
-      )}
+
+      <div className="flex justify-between">
+        {showPagination && enablePageLengthChange && (
+          <div className="flex justify-start items-center p-2">
+            <p className="text-sm mr-2">Rows per page:</p>
+            <div className="flex join">{rowNumberSelect()}</div>
+          </div>
+        )}
+        {showPageNavigation && (
+          <div className="flex justify-end p-2 items-center">
+            <p className="text-sm mr-2">Page:</p>
+            <div className="flex join">{createPagination()}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

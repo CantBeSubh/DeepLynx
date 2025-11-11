@@ -1,30 +1,67 @@
 // src/app/(home)/components/LayoutShell.tsx
-
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
 import {
   ArrowRightStartOnRectangleIcon,
+  BookOpenIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   Cog6ToothIcon,
+  GlobeAmericasIcon,
   UserCircleIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
 import { useSession, signOut } from "next-auth/react";
-import { useRBAC } from "@/app/(home)/rbac/useRBAC";
 import { RoleGate } from "../rbac/RBACComponents";
+import { useRBAC } from "../rbac/useRBAC";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getAllOrganizations } from "@/app/lib/organization_services.client";
+import { OrganizationResponseDto } from "../types/responseDTOs";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const { data: session } = useSession();
-  const { hasPermission, user, PERMISSIONS } = useRBAC();
+  const { user } = useRBAC();
+  const { organization, setOrganization } = useOrganizationSession();
+
+  const [selectedItem, setSelectedItem] = useState<string>("");
+  const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>(
+    []
+  );
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
+
   // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
+
+  // Check if auth is disabled
+  const isAuthDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
+  // Fetch organizations for the switcher
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        setLoadingOrgs(true);
+        const orgs = await getAllOrganizations(true);
+        setOrganizations(orgs);
+      } catch (error) {
+        console.error("Failed to fetch organizations:", error);
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
 
   const handleMenuToggle = (isCollapsed: boolean) => {
     setIsMenuCollapsed(isCollapsed);
@@ -41,21 +78,143 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
+  const handleOrganizationSwitch = (org: OrganizationResponseDto) => {
+    setOrganization({
+      organizationId: org.id,
+      organizationName: org.name,
+    });
+
+    // Close dropdown
+    setIsOrgDropdownOpen(false);
+
+    // Navigate to home page - this will trigger a full server-side re-render
+    router.push("/");
+  };
+
   const formatUserName = (fullName?: string | null): string => {
     if (!fullName) return "";
 
     const parts = fullName.trim().split(/\s+/);
     const firstName = parts[0] ?? "";
     const lastName = parts[parts.length - 1] ?? "";
-    return [firstName, lastName].filter(Boolean).join(", ");
+    return [firstName, lastName].filter(Boolean).join(" ");
+  };
+
+  // When auth is disabled, use RBAC user. When enabled, use session.
+  const displayName = isAuthDisabled
+    ? user?.name || ""
+    : session?.user?.name || "";
+
+  const displayEmail = isAuthDisabled
+    ? user?.email || ""
+    : session?.user?.email || "";
+
+  const displayImage = session?.user?.image;
+
+  // Function to handle item click events
+  const handleItemClick = (
+    item: string,
+    event: React.MouseEvent<HTMLElement>
+  ) => {
+    event.preventDefault();
+    setSelectedItem(item);
+    router.push(item);
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
       {/* Banner/Header */}
-      <header className="bg-primary text-primary-content flex justify-between items-center px-6 py-1 z-50 fixed w-full shadow-xl">
+      <header className="bg-[var(--base-400)] text-primary-content flex justify-between items-center px-6 py-3 z-50 fixed w-full">
+        {/* Organization Switcher */}
+        <div className="dropdown">
+          <div className="flex items-center">
+            <div className="flex items-center px-3 py-2">
+              <UserGroupIcon className="size-8 mr-3" />
+              <div className="flex flex-col">
+                <span className="text-xs opacity-70">Organization</span>
+                <h1 className="text-lg font-bold">
+                  {organization?.organizationName || "No Organization"}
+                </h1>
+              </div>
+            </div>
+            <button
+              tabIndex={0}
+              onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
+              className="btn btn-ghost btn-sm btn-circle"
+            >
+              {isOrgDropdownOpen ? (
+                <ChevronUpIcon className="size-5" />
+              ) : (
+                <ChevronDownIcon className="size-5" />
+              )}
+            </button>
+          </div>
+          {isOrgDropdownOpen && (
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu bg-base-100 text-base-content rounded-box z-[100] w-72 p-2 shadow-xl border border-base-300 mt-2"
+            >
+              {loadingOrgs ? (
+                <li>
+                  <div className="flex justify-center p-4">
+                    <span className="loading loading-spinner loading-sm"></span>
+                  </div>
+                </li>
+              ) : (
+                <>
+                  <li className="menu-title">
+                    <span className="text-base-content/70">
+                      Switch Organization
+                    </span>
+                  </li>
+                  {organizations.map((org) => (
+                    <li key={org.id}>
+                      <button
+                        onClick={() => handleOrganizationSwitch(org)}
+                        className={`flex items-center justify-between ${
+                          organization?.organizationId === org.id
+                            ? "active bg-info/60 text-primary-content"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <AvatarCell name={org.name} size={8} />
+                          <div className="flex flex-col items-start">
+                            <span className="font-semibold text-base-content">
+                              {org.name}
+                            </span>
+                            {org.description && (
+                              <span className="text-xs opacity-70 truncate max-w-[200px]">
+                                {org.description}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {organization?.organizationId === org.id && (
+                          <span className="badge badge-sm">Current</span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                  <div className="divider my-1"></div>
+                  <li>
+                    <Link
+                      href="/select-org"
+                      className=" hover:bg-base-200"
+                      onClick={() => setIsOrgDropdownOpen(false)}
+                    >
+                      <UserGroupIcon className="size-5" />
+                      View All Organizations
+                    </Link>
+                  </li>
+                </>
+              )}
+            </ul>
+          )}
+        </div>
+
         <Image
-          src="/images/lynx-white.png"
+          src="/assets/nexusWhite.png"
           alt="Logo"
           height={20}
           width={150}
@@ -63,9 +222,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={() => router.push("/")}
         />
         <div className="dropdown dropdown-end">
-          <div className="flex">
+          <div className="flex items-center">
             <RoleGate role="sysAdmin">
-              <Link href={"/sys_admin"} prefetch={false}>
+              <Link href={"/site_management"} prefetch={false}>
                 <Cog6ToothIcon className="size-10" />
               </Link>
             </RoleGate>
@@ -78,26 +237,24 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             className="menu dropdown-content bg-base-100 text-base-content rounded-box z-[100] w-auto min-w-52 max-w-[90vw] p-2 shadow-xl border border-base-300"
           >
             <li>
-              <div className="flex hover:bg-base-300">
+              <div className="flex bg-base-100">
                 <AvatarCell
-                  image={session?.user?.image ?? undefined}
-                  name={session?.user?.name ?? ""}
+                  image={displayImage ?? undefined}
+                  name={displayName}
                   size={20}
                 />
                 <div className="flex-1 min-w-0">
                   <h1 className="font-bold text-lg text-base-content">
-                    {formatUserName(session?.user?.name ?? null)}
+                    {formatUserName(displayName)}
                   </h1>
-                  <p className="text-base-content/70 text-sm">
-                    {session?.user?.email}
-                  </p>
+                  <p className="text-base-content/70 text-sm">{displayEmail}</p>
                 </div>
               </div>
             </li>
             <li className="mt-2">
               <Link
                 href="/settings"
-                className="text-base-content hover:bg-base-300"
+                className="text-base-content hover:bg-base-200"
               >
                 <Cog6ToothIcon className="size-6" />
                 {t.translations.SETTINGS}
@@ -105,7 +262,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </li>
             <li>
               <button
-                className="text-base-content hover:bg-base-300"
+                className="text-base-content hover:bg-base-200"
                 onClick={handleLogout}
               >
                 <ArrowRightStartOnRectangleIcon className="size-6" />
@@ -119,10 +276,38 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Page Content */}
       <div className="flex h-full z-0">
         {/* Side Menu */}
+        <div className="fixed top-18 bottom-0 flex">
+          <aside
+            className={
+              "h-full shadow-xl w-18 login text-primary-content p-4 transition-all duration-300 flex flex-col"
+            }
+          >
+            <ul className="mt-20">
+              <li>
+                <Link href={"#"}>
+                  <GlobeAmericasIcon className="size-10" />
+                </Link>
+              </li>
+              <li className="mt-5">
+                <Link href={"#"}>
+                  <Cog6ToothIcon className="size-10" />
+                </Link>
+              </li>
+              <li className="mt-5">
+                <Link
+                  href="/data_catalog"
+                  onClick={(e) => handleItemClick("/data_catalog", e)}
+                >
+                  <BookOpenIcon className="size-10" />
+                </Link>
+              </li>
+            </ul>
+          </aside>
+        </div>
         <SideMenu onToggle={handleMenuToggle} />
         <main
           className={`transition-all duration-300 w-full mt-18 ${
-            isMenuCollapsed ? "ml-20" : "ml-64"
+            isMenuCollapsed ? "ml-40" : "ml-82"
           }`}
         >
           {children}

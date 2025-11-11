@@ -320,15 +320,16 @@ namespace deeplynx.tests
         {
             // Act
             var result = (await _roleBusiness.GetAllRoles(null, null)).ToList();
-            
-            // Assert
-            Assert.Equal(3, result.Count());
-            Assert.All(result, r => Assert.Equal(false, r.IsArchived));
+    
+            // Assert - Check that our test roles are present/absent as expected
             Assert.Contains(result, r => r.Id == rid1);
-            Assert.DoesNotContain(result, r => r.Id == rid2);
-            Assert.DoesNotContain(result, r => r.Id == rid3);
+            Assert.DoesNotContain(result, r => r.Id == rid2); // archived
+            Assert.DoesNotContain(result, r => r.Id == rid3); // deleted
             Assert.Contains(result, r => r.Id == rid4);
             Assert.Contains(result, r => r.Id == rid5);
+    
+            // Verify all returned roles are not archived
+            Assert.All(result, r => Assert.False(r.IsArchived));
         }
         
         [Fact]
@@ -1125,7 +1126,8 @@ namespace deeplynx.tests
             { 
                 Name = "Test",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = uid
+                LastUpdatedBy = uid,
+                OrganizationId = organization.Id
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();

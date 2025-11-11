@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 
 export default function Signin() {
   const [isChecked, setChecked] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const { data: session, status } = useSession();
   const router = useRouter();
   const { t } = useLanguage();
@@ -30,7 +31,7 @@ export default function Signin() {
       <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
         <div className="flex flex-col items-center sm:items-start mb-0">
           <Image
-            src="/assets/lynx-white.svg"
+            src="/assets/nexusWhite.png"
             alt="DeepLynx logo"
             width={265.8}
             height={113.9}
@@ -51,6 +52,7 @@ export default function Signin() {
   }
 
   const handleOktaSignIn = () => {
+    setIsSigningIn(true);
     signIn("okta", { callbackUrl: "/" });
   };
 
@@ -58,7 +60,7 @@ export default function Signin() {
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
       <div className="flex flex-col items-center sm:items-start mb-0">
         <Image
-          src="/assets/lynx-white.svg"
+          src="/assets/nexusWhite.png"
           alt="DeepLynx logo"
           width={265.8}
           height={113.9}
@@ -98,8 +100,12 @@ export default function Signin() {
 
               <button
                 onClick={handleOktaSignIn}
-                className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl hover:bg-gray-600 transition-colors"
+                disabled={isSigningIn}
+                className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
+                {isSigningIn && (
+                  <span className="loading loading-spinner loading-sm"></span>
+                )}
                 {t.translations.PIV_CAC_CARD_SIGN_IN}
               </button>
             </div>

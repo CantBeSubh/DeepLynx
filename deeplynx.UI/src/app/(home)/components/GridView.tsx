@@ -34,6 +34,7 @@ const GridView = ({
         enablePagination
         rowsPerPage={8}
         gridView={true}
+        bordered={false}
       />
     </div>
   );

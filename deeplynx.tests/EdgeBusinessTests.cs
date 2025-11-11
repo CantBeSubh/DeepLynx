@@ -28,6 +28,8 @@ namespace deeplynx.tests
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
         private Mock<IRoleBusiness> _mockRoleBusiness = null!;
+        private Mock<IOrganizationBusiness> _mockOrganizationBusiness = null!;
+        
         public long pid;
         public long pid2;
         public long dsid;
@@ -39,6 +41,7 @@ namespace deeplynx.tests
         public long destinationRecordId3;
         public long relationshipId;
         public long uid1;
+        public long oid;
         public EdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
@@ -53,17 +56,18 @@ namespace deeplynx.tests
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
             _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+            _mockOrganizationBusiness =  new Mock<IOrganizationBusiness>();
 
             _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(Context, _cacheBusiness, _edgeBusiness, _mockRecordBusiness.Object, _eventBusiness);
             _classBusiness = new ClassBusiness(
-                Context, _cacheBusiness, _mockRecordBusiness.Object, 
+                Context, _cacheBusiness, _mockRecordBusiness.Object,
                 _mockRelationshipBusiness.Object, _eventBusiness);
-            
+
             _projectBusiness = new ProjectBusiness(
-                Context, _cacheBusiness, _mockLogger.Object, _classBusiness, 
-                _mockRoleBusiness.Object, _dataSourceBusiness, 
-                _mockObjectStorageBusiness.Object, _eventBusiness);
+                Context, _cacheBusiness, _mockLogger.Object, _classBusiness,
+                _mockRoleBusiness.Object, _dataSourceBusiness,
+                _mockObjectStorageBusiness.Object, _eventBusiness, _mockOrganizationBusiness.Object );
         }
 
         #region CreateEdge Tests
@@ -81,7 +85,7 @@ namespace deeplynx.tests
 
             // Act
             var result = await _edgeBusiness.CreateEdge(pid, dsid, dto);
-            
+
             // Assert
             Assert.True(result.Id > 0);
             Assert.True(result.LastUpdatedAt >= now);
@@ -89,13 +93,13 @@ namespace deeplynx.tests
             Assert.Equal(destinationRecordId, result.DestinationId);
             Assert.Equal(pid, result.ProjectId);
             Assert.Equal(dsid, result.DataSourceId);
-            
+
             // Ensure that edge create event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("edge", actualEvent.EntityType);
@@ -114,7 +118,7 @@ namespace deeplynx.tests
             };
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
-            
+
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -131,12 +135,12 @@ namespace deeplynx.tests
                 RelationshipId = (int)relationshipId
             };
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
-            
+
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateEdge_Fails_IfSameDestinationIdAndOriginId()
         {
@@ -147,7 +151,7 @@ namespace deeplynx.tests
                 RelationshipId = (int)relationshipId
             };
             await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
-            
+
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -163,10 +167,10 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid + 99, dsid, dto));
-            
+
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -182,10 +186,10 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid + 99, dto));
-            
+
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -206,23 +210,23 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
-            
+
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         #endregion
-        
+
         #region BulkCreateEdge Tests
 
         [Fact]
         public async Task BulkCreateEdges_Success_ReturnsMultipleEdges()
         {
-            
+
             // Arrange
             var now = DateTime.UtcNow;
 
@@ -244,7 +248,7 @@ namespace deeplynx.tests
 
             // Act
             var result = await _edgeBusiness.BulkCreateEdges(pid, dsid, edges);
-            
+
             // Assert
             Assert.Equal(2, result.Count);
             Assert.All(result, e => Assert.True(e.Id > 0));
@@ -265,22 +269,22 @@ namespace deeplynx.tests
             Assert.Equal("edge", actualEvent1.EntityType);
             Assert.Equal("create", actualEvent1.Operation);
         }
-        
+
         [Fact]
         public async Task BulkCreateEdges_Fails_IfNullDto()
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() => _edgeBusiness.BulkCreateEdges(pid, dsid, null));
-            
+
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         #endregion
 
         #region GetAllEdges Tests
-        
+
         [Fact]
         public async Task GetAllEdges_ReturnsOnlyForProject()
         {
@@ -290,7 +294,7 @@ namespace deeplynx.tests
 
             // Act
             var list = await _edgeBusiness.GetAllEdges(pid, null, true);
-            
+
             // Assert
             Assert.All(list, e => Assert.Equal(pid, e.ProjectId));
         }
@@ -326,17 +330,17 @@ namespace deeplynx.tests
             // Act
             var listWithArchived = await _edgeBusiness.GetAllEdges(pid, null, false);
             var listWithoutArchived = await _edgeBusiness.GetAllEdges(pid, null, true);
-            
+
             // Assert
             Assert.Contains(listWithArchived, e => e.Id == archivedEdge.Id);
             Assert.DoesNotContain(listWithoutArchived, e => e.Id == archivedEdge.Id);
         }
-        
+
         #endregion
-        
+
         #region GetEdgesByRecord Tests
         // Todo: Add test back in when we filter record edges by user access
-        
+
         // [Fact]
         // public async Task GetEdgesByRecord_ReturnsEdgesWithUserAccess()
         // {
@@ -409,15 +413,15 @@ namespace deeplynx.tests
         //     edges.Should().NotContain(e => e.Id == edgeWithOriginInRestrictedProject.Id);
         //     edges.Should().NotContain(e => e.Id == edgeWithDestinationInRestrictedProject.Id);
         // }
-        
+
         [Fact]
         public async Task GetEdgesByRecord_FiltersByOriginRecord()
         {
-            
+
             // Arrange
             var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             Assert.True(userAdded);
-            
+
             var edge1 = new Edge
             {
                 OriginId = originRecordId,
@@ -427,7 +431,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-        
+
             var edge2 = new Edge
             {
                 OriginId = originRecordId,
@@ -437,7 +441,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge3 = new Edge
             {
                 OriginId = destinationRecordId,
@@ -447,7 +451,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge4 = new Edge
             {
                 OriginId = destinationRecordId3,
@@ -457,7 +461,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge5 = new Edge
             {
                 OriginId = originRecordId2,
@@ -467,18 +471,18 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             Context.Edges.Add(edge1);
             Context.Edges.Add(edge2);
             Context.Edges.Add(edge3);
             Context.Edges.Add(edge4);
             Context.Edges.Add(edge5);
-            
+
             await Context.SaveChangesAsync();
-        
+
             // Act
             var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, true, 1, true, 20);
-            
+
             // Assert
             Assert.Equal(2, edges.Count);
             Assert.Contains(edges, r => r.RelatedRecordName == "Destination 1" &&
@@ -490,14 +494,14 @@ namespace deeplynx.tests
             Assert.DoesNotContain(edges, r => r.RelatedRecordName == "Destination 3");
             Assert.DoesNotContain(edges, r => r.RelatedRecordName == "Origin 2");
         }
-        
+
         [Fact]
         public async Task GetEdgesByRecord_FiltersByDestinationRecord()
         {
             // Arrange
             var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             Assert.True(userAdded);
-            
+
             var edge1 = new Edge
             {
                 OriginId = originRecordId,
@@ -507,7 +511,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-        
+
             var edge2 = new Edge
             {
                 OriginId = originRecordId,
@@ -517,7 +521,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge3 = new Edge
             {
                 OriginId = destinationRecordId,
@@ -527,7 +531,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge4 = new Edge
             {
                 OriginId = destinationRecordId3,
@@ -537,7 +541,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge5 = new Edge
             {
                 OriginId = originRecordId2,
@@ -547,18 +551,18 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             Context.Edges.Add(edge1);
             Context.Edges.Add(edge2);
             Context.Edges.Add(edge3);
             Context.Edges.Add(edge4);
             Context.Edges.Add(edge5);
-            
+
             await Context.SaveChangesAsync();
-        
+
             // Act
             var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, false, 1, true, 20);
-            
+
             // Assert
             Assert.Equal(3, edges.Count);
             Assert.Contains(edges, r => r.RelatedRecordName == "Destination 3" &&
@@ -571,14 +575,14 @@ namespace deeplynx.tests
                                         r.RelationshipName == null && r.RelatedRecordId == destinationRecordId &&
                                         r.RelatedRecordProjectId == pid);
         }
-        
+
         [Fact]
         public async Task GetEdgesByRecord_FiltersByPage()
         {
             // Arrange
             var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             Assert.True(userAdded);
-            
+
             var edge1 = new Edge
             {
                 OriginId = originRecordId,
@@ -588,7 +592,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-        
+
             var edge2 = new Edge
             {
                 OriginId = originRecordId,
@@ -598,7 +602,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge3 = new Edge
             {
                 OriginId = destinationRecordId,
@@ -608,7 +612,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge4 = new Edge
             {
                 OriginId = destinationRecordId3,
@@ -618,7 +622,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge5 = new Edge
             {
                 OriginId = originRecordId2,
@@ -628,18 +632,18 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             Context.Edges.Add(edge1);
             Context.Edges.Add(edge2);
             Context.Edges.Add(edge3);
             Context.Edges.Add(edge4);
             Context.Edges.Add(edge5);
-            
+
             await Context.SaveChangesAsync();
-        
+
             // Act
             var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, false, 1, true, 2);
-            
+
             // Assert
             Assert.Equal(2, edges.Count);
             Assert.Contains(edges, r => r.RelatedRecordName == "Destination 1" &&
@@ -653,18 +657,18 @@ namespace deeplynx.tests
 
             var edges2 = await _edgeBusiness.GetEdgesByRecord(originRecordId, false, 2, true, 2);
             Assert.Single(edges2);
-            Assert.Contains(edges2, r => r.RelatedRecordName == "Origin 2" && 
+            Assert.Contains(edges2, r => r.RelatedRecordName == "Origin 2" &&
                                          r.RelationshipName == null && r.RelatedRecordId == originRecordId2 &&
                                          r.RelatedRecordProjectId == pid2);
         }
-        
+
         [Fact]
         public async Task GetGraphData_GetsCorrectNodesAndLinks()
         {
             var userAddedProject1 = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             var userAddedProject2 = await _projectBusiness.AddMemberToProject(pid2, null, uid1, null);
             Assert.True(userAddedProject1 && userAddedProject2);
-            
+
             var edge1 = new Edge
             {
                 OriginId = originRecordId,
@@ -674,7 +678,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-        
+
             var edge2 = new Edge
             {
                 OriginId = originRecordId,
@@ -684,7 +688,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge3 = new Edge
             {
                 OriginId = destinationRecordId,
@@ -694,7 +698,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge4 = new Edge
             {
                 OriginId = destinationRecordId2,
@@ -704,7 +708,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge5 = new Edge
             {
                 OriginId = destinationRecordId3,
@@ -714,27 +718,27 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             Context.Edges.Add(edge1);
             Context.Edges.Add(edge2);
             Context.Edges.Add(edge3);
             Context.Edges.Add(edge4);
             Context.Edges.Add(edge5);
-            
+
             await Context.SaveChangesAsync();
 
             var graphData = await _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 3);
             Assert.Equal(5, graphData.Nodes?.Count);
             Assert.Equal(5, graphData.Links?.Count);
-            
+
             // Create expected node IDs set
-            var expectedNodeIds = new HashSet<long> 
-            { 
-                originRecordId, 
-                destinationRecordId, 
-                destinationRecordId2, 
-                destinationRecordId3, 
-                originRecordId2 
+            var expectedNodeIds = new HashSet<long>
+            {
+                originRecordId,
+                destinationRecordId,
+                destinationRecordId2,
+                destinationRecordId3,
+                originRecordId2
             };
 
             var actualNodeIds = graphData.Nodes?.Select(n => n.Id).ToHashSet();
@@ -753,14 +757,14 @@ namespace deeplynx.tests
             var actualLinks = graphData.Links?.Select(l => (l.Source, l.Target)).ToHashSet();
             Assert.Equal(expectedLinks, actualLinks);
         }
-        
-        
+
+
         [Fact]
         public async Task GetGraphData_FiltersByUserProject()
         {
             var userAddedProject1 = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             Assert.True(userAddedProject1);
-            
+
             var edge1 = new Edge
             {
                 OriginId = originRecordId,
@@ -770,7 +774,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-        
+
             var edge2 = new Edge
             {
                 OriginId = originRecordId,
@@ -780,7 +784,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // edge in restricted project
             var edge3 = new Edge
             {
@@ -791,7 +795,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // destination is in restricted project
             var edge4 = new Edge
             {
@@ -802,7 +806,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // origin is in restricted project
             var edge5 = new Edge
             {
@@ -813,25 +817,25 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             Context.Edges.Add(edge1);
             Context.Edges.Add(edge2);
             Context.Edges.Add(edge3);
             Context.Edges.Add(edge4);
             Context.Edges.Add(edge5);
-            
+
             await Context.SaveChangesAsync();
 
             var graphData = await _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 3);
             Assert.Equal(3, graphData.Nodes?.Count);
             Assert.Equal(2, graphData.Links?.Count);
-            
+
             // Create expected node IDs set
-            var expectedNodeIds = new HashSet<long> 
-            { 
-                originRecordId, 
-                destinationRecordId, 
-                destinationRecordId2, 
+            var expectedNodeIds = new HashSet<long>
+            {
+                originRecordId,
+                destinationRecordId,
+                destinationRecordId2,
             };
 
             var actualNodeIds = graphData.Nodes?.Select(n => n.Id).ToHashSet();
@@ -847,14 +851,14 @@ namespace deeplynx.tests
             var actualLinks = graphData.Links?.Select(l => (l.Source, l.Target)).ToHashSet();
             Assert.Equal(expectedLinks, actualLinks);
         }
-        
+
         [Fact]
         public async Task GetGraphData_FiltersByDepth()
         {
             var userAddedProject1 = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             var userAddedProject2 = await _projectBusiness.AddMemberToProject(pid2, null, uid1, null);
             Assert.True(userAddedProject1 && userAddedProject2);
-            
+
             var edge1 = new Edge
             {
                 OriginId = originRecordId,
@@ -864,7 +868,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-        
+
             var edge2 = new Edge
             {
                 OriginId = originRecordId,
@@ -874,7 +878,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge3 = new Edge
             {
                 OriginId = destinationRecordId,
@@ -884,7 +888,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge4 = new Edge
             {
                 OriginId = destinationRecordId2,
@@ -894,7 +898,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             var edge5 = new Edge
             {
                 OriginId = destinationRecordId3,
@@ -904,25 +908,25 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             Context.Edges.Add(edge1);
             Context.Edges.Add(edge2);
             Context.Edges.Add(edge3);
             Context.Edges.Add(edge4);
             Context.Edges.Add(edge5);
-            
+
             await Context.SaveChangesAsync();
 
             var graphData = await _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 1);
             Assert.Equal(3, graphData.Nodes?.Count);
             Assert.Equal(3, graphData.Links?.Count);
-            
+
             // Create expected node IDs set
-            var expectedNodeIds = new HashSet<long> 
-            { 
-                originRecordId, 
-                destinationRecordId, 
-                destinationRecordId2, 
+            var expectedNodeIds = new HashSet<long>
+            {
+                originRecordId,
+                destinationRecordId,
+                destinationRecordId2,
             };
 
             var actualNodeIds = graphData.Nodes?.Select(n => n.Id).ToHashSet();
@@ -939,7 +943,7 @@ namespace deeplynx.tests
             var actualLinks = graphData.Links?.Select(l => (l.Source, l.Target)).ToHashSet();
             Assert.Equal(expectedLinks, actualLinks);
         }
-        
+
         [Fact]
         public async Task GetGraphData_Fails_IfRecordDoesNotExist()
         {
@@ -947,30 +951,30 @@ namespace deeplynx.tests
             await Assert.ThrowsAsync<KeyNotFoundException>(graphData);
 
         }
-        
+
         [Fact]
         public async Task GetGraphData_Fails_IfUserIsRestricted()
         {
             var userAddedProject2 = await _projectBusiness.AddMemberToProject(pid2, null, uid1, null);
             Assert.True(userAddedProject2);
             var graphData = () => _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 1);
-            await Assert.ThrowsAsync<AccessViolationException>(graphData); 
+            await Assert.ThrowsAsync<AccessViolationException>(graphData);
         }
-        
+
         [Fact]
         public async Task GetEdgesByRecord_Fails_IfRecordDoesNotExist()
         {
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId + 1000, true, 1, true, 20));
         }
-        
+
         [Fact]
         public async Task GetEdgesByRecord_Fails_IfPageis0()
-        { 
+        {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId, true, 0, true, 20));
         }
-        
+
         [Fact]
         public async Task GetEdgesByRecord_Fails_IfPageSizeIsO()
         {
@@ -983,11 +987,11 @@ namespace deeplynx.tests
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId, true, 1, true, 101));
         }
-        
+
         #endregion
 
         #region GetEdge Tests
-        
+
         [Fact]
         public async Task GetEdge_Success_WhenExistsById()
         {
@@ -1006,7 +1010,7 @@ namespace deeplynx.tests
 
             // Act
             var result = await _edgeBusiness.GetEdge(pid, testEdge.Id, null, null, true);
-            
+
             // Assert
             Assert.Equal(testEdge.Id, result.Id);
             Assert.Equal(originRecordId, result.OriginId);
@@ -1031,7 +1035,7 @@ namespace deeplynx.tests
 
             // Act
             var result = await _edgeBusiness.GetEdge(pid, null, originRecordId, destinationRecordId, true);
-            
+
             // Assert
             Assert.Equal(testEdge.Id, result.Id);
             Assert.Equal(originRecordId, result.OriginId);
@@ -1053,7 +1057,7 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdge(pid + 999, testEdge.Id, null, null, true));
         }
@@ -1074,7 +1078,7 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdge(pid, testEdge.Id, null, null, true));
         }
@@ -1085,11 +1089,11 @@ namespace deeplynx.tests
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _edgeBusiness.GetEdge(pid, null, null, null, true));
-            Assert.Contains("Please supply either an edgeID or an originID and destinationID", exception.Message);        
+            Assert.Contains("Please supply either an edgeID or an originID and destinationID", exception.Message);
         }
-        
+
         #endregion
-        
+
         #region UpdateEdge Tests
 
         [Fact]
@@ -1107,7 +1111,7 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-            
+
             // Store the original timestamp for comparison
             var originalLastUpdatedAt = testEdge.LastUpdatedAt;
 
@@ -1131,25 +1135,25 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId2,
                 RelationshipId = (int)relationshipId
             };
-            
+
             // Act
             var updatedResult = await _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null);
 
             // Assert
             Assert.True(updatedResult.LastUpdatedAt >= originalLastUpdatedAt);
             Assert.Equal(destinationRecordId2, updatedResult.DestinationId);
-            
+
             // Ensure that update edge event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(testEdge.Id, actualEvent.EntityId);
             Assert.Equal("edge", actualEvent.EntityType);
             Assert.Equal("update", actualEvent.Operation);
         }
-        
+
         [Fact]
         public async Task UpdateEdge_Fails_WhenSameOriginAndDestinationId()
         {
@@ -1164,7 +1168,7 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-            
+
             // Store the original timestamp for comparison
             var originalLastUpdatedAt = testEdge.LastUpdatedAt;
 
@@ -1188,7 +1192,7 @@ namespace deeplynx.tests
                 DestinationId = (int)originRecordId,
                 RelationshipId = (int)relationshipId
             };
-            await Assert.ThrowsAsync<ValidationException>( () => _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null));
+            await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null));
             // Ensure that update edge event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -1256,13 +1260,13 @@ namespace deeplynx.tests
             Assert.Equal(oid, getResult.OriginId);
             Assert.Equal(did, getResult.DestinationId);
             Assert.NotEqual(DateTime.MinValue, getResult.LastUpdatedAt);
-            
+
             // Ensure that update edge event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(testEdge.Id, actualEvent.EntityId);
             Assert.Equal("edge", actualEvent.EntityType);
             Assert.Equal("update", actualEvent.Operation);
@@ -1278,17 +1282,17 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UpdateEdge(pid, dto, 99, null, null));
-            
+
             // Ensure that update edge event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         #endregion
-        
+
         #region ArchiveEdge Tests
 
         [Fact]
@@ -1312,23 +1316,23 @@ namespace deeplynx.tests
             var archivedResult = await _edgeBusiness.ArchiveEdge(pid, testEdge.Id, null, null);
 
             var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
-            
+
             // Assert
             Assert.Equal(testEdge.Id, archivedResult);
             Assert.NotNull(archivedEdge);
             Assert.True(archivedEdge.IsArchived);
-            
+
             // Ensure that soft delete edge event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(testEdge.Id, actualEvent.EntityId);
             Assert.Equal("edge", actualEvent.EntityType);
             Assert.Equal("delete", actualEvent.Operation);
         }
-        
+
         [Fact]
         public async Task ArchiveEdge_Fails_IfNotFound()
         {
@@ -1339,7 +1343,7 @@ namespace deeplynx.tests
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task EdgeArchived_WhenProjectArchived()
         {
@@ -1365,7 +1369,7 @@ namespace deeplynx.tests
             Context.ChangeTracker.Clear();
 
             var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
-            
+
             // Assert
             Assert.True(deletedResult);
             Assert.NotNull(archivedEdge);
@@ -1405,23 +1409,23 @@ namespace deeplynx.tests
             Assert.Equal(testEdge.Id, unarchivedResult);
 
             var unarchivedEdge = await Context.Edges.FindAsync(testEdge.Id);
-            
+
             // Assert
             Assert.NotNull(unarchivedEdge);
             Assert.False(unarchivedEdge.IsArchived);
         }
-        
+
         [Fact]
         public async Task UnarchiveEdge_Fails_IfNotFound()
         {
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UnarchiveEdge(pid, 999, null, null));
-            
+
             // Ensure that create edge event is NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task UnarchiveEdge_Fails_IfNotArchived()
         {
@@ -1437,19 +1441,19 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(activeEdge);
             await Context.SaveChangesAsync();
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UnarchiveEdge(pid, activeEdge.Id, null, null));
-            
+
             // Ensure that create edge event is NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         #endregion
 
         #region  DeleteEdge Tests
-        
+
         [Fact]
         public async Task DeleteEdge_Success_WhenExists()
         {
@@ -1468,13 +1472,13 @@ namespace deeplynx.tests
 
             // Act
             var deletedResult = await _edgeBusiness.DeleteEdge(pid, testEdge.Id, null, null);
-            
+
             // Assert
             Assert.Equal(testEdge.Id, deletedResult);
             var deletedEdge = await Context.Edges.FindAsync(testEdge.Id);
             Assert.Null(deletedEdge);
         }
-        
+
         [Fact]
         public async Task DeleteEdge_Fails_IfNotFound()
         {
@@ -1531,9 +1535,9 @@ namespace deeplynx.tests
             Assert.Equal(7, dto.ProjectId);
             Assert.Equal(now, dto.LastUpdatedAt);
             Assert.False(dto.IsArchived);
-            Assert.Equal(uid1,dto.LastUpdatedBy);
+            Assert.Equal(uid1, dto.LastUpdatedBy);
         }
-        
+
         #endregion
         #region LastUpdatedBy Tests
 
@@ -1550,7 +1554,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid1
             };
-            
+
             // Act
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -1574,7 +1578,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid1
             };
-            
+
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
 
@@ -1582,7 +1586,7 @@ namespace deeplynx.tests
             var edgeWithUser = await Context.Edges
                 .Include(e => e.LastUpdatedByUser)
                 .FirstAsync(e => e.Id == testEdge.Id);
-            
+
             // Assert
             Assert.NotNull(edgeWithUser.LastUpdatedByUser);
             Assert.Equal("Test User 1", edgeWithUser.LastUpdatedByUser.Name);
@@ -1603,7 +1607,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // Act
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -1612,11 +1616,11 @@ namespace deeplynx.tests
             var savedEdge = await Context.Edges.FindAsync(testEdge.Id);
             Assert.NotNull(savedEdge);
             Assert.Null(savedEdge.LastUpdatedBy);
-            
+
             var edgeWithUser = await Context.Edges
                 .Include(e => e.LastUpdatedByUser)
                 .FirstAsync(e => e.Id == testEdge.Id);
-            
+
             Assert.Null(edgeWithUser.LastUpdatedByUser);
         }
 
@@ -1640,7 +1644,7 @@ namespace deeplynx.tests
             testEdge.LastUpdatedBy = uid1;
             testEdge.DestinationId = destinationRecordId2;
             testEdge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            
+
             Context.Edges.Update(testEdge);
             await Context.SaveChangesAsync();
 
@@ -1648,7 +1652,7 @@ namespace deeplynx.tests
             var updatedEdge = await Context.Edges
                 .Include(e => e.LastUpdatedByUser)
                 .FirstAsync(e => e.Id == testEdge.Id);
-            
+
             Assert.Equal(uid1, updatedEdge.LastUpdatedBy);
             Assert.NotNull(updatedEdge.LastUpdatedByUser);
             Assert.Equal("Test User 1", updatedEdge.LastUpdatedByUser.Name);
@@ -1671,16 +1675,21 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             uid1 = user.Id;
 
-            var project = new Project { Name = "Project 1" };
+            var org = new Organization { Name = "Test Org" };
+            Context.Organizations.Add(org);
+            await Context.SaveChangesAsync();
+            oid = org.Id;
+
+            var project = new Project { Name = "Project 1", OrganizationId = oid };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
-            
-            var project2 = new Project { Name = "Project 2" };
+
+            var project2 = new Project { Name = "Project 2", OrganizationId = oid };
             Context.Projects.Add(project2);
             await Context.SaveChangesAsync();
             pid2 = project2.Id;
-            
+
             var dataSource = new DataSource
             {
                 Name = "DataSource 1",
@@ -1690,7 +1699,7 @@ namespace deeplynx.tests
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             dsid = dataSource.Id;
-            
+
             var dataSource2 = new DataSource
             {
                 Name = "DataSource 2",
@@ -1722,7 +1731,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(originRecord);
-            
+
             var originRecord2 = new Record
             {
                 ProjectId = pid2,
@@ -1740,14 +1749,14 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = dsid,
                 ClassId = testClass.Id,
-                Properties = "{\"test\": \"destination_value\"}", 
+                Properties = "{\"test\": \"destination_value\"}",
                 Name = "Destination 1",
                 Description = "Destination Description 1",
                 OriginalId = "dest1",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord);
-            
+
             // Create additional records for second edge
             var destinationRecord2 = new Record
             {
@@ -1760,7 +1769,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord2);
-            
+
             //Record in another project
             var destinationRecord3 = new Record
             {

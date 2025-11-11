@@ -81,11 +81,14 @@ try
     // Authentication
     // ----------------------------------
     var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
     var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
     var localDevelopment = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
 
     if (string.IsNullOrWhiteSpace(issuer))
         throw new InvalidOperationException("JWT_ISSUER not configured");
+    if (string.IsNullOrWhiteSpace(secret))
+        throw new InvalidOperationException("JWT_SECRET_KEY not configured");
     if (string.IsNullOrWhiteSpace(audience))
         throw new InvalidOperationException("JWT_AUDIENCE not configured");
 
