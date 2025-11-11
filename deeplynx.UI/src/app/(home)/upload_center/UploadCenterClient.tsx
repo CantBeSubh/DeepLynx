@@ -246,23 +246,21 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   }, [fetchProjects]);
 
   return (
-    <div className="mt-3">
-      <div className="flex items-center bg-base-200/40 py-2 pl-12">
+    <div>
+      <div className="bg-base-200/40 pl-12 p-6">
         <h1 className="text-2xl font-bold text-base-content">
           {t.translations.UPLOAD_CENTER}
         </h1>
       </div>
 
       <div
-        className={`flex gap-8 p-10 lg:p-20 ${
-          showRightPanel ? "justify-between" : "justify-center"
-        }`}
+        className={`flex gap-8 p-10 lg:p-20 ${showRightPanel ? "justify-between" : "justify-center"
+          }`}
       >
         {/* LEFT */}
         <div
-          className={`w-full lg:w-3/5 ${
-            showRightPanel ? "" : "max-w-5xl mx-auto"
-          }`}
+          className={`w-full lg:w-3/5 ${showRightPanel ? "" : "max-w-5xl mx-auto"
+            }`}
         >
           <h2>{t.translations.START_UPLOAD_BY_CHOOSING_TYPE}</h2>
           <div className="p-4 space-y-4">
@@ -285,8 +283,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!organization
                       ? "Select an organization first"
                       : isLoadingProjects
-                      ? "Loading projects..."
-                      : t.translations.PROJECT}
+                        ? "Loading projects..."
+                        : t.translations.PROJECT}
                   </option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -314,8 +312,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!projectId
                       ? "Select a project first"
                       : isLoadingDataSources
-                      ? "Loading data sources..."
-                      : "Data Sources"}
+                        ? "Loading data sources..."
+                        : "Data Sources"}
                   </option>
                   {dataSources.map((d) => (
                     <option key={d.id} value={String(d.id)}>
@@ -343,8 +341,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!projectId
                       ? "Select a project first"
                       : isLoadingObjectStorage
-                      ? "Loading object storages..."
-                      : "Object storages"}
+                        ? "Loading object storages..."
+                        : "Object storages"}
                   </option>
                   {objectStorage.map((object) => (
                     <option key={object.id} value={String(object.id)}>

@@ -5,6 +5,7 @@ import AvatarCell from "@/app/(home)/components/Avatar";
 import { RoleGate } from "@/app/(home)/rbac/RBACComponents";
 import { CreateOrganizationRequestDto } from "@/app/(home)/types/requestDTOs";
 import { OrganizationResponseDto } from "@/app/(home)/types/responseDTOs";
+import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { getAllOrganizations } from "@/app/lib/organization_services.client";
 import { createOrganization } from "@/app/lib/organization_services.client";
@@ -32,6 +33,7 @@ interface Props {
 
 const SelectOrgClient = ({ session }: Props) => {
   const router = useRouter();
+  const { t } = useLanguage();
   const { setOrganization } = useOrganizationSession();
   const [organizations, setOrganizations] = useState<OrgWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,8 +176,8 @@ const SelectOrgClient = ({ session }: Props) => {
                     className="btn btn-primary btn-sm"
                     onClick={() => setIsModalOpen(true)}
                   >
-                    Add An Organization
                     <PlusIcon className="size-5" />
+                    <span>{t.translations.ORGANIZATION}</span>
                   </button>
                 </RoleGate>
               </div>
