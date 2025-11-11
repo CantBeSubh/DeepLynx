@@ -2,22 +2,35 @@
 
 import React, { useState } from "react";
 import Tabs from "../components/Tabs";
-import { OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
+import {
+  OrganizationResponseDto,
+  ProjectResponseDto,
+  UserResponseDto,
+} from "../types/responseDTOs";
 import UsersTable from "../components/SiteManagementPortal/UsersTable";
-import TagManagementPage from "../tag_management/page";
 import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
 import { useLanguage } from "@/app/contexts/Language";
 import ObjectStorageTable from "../components/OrganizationManagementPortal/ObjectStorageTable";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import TagManagementClient from "../tag_management/TagManagementClient";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
+  initialProjects: ProjectResponseDto[];
+  initialSelectedProjects?: ProjectResponseDto | null;
 }
 
-const OrganizationManagementClient = ({ members }: OrganizationManagementProps) => {
+const OrganizationManagementClient = ({
+  members,
+  initialProjects,
+  initialSelectedProjects,
+}: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
   const { t } = useLanguage();
   const { organization, setOrganization } = useOrganizationSession();
+  const { project } = useProjectSession();
+  console.log("Selected Project", project);
 
   const tabData = [
     {
@@ -34,7 +47,12 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
     },
     {
       label: "Tags and Security Labels",
-      content: "content here",
+      content: (
+        <TagManagementClient
+          initialProjects={initialProjects}
+          initialSelectedProjects={initialSelectedProjects}
+        />
+      ),
     },
     // {
     //   label: "Object Storage",
@@ -47,7 +65,7 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
       ) : (
         <div>No organization selected</div>
       ),
-    }
+    },
   ];
 
   const handleTabChange = (label: string) => {
@@ -57,7 +75,9 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
   return (
     <div>
       <div className="bg-base-200/40 pl-12 p-6">
-        <h1 className="text-2xl font-bold text-base-content">{t.translations.ORGANIZATION_MANAGEMENT}</h1>
+        <h1 className="text-2xl font-bold text-base-content">
+          {t.translations.ORGANIZATION_MANAGEMENT}
+        </h1>
       </div>
       <div className="p-2">
         <Tabs

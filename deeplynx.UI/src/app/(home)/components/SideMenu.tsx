@@ -41,7 +41,11 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(false);
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [activeProject, setActivepProject] = useState<ProjectResponseDto>()
+  const [activeProject, setActivepProject] = useState<ProjectResponseDto>();
+
+  // Determine if we should hide the projects section
+  const shouldHideProjects = pathname === "/organization_management";
+  // const shouldHideProjects = ["/organization_management", "/other_page"].includes(pathname);
 
   // Memoize fetchProjects to prevent it from changing on every render
   const fetchProjects = useCallback(async () => {
@@ -96,7 +100,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       projectId: selectedProject.id.toString(),
       projectName: selectedProject.name,
     });
-    setActivepProject(selectedProject)
+    setActivepProject(selectedProject);
     router.push(`/project/${selectedProject.id}`);
   };
 
@@ -156,69 +160,78 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 left-18 flex z-30">
       <aside
-        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
-          } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
+        className={`h-full shadow-xl ${
+          isCollapsed ? "w-22" : "w-64"
+        } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
       >
         {/* Projects Section */}
-        <div className="mt-5">
-          <div
-            className="flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-info/20 rounded transition"
-            onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
-          >
-            <div className="flex items-center min-w-0 flex-1">
-              <FolderIcon className="size-6 flex-shrink-0" />
-              {!isCollapsed && <div className="flex flex-col p-4 min-w-0">
-                <span className="text-xs opacity-70">{t.translations.PROJECTS}</span>
-                <h1 className="text-lg font-bold truncate">
-                  {activeProject?.name || "No Project"}
-                </h1>
-              </div>}
-            </div>
-            {!isCollapsed && (
-              <button className="btn btn-ghost btn-xs btn-circle flex-shrink-0">
-                {isProjectsExpanded ? (
-                  <ChevronUpIcon className="size-4" />
-                ) : (
-                  <ChevronDownIcon className="size-4" />
+        {!shouldHideProjects && (
+          <div className="mt-5">
+            <div
+              className="flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-info/20 rounded transition"
+              onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
+            >
+              <div className="flex items-center min-w-0 flex-1">
+                <FolderIcon className="size-6 flex-shrink-0" />
+                {!isCollapsed && (
+                  <div className="flex flex-col p-4 min-w-0">
+                    <span className="text-xs opacity-70">
+                      {t.translations.PROJECTS}
+                    </span>
+                    <h1 className="text-lg font-bold truncate">
+                      {activeProject?.name || "No Project"}
+                    </h1>
+                  </div>
                 )}
-              </button>
+              </div>
+              {!isCollapsed && (
+                <button className="btn btn-ghost btn-xs btn-circle flex-shrink-0">
+                  {isProjectsExpanded ? (
+                    <ChevronUpIcon className="size-4" />
+                  ) : (
+                    <ChevronDownIcon className="size-4" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Projects List shadow-[0_0_20px_rgba(0,0,0,0.3)]*/}
+            {!isCollapsed && isProjectsExpanded && (
+              <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto bg-[var(--base-400)] border border-white/10 rounded-lg ">
+                {loadingProjects ? (
+                  <li className="py-2 px-4 text-sm text-primary-content/70">
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span className="ml-2">Loading...</span>
+                  </li>
+                ) : projects.length === 0 ? (
+                  <li className="py-2 px-4 text-sm text-base-content/70">
+                    No projects found
+                  </li>
+                ) : (
+                  projects.map((proj) => (
+                    <li key={proj.id}>
+                      <button
+                        onClick={() => handleProjectClick(proj)}
+                        className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${
+                          isProjectActive(proj.id)
+                            ? "bg-info/30 text-primary-content font-semibold"
+                            : "hover:bg-info/20 text-primary-content"
+                        }`}
+                      >
+                        <span className="truncate">{proj.name}</span>
+                        {isProjectActive(proj.id) && (
+                          <span className="ml-auto badge badge-xs flex-shrink-0">
+                            Active
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
             )}
           </div>
-
-          {/* Projects List shadow-[0_0_20px_rgba(0,0,0,0.3)]*/}
-          {!isCollapsed && isProjectsExpanded && (
-            <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto bg-[var(--base-400)] border border-white/10 rounded-lg ">
-              {loadingProjects ? (
-                <li className="py-2 px-4 text-sm text-primary-content/70">
-                  <span className="loading loading-spinner loading-sm"></span>
-                  <span className="ml-2">Loading...</span>
-                </li>
-              ) : projects.length === 0 ? (
-                <li className="py-2 px-4 text-sm text-base-content/70">
-                  No projects found
-                </li>
-              ) : (
-                projects.map((proj) => (
-                  <li key={proj.id}>
-                    <button
-                      onClick={() => handleProjectClick(proj)}
-                      className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${isProjectActive(proj.id)
-                        ? "bg-info/30 text-primary-content font-semibold"
-                        : "hover:bg-info/20 text-primary-content"
-                        }`}
-                    >
-                      <span className="truncate">{proj.name}</span>
-                      {isProjectActive(proj.id) && (
-                        <span className="ml-auto badge badge-xs flex-shrink-0">Active</span>
-                      )}
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </div>
-
+        )}
 
         {/* Home */}
         <ul className="mt-8">
@@ -288,9 +301,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
         </ul>
-
-
-
       </aside>
 
       {/* Toggle tab */}

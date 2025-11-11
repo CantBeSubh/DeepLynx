@@ -50,7 +50,7 @@ const parseTags = (
 
 interface Props {
   initialProjects: ProjectResponseDto[];
-  initialSelectedProjects: ProjectResponseDto;
+  initialSelectedProjects?: ProjectResponseDto | null;
 }
 
 const TagManagementClient = ({
@@ -195,8 +195,7 @@ const TagManagementClient = ({
 
   return (
     <div>
-      <div className="items-center bg-base-200/40 pl-12 py-2 pb-4">
-        <h1 className="text-2xl font-bold text-info-content">Tag Management</h1>
+      <div className="items-center pl-12 py-2 pb-4">
         <ProjectDropdownSingleSelect
           projects={projects}
           onSelectionChange={handleProjectChange}
