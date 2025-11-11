@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -26,7 +27,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Query timeseries 
+        /// Query timeseries
         /// </summary>
         /// <param name="request"> The request containing an sql query string</param>
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -34,7 +35,8 @@ namespace deeplynx.api.Controllers
         /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
         [HttpPost("Query", Name = "api_query_timeseries")]
-        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId,[FromQuery] string fileType, [FromBody] TimeseriesQueryRequestDto request)
+        [AuthInProject("read", "timeseries")]
+        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId, [FromQuery] string fileType, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
             {
@@ -54,13 +56,14 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Upload timeseries file 
+        /// Upload timeseries file
         /// </summary>
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <param name="file">Timeseries file</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("upload", Name = "api_upload_timeseries_file")]
+        [AuthInProject("write", "timeseries")]
         public async Task<ActionResult<RecordResponseDto>> UploadFile(long projectId, long dataSourceId, IFormFile file)
         {
             try
@@ -84,6 +87,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{UploadId}</returns>
         [HttpPost("start-upload", Name = "api_start_timeseries_upload")]
+        [AuthInProject("write", "timeseries")]
         public async Task<IActionResult> StartUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
             try
@@ -100,7 +104,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Upload timeseries chunk 
+        /// Upload timeseries chunk
         /// </summary>
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
@@ -109,6 +113,7 @@ namespace deeplynx.api.Controllers
         /// <param name="chunkNumber">Chunk number from form</param>
         /// <returns>{ChunkUploadStatus}</returns>
         [HttpPost("upload-chunk", Name = "api_upload_timeseries_chunk")]
+        [AuthInProject("write", "timeseries")]
         public async Task<IActionResult> UploadChunk(long projectId, long dataSourceId, IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
             try
@@ -126,13 +131,14 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Complete timeseries upload 
+        /// Complete timeseries upload
         /// </summary>
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{TimeseriesUploadRecord}</returns>
         [HttpPost("complete-upload", Name = "api_complete_timeseries_upload")]
+        [AuthInProject("write", "timeseries")]
         public async Task<ActionResult<RecordResponseDto>> CompleteUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
             try
@@ -156,6 +162,7 @@ namespace deeplynx.api.Controllers
         /// <param name="tableName"></param>
         /// <returns></returns>
         [HttpPatch("append", Name = "api_append_timeseries_file")]
+        [AuthInProject("write", "timeseries")]
         public async Task<ActionResult<string>> AppendTimeseriesTable(long projectId, long dataSourceId, IFormFile file, string tableName)
         {
             try
@@ -181,6 +188,7 @@ namespace deeplynx.api.Controllers
         /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
         [HttpGet("InterpolateRows", Name = "api_interpolate_timeseries_rows")]
+        [AuthInProject("read", "timeseries")]
         public async Task<IActionResult> InterpolateRows(long projectId, long dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber, [FromQuery] string fileType)
         {
             try
@@ -205,6 +213,7 @@ namespace deeplynx.api.Controllers
         /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
         [HttpGet("Export", Name = "api_export_timeseries_table")]
+        [AuthInProject("read", "timeseries")]
         public async Task<IActionResult> ExportTimeseriesTable(long projectId, long dataSourceId, [FromQuery] string tableName, string fileType)
         {
             try

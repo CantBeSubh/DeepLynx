@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -30,9 +31,10 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
         /// <returns></returns>
         [HttpGet("GetAllSensitivityLabels", Name = "api_get_all_sensitivity_labels")]
+        [AuthInProject("read", "sensitivity_label")]
         public async Task<ActionResult<IEnumerable<SensitivityLabelResponseDto>>> GetAllSensitivityLabels(
             [FromQuery] long? projectId = null,
-            [FromQuery] long? organizationId = null, 
+            [FromQuery] long? organizationId = null,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -56,6 +58,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
         /// <returns></returns>
         [HttpGet("GetSensitivityLabel/{labelId}", Name = "api_get_sensitivity_label")]
+        [AuthInProject("read", "sensitivity_label")]
         public async Task<ActionResult<SensitivityLabelResponseDto>> GetSensitivityLabel(
             long labelId, [FromQuery] bool hideArchived = true)
         {
@@ -80,6 +83,7 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">(use this or project ID) ID of the organization to which the label belongs</param>
         /// <returns></returns>
         [HttpPost("CreateSensitivityLabel", Name = "api_create_sensitivity_label")]
+        [AuthInProject("write", "sensitivity_label")]
         public async Task<ActionResult<SensitivityLabelResponseDto>> CreateSensitivityLabel(
             [FromBody] CreateSensitivityLabelRequestDto dto,
             [FromQuery] long? projectId = null,
@@ -105,6 +109,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Fields to update</param>
         /// <returns></returns>
         [HttpPut("UpdateSensitivityLabel/{labelId}", Name = "api_update_sensitivity_label")]
+        [AuthInProject("write", "sensitivity_label")]
         public async Task<ActionResult<SensitivityLabelResponseDto>> UpdateSensitivityLabel(
             long labelId,
             [FromBody] UpdateSensitivityLabelRequestDto dto)
@@ -128,6 +133,7 @@ namespace deeplynx.api.Controllers
         /// <param name="labelId">ID of the sensitivity label to hard delete</param>
         /// <returns></returns>
         [HttpDelete("DeleteSensitivityLabel/{labelId}", Name = "api_delete_sensitivity_label")]
+        [AuthInProject("write", "sensitivity_label")]
         public async Task<ActionResult> DeleteSensitivityLabel(long labelId)
         {
             try
@@ -149,6 +155,7 @@ namespace deeplynx.api.Controllers
         /// <param name="labelId">ID of the sensitivity label</param>
         /// <returns></returns>
         [HttpDelete("ArchiveSensitivityLabel/{labelId}", Name = "api_archive_sensitivity_label")]
+        [AuthInProject("write", "sensitivity_label")]
         public async Task<ActionResult> ArchiveSensitivityLabel(long labelId)
         {
             try
@@ -170,6 +177,7 @@ namespace deeplynx.api.Controllers
         /// <param name="labelId">ID of the sensitivity label</param>
         /// <returns></returns>
         [HttpPut("UnarchiveSensitivityLabel/{labelId}", Name = "api_unarchive_sensitivity_label")]
+        [AuthInProject("write", "sensitivity_label")]
         public async Task<ActionResult> UnarchiveSensitivityLabel(long labelId)
         {
             try

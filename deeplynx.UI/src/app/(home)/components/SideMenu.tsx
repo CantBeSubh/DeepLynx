@@ -156,7 +156,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       <aside
         className={`h-full shadow-xl ${
           isCollapsed ? "w-22" : "w-64"
-        } bg-base-300 brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
+        } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
       >
         {/* Projects Section */}
         <div className="mt-5">

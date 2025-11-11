@@ -32,12 +32,13 @@ public class TagController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet("GetAllTags", Name = "api_get_all_tags")]
+    [AuthInProject("read", "tag")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
         long projectId, [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(projectId,  hideArchived);
+            var tags = await _tagBusiness.GetAllTags(projectId, hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -56,14 +57,15 @@ public class TagController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
     [HttpGet("GetTag/{tagId}", Name = "api_get_a_tag")]
+    [AuthInProject("read", "tag")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
-        long projectId, 
+        long projectId,
         long tagId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var tag = await _tagBusiness.GetTag(projectId, tagId,  hideArchived);
+            var tag = await _tagBusiness.GetTag(projectId, tagId, hideArchived);
             return Ok(tag);
         }
         catch (Exception exception)
@@ -82,12 +84,13 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("CreateTag", Name = "api_create_a_tag")]
+    [AuthInProject("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] CreateTagRequestDto tagRequestDto)
     {
         try
         {
             var createdTag = await _tagBusiness.CreateTag(projectId, tagRequestDto);
-            return CreatedAtAction(nameof(GetTag), new { projectId = projectId, tagId = createdTag.Id }, 
+            return CreatedAtAction(nameof(GetTag), new { projectId = projectId, tagId = createdTag.Id },
                 createdTag);
         }
         catch (Exception exception)
@@ -97,7 +100,7 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
     /// Creates many tags
     /// </summary>
@@ -105,8 +108,9 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
+    [AuthInProject("write", "tag")]
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
-        long projectId, 
+        long projectId,
         [FromBody] List<CreateTagRequestDto> tagRequestDto)
     {
         try
@@ -130,6 +134,7 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
     [HttpPut("UpdateTag/{tagId}", Name = "api_update_a_tag")]
+    [AuthInProject("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(long projectId, long tagId, [FromBody] UpdateTagRequestDto tagRequestDto)
     {
         try
@@ -152,6 +157,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
     [HttpDelete("DeleteTag/{tagId}", Name = "api_delete_a_tag")]
+    [AuthInProject("write", "tag")]
     public async Task<IActionResult> DeleteTag(long projectId, long tagId)
     {
         try
@@ -166,14 +172,15 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
-    /// Archive a tag 
+    /// Archive a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>
     /// <returns> A message stating the tag was successfully archived.</returns>
     [HttpDelete("ArchiveTag/{tagId}", Name = "api_archive_a_tag")]
+    [AuthInProject("write", "tag")]
     public async Task<IActionResult> ArchiveTag(long projectId, long tagId)
     {
         try
@@ -188,14 +195,15 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
-    /// Unarchive a tag 
+    /// Unarchive a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to unarchive.</param>
     /// <returns> A message stating the tag was successfully unarchived.</returns>
     [HttpPut("UnarchiveTag/{tagId}", Name = "api_unarchive_a_tag")]
+    [AuthInProject("write", "tag")]
     public async Task<IActionResult> UnarchiveTag(long projectId, long tagId)
     {
         try

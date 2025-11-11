@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -23,7 +24,7 @@ namespace deeplynx.api.Controllers
             _historicalRecordBusiness = historicalRecordBusiness;
             _logger = logger;
         }
-        
+
         /// <summary>
         /// Get all records at a point in time
         /// </summary>
@@ -34,6 +35,7 @@ namespace deeplynx.api.Controllers
         /// <param name="current">(Optional) Find only the most current records. Overrides point in time (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllHistoricalRecords", Name = "api_get_all_historical_records")]
+        [AuthInProject("read", "historical_record")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetAllHistoricalRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
@@ -53,7 +55,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get a record at a point in time
         /// </summary>
@@ -63,9 +65,10 @@ namespace deeplynx.api.Controllers
         /// <param name="current">(Optional) Find only the most current records. Overrides point in time (Default true)</param>
         /// <returns>Record response DTO</returns>
         [HttpGet("GetHistoricalRecord/{recordId}", Name = "api_get_a_historical_record")]
+        [AuthInProject("read", "historical_record")]
         public async Task<ActionResult<HistoricalRecordResponseDto>> GetHistoricalRecord(
             long recordId,
-            [FromQuery] DateTime? pointInTime, 
+            [FromQuery] DateTime? pointInTime,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -81,13 +84,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get record history
         /// </summary>
         /// <param name="recordId">ID of record to search on </param>
         /// <returns>A list of previous record versions</returns>
         [HttpGet("GetRecordHistory/{recordId}", Name = "api_get_a_historical_record_history")]
+        [AuthInProject("read", "historical_record")]
         public async Task<ActionResult<HistoricalRecordResponseDto>> GetRecordHistory(long recordId)
         {
             try
