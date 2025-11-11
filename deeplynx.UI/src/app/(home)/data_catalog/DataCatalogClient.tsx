@@ -1,7 +1,8 @@
+// src/app/(home)/data_catalog/DataCatalogClient.tsx
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
@@ -34,6 +35,10 @@ export default function DataCatalogClient({
 }: Props) {
   const { t } = useLanguage();
   const { hasLoaded, setProject: setProjectSession } = useProjectSession();
+
+  // Use ref to store initial values to prevent re-renders
+  const initialSelectedProjectsRef = useRef(initialSelectedProjects);
+  const initialSearchTermRef = useRef(initialSearchTerm);
 
   // State management
   const [projects] = useState(initialProjects);
@@ -160,13 +165,22 @@ export default function DataCatalogClient({
     await performFullTextSearch(searchTerm, selectedProjects);
   };
 
-  // Update project session when selectedProjects change
   useEffect(() => {
     if (!hasLoaded) return;
-    if (selectedProjects.length > 0) {
+
+    // Determine which project to set - prioritize current selection, fall back to initial
+    const projectToSet =
+      selectedProjects.length > 0
+        ? selectedProjects[0]
+        : initialSelectedProjectsRef.current.length > 0
+        ? initialSelectedProjectsRef.current[0]
+        : null;
+
+    if (projectToSet && projectToSet !== "ALL") {
       const selectedProject = projects.find(
-        (project) => project.id === selectedProjects[0]
+        (project) => project.id === projectToSet
       );
+
       if (selectedProject) {
         setProjectSession({
           projectId: selectedProject.id,
@@ -174,24 +188,20 @@ export default function DataCatalogClient({
         });
       }
     }
-  }, [selectedProjects, hasLoaded, projects, setProjectSession]);
+  }, [hasLoaded, selectedProjects, projects, setProjectSession]);
 
   // Handle initial search term
   useEffect(() => {
     if (!hasLoaded || hasInitialSearchRun) return;
 
-    if (initialSearchTerm && initialSelectedProjects.length > 0) {
+    const initialTerm = initialSearchTermRef.current;
+    const initialProjects = initialSelectedProjectsRef.current;
+
+    if (initialTerm && initialProjects.length > 0) {
       setHasInitialSearchRun(true);
-      performFullTextSearch(initialSearchTerm, initialSelectedProjects);
+      performFullTextSearch(initialTerm, initialProjects);
     }
-  }, [
-    hasLoaded,
-    hasInitialSearchRun,
-    initialSearchTerm,
-    initialSelectedProjects.length,
-    initialSelectedProjects,
-    performFullTextSearch,
-  ]);
+  }, [hasLoaded, hasInitialSearchRun, performFullTextSearch]);
 
   // Fetch records when selection changes (if no active filters)
   useEffect(() => {
@@ -215,7 +225,7 @@ export default function DataCatalogClient({
   if (!hasLoaded) return null;
 
   return (
-    <div>
+    <div className="mt-3">
       {/* Header */}
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
         <div>
@@ -312,9 +322,6 @@ export default function DataCatalogClient({
         ) : (
           records && (
             <div className="w-2/3">
-              <h2 className="text-center font-bold mb-8">
-                {t.translations.NO_RECENT_RECORDS}
-              </h2>
               <RecentRecordsCard selectedProjects={selectedProjects} />
             </div>
           )

@@ -12,6 +12,7 @@ import { useSession } from "next-auth/react";
 import { Session } from "next-auth";
 import api from "@/app/lib/api"; // Your existing api instance with interceptor
 import axios from "axios";
+import Image from "next/image";
 
 // Define the User type based on your API response
 interface User {
@@ -111,6 +112,7 @@ export function RBACProvider({ children }: { children: ReactNode }) {
   if (status === "loading" || loading) {
     return (
       <div
+        className="login"
         style={{
           display: "flex",
           justifyContent: "center",
@@ -118,7 +120,13 @@ export function RBACProvider({ children }: { children: ReactNode }) {
           height: "100vh",
         }}
       >
-        Loading RBAC...
+        <Image
+          src="/assets/nexusWhite.png"
+          alt="DeepLynx logo"
+          width={265.8}
+          height={113.9}
+          priority
+        />
       </div>
     );
   }

@@ -17,11 +17,11 @@ namespace deeplynx.helpers
             var userExists = hideArchived
                 ? await context.Users.AnyAsync(u => u.Id == userId && u.IsArchived == false)
                 : await context.Users.AnyAsync(u => u.Id == userId);
-            
+
             if (!userExists)
                 throw new KeyNotFoundException($"User with id {userId} does not exist");
         }
-        
+
         /// <summary>
         /// Check if an organization exists
         /// </summary>
@@ -37,11 +37,11 @@ namespace deeplynx.helpers
             var organizationExists = hideArchived
                 ? await context.Organizations.AnyAsync(o => o.Id == organizationId && o.IsArchived == false)
                 : await context.Organizations.AnyAsync(o => o.Id == organizationId);
-            
+
             if (!organizationExists)
                 throw new KeyNotFoundException($"Organization with id {organizationId} does not exist");
         }
-        
+
         public static async Task<ProjectResponseDto> EnsureProjectExistsAsync(
             DeeplynxContext context,
             long projectId,
@@ -82,13 +82,13 @@ namespace deeplynx.helpers
 
             if (project == null || hideArchived && project.IsArchived)
             {
-                
+
                 throw new KeyNotFoundException($"Project with id {projectId} not found.");
             }
 
             return project;
         }
-        
+
         public static async Task EnsureDataSourceExistsForProjectAsync(DeeplynxContext context, long dataSourceId, long projectId, bool hideArchived = true)
         {
             var dataSourceExists = hideArchived

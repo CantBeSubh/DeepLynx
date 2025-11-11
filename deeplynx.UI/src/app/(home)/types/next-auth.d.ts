@@ -8,6 +8,7 @@ declare module "next-auth" {
             oktaId?: string;
             username?: string;
             groups?: string[];
+            organizationId?: number;
         } & DefaultSession["user"];
         tokens?: {
             access_token?: string;
@@ -27,6 +28,7 @@ declare module "next-auth/jwt" {
         oktaId?: string | null;
         username?: string | null;
         groups?: string[];
+        organizationId?: number;
         error?: string;
         user?: {
             name?: string | null;

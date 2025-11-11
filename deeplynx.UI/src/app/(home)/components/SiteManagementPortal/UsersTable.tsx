@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from "react";
-import GenericTable from "../../components/GenericTable";
+import GenericTable from "../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { Column } from "../../types/types";
-import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
-import {
-  getAllUsers,
-  updateUser,
-  deleteUser,
-} from "@/app/lib/user_services.client";
-import EditSysUser from "../../components/MemberSettingsTable/MemberModals/EditSysUser";
-import MemberManagementUserSkeleton from "../../components/skeletons/membermanagementuserskeleton";
+import { TrashIcon, PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
+import EditSysUser from "./EditSysUser";
+import MemberManagementUserSkeleton from "../skeletons/membermanagementuserskeleton";
 import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
-const UsersTable = () => {
+import AddSysUser from "./AddSysUser";
+interface Props {
+  members: UserResponseDto[];
+}
+const UsersTable = ({ members }: Props) => {
   const { t } = useLanguage();
-  const [data, setData] = useState<UserResponseDto[]>([]);
+  const [data, setData] = useState<UserResponseDto[]>(members);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>([]);
@@ -21,6 +21,8 @@ const UsersTable = () => {
   const [editSysUserModal, setEditSysUserModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>("");
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false); // ← Fixed naming
+
 
   const fetchUsers = async () => {
     try {
@@ -147,13 +149,28 @@ const UsersTable = () => {
 
   return (
     <div>
+      <div className="flex justify-end p-4 mr-4">
+        <button
+          className="btn btn-secondary btn-sm flex-1 sm:flex-initial"
+          data-tour="create-user"
+          onClick={() => setIsAddUserModalOpen(true)}
+        >
+          <PlusIcon className="size-5" />
+          <span>{t.translations.MEMBER}</span>
+        </button>
+      </div>
       <GenericTable columns={columns} data={data} enablePagination />
+      <AddSysUser
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+      />
       {selectedUserId !== null && (
         <EditSysUser
           isOpen={editSysUserModal}
           onClose={() => setEditSysUserModal(false)}
           userId={selectedUserId}
           userName={selectedUserName}
+          onUserUpdated={fetchUsers}  // Add this line
         />
       )}
     </div>

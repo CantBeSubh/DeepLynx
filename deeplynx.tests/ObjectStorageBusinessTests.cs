@@ -24,6 +24,8 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
     private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     private ProjectBusiness _projectBusiness;
+    private Mock<IOrganizationBusiness> _organizationBusiness = null!;
+    
     public long pid;
     public long pid2;
     public long os1;
@@ -31,12 +33,14 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     public long os4;
     public long archivedOs;
     public long uid;
+    private long organizationId;
     
     public ObjectStorageBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
+        _organizationBusiness = new Mock<IOrganizationBusiness>();
         _objectStorageBusiness = new ObjectStorageBusiness(Context, _cacheBusiness);
         _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
@@ -54,7 +58,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             _mockRoleBusiness.Object,
             _mockDataSourceBusiness.Object, 
             _objectStorageBusiness,
-            _eventBusiness);
+            _eventBusiness, _organizationBusiness.Object);
     }
 
     #region GetAllObjectStorages Tests
@@ -642,8 +646,13 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         await Context.SaveChangesAsync();
         uid = user.Id;
         
-        var project = new Project() { Name = "Test Project 1" };
-        var project2 = new Project() { Name = "Test Project 2" };
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
+        
+        var project = new Project() { Name = "Test Project 1", OrganizationId = organizationId };
+        var project2 = new Project() { Name = "Test Project 2", OrganizationId = organizationId };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);
         await Context.SaveChangesAsync();

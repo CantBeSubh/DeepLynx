@@ -27,6 +27,7 @@ namespace deeplynx.tests
         private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
         private Mock<IRoleBusiness> _mockRoleBusiness = null!;
+        private Mock<IOrganizationBusiness> _mockOrganizationBusiness = null!;
         
         public long pid;    // project ID
         public long cid;    // origin class ID
@@ -34,6 +35,7 @@ namespace deeplynx.tests
         public long rid;    // existing record ID
         public long rid2;   // archived record ID
         public long uid;    // user ID
+        private long organizationId;
 
         public RelationshipBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -49,6 +51,7 @@ namespace deeplynx.tests
             _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
             _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRoleBusiness = new Mock<IRoleBusiness>();
+            _mockOrganizationBusiness = new Mock<IOrganizationBusiness>();
 
             _relationshipBusiness = new RelationshipBusiness(
                 Context, _cacheBusiness, _mockEdgeBusiness.Object, _eventBusiness);
@@ -63,7 +66,7 @@ namespace deeplynx.tests
             _projectBusiness = new ProjectBusiness(
                 Context, _cacheBusiness, _mockLogger.Object, 
                 _classBusiness, _mockRoleBusiness.Object, _dataSourceBusiness, 
-                _mockObjectStorageBusiness.Object, _eventBusiness);
+                _mockObjectStorageBusiness.Object, _eventBusiness, _mockOrganizationBusiness.Object);
         }
 
         #region CreateRelationship Tests
@@ -381,7 +384,7 @@ namespace deeplynx.tests
         public async Task GetAllRelationships_ReturnsOnlyForProject()
         {
             // Arrange
-            var p2 = new Project { Name = "ExtraProj" };
+            var p2 = new Project { Name = "ExtraProj", OrganizationId = organizationId };
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
 
@@ -987,12 +990,18 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             uid = testUser.Id;
             
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
+            
             // Add project
             var project = new Project
             {
                 Name = "Project 1",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid,
+                OrganizationId = organizationId,
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();

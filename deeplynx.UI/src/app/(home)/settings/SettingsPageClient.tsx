@@ -44,21 +44,6 @@ const SettingsPageClient = () => {
             toastId={t.id}
             infoDisplay={[keyStr, secretStr]}
           />
-          // <div className="relative">
-          //   <div className="space-y-1 pb-5">
-          //     <div className="flex justify-center w-full">
-          //       <span>API Keypair created successfully! Keep these somewhere safe:</span>
-          //     </div>
-          //     <code className="block">Key: {res.apiKey}</code>
-          //     <code className="block">Secret: {res.apiSecret}</code>
-          //   </div>
-          //   <div className="flex justify-center w-full">
-          //     <button className="btn btn-primary btn-outline btn-xs" onClick={()=>{toast.dismiss(t.id); router.refresh()}}>
-          //     Dismiss
-          //     </button>
-          //   </div>
-
-          // </div>
         ),
         {
           duration: Infinity,

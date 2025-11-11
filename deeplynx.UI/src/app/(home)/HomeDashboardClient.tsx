@@ -8,7 +8,7 @@ import { WidgetType } from "./types/types";
 import { PlusIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "../contexts/Language";
 import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
@@ -18,12 +18,15 @@ import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
 import { useDashboardTour } from "./tours/useDashboardTour";
 import { ProjectResponseDto } from "./types/responseDTOs";
+import { useOrganizationSession } from "../contexts/OrganizationSessionProvider";
+
 type Props = { initialProjects: ProjectResponseDto[] };
 
 export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
+  const { organization, hasLoaded } = useOrganizationSession();
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
@@ -37,6 +40,32 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     "DataOverview",
     "Graph",
   ]);
+
+  // Memoize refreshProjects to prevent it from changing on every render
+  const refreshProjects = useCallback(async () => {
+    if (!organization) return;
+
+    try {
+      const data = await getAllProjects(organization.organizationId, true);
+      setProjects(data);
+    } catch (err) {
+      console.error("Failed to refresh projects:", err);
+    }
+  }, [organization]);
+
+  // Redirect if no organization selected
+  useEffect(() => {
+    if (hasLoaded && !organization) {
+      router.push("/select-org");
+    }
+  }, [hasLoaded, organization, router]);
+
+  // Refresh projects when organization changes
+  useEffect(() => {
+    if (organization && hasLoaded) {
+      refreshProjects();
+    }
+  }, [organization, hasLoaded, refreshProjects]);
 
   const filteredProjects = projects
     .filter((project) => {
@@ -57,15 +86,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     filteredProjects,
     initialProjects,
   });
-
-  const refreshProjects = async () => {
-    try {
-      const data = await getAllProjects();
-      setProjects(data);
-    } catch (err) {
-      console.error("Failed to refresh projects:", err);
-    }
-  };
 
   const onExplore = (row: ProjectResponseDto) => {
     router.push(`/project/${row.id}`);
@@ -104,10 +124,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     setCanCustomize(false);
   };
 
-  const handleCancel = () => {
-    setCanCustomize(false);
-  };
-
   const formatUserName = (fullName?: string | null): string => {
     if (!fullName) return "";
 
@@ -117,10 +133,19 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     return [firstName, lastName].filter(Boolean).join(" ");
   };
 
+  // Show loading while checking organization
+  if (!hasLoaded || !organization) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-base-100">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 mt-3">
       {/* Header Section */}
-      <header className="bg-base-200/50 border-b border-base-300/30 sticky top-0 z-10 backdrop-blur-sm">
+      <header className="bg-base-200/50 border-b border-base-300/30 sticky z-10 backdrop-blur-sm">
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-base-content">
@@ -188,20 +213,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
             />
           </div>
         </div>
-
-        {/* Commented out widgets section
-        <div className="w-full md:w-2/5 px-4">
-            <WidgetCard
-              widgets={homeWidgets}
-              onSave={handleSave}
-              onCustomizeChange={setCanCustomize}
-            />
-            {session?.user && (
-              <div className="bg-green-100 p-4 m-4 rounded">
-                <p>Welcome back, {session.user.name}!</p>
-              </div>
-            )}
-          </div> */}
       </div>
 
       {/* Modals */}

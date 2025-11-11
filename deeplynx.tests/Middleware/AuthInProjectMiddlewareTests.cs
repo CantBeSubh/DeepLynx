@@ -29,7 +29,9 @@ namespace deeplynx.tests.Middleware
         public long groupId1;
         public long organizationId1;
 
-        public AuthInProjectMiddlewareTests(TestSuiteFixture fixture) : base(fixture) { }
+        public AuthInProjectMiddlewareTests(TestSuiteFixture fixture) : base(fixture)
+        {
+        }
 
         public override async Task InitializeAsync()
         {
@@ -37,7 +39,7 @@ namespace deeplynx.tests.Middleware
 
             _rolePermissionServiceMock = new Mock<IProjectRolePermissionService>();
             _loggerMock = new Mock<ILogger<ProjectRolePermissionService>>();
-            
+
             // Reset UserContextStorage before each test
             UserContextStorage.UserId = 0;
         }
@@ -50,7 +52,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var nextCalled = false;
             RequestDelegate next = (ctx) =>
             {
@@ -73,7 +75,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(),
@@ -161,7 +163,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(new AuthInProjectAttribute("read", "project")),
@@ -374,7 +376,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(
@@ -419,7 +421,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(
@@ -452,7 +454,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(
@@ -878,10 +880,10 @@ namespace deeplynx.tests.Middleware
         {
             await base.SeedTestDataAsync();
 
-            // Create organization first (required for groups)
+            // Create organization first (required for projects AND groups)
             var organization1 = new Organization
             {
-                Name = "Test Organization",
+                Name = $"Test Organization {Guid.NewGuid()}", // Make unique to avoid conflicts
                 Description = "Test Organization Description"
             };
             Context.Organizations.Add(organization1);
@@ -913,18 +915,22 @@ namespace deeplynx.tests.Middleware
             userId1 = user1.Id;
             userId2 = user2.Id;
 
-            // Create projects
+            // Create projects - NOW WITH ORGANIZATION ID
             var project1 = new Project
             {
                 Name = "Test Project 1",
-                Description = "Test Description 1"
+                Description = "Test Description 1",
+                OrganizationId = organizationId1, // ← FIX: Add the foreign key
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Projects.Add(project1);
 
             var project2 = new Project
             {
                 Name = "Test Project 2",
-                Description = "Test Description 2"
+                Description = "Test Description 2",
+                OrganizationId = organizationId1, // ← FIX: Add the foreign key
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Projects.Add(project2);
 

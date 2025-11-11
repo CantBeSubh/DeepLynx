@@ -678,10 +678,16 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             uid = user.Id;
             
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            var organizationId = organization.Id;
+            
             var project = new Project {
                 Name = "Project 1", 
                 LastUpdatedBy = uid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                OrganizationId = organizationId
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();

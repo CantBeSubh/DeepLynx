@@ -1,9 +1,10 @@
 // app/(home)/(routes)/data_catalog/page.tsx
+import { cookies } from "next/headers";
+import { auth } from "../../../../auth";
 import { ProjectResponseDto } from "../types/responseDTOs";
 import { FileViewerTableRow } from "../types/types";
 import DataCatalogClient from "./DataCatalogClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-
 
 export default async function Page({
   searchParams,
@@ -15,14 +16,37 @@ export default async function Page({
     typeof params.fromProject === "string" ? params.fromProject : "";
   const initialSearch = typeof params.search === "string" ? params.search : "";
 
-  // Keep SSR for projects (fast initial render, no client flash)
-  const projects = (await getAllProjectsServer()) as ProjectResponseDto[];
+  // Get organization ID - prioritize cookie over session for real-time updates
+  const cookieStore = await cookies();
+  const orgSessionCookie = cookieStore.get("organizationSession");
+
+  let organizationId: number | undefined;
+
+  if (orgSessionCookie) {
+    try {
+      const orgSession = JSON.parse(orgSessionCookie.value);
+      organizationId = orgSession.organizationId;
+    } catch (e) {
+      console.error("Failed to parse organization cookie:", e);
+      // Fallback to session if cookie parsing fails
+      const session = await auth();
+      organizationId = session?.user?.organizationId;
+    }
+  } else {
+    // No cookie, fallback to session
+    const session = await auth();
+    organizationId = session?.user?.organizationId;
+  }
+
+  // Fetch projects filtered by organization
+  const projects = (await getAllProjectsServer(
+    organizationId
+  )) as ProjectResponseDto[];
   const initialProjects = projects.map((p) => ({
     id: String(p.id),
     name: p.name,
   }));
 
-  // Let the client fetch records after mount based on the dropdown selection
   const initialSelectedProjects = fromProject ? [fromProject] : [];
   const initialRecords = [] as FileViewerTableRow[];
 
