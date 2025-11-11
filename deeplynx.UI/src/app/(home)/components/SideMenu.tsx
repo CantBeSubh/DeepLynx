@@ -41,6 +41,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(false);
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [activeProject, setActivepProject] = useState<ProjectResponseDto>()
 
   // Memoize fetchProjects to prevent it from changing on every render
   const fetchProjects = useCallback(async () => {
@@ -95,6 +96,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       projectId: selectedProject.id.toString(),
       projectName: selectedProject.name,
     });
+    setActivepProject(selectedProject)
     router.push(`/project/${selectedProject.id}`);
   };
 
@@ -163,12 +165,17 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             className="flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-info/20 rounded transition"
             onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
           >
-            <div className="flex items-center">
-              <FolderIcon className="size-6" />
-              {!isCollapsed && <p className="ml-2 font-semibold">Projects</p>}
+            <div className="flex items-center min-w-0 flex-1">
+              <FolderIcon className="size-6 flex-shrink-0" />
+              {!isCollapsed && <div className="flex flex-col p-4 min-w-0">
+                <span className="text-xs opacity-70">{t.translations.PROJECTS}</span>
+                <h1 className="text-lg font-bold truncate">
+                  {activeProject?.name || "No Project"}
+                </h1>
+              </div>}
             </div>
             {!isCollapsed && (
-              <button className="btn btn-ghost btn-xs btn-circle">
+              <button className="btn btn-ghost btn-xs btn-circle flex-shrink-0">
                 {isProjectsExpanded ? (
                   <ChevronUpIcon className="size-4" />
                 ) : (
@@ -178,9 +185,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             )}
           </div>
 
-          {/* Projects List */}
+          {/* Projects List shadow-[0_0_20px_rgba(0,0,0,0.3)]*/}
           {!isCollapsed && isProjectsExpanded && (
-            <ul className="ml-4 mt-2 space-y-1 max-h-64 overflow-y-auto">
+            <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto bg-[var(--base-400)] border border-white/10 rounded-lg ">
               {loadingProjects ? (
                 <li className="py-2 px-4 text-sm text-primary-content/70">
                   <span className="loading loading-spinner loading-sm"></span>
@@ -202,7 +209,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                     >
                       <span className="truncate">{proj.name}</span>
                       {isProjectActive(proj.id) && (
-                        <span className="ml-auto badge badge-xs">Active</span>
+                        <span className="ml-auto badge badge-xs flex-shrink-0">Active</span>
                       )}
                     </button>
                   </li>
