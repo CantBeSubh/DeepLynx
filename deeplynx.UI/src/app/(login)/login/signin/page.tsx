@@ -7,11 +7,11 @@ import { useLanguage } from "@/app/contexts/Language";
 import "@/app/globals.css";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function Signin() {
+function SigninContent() {
   const [isChecked, setChecked] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const { data: session, status } = useSession();
@@ -133,5 +133,29 @@ export default function Signin() {
           ))} */}
       </footer>
     </div>
+  );
+}
+
+export default function Signin() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
+        <div className="flex flex-col items-center sm:items-start mb-0">
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
+        </div>
+        <div className="text-center text-white">
+          <div className="loading loading-spinner loading-lg"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SigninContent />
+    </Suspense>
   );
 }
