@@ -4,8 +4,13 @@ using System.IdentityModel.Tokens.Jwt;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Context;
+using deeplynx.helpers.Hubs;
 using deeplynx.models;
+using deeplynx.interfaces;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using Microsoft.Extensions.Logging;
 
 namespace deeplynx.tests
 {
@@ -13,6 +18,15 @@ namespace deeplynx.tests
     public class TokenBusinessTests : IntegrationTestBase
     {
         private TokenBusiness _tokenBusiness;
+        
+        private long uid1;
+        private long uid2;
+        private string userEmail;
+        private string clientId;
+        private long applicationId;
+        private string apiKey1;
+        private string plaintextSecret1;
+        private string hashedSecret1;
 
         public TokenBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
@@ -27,80 +41,44 @@ namespace deeplynx.tests
         #region CreateToken Tests
 
         [Fact]
-        public void CreateToken_ReturnsJwt_WhenVerifySucceeds_AndSecretExists()
+        public async Task CreateToken_ReturnsJwt_WhenVerifySucceeds_AndSecretExists()
         {
-            // Arrange
-            var email = $"tester-{Guid.NewGuid():N}@example.com";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = "Tester" };
-            Context.Users.Add(user);
-            Context.SaveChanges();
-
-            var apiKey = "api-key-123";
-            var plaintextSecret = "my-plaintext-secret";
-
-            // Store the HASHED secret in the database
-            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
-            Context.ApiKeys.Add(new ApiKey { Key = apiKey, Secret = hashedSecret, UserId = user.Id });
-            Context.SaveChanges();
-
-            // Set the JWT signing secret environment variable
-            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
-
             // Act - Pass the PLAINTEXT secret to CreateToken
-            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = _tokenBusiness.CreateToken(plaintextSecret1, apiKey1, expiration: 5);
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(jwt));
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
-            Assert.Equal(apiKey, parsed.Claims.First(c => c.Type == "apiKey").Value);
+            Assert.Equal(apiKey1, parsed.Claims.First(c => c.Type == "apiKey").Value);
             Assert.True(parsed.ValidTo > DateTime.UtcNow);
+            
+            // Verify token was saved to database
+            var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+            var tokenHash = HashToken(jti);
+            var savedToken = Context.OauthTokens.FirstOrDefault(t => t.TokenHash == tokenHash);
+            Assert.NotNull(savedToken);
+            Assert.Equal(uid1, savedToken!.UserId);
+            Assert.Equal(applicationId, savedToken.ApplicationId);
+            Assert.False(savedToken.Revoked);
         }
 
         [Fact]
-        public void CreateToken_Throws_WhenVerifyFails()
+        public async Task CreateToken_Throws_WhenVerifyFails()
         {
-            // Arrange
-            var email = $"tester-{Guid.NewGuid():N}@example.com";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = "Tester" };
-            Context.Users.Add(user);
-            Context.SaveChanges();
-
-            var apiKey = "api-key-XYZ";
-            var correctSecret = "correct-secret";
-            var hashedSecret = _tokenBusiness.HashApiKey(correctSecret);
-
-            Context.ApiKeys.Add(new ApiKey { Key = apiKey, Secret = hashedSecret, UserId = user.Id });
-            Context.SaveChanges();
-
-            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
-
             // Pass wrong plaintext secret
             var wrongSecret = "wrong-secret";
 
             // Act & Assert
             var ex = Assert.Throws<UnauthorizedAccessException>(() =>
-                _tokenBusiness.CreateToken(wrongSecret, apiKey, expiration: 5));
+                _tokenBusiness.CreateToken(wrongSecret, apiKey1, expiration: 5));
             Assert.Contains("Invalid API credentials", ex.Message);
         }
 
         [Fact]
-        public void CreateToken_Throws_WhenApiKeyNotFound()
+        public async Task CreateToken_Throws_WhenApiKeyNotFound()
         {
             // Arrange
-            var email = $"tester-{Guid.NewGuid():N}@example.com";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = "Tester" };
-            Context.Users.Add(user);
-            Context.SaveChanges();
-
-            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
-
             var nonExistentApiKey = "does-not-exist";
             var someSecret = "any-secret";
 
@@ -110,48 +88,296 @@ namespace deeplynx.tests
             Assert.Contains("API key not found", ex.Message);
         }
 
+        [Fact]
+        public async Task CreateToken_Throws_WhenApplicationArchived()
+        {
+            // Arrange TODO fix
+            UserContextStorage.Email = userEmail;
+
+            // Archive the application
+            var app = Context.OauthApplications.Find(applicationId);
+            app!.IsArchived = true;
+            await Context.SaveChangesAsync();
+            
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = "archived-key", 
+                Secret = hashedSecret1, 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+
+            // Act & Assert
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+                _tokenBusiness.CreateToken(plaintextSecret1, apiKey1, expiration: 5));
+            Assert.Contains("archived", ex.Message);
+        }
+
+        #endregion
+
+        #region RevokeToken Tests
+
+        [Fact]
+        public async Task RevokeToken_Success_WhenTokenExists()
+        {
+            // Arrange
+            var apiKey = "revoke-test-key";
+            var plaintextSecret = "revoke-secret";
+            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey, 
+                Secret = hashedSecret, 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+
+            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var handler = new JwtSecurityTokenHandler();
+            var parsed = handler.ReadJwtToken(jwt);
+            var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+
+            // Act
+            var result = await _tokenBusiness.RevokeToken(jti);
+
+            // Assert
+            Assert.True(result);
+            var isRevoked = await _tokenBusiness.IsTokenRevoked(jti);
+            Assert.True(isRevoked);
+        }
+
+        [Fact]
+        public async Task RevokeToken_ReturnsFalse_WhenAlreadyRevoked()
+        {
+            // Arrange
+            var apiKey = "already-revoked-key";
+            var plaintextSecret = "already-revoked-secret";
+            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey, 
+                Secret = hashedSecret, 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+
+            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var handler = new JwtSecurityTokenHandler();
+            var parsed = handler.ReadJwtToken(jwt);
+            var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+
+            await _tokenBusiness.RevokeToken(jti);
+
+            // Act
+            var result = await _tokenBusiness.RevokeToken(jti);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task RevokeToken_Throws_WhenTokenNotFound()
+        {
+            // Arrange
+            var nonExistentJti = Guid.NewGuid().ToString();
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+                _tokenBusiness.RevokeToken(nonExistentJti));
+        }
+
+        #endregion
+
+        #region IsTokenRevoked Tests
+
+        [Fact]
+        public async Task IsTokenRevoked_ReturnsFalse_WhenTokenNotRevoked()
+        {
+            // Arrange
+            var apiKey = "check-revoked-key";
+            var plaintextSecret = "check-revoked-secret";
+            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey, 
+                Secret = hashedSecret, 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+
+            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var handler = new JwtSecurityTokenHandler();
+            var parsed = handler.ReadJwtToken(jwt);
+            var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+
+            // Act
+            var isRevoked = await _tokenBusiness.IsTokenRevoked(jti);
+
+            // Assert
+            Assert.False(isRevoked);
+        }
+
+        [Fact]
+        public async Task IsTokenRevoked_ReturnsTrue_WhenTokenRevoked()
+        {
+            // Arrange
+            var apiKey = "revoked-check-key";
+            var plaintextSecret = "revoked-check-secret";
+            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey, 
+                Secret = hashedSecret, 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+
+            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var handler = new JwtSecurityTokenHandler();
+            var parsed = handler.ReadJwtToken(jwt);
+            var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+
+            await _tokenBusiness.RevokeToken(jti);
+
+            // Act
+            var isRevoked = await _tokenBusiness.IsTokenRevoked(jti);
+
+            // Assert
+            Assert.True(isRevoked);
+        }
+        #endregion
+
+        #region RevokeAllUserTokens Tests
+
+        [Fact]
+        public async Task RevokeAllUserTokens_RevokesAllTokensForUser()
+        {
+           // Create multiple tokens for the user
+            var tokens = new List<string>();
+            for (int i = 0; i < 3; i++)
+            {
+                var apiKey = $"bulk-revoke-key-{i}";
+                var plaintextSecret = $"bulk-revoke-secret-{i}";
+                var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+                
+                Context.ApiKeys.Add(new ApiKey 
+                { 
+                    Key = apiKey, 
+                    Secret = hashedSecret, 
+                    UserId = uid1,
+                    ApplicationId = applicationId
+                });
+                Context.SaveChanges();
+
+                var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+                tokens.Add(jwt);
+            }
+
+            // Act
+            var count = await _tokenBusiness.RevokeAllUserTokens(uid1);
+
+            // Assert
+            Assert.Equal(3, count);
+
+            foreach (var jwt in tokens)
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var parsed = handler.ReadJwtToken(jwt);
+                var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+                var isRevoked = await _tokenBusiness.IsTokenRevoked(jti);
+                Assert.True(isRevoked);
+            }
+        }
+
+        [Fact]
+        public async Task RevokeAllUserTokens_DoesNotAffectOtherUsers()
+        {
+            // Create token for first user
+            var apiKey = "user1-key";
+            var secret1 = "user1-secret";
+            var hashedSecret1 = _tokenBusiness.HashApiKey(secret1);
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey, 
+                Secret = hashedSecret1, 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+            var jwt1 = _tokenBusiness.CreateToken(secret1, apiKey, expiration: 5);
+
+            // Create token for other user
+            var apiKey2 = "user2-key";
+            var secret2 = "user2-secret";
+            var hashedSecret2 = _tokenBusiness.HashApiKey(secret2);
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey2, 
+                Secret = hashedSecret2, 
+                UserId = uid2,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+            var jwt2 = _tokenBusiness.CreateToken(secret2, apiKey2, expiration: 5);
+
+            // Act
+            await _tokenBusiness.RevokeAllUserTokens(uid1);
+
+            // Assert
+            var handler = new JwtSecurityTokenHandler();
+            
+            var parsed1 = handler.ReadJwtToken(jwt1);
+            var jti1 = parsed1.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+            Assert.True(await _tokenBusiness.IsTokenRevoked(jti1));
+
+            var parsed2 = handler.ReadJwtToken(jwt2);
+            var jti2 = parsed2.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+            Assert.False(await _tokenBusiness.IsTokenRevoked(jti2));
+        }
+
         #endregion
 
         #region GetApiKey Tests
 
         [Fact]
-        public void GetApiKey_ReturnsKey_WhenUserExists()
+        public async Task GetApiKey_ReturnsKey_WhenExists()
         {
-            // Arrange
-            var email = $"tester-{Guid.NewGuid():N}@example.com";
-            var name = "tester";
-            var username = "tester";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = name, Username = username };
-            Context.Users.Add(user);
-            Context.SaveChanges();
-
-            var apiKey = "getKey-1";
-            var row = new ApiKey { Key = apiKey, Secret = "sec", UserId = user.Id };
-            Context.ApiKeys.Add(row);
-            Context.SaveChanges();
+            var apiKey = "findMe";
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey, 
+                Secret = "hashMe", 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
 
             // Act
-            var found = _tokenBusiness.GetApiKey(apiKey);
+            var found = await _tokenBusiness.GetApiKey(apiKey);
 
             // Assert
             Assert.NotNull(found);
             Assert.Equal(apiKey, found!.Key);
-            Assert.Equal(user.Id, found.UserId);
+            Assert.Equal(uid1, found.UserId);
         }
-
-        [Fact]
-        public void GetApiKey_ReturnsNull_WhenUserMissing()
+        
+        public async Task GetApiKey_Fails_WhenNotExists()
         {
-            // Arrange
-            UserContextStorage.Email = "nobody@example.com"; // no user with this email
+            var apiKey = "cantFindMe";
 
-            // Act
-            var found = _tokenBusiness.GetApiKey("doesnotmatter");
-
-            // Assert
-            Assert.Null(found);
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+                _tokenBusiness.GetApiKey(apiKey));
+            Assert.Contains("Api Keypair with key", ex.Message);
         }
 
         #endregion
@@ -159,43 +385,58 @@ namespace deeplynx.tests
         #region CreateApiKey Tests
 
         [Fact]
-        public void CreateApiKey_PersistsRow_And_ReturnsDto_WithVerifiableHash()
+        public async Task CreateApiKey_PersistsRow_And_ReturnsDto_WithVerifiableHash()
         {
-            // Arrange
-            var email = $"creator-{Guid.NewGuid():N}@example.com";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = "Creator" };
-            Context.Users.Add(user);
-            Context.SaveChanges();
-
             // Act
-            TokenResponseDto dto = _tokenBusiness.CreateApiKey();
+            TokenResponseDto dto = _tokenBusiness.CreateApiKey(uid1, clientId);
 
             // Assert - DTO populated
             Assert.False(string.IsNullOrWhiteSpace(dto.apiKey));
             Assert.False(string.IsNullOrWhiteSpace(dto.apiSecret));
 
             // Assert - Persisted row (secret is stored as HASH)
-            var saved = Context.ApiKeys.SingleOrDefault(k => k.Key == dto.apiKey && k.UserId == user.Id);
+            var saved = Context.ApiKeys.SingleOrDefault(k => k.Key == dto.apiKey && k.UserId == uid1);
             Assert.NotNull(saved);
             Assert.False(string.IsNullOrWhiteSpace(saved!.Secret));
+            Assert.Equal(applicationId, saved.ApplicationId);
             
-            Assert.True(_tokenBusiness.VerifyApiKey(dto.apiSecret, saved.Secret));
+            Assert.True(_tokenBusiness.VerifyApiSecret(dto.apiSecret, saved.Secret));
     
             // Verify they are NOT the same (one is plaintext, one is hash)
             Assert.NotEqual(dto.apiSecret, saved.Secret);
         }
 
         [Fact]
-        public void CreateApiKey_Throws_WhenUserNotFound()
+        public async Task CreateApiKey_Throws_WhenUserNotFound()
         {
             // Arrange
             UserContextStorage.Email = "nouser@example.com";
 
             // Act & Assert
-            var ex = Assert.Throws<KeyNotFoundException>(() => _tokenBusiness.CreateApiKey());
-            Assert.Contains("User with email", ex.Message);
+            var ex = Assert.Throws<KeyNotFoundException>(() => _tokenBusiness.CreateApiKey(99999, clientId));
+            Assert.Contains("User with id", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateApiKey_Throws_WhenApplicationNotFound()
+        {
+            // Act & Assert
+            var ex = Assert.Throws<KeyNotFoundException>(() => 
+                _tokenBusiness.CreateApiKey(uid1, "nonexistent-client-id"));
+            Assert.Contains("OAuth application", ex.Message);
+        }
+
+        [Fact]
+        public async Task CreateApiKey_Throws_WhenApplicationArchived()
+        {
+            var app = Context.OauthApplications.Find(applicationId);
+            app!.IsArchived = true;
+            await Context.SaveChangesAsync();
+
+            // Act & Assert
+            var ex = Assert.Throws<KeyNotFoundException>(() => 
+                _tokenBusiness.CreateApiKey(uid1, clientId));
+            Assert.Contains("archived", ex.Message);
         }
 
         #endregion
@@ -205,44 +446,30 @@ namespace deeplynx.tests
         [Fact]
         public async Task DeleteApiKey_RemovesRow_And_ReturnsTrue()
         {
-            // Arrange
-            var email = $"deleter2-{Guid.NewGuid():N}@example.com";
-            var name = "deleter2";
-            var username = "deleter2";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = name, Username = username };
-            Context.Users.Add(user);
-            await Context.SaveChangesAsync();
-
             var key = "delete-me";
-            Context.ApiKeys.Add(new ApiKey { Key = key, Secret = "sec", UserId = user.Id });
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = key, 
+                Secret = "sec", 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
             await Context.SaveChangesAsync();
 
             // Act
-            var ok = await _tokenBusiness.DeleteApiKey(user.Id, key);
+            var ok = await _tokenBusiness.DeleteApiKey(uid1, key);
 
             // Assert
             Assert.True(ok);
-            Assert.False(await Context.ApiKeys.AnyAsync(k => k.Key == key && k.UserId == user.Id));
+            Assert.False(await Context.ApiKeys.AnyAsync(k => k.Key == key && k.UserId == uid1));
         }
 
         [Fact]
         public async Task DeleteApiKey_Throws_WhenNotFound()
         {
-            // Arrange
-            var email = $"deleter-{Guid.NewGuid():N}@example.com";
-            var name = "deleter";
-            var username = "deleter";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = name, Username = username };
-            Context.Users.Add(user);
-            await Context.SaveChangesAsync();
-
             // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _tokenBusiness.DeleteApiKey(user.Id, "nope"));
+                _tokenBusiness.DeleteApiKey(uid1, "nope"));
 
             Assert.Contains("not found", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
@@ -252,7 +479,7 @@ namespace deeplynx.tests
         #region Hash/Verify Tests
 
         [Fact]
-        public void HashApiKey_And_VerifyApiKey_RoundTrip()
+        public async Task HashApiKey_And_VerifyApiSecret_RoundTrip()
         {
             // Arrange
             var apiKey = "roundtrip-key";
@@ -261,8 +488,8 @@ namespace deeplynx.tests
             var hash = _tokenBusiness.HashApiKey(apiKey);
 
             // Assert
-            Assert.True(_tokenBusiness.VerifyApiKey(apiKey, hash));
-            Assert.False(_tokenBusiness.VerifyApiKey("wrong", hash));
+            Assert.True(_tokenBusiness.VerifyApiSecret(apiKey, hash));
+            Assert.False(_tokenBusiness.VerifyApiSecret("wrong", hash));
         }
 
         #endregion
@@ -272,36 +499,166 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllUserKeys_ReturnsOnlyKeys_ForUser()
         {
-            // Arrange
-            var email = $"keys-{Guid.NewGuid():N}@example.com";
-            var name = "keysName";
-            var username = "keysUsername";
-            UserContextStorage.Email = email;
-
-            var user = new User { Email = email, Name = name, Username = username };
-            var other = new User
-                { Email = $"other-{Guid.NewGuid():N}@example.com", Name = "otherName", Username = "otherUsername" };
-
-            Context.Users.AddRange(user, other);
-            await Context.SaveChangesAsync();
-
             Context.ApiKeys.AddRange(
-                new ApiKey { Key = "K1", Secret = "s1", UserId = user.Id },
-                new ApiKey { Key = "K2", Secret = "s2", UserId = user.Id },
-                new ApiKey { Key = "Z9", Secret = "s9", UserId = other.Id }
+                new ApiKey 
+                { 
+                    Key = "K1", 
+                    Secret = "s1", 
+                    UserId = uid1,
+                    ApplicationId = applicationId
+                },
+                new ApiKey 
+                { 
+                    Key = "K2", 
+                    Secret = "s2", 
+                    UserId = uid1,
+                    ApplicationId = applicationId
+                },
+                new ApiKey 
+                { 
+                    Key = "Z9", 
+                    Secret = "s9", 
+                    UserId = uid2,
+                    ApplicationId = applicationId
+                }
             );
             await Context.SaveChangesAsync();
 
             // Act
-            var keys = await ((interfaces.ITokenBusiness)_tokenBusiness).GetAllUserKeys(user.Id);
+            var keys = await ((interfaces.ITokenBusiness)_tokenBusiness).GetAllUserKeys(uid1);
 
             // Assert
-            Assert.Equal(2, keys.Count);
+            Assert.Equal(3, keys.Count);
             Assert.Contains("K1", keys);
             Assert.Contains("K2", keys);
+            Assert.Contains("api-key-123", keys); // application key
             Assert.DoesNotContain("Z9", keys);
         }
 
         #endregion
+
+        protected override async Task SeedTestDataAsync()
+        {
+            await base.SeedTestDataAsync();
+            
+            // Create test users
+            var user = new User 
+            { 
+                Email = "tester@example.com", 
+                Name = "Test User" 
+            };
+            Context.Users.Add(user);
+            
+            var otherUser = new User 
+            { 
+                Email = "other@example.com", 
+                Name = "Other User" 
+            };
+            Context.Users.Add(otherUser);
+            await Context.SaveChangesAsync();
+            
+            uid1 = user.Id;
+            uid2 = otherUser.Id;
+            userEmail = user.Email;
+            UserContextStorage.Email = userEmail;
+
+            // Create OAuth application DIRECTLY (copied logic from OauthApplicationBusiness)
+            clientId = GenerateClientId();
+            var clientSecret = GenerateClientSecret();
+            var clientSecretHash = HashSecret(clientSecret);
+            
+            var oauthApp = new OauthApplication
+            {
+                Name = "Test OAuth Application",
+                Description = "Test application for token tests",
+                ClientId = clientId,
+                ClientSecretHash = clientSecretHash,
+                CallbackUrl = "https://example.com/callback",
+                BaseUrl = "https://example.com",
+                AppOwnerEmail = userEmail,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid1,
+                IsArchived = false
+            };
+            
+            Context.OauthApplications.Add(oauthApp);
+            await Context.SaveChangesAsync();
+            applicationId = oauthApp.Id;
+            
+            // Create API Key and Secret
+            apiKey1 = "api-key-123";
+            plaintextSecret1 = "my-plaintext-secret";
+
+            // Store the HASHED secret in the database
+            hashedSecret1 = HashApiKey(plaintextSecret1);
+            Context.ApiKeys.Add(new ApiKey 
+            { 
+                Key = apiKey1, 
+                Secret = hashedSecret1, 
+                UserId = uid1,
+                ApplicationId = applicationId
+            });
+            await Context.SaveChangesAsync();
+            
+            // Set the JWT signing secret environment variable
+            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
+        }
+
+        // Helper methods (copied directly from OauthApplicationBusiness)
+        private string GenerateClientId()
+        {
+            var bytes = new byte[32];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            var base64 = Convert.ToBase64String(bytes);
+            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
+        }
+
+        private string GenerateClientSecret()
+        {
+            var bytes = new byte[64];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            var base64 = Convert.ToBase64String(bytes);
+            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
+        }
+
+        private string HashSecret(string secret)
+        {
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                var salt = new byte[32];
+                rng.GetBytes(salt);
+
+                using (var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
+                   secret,
+                   salt,
+                   100000,
+                   System.Security.Cryptography.HashAlgorithmName.SHA256))
+                {
+                    var hash = pbkdf2.GetBytes(32);
+                    var saltBase64 = Convert.ToBase64String(salt);
+                    var hashBase64 = Convert.ToBase64String(hash);
+                    return $"{saltBase64}:{hashBase64}";
+                }
+            }
+        }
+        
+        // Helpers copied from TokenBusiness
+        private string HashToken(string jti)
+        {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(jti));
+            return Convert.ToBase64String(hashBytes);
+        }
+        
+        public string HashApiKey(string apiKey)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
+        }
     }
 }
