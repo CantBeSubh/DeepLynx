@@ -8,6 +8,7 @@ import {
 import { getAllOrganizationsServer } from "@/app/lib/organization_services.server";
 import { getAllOauthApplicationsServer } from "@/app/lib/oauth_services.server";
 import { getAllUsersServer } from "@/app/lib/user_services.server";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 
 export const dynamic = "force-dynamic";
@@ -20,8 +21,6 @@ const OrganizationManagementPage = async ({ }) => {
 
   return (
     <OrganizationManagmentClient
-      organizations={OrganizationResponseDtos}
-      applications={oAuthApplications}
       members={members}
     />
   );

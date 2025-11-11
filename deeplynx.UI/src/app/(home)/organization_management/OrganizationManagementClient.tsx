@@ -2,24 +2,22 @@
 
 import React, { useState } from "react";
 import Tabs from "../components/Tabs";
-import { OauthApplicationResponseDto, OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
+import { OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
 import UsersTable from "../components/SiteManagementPortal/UsersTable";
-import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
-import SiteOrganizationManagement from "../components/SiteManagementPortal/OrgTable";
 import TagManagementPage from "../tag_management/page";
 import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
 import { useLanguage } from "@/app/contexts/Language";
 import ObjectStorageTable from "../components/OrganizationManagementPortal/ObjectStorageTable";
-interface SysAdminProps {
-  organizations: OrganizationResponseDto[];
-  applications: OauthApplicationResponseDto[];
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+
+interface OrganizationManagementProps {
   members: UserResponseDto[];
 }
 
-const OrganizationManagementClient = ({ organizations, applications, members }: SysAdminProps) => {
+const OrganizationManagementClient = ({ members }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
   const { t } = useLanguage();
-
+  const { organization, setOrganization } = useOrganizationSession();
 
   const tabData = [
     {
@@ -38,19 +36,21 @@ const OrganizationManagementClient = ({ organizations, applications, members }: 
       label: "Tags and Security Labels",
       content: "content here",
     },
-    {
-      label: "Object Storage",
-      content: <ObjectStorageTable initialOrganizations={organizations} />
-    },
+    // {
+    //   label: "Object Storage",
+    //   content: <ObjectStorageTable organization={organization} />
+    // }, //TODO: Object storage org level management backend not finished yet
     {
       label: "Settings",
-      content: <OrganizationSettings
-        organizationName="name" />,
+      content: organization ? (
+        <OrganizationSettings organization={organization} />
+      ) : (
+        <div>No organization selected</div>
+      ),
     }
   ];
 
   const handleTabChange = (label: string) => {
-    console.log(label)
     setActiveTab(label);
   };
 
@@ -70,6 +70,5 @@ const OrganizationManagementClient = ({ organizations, applications, members }: 
     </div>
   );
 };
-
 
 export default OrganizationManagementClient;

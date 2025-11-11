@@ -3,23 +3,37 @@
 import React, { useState } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import { PencilIcon } from '@heroicons/react/24/outline';
+import { OrganizationResponseDto } from '../../types/responseDTOs';
+import { OrganizationSession, useOrganizationSession } from '@/app/contexts/OrganizationSessionProvider';
+import { updateOrganization } from '@/app/lib/organization_services.client';
+
+
 
 interface OrganizationSettingsProps {
-    organizationName: string;
+    organization: OrganizationSession;
 }
 
-const OrganizationSettings = ({ organizationName }: OrganizationSettingsProps) => {
+const OrganizationSettings = ({ organization }: OrganizationSettingsProps) => {
     const { t } = useLanguage();
     const [isEditingName, setIsEditingName] = useState(false);
-    const [editedName, setEditedName] = useState(organizationName);
+    const [editedName, setEditedName] = useState(organization.organizationName);
+    const [currentOrganization, setCurrentOrganization] = useState(organization);
+    const { setOrganization } = useOrganizationSession();
 
-    const handleSaveName = () => {
-        // Add your save logic here
-        setIsEditingName(false);
+    const handleSaveName = async () => {
+        setIsEditingName(true);
+        try {
+            updateOrganization(organization.organizationId as number, { name: editedName })
+            setOrganization({ organizationName: editedName, organizationId: organization.organizationId })
+        } catch (error) {
+            console.error("Failed to create organization", error);
+        } finally {
+            setIsEditingName(false);
+        }
     };
 
     const handleCancelEdit = () => {
-        setEditedName(organizationName);
+        setEditedName(organization.organizationName);
         setIsEditingName(false);
     };
 
@@ -56,7 +70,7 @@ const OrganizationSettings = ({ organizationName }: OrganizationSettingsProps) =
                         </div>
                     ) : (
                         <div className="flex items-center justify-between">
-                            <span className="text-lg font-semibold text-gray-900">{organizationName}</span>
+                            <span className="text-lg font-semibold text-gray-900">{organization.organizationName}</span>
                             <PencilIcon
                                 className="text-primary hover:text-primary-focus size-6 cursor-pointer transition-colors"
                                 onClick={() => setIsEditingName(true)}
