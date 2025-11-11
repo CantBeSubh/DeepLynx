@@ -127,11 +127,11 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
       {/* Banner/Header */}
-      <header className="bg-[var(--base-400)] text-primary-content flex justify-between items-center px-6 py-3 z-50 fixed w-full">
+      <header className="bg-[var(--base-400)] text-primary-content flex justify-between items-center px-5 py-3 z-50 fixed w-full">
         {/* Organization Switcher */}
         <div className="dropdown">
           <div className="flex items-center">
-            <div className="flex items-center px-3 py-2">
+            <div className="flex items-center py-2">
               <UserGroupIcon className="size-8 mr-3" />
               <div className="flex flex-col">
                 <span className="text-xs opacity-70">Organization</span>
