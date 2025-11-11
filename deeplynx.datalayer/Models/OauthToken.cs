@@ -24,7 +24,7 @@ public partial class OauthToken
     [Column("user_id")]
     public long UserId { get; set; }
     
-    [Column("expires_at")]
+    [Column("expires_at", TypeName = "timestamp without time zone")]
     public DateTime ExpiresAt { get; set; }
     
     [Column("revoked")]
@@ -33,10 +33,6 @@ public partial class OauthToken
     // using CreatedAt as tokens will never be updated other than for revocation, after which they cannot be restored
     [Column("created_at", TypeName = "timestamp without time zone")]
     public DateTime CreatedAt { get; set; }
-    
-    // captures when the user last utilized their token
-    [Column("last_used_at", TypeName = "timestamp without time zone")]
-    public DateTime LastUsedAt { get; set; }
     
     [ForeignKey("ApplicationId")]
     [InverseProperty("OauthTokens")]

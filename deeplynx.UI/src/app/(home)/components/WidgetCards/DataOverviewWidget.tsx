@@ -1,5 +1,4 @@
 import { useLanguage } from "@/app/contexts/Language";
-import { useUserSession } from "@/app/contexts/UserSessionProvider";
 import { getDataOverview } from "@/app/lib/user_services.client";
 import {
   ArrowsRightLeftIcon,
@@ -11,7 +10,6 @@ import { useEffect, useState } from "react";
 
 const DataOverviewWidget = () => {
   const { t } = useLanguage();
-  const { user } = useUserSession();
   const [stats, setStats] = useState<{
     projects: number;
     records: number;

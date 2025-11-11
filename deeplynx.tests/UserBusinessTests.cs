@@ -893,8 +893,6 @@ namespace deeplynx.tests
         
         protected override async Task SeedTestDataAsync()
         {
-            await CleanupTestData();
-            
             await base.SeedTestDataAsync();
             
             // create test organization
@@ -1396,44 +1394,6 @@ namespace deeplynx.tests
                 historicalRecord4,
                 historicalArchivedRecord
             );
-            await Context.SaveChangesAsync();
-        }
-        
-        private async Task CleanupTestData()
-        {
-            // Remove historical records first due to foreign key constraints
-            var existingHistoricalRecords = await Context.HistoricalRecords.ToListAsync();
-            Context.HistoricalRecords.RemoveRange(existingHistoricalRecords);
-            await Context.SaveChangesAsync();
-            
-            // Remove records
-            var existingRecords = await Context.Records.ToListAsync();
-            Context.Records.RemoveRange(existingRecords);
-            await Context.SaveChangesAsync();
-            
-            // Remove classes
-            var existingClasses = await Context.Classes.ToListAsync();
-            Context.Classes.RemoveRange(existingClasses);
-            await Context.SaveChangesAsync();
-            
-            // Remove data sources
-            var existingDataSources = await Context.DataSources.ToListAsync();
-            Context.DataSources.RemoveRange(existingDataSources);
-            await Context.SaveChangesAsync();
-            
-            // Remove project members
-            var existingProjectMembers = await Context.ProjectMembers.ToListAsync();
-            Context.ProjectMembers.RemoveRange(existingProjectMembers);
-            await Context.SaveChangesAsync();
-            
-            // Remove all users
-            var existingUsers = await Context.Users.ToListAsync();
-            Context.Users.RemoveRange(existingUsers);
-            await Context.SaveChangesAsync();
-            
-            // Remove all projects
-            var existingProjects = await Context.Projects.ToListAsync();
-            Context.Projects.RemoveRange(existingProjects);
             await Context.SaveChangesAsync();
         }
     }
