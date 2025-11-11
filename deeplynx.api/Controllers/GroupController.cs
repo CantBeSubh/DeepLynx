@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -30,7 +29,6 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived groups</param>
         /// <returns></returns>
         [HttpGet("GetAllGroups", Name = "api_get_all_groups")]
-        [AuthInProject("read", "group")]
         public async Task<ActionResult<IEnumerable<GroupResponseDto>>> GetAllGroups(
             [FromQuery] long organizationId,
             [FromQuery] bool hideArchived = true)
@@ -55,7 +53,6 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived groups</param>
         /// <returns></returns>
         [HttpGet("GetGroup/{groupId}", Name = "api_get_group")]
-        [AuthInProject("read", "group")]
         public async Task<ActionResult<GroupResponseDto>> GetGroup(
             long groupId, [FromQuery] bool hideArchived = true)
         {
@@ -79,7 +76,6 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">ID of the organization to which the group belongs</param>
         /// <returns></returns>
         [HttpPost("CreateGroup", Name = "api_create_group")]
-        [AuthInProject("write", "group")]
         public async Task<ActionResult<GroupResponseDto>> CreateGroup(
             [FromBody] CreateGroupRequestDto dto,
             [FromQuery] long organizationId)
@@ -104,7 +100,6 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Fields to update</param>
         /// <returns></returns>
         [HttpPut("UpdateGroup/{groupId}", Name = "api_update_group")]
-        [AuthInProject("write", "group")]
         public async Task<ActionResult<GroupResponseDto>> UpdateGroup(
             long groupId,
             [FromBody] UpdateGroupRequestDto dto)
@@ -128,7 +123,6 @@ namespace deeplynx.api.Controllers
         /// <param name="groupId">ID of the group to hard delete</param>
         /// <returns></returns>
         [HttpDelete("DeleteGroup/{groupId}", Name = "api_delete_group")]
-        [AuthInProject("write", "group")]
         public async Task<ActionResult> DeleteGroup(long groupId)
         {
             try
@@ -150,7 +144,6 @@ namespace deeplynx.api.Controllers
         /// <param name="groupId">ID of the group</param>
         /// <returns></returns>
         [HttpDelete("ArchiveGroup/{groupId}", Name = "api_archive_group")]
-        [AuthInProject("write", "group")]
         public async Task<ActionResult> ArchiveGroup(long groupId)
         {
             try
@@ -172,7 +165,6 @@ namespace deeplynx.api.Controllers
         /// <param name="groupId">ID of the group</param>
         /// <returns></returns>
         [HttpPut("UnarchiveGroup/{groupId}", Name = "api_unarchive_group")]
-        [AuthInProject("write", "group")]
         public async Task<ActionResult> UnarchiveGroup(long groupId)
         {
             try
@@ -195,9 +187,8 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of the user to be added</param>
         /// <returns></returns>
         [HttpPost("AddUserToGroup", Name = "api_add_user_to_group")]
-        [AuthInProject("write", "group")]
         public async Task<ActionResult> AddUserToGroup(
-            [FromQuery] long groupId,
+            [FromQuery] long groupId, 
             [FromQuery] long userId)
         {
             try
@@ -220,9 +211,8 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user to be removed</param>
         /// <returns></returns>
         [HttpDelete("RemoveUserFromGroup", Name = "api_remove_user_from_group")]
-        [AuthInProject("write", "group")]
         public async Task<ActionResult> RemoveUserFromGroup(
-            [FromQuery] long groupId,
+            [FromQuery] long groupId, 
             [FromQuery] long userId)
         {
             try

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authorization;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -31,7 +30,6 @@ namespace deeplynx.api.Controllers
         /// Send email
         /// </summary>
         [HttpPost("SendEmail", Name = "api_send_email")]
-        [AuthInProject("write", "notification")]
         public async Task<IActionResult> SendEmail([FromQuery] string email, string? name)
         {
             try
