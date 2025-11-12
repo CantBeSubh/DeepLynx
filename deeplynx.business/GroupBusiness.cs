@@ -34,7 +34,7 @@ public class GroupBusiness : IGroupBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         var groupQuery = _context.Groups.Where(g => g.OrganizationId == organizationId);
-        
+
         if (hideArchived)
         {
             groupQuery = groupQuery.Where(g => !g.IsArchived);
@@ -65,10 +65,10 @@ public class GroupBusiness : IGroupBusiness
         var group = await _context.Groups
             .Where(g => g.Id == groupId)
             .FirstOrDefaultAsync();
-        
+
         if (group == null)
             throw new KeyNotFoundException($"Group with id {groupId} does not exist");
-        
+
         if (hideArchived && group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} is archived");
 
@@ -102,10 +102,10 @@ public class GroupBusiness : IGroupBusiness
             LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready
             OrganizationId = organizationId,
         };
-        
+
         _context.Groups.Add(group);
         await _context.SaveChangesAsync();
-        
+
         // Log create Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -141,15 +141,15 @@ public class GroupBusiness : IGroupBusiness
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
-        
+
         group.Name = dto.Name ?? group.Name;
         group.Description = dto.Description ?? group.Description;
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         group.LastUpdatedBy = null; // TODO: handled in the future by JWT
-        
+
         _context.Groups.Update(group);
         await _context.SaveChangesAsync();
-        
+
         // Log update Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -184,13 +184,13 @@ public class GroupBusiness : IGroupBusiness
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found or is archived");
-        
+
         group.IsArchived = true;
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         group.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
         _context.Groups.Update(group);
         await _context.SaveChangesAsync();
-        
+
         // Log archive Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -204,7 +204,7 @@ public class GroupBusiness : IGroupBusiness
 
         return true;
     }
-    
+
     /// <summary>
     /// Unarchive a specific group by ID
     /// </summary>
@@ -218,13 +218,13 @@ public class GroupBusiness : IGroupBusiness
         // we only want to unarchive what has already been archived
         if (group == null || !group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found or is not archived");
-        
+
         group.IsArchived = false;
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         group.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
         _context.Groups.Update(group);
         await _context.SaveChangesAsync();
-        
+
         // Log unarchive Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -238,7 +238,7 @@ public class GroupBusiness : IGroupBusiness
 
         return true;
     }
-    
+
     /// <summary>
     /// Delete a specific group by ID
     /// </summary>
@@ -250,10 +250,10 @@ public class GroupBusiness : IGroupBusiness
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
-        
+
         _context.Groups.Remove(group);
         await _context.SaveChangesAsync();
-        
+
         // Log delete Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -280,17 +280,17 @@ public class GroupBusiness : IGroupBusiness
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
-        
+
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
         if (user == null || user.IsArchived)
             throw new KeyNotFoundException($"User with id {userId} not found");
-        
+
         group.Users.Add(user);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Remove a user from a group
     /// </summary>
@@ -303,14 +303,43 @@ public class GroupBusiness : IGroupBusiness
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || !group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
-        
+
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
         if (user == null || !user.IsArchived)
             throw new KeyNotFoundException($"User with id {userId} does not exist");
-        
+
         group.Users.Remove(user);
         await _context.SaveChangesAsync();
-        
+
         return true;
+    }
+
+    /// <summary>
+    /// Get all members of a group
+    /// </summary>
+    /// <param name="groupId">ID of the group</param>
+    /// <returns>List of users who are members of the group</returns>
+    /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
+    public async Task<IEnumerable<UserResponseDto>> GetGroupMembers(long groupId)
+    {
+        var group = await _context.Groups
+            .Include(g => g.Users)
+            .FirstOrDefaultAsync(g => g.Id == groupId);
+
+        if (group == null || group.IsArchived)
+            throw new KeyNotFoundException($"Group with id {groupId} not found");
+
+        return group.Users
+            .Where(u => !u.IsArchived)
+            .Select(u => new UserResponseDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                IsSysAdmin = u.IsSysAdmin,
+                IsArchived = u.IsArchived,
+                IsActive = u.IsActive
+            })
+            .ToList();
     }
 }
