@@ -207,6 +207,7 @@ try
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
     builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
     builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
+    builder.Services.AddTransient<ISysAdminService, SysAdminService>();
     
     builder.Services.AddOpenApi(options =>
     {
