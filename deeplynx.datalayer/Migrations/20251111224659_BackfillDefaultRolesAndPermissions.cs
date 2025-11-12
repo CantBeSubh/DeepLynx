@@ -30,9 +30,7 @@ namespace deeplynx.datalayer.Migrations
             // STEP 3: Delete ALL existing roles (for both organizations and projects)
             // ====================================================================
             migrationBuilder.Sql(@"
-                DELETE FROM deeplynx.roles
-                WHERE (project_id IS NOT NULL OR organization_id IS NOT NULL)
-                AND is_archived = false;
+                DELETE FROM deeplynx.roles;
             ");
 
             // ====================================================================
@@ -245,9 +243,16 @@ namespace deeplynx.datalayer.Migrations
                 AND r.name = 'Admin'
                 AND r.is_archived = false;
             ");
-
+            
             // ====================================================================
-            // STEP 13: Add all users to the default organization
+            // STEP 13: Clear all existing organization_users
+            // ====================================================================
+            migrationBuilder.Sql(@"
+                DELETE FROM deeplynx.organization_users;
+             ");
+            
+            // ====================================================================
+            // STEP 14: Add all users to the default organization
             // Uses the organization where default_org = true
             // ====================================================================
             migrationBuilder.Sql(@"
@@ -264,18 +269,7 @@ namespace deeplynx.datalayer.Migrations
                     SELECT 1 FROM deeplynx.organizations 
                     WHERE default_org = true 
                     AND is_archived = false
-                )
-                AND NOT EXISTS (
-                    SELECT 1 FROM deeplynx.organization_users ou 
-                    WHERE ou.user_id = u.id
-                    AND ou.organization_id = (
-                        SELECT id FROM deeplynx.organizations 
-                        WHERE default_org = true 
-                        AND is_archived = false 
-                        LIMIT 1
-                    )
-                )
-                ON CONFLICT (organization_id, user_id) DO NOTHING;
+                ) ON CONFLICT (organization_id, user_id) DO NOTHING;
             ");
         
         }
@@ -304,17 +298,20 @@ namespace deeplynx.datalayer.Migrations
             // ====================================================================
             migrationBuilder.Sql(@"
                 DELETE FROM deeplynx.roles
-                WHERE (project_id IS NOT NULL OR organization_id IS NOT NULL)
-                AND is_archived = false;
             ");
 
             // ====================================================================
             // Rollback: Remove ALL permissions
-            // Note: This is destructive - you may want to comment this out
-            // if you want to preserve custom permissions
             // ====================================================================
             migrationBuilder.Sql(@"
                 DELETE FROM deeplynx.permissions;
+            ");
+            
+            // ====================================================================
+            // Rollback: Remove ALL permissions
+            // ====================================================================
+            migrationBuilder.Sql(@"
+                DELETE FROM deeplynx.organization_users;
             ");
 
         }
