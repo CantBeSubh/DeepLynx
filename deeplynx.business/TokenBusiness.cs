@@ -61,7 +61,7 @@ public class TokenBusiness : ITokenBusiness
         }
 
         // 5. Use the JWT signing secret
-        var jwtSigningSecret = Config.JWT_SECRET_KEY;
+        var jwtSigningSecret = Config.Instance.JWT_SECRET_KEY;
 
         if (string.IsNullOrEmpty(jwtSigningSecret))
             throw new InvalidOperationException("JWT signing secret not configured");
