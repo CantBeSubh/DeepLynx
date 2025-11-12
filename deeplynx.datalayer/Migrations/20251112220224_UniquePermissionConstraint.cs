@@ -11,15 +11,34 @@ namespace deeplynx.datalayer.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
+                name: "permissions_unique_label_action",
+                schema: "deeplynx",
+                table: "permissions");
+
+            migrationBuilder.DropIndex(
                 name: "permissions_unique_resource_action",
                 schema: "deeplynx",
                 table: "permissions");
+
+            migrationBuilder.CreateIndex(
+                name: "permissions_unique_org_label_action",
+                schema: "deeplynx",
+                table: "permissions",
+                columns: new[] { "organization_id", "label_id", "action" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "permissions_unique_org_resource_action",
                 schema: "deeplynx",
                 table: "permissions",
                 columns: new[] { "organization_id", "resource", "action" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "permissions_unique_project_label_action",
+                schema: "deeplynx",
+                table: "permissions",
+                columns: new[] { "project_id", "label_id", "action" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -34,7 +53,17 @@ namespace deeplynx.datalayer.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
+                name: "permissions_unique_org_label_action",
+                schema: "deeplynx",
+                table: "permissions");
+
+            migrationBuilder.DropIndex(
                 name: "permissions_unique_org_resource_action",
+                schema: "deeplynx",
+                table: "permissions");
+
+            migrationBuilder.DropIndex(
+                name: "permissions_unique_project_label_action",
                 schema: "deeplynx",
                 table: "permissions");
 
@@ -42,6 +71,13 @@ namespace deeplynx.datalayer.Migrations
                 name: "permissions_unique_project_resource_action",
                 schema: "deeplynx",
                 table: "permissions");
+
+            migrationBuilder.CreateIndex(
+                name: "permissions_unique_label_action",
+                schema: "deeplynx",
+                table: "permissions",
+                columns: new[] { "project_id", "organization_id", "label_id", "action" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "permissions_unique_resource_action",
