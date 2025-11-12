@@ -207,6 +207,7 @@ try
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
     builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
     builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
+    builder.Services.AddTransient<ISysAdminService, SysAdminService>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -388,8 +389,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
-    app.UseMiddleware<AuthInProjectMiddleware>(); //Project level RBAC
-    app.UseMiddleware<AuthInOrgMiddleware>(); //Project level RBAC
+    app.UseMiddleware<AuthMiddleware>(); //Organization and project RBAC
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
