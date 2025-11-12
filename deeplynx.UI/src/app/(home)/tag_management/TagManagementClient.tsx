@@ -50,16 +50,16 @@ const parseTags = (
 
 interface Props {
   initialProjects: ProjectResponseDto[];
-  initialSelectedProjects?: ProjectResponseDto | null;
+  initialSelectedProject?: ProjectResponseDto | null;
 }
 
 const TagManagementClient = ({
   initialProjects,
-  initialSelectedProjects,
+  initialSelectedProject,
 }: Props) => {
   const [projects] = useState<ProjectResponseDto[]>(initialProjects);
   const [selectedProject, setSelectedProject] = useState<string>(
-    initialSelectedProjects?.id?.toString() || ""
+    initialSelectedProject?.id?.toString() || ""
   );
   const [selectedMenuItem, setSelectedMenuItems] = useState("Search Tags");
   const [tags, setTags] = useState<TagResponseDto[]>([]);

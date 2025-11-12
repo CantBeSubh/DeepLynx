@@ -1,6 +1,9 @@
+// src/app/(home)/organization_management/page.tsx
+
 import React from "react";
 import OrganizationManagmentClient from "./OrganizationManagementClient";
 import {
+  GroupResponseDto,
   OauthApplicationResponseDto,
   OrganizationResponseDto,
   ProjectResponseDto,
@@ -14,20 +17,23 @@ import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import { mapToProjectResponseDtos } from "../page";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { getAllGroups } from "@/app/lib/group_services.server";
 
 export const dynamic = "force-dynamic";
+
+// Mapping function for groups (if needed)
+const mapToGroupResponseDtos = (group: any): GroupResponseDto => {
+  return {
+    ...group,
+    // Add any necessary transformations here
+  } as GroupResponseDto;
+};
 
 const OrganizationManagementPage = async ({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) => {
-  const OrganizationResponseDtos =
-    (await getAllOrganizationsServer()) as OrganizationResponseDto[];
-  const oAuthApplications =
-    (await getAllOauthApplicationsServer()) as OauthApplicationResponseDto[];
-  const members = (await getAllUsersServer()) as UserResponseDto[];
-
   // Get organization from cookies
   const cookieStore = await cookies();
   const orgSessionCookie = cookieStore.get("organizationSession");
@@ -37,7 +43,7 @@ const OrganizationManagementPage = async ({
     redirect("/select-org");
   }
 
-  let organizationId: string | number | undefined;
+  let organizationId: string | number;
   try {
     const orgSession = JSON.parse(orgSessionCookie.value);
     organizationId = orgSession.organizationId;
@@ -55,6 +61,21 @@ const OrganizationManagementPage = async ({
     console.error("getAllProjectsServer failed:", e);
   }
 
+  // Fetch groups filtered by organization
+  let groups: GroupResponseDto[] = [];
+  try {
+    const apiGroups = await getAllGroups(organizationId, true);
+    groups = apiGroups.map(mapToGroupResponseDtos);
+  } catch (error) {
+    console.error("getAllGroups failed:", error);
+  }
+
+  // Fetch users filtered by organization
+  const members = (await getAllUsersServer(
+    undefined,
+    Number(organizationId)
+  )) as UserResponseDto[];
+
   const params = await searchParams;
   const fromProject =
     typeof params.fromProject === "string" ? params.fromProject : "";
@@ -65,7 +86,12 @@ const OrganizationManagementPage = async ({
     : projects[0];
 
   return (
-    <OrganizationManagmentClient members={members} initialProjects={projects} />
+    <OrganizationManagmentClient
+      members={members}
+      initialProjects={projects}
+      initialGroups={groups}
+      initialSelectedProject={initialSelectedProject}
+    />
   );
 };
 

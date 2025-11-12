@@ -1,104 +1,90 @@
-//TODO POST FY: GROUPS
-// "use client";
+// src/app/lib/group_services.client.ts
+"use client";
 
-// import api from "./api";
-// export interface Group {
-//   id: number | null;
-//   name: string;
-//   description?: string | null;
-// }
+import api from "./api";
+import { GroupResponseDto } from "../(home)/types/responseDTOs";
 
-// /** ===== Client calls (browser; cookie/session-based) ===== */
+/** ===== Client calls (browser; cookie/session-based) ===== */
 
-// export async function getAllGroups() {
-//   try {
-//     const res = await api.get("/groups");
-//     return res.data;
-//   } catch (error) {
-//     console.error("Failed to fetch groups:", error);
-//     throw new Error("Could not retrieve groups. Please try again later.");
-//   }
-// }
+export async function getAllGroups(
+  organizationId?: number | string,
+  hideArchived: boolean = true
+) {
+  const params: Record<string, string | number | boolean> = { hideArchived };
+  
+  if (organizationId !== undefined) {
+    params.organizationId = organizationId;
+  }
 
-// export async function getGroupById(groupId: string) {
-//   try {
-//     const res = await api.get(`/groups/${groupId}`);
-//     return res.data;
-//   } catch (error) {
-//     console.error(`Failed to fetch group with ID ${groupId}:`, error);
-//     throw new Error("Could not retrieve the group. Please try again later.");
-//   }
-// }
+  const res = await api.get("/groups/GetAllGroups", { params });
+  return res.data;
+}
 
-// export async function createGroup(data: { name: string; description?: string | null }) {
-//   try {
-//     const res = await api.post("/groups/CreateGroup", data, {
-//       headers: { "Content-Type": "application/json" },
-//     });
-//     return res.data;
-//   } catch (error) {
-//     console.error("Failed to create group:", error);
-//     throw new Error("Could not create the group. Please ensure all fields are correct.");
-//   }
-// }
+export async function getGroup(groupId: number | string) {
+  const res = await api.get(`/groups/GetGroup/${groupId}`);
+  return res.data;
+}
 
-// export async function updateGroup(groupId: string, data: { name?: string; description?: string }) {
-//   try {
-//     const res = await api.put(`/groups/${groupId}`, data, {
-//       headers: { "Content-Type": "application/json" },
-//     });
-//     return res.data;
-//   } catch (error) {
-//     console.error(`Failed to update group with ID ${groupId}:`, error);
-//     throw new Error("Could not update the group. Please try again later.");
-//   }
-// }
+export async function createGroup(
+  organizationId: number | string,
+  name: string,
+  description: string
+): Promise<GroupResponseDto> {
+  const res = await api.post("/groups/CreateGroup", {
+    organizationId,
+    name,
+    description,
+  }, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.data;
+}
 
-// export async function deleteGroup(groupId: string) {
-//   try {
-//     await api.delete(`/groups/${groupId}`);
-//   } catch (error) {
-//     console.error(`Failed to delete group with ID ${groupId}:`, error);
-//     throw new Error("Could not delete the group. Please try again later.");
-//   }
-// }
+export async function updateGroup(
+  groupId: number | string,
+  name: string,
+  description: string
+): Promise<GroupResponseDto> {
+  const res = await api.put(`/groups/UpdateGroup/${groupId}`, {
+    name,
+    description,
+  }, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.data;
+}
 
-// export async function archiveGroup(groupId: string) {
-//   try {
-//     const res = await api.post(`/groups/${groupId}/archive`);
-//     return res.data;
-//   } catch (error) {
-//     console.error(`Failed to archive group with ID ${groupId}:`, error);
-//     throw new Error("Could not archive the group. Please try again later.");
-//   }
-// }
+export async function deleteGroup(groupId: number | string): Promise<void> {
+  await api.delete(`/groups/DeleteGroup/${groupId}`);
+}
 
-// export async function unarchiveGroup(groupId: string) {
-//   try {
-//     const res = await api.post(`/groups/${groupId}/unarchive`);
-//     return res.data;
-//   } catch (error) {
-//     console.error(`Failed to unarchive group with ID ${groupId}:`, error);
-//     throw new Error("Could not unarchive the group. Please try again later.");
-//   }
-// }
+export async function getGroupMembers(groupId: number | string) {
+  const res = await api.get(`/groups/GetGroupMembers/${groupId}`);
+  return res.data;
+}
 
-// export async function addUserToGroup(groupId: string, userId: string) {
-//   try {
-//     const res = await api.post(`/groups/${groupId}/addUser`, { userId });
-//     return res.data;
-//   } catch (error) {
-//     console.error(`Failed to add user ${userId} to group with ID ${groupId}:`, error);
-//     throw new Error("Could not add the user to the group. Please try again later.");
-//   }
-// }
+export async function addMemberToGroup(
+  groupId: number | string,
+  userId: number | string
+): Promise<void> {
+  const res = await api.post(
+    `/groups/AddMemberToGroup?groupId=${groupId}&userId=${userId}`,
+    { groupId, userId },
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+  return res.data;
+}
 
-// export async function removeUserFromGroup(groupId: string, userId: string) {
-//   try {
-//     const res = await api.post(`/groups/${groupId}/removeUser`, { userId });
-//     return res.data;
-//   } catch (error) {
-//     console.error(`Failed to remove user ${userId} from group with ID ${groupId}:`, error);
-//     throw new Error("Could not remove the user from the group. Please try again later.");
-//   }
-// }
+export async function removeMemberFromGroup(
+  groupId: number | string,
+  userId: number | string
+): Promise<void> {
+  await api.delete(
+    `/groups/RemoveMemberFromGroup?groupId=${groupId}&userId=${userId}`,
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+}

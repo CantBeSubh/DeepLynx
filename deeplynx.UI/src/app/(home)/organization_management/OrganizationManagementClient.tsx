@@ -1,8 +1,10 @@
+// src/app/(home)/organization_management/OrganizationManagementClient.tsx
 "use client";
 
 import React, { useState } from "react";
 import Tabs from "../components/Tabs";
 import {
+  GroupResponseDto,
   OrganizationResponseDto,
   ProjectResponseDto,
   UserResponseDto,
@@ -14,23 +16,27 @@ import ObjectStorageTable from "../components/OrganizationManagementPortal/Objec
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import TagManagementClient from "../tag_management/TagManagementClient";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import InlineGroupsTable from "./groups/InlineGroupsTable";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
   initialProjects: ProjectResponseDto[];
-  initialSelectedProjects?: ProjectResponseDto | null;
+  initialGroups: GroupResponseDto[];
+  initialSelectedProject?: ProjectResponseDto;
 }
 
 const OrganizationManagementClient = ({
   members,
   initialProjects,
-  initialSelectedProjects,
+  initialGroups,
+  initialSelectedProject,
 }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
   const { t } = useLanguage();
   const { organization, setOrganization } = useOrganizationSession();
   const { project } = useProjectSession();
-  console.log("Selected Project", project);
+  console.log("Groups", initialGroups);
+  console.log("Members", members);
 
   const tabData = [
     {
@@ -43,14 +49,20 @@ const OrganizationManagementClient = ({
     },
     {
       label: "Groups",
-      content: "content here",
+      content: (
+        <InlineGroupsTable
+          initialGroups={initialGroups}
+          availableUsers={members}
+          organizationId={organization?.organizationId}
+        />
+      ),
     },
     {
       label: "Tags and Security Labels",
       content: (
         <TagManagementClient
           initialProjects={initialProjects}
-          initialSelectedProjects={initialSelectedProjects}
+          initialSelectedProject={initialSelectedProject}
         />
       ),
     },
