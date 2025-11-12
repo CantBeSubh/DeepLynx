@@ -50,16 +50,16 @@ const parseTags = (
 
 interface Props {
   initialProjects: ProjectResponseDto[];
-  initialSelectedProjects: ProjectResponseDto;
+  initialSelectedProject?: ProjectResponseDto | null;
 }
 
 const TagManagementClient = ({
   initialProjects,
-  initialSelectedProjects,
+  initialSelectedProject,
 }: Props) => {
   const [projects] = useState<ProjectResponseDto[]>(initialProjects);
   const [selectedProject, setSelectedProject] = useState<string>(
-    initialSelectedProjects?.id?.toString() || ""
+    initialSelectedProject?.id?.toString() || ""
   );
   const [selectedMenuItem, setSelectedMenuItems] = useState("Search Tags");
   const [tags, setTags] = useState<TagResponseDto[]>([]);
@@ -195,8 +195,7 @@ const TagManagementClient = ({
 
   return (
     <div>
-      <div className="items-center bg-base-200/40 pl-12 py-2 pb-4">
-        <h1 className="text-2xl font-bold text-info-content">Tag Management</h1>
+      <div className="items-center pl-12 py-2 pb-4">
         <ProjectDropdownSingleSelect
           projects={projects}
           onSelectionChange={handleProjectChange}

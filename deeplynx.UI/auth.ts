@@ -198,7 +198,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return session;
         },
 
+        // auth.ts
         async redirect({ url, baseUrl }) {
+            // Check if authentication is disabled
+            const isAuthDisabled = process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+            
+            // If auth is disabled, always redirect to home or the requested URL
+            if (isAuthDisabled) {
+                // If redirecting to a specific URL within the app, allow it
+                if (url.startsWith(baseUrl)) {
+                    return url;
+                }
+                // Otherwise go to home
+                return `${baseUrl}`;
+            }
+            
             // If redirecting to a specific URL within the app, allow it
             if (url.startsWith(baseUrl)) {
                 return url;
