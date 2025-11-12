@@ -22,10 +22,9 @@ import { getAllGroups } from "@/app/lib/group_services.server";
 export const dynamic = "force-dynamic";
 
 // Mapping function for groups (if needed)
-const mapToGroupResponseDtos = (group: any): GroupResponseDto => {
+const mapToGroupResponseDtos = (group: GroupResponseDto): GroupResponseDto => {
   return {
     ...group,
-    // Add any necessary transformations here
   } as GroupResponseDto;
 };
 
