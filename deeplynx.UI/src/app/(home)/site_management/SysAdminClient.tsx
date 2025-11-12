@@ -5,7 +5,8 @@ import Tabs from "../components/Tabs";
 import { OauthApplicationResponseDto, OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
 import UsersTable from "../components/SiteManagementPortal/UsersTable";
 import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
-import OrganizationManagement from "../components/SiteManagementPortal/OrgTable";
+import SiteOrganizationManagement from "../components/SiteManagementPortal/OrgTable";
+
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
   applications: OauthApplicationResponseDto[];
@@ -18,7 +19,7 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
   const tabData = [
     {
       label: "Organization Management",
-      content: <OrganizationManagement initialOrganizations={organizations} />,
+      content: <SiteOrganizationManagement initialOrganizations={organizations} />,
     },
     {
       label: "Oauth Application",
@@ -31,13 +32,12 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
   ];
 
   const handleTabChange = (label: string) => {
-    console.log(label)
     setActiveTab(label);
   };
 
   return (
     <div>
-      <div className="bg-base-200/40 pl-12 p-4">
+      <div className="bg-base-200/40 pl-12 p-6">
         <h1 className="text-2xl font-bold text-base-content">Site Management</h1>
       </div>
       <div className="p-2">
