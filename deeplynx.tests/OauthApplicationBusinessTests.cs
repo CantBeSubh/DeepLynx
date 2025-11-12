@@ -239,10 +239,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllOauthApplications_ExcludesArchived()
         {
-            // Arrange: reset test data to avoid race conditions
-            await CleanupTestData();
-            await SeedTestDataAsync();
-
             // Act
             var result = await _oauthApplicationBusiness.GetAllOauthApplications();
             var applications = result.ToList();
@@ -270,9 +266,9 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllOauthApplications_ReturnsEmptyList_WhenNoApplications()
         {
-            // Arrange
-            await CleanupTestData();
-
+            // clear database for emptied list of apps
+            await base.SeedTestDataAsync();
+            
             // Act
             var result = await _oauthApplicationBusiness.GetAllOauthApplications();
             var applications = result.ToList();
@@ -783,14 +779,6 @@ namespace deeplynx.tests
 
             // delete app 3
             Context.OauthApplications.Remove(app3);
-            await Context.SaveChangesAsync();
-        }
-
-        private async Task CleanupTestData()
-        {
-            // Remove all oauth applications
-            var existingApps = await Context.OauthApplications.ToListAsync();
-            Context.OauthApplications.RemoveRange(existingApps);
             await Context.SaveChangesAsync();
         }
     }
