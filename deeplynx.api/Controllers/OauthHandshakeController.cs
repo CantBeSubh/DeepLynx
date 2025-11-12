@@ -46,8 +46,8 @@ public class OauthHandshakeController : ControllerBase
     /// </remarks>
     [HttpGet("authorize", Name = "api_oauth_authorize")]
     public async Task<IActionResult> Authorize(
-        [FromQuery] string clientId,
-        [FromQuery] string redirectUri,
+        [FromQuery(Name = "client_id")] string clientId,
+        [FromQuery(Name = "redirect_uri")] string redirectUri,
         [FromQuery] string state)
     {
         try
@@ -57,15 +57,43 @@ public class OauthHandshakeController : ControllerBase
 
             var authCode = await _oauthBusiness.GenerateAuthCode(clientId, userId, redirectUri, state);
             var callbackUrl = BuildCallbackUrl(redirectUri, authCode, state);
-            _logger.LogInformation($"Auth code generated successfully for application {clientId}, user {userId}");
+            _logger.LogInformation($"Auth code generated successfully for application {clientId}, user {userId}. Redirecting to {callbackUrl}");
 
             return Redirect(callbackUrl);
         }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, $"Invalid argument in OAuth authorization for client {clientId}: {ex.Message}");
+            return BadRequest(new 
+            { 
+                error = "invalid_request", 
+                error_description = ex.Message 
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, $"Unauthorized OAuth authorization attempt for client {clientId}: {ex.Message}");
+            return Unauthorized(new 
+            { 
+                error = "unauthorized_client", 
+                error_description = ex.Message 
+            });
+        }
         catch (Exception ex)
         {
-            var message = "An unexpected error occurred in the Oauth authorization flow";
-            _logger.LogError(ex, message);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { message = message });
+            var message = "An unexpected error occurred in the OAuth authorization flow";
+            _logger.LogError(ex, $"{message}. ClientId: {clientId}, RedirectUri: {redirectUri}, State: {state}");
+            
+            return StatusCode(StatusCodes.Status500InternalServerError, new 
+            { 
+                error = "server_error",
+                error_description = message,
+                // Only include detailed error in development
+                #if DEBUG
+                detail = ex.Message,
+                stack_trace = ex.StackTrace
+                #endif
+            });
         }
     }
 
@@ -87,9 +115,9 @@ public class OauthHandshakeController : ControllerBase
     [AllowAnonymous] // token exchange uses client credentials vs user authentication to verify identity
     public async Task<IActionResult> Exchange(
         [FromQuery] string code,
-        [FromQuery] string clientId,
-        [FromQuery] string clientSecret,
-        [FromQuery] string redirectUri,
+        [FromQuery(Name = "client_id")] string clientId,
+        [FromQuery(Name = "client_secret")] string clientSecret,
+        [FromQuery(Name = "redirect_uri")] string redirectUri,
         [FromQuery] string state,
         [FromQuery] double? expiration)
     {
@@ -108,22 +136,68 @@ public class OauthHandshakeController : ControllerBase
                 state
             });
         }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, $"Invalid argument in token exchange for client {clientId}: {ex.Message}");
+            return BadRequest(new 
+            { 
+                error = "invalid_request", 
+                error_description = ex.Message 
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, $"Unauthorized token exchange attempt for client {clientId}: {ex.Message}");
+            return Unauthorized(new 
+            { 
+                error = "invalid_client", 
+                error_description = "Invalid client credentials or authorization code" 
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, $"Invalid operation in token exchange for client {clientId}: {ex.Message}");
+            return BadRequest(new 
+            { 
+                error = "invalid_grant", 
+                error_description = ex.Message 
+            });
+        }
         catch (Exception ex)
         {
             var message = "Unexpected error occurred during OAuth token exchange";
-            _logger.LogError(ex, message);
-            return StatusCode(500, new { error = "server_error", error_description = message});
+            _logger.LogError(ex, $"{message}. ClientId: {clientId}, Code: {code?.Substring(0, Math.Min(10, code?.Length ?? 0))}..., RedirectUri: {redirectUri}, State: {state}");
+            
+            return StatusCode(500, new 
+            { 
+                error = "server_error", 
+                error_description = message,
+                // Only include detailed error in development
+                #if DEBUG
+                detail = ex.Message,
+                inner_exception = ex.InnerException?.Message,
+                stack_trace = ex.StackTrace
+                #endif
+            });
         }
     }
     
     private string BuildCallbackUrl(string baseUrl, string code, string state)
     {
-        var uriBuilder = new UriBuilder(baseUrl);
-        var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-        query["code"] = code;
-        query["state"] = state;
+        try
+        {
+            var uriBuilder = new UriBuilder(baseUrl);
+            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
+            query["code"] = code;
+            query["state"] = state;
 
-        uriBuilder.Query = query.ToString();
-        return uriBuilder.ToString();
+            uriBuilder.Query = query.ToString();
+            return uriBuilder.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error building callback URL. BaseUrl: {baseUrl}, Code: {code?.Substring(0, Math.Min(10, code?.Length ?? 0))}..., State: {state}");
+            throw;
+        }
     }
 }

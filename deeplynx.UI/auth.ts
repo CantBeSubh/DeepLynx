@@ -7,10 +7,6 @@ import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 
-// ======================================================================
-// TODO: This is trying to extract the isues from the access token.      |
-// But we need to know the exact issuer URL to hold it in a ENV variable |
-// ======================================================================
 async function refreshAccessToken(token: JWT): Promise<JWT> {
     try {
         if (!token.refresh_token) {
@@ -199,12 +195,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
 
         async redirect({ url, baseUrl }) {
-            // If redirecting to a specific URL within the app, allow it
+            console.log(`NextAuth redirect callback - url: ${url}, baseUrl: ${baseUrl}`);
+            
+            // CRITICAL: Check if this is an OAuth flow redirect
+            // OAuth flows will have /api/oauth/authorize in the URL
+            if (url.includes('/api/oauth/authorize')) {
+                console.log(`OAuth flow detected, allowing redirect to: ${url}`);
+                return url;
+            }
+            
+            // If url starts with baseUrl, it's a relative URL on our site
             if (url.startsWith(baseUrl)) {
                 return url;
             }
             
-            // After login, check if user has an organization selected
+            // If url starts with /, it's a relative path
+            if (url.startsWith("/")) {
+                const fullUrl = `${baseUrl}${url}`;
+                return fullUrl;
+            }
+            
+            // For default redirect after login, check if user has an organization selected
             try {
                 const cookieStore = await cookies();
                 const orgSessionCookie = cookieStore.get("organizationSession");
