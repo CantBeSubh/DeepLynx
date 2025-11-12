@@ -8,8 +8,9 @@ import {
   createGroup,
   updateGroup,
   deleteGroup,
-  addMemberToGroup,
-  removeMemberFromGroup,
+  addUserToGroup,
+  removeUserFromGroup,
+  getGroupMembers,
 } from "@/app/lib/group_services.client";
 import {
   TrashIcon,
@@ -22,6 +23,8 @@ import {
   ChevronUpIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
+import AvatarCell from "../../components/Avatar";
+import toast from "react-hot-toast";
 
 interface InlineGroupsTableProps {
   initialGroups: GroupResponseDto[];
@@ -46,6 +49,17 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  console.log("Inline table members: ", availableUsers);
+
+  // Member management state
+  const [groupMembers, setGroupMembers] = useState<
+    Map<string | number, UserResponseDto[]>
+  >(new Map());
+  const [loadingMembers, setLoadingMembers] = useState<Set<string | number>>(
+    new Set()
+  );
+  const [memberSearchTerm, setMemberSearchTerm] = useState("");
+
   // Create form state
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
@@ -59,14 +73,39 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     new Set()
   );
 
-  // Update the toggleExpand function:
-  const toggleExpand = (groupId: string | number) => {
+  // Fetch members for a group
+  const fetchGroupMembers = async (groupId: string | number) => {
+    // Check if we already have the members cached
+    if (groupMembers.has(groupId)) {
+      return;
+    }
+
+    const newLoadingMembers = new Set(loadingMembers).add(groupId);
+    setLoadingMembers(newLoadingMembers);
+
+    try {
+      const members = await getGroupMembers(groupId);
+      setGroupMembers(new Map(groupMembers).set(groupId, members));
+    } catch (err) {
+      console.error("Failed to fetch group members:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch members");
+    } finally {
+      const updatedLoadingMembers = new Set(loadingMembers);
+      updatedLoadingMembers.delete(groupId);
+      setLoadingMembers(updatedLoadingMembers);
+    }
+  };
+
+  // Toggle expand/collapse and fetch members
+  const toggleExpand = async (groupId: string | number) => {
     if (expandedGroup === groupId) {
       setExpandedGroup(null);
       setEditingGroup(null);
     } else {
       setExpandedGroup(groupId);
       setEditingGroup(null);
+      // Fetch members when expanding
+      await fetchGroupMembers(groupId);
     }
   };
 
@@ -104,8 +143,10 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
       setNewGroupName("");
       setNewGroupDescription("");
       setShowCreateForm(false);
+      toast.success("Group created");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create group");
+      toast.error("Group not created");
     } finally {
       setLoading(false);
     }
@@ -151,6 +192,10 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
       if (expandedGroup === groupId) {
         setExpandedGroup(null);
       }
+      // Clear cached members
+      const newGroupMembers = new Map(groupMembers);
+      newGroupMembers.delete(groupId);
+      setGroupMembers(newGroupMembers);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete group");
     } finally {
@@ -184,6 +229,48 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
+  // Add member to group
+  const handleAddMember = async (
+    groupId: string | number,
+    userId: string | number
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await addUserToGroup(groupId, userId);
+      // Refetch members after adding
+      const members = await getGroupMembers(groupId);
+      setGroupMembers(new Map(groupMembers).set(groupId, members));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add member");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Remove member from group
+  const handleRemoveMember = async (
+    groupId: string | number,
+    userId: string | number
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await removeUserFromGroup(groupId, userId);
+      // Refetch members after removing
+      const members = await getGroupMembers(groupId);
+      setGroupMembers(new Map(groupMembers).set(groupId, members));
+      toast.success("Removed member");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove member");
+      toast.error("Falied to remove member");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle checkbox selection
   const toggleSelectGroup = (groupId: string | number) => {
     const newSelection = new Set(selectedGroups);
@@ -204,6 +291,32 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
+  // Get current members for a group
+  const getCurrentMembers = (groupId: string | number): UserResponseDto[] => {
+    return groupMembers.get(groupId) || [];
+  };
+
+  // Get available users (not in group)
+  const getAvailableUsers = (groupId: string | number): UserResponseDto[] => {
+    const currentMembers = getCurrentMembers(groupId);
+    const memberIds = new Set(currentMembers.map((m) => m.id));
+    return availableUsers.filter(
+      (u) => !memberIds.has(u.id) && u.isActive && !u.isArchived
+    );
+  };
+
+  // Filter users by search term
+  const filterUsersBySearch = (users: UserResponseDto[]): UserResponseDto[] => {
+    if (!memberSearchTerm.trim()) return users;
+
+    const searchLower = memberSearchTerm.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(searchLower) ||
+        u.email?.toLowerCase().includes(searchLower)
+    );
+  };
+
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
@@ -222,24 +335,10 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
             onClick={() => setShowCreateForm(!showCreateForm)}
             disabled={loading}
           >
-            <PlusIcon className="w-5 h-5" />
+            <PlusIcon className="size-6" />
             Create Group
           </button>
         </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="alert alert-error mb-4">
-            <XMarkIcon className="w-5 h-5" />
-            <span>{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="btn btn-sm btn-ghost"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
 
         {/* Create Group Inline Form */}
         {showCreateForm && (
@@ -305,6 +404,16 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
           <table className="table w-full">
             <thead className="bg-base-300">
               <tr>
+                <th className="w-12">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-sm"
+                    checked={
+                      selectedGroups.size === groups.length && groups.length > 0
+                    }
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th>Group Name</th>
                 <th>Description</th>
                 <th>Members</th>
@@ -315,7 +424,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                       className="btn btn-ghost btn-sm text-error"
                       disabled={loading}
                     >
-                      <TrashIcon className="w-5 h-5" />
+                      <TrashIcon className="size-6" />
                       Delete ({selectedGroups.size})
                     </button>
                   )}
@@ -334,183 +443,299 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                   </td>
                 </tr>
               ) : (
-                groups.map((group) => (
-                  <React.Fragment key={group.id}>
-                    {/* Main Row */}
-                    <tr
-                      className={`hover cursor-pointer ${
-                        expandedGroup === group.id ? "bg-base-300" : ""
-                      }`}
-                      onClick={() => toggleExpand(group.id)}
-                    >
-                      <td className="font-semibold">{group.name}</td>
-                      <td className="text-base-content/70">
-                        {group.description || "No description"}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <UserGroupIcon className="w-4 h-4" />
-                          <span className="badge badge-ghost">
-                            {/* TODO: Display actual member count when API is ready */}
-                            0
-                          </span>
-                        </div>
-                      </td>
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-2">
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => {
-                              setExpandedGroup(group.id);
-                              startEdit(group);
-                            }}
-                            disabled={loading}
-                          >
-                            <PencilIcon className="w-5 h-5 text-info" />
-                          </button>
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => handleDeleteGroup(group.id)}
-                            disabled={loading}
-                          >
-                            <TrashIcon className="w-5 h-5 text-error" />
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        {expandedGroup === group.id ? (
-                          <ChevronUpIcon className="w-5 h-5" />
-                        ) : (
-                          <ChevronDownIcon className="w-5 h-5" />
-                        )}
-                      </td>
-                    </tr>
+                groups.map((group) => {
+                  const currentMembers = getCurrentMembers(group.id);
+                  const availableUsersForGroup = getAvailableUsers(group.id);
+                  const filteredAvailable = filterUsersBySearch(
+                    availableUsersForGroup
+                  );
+                  const isLoadingMembers = loadingMembers.has(group.id);
 
-                    {/* Expanded Row */}
-                    {expandedGroup === group.id && (
-                      <tr>
-                        <td colSpan={6} className="bg-base-100 p-0">
-                          <div className="p-6 border-t-2 border-primary/20">
-                            {/* Edit Mode */}
-                            {editingGroup === group.id ? (
-                              <div className="space-y-4">
-                                <div className="flex justify-between items-center mb-4">
-                                  <h4 className="font-bold text-lg">
-                                    Edit Group Details
-                                  </h4>
-                                  <div className="flex gap-2">
-                                    <button
-                                      className="btn btn-sm btn-ghost"
-                                      onClick={cancelEdit}
-                                      disabled={loading}
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      className="btn btn-sm btn-primary"
-                                      onClick={() =>
-                                        handleUpdateGroup(group.id)
-                                      }
-                                      disabled={loading || !editName.trim()}
-                                    >
-                                      {loading ? (
-                                        <span className="loading loading-spinner loading-sm"></span>
-                                      ) : (
-                                        <>
-                                          <CheckIcon className="w-4 h-4" />
-                                          Save Changes
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="form-control">
-                                    <label className="label">
-                                      <span className="label-text font-semibold">
-                                        Group Name
-                                      </span>
-                                    </label>
-                                    <input
-                                      type="text"
-                                      className="input input-bordered w-full"
-                                      value={editName}
-                                      onChange={(e) =>
-                                        setEditName(e.target.value)
-                                      }
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                  <div className="form-control">
-                                    <label className="label">
-                                      <span className="label-text font-semibold">
-                                        Description
-                                      </span>
-                                    </label>
-                                    <input
-                                      type="text"
-                                      className="input input-bordered w-full"
-                                      value={editDescription}
-                                      onChange={(e) =>
-                                        setEditDescription(e.target.value)
-                                      }
-                                      disabled={loading}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex justify-between items-start mb-4">
-                                <div>
-                                  <h4 className="font-bold text-lg">
-                                    {group.name}
-                                  </h4>
-                                  <p className="text-base-content/70">
-                                    {group.description || "No description"}
-                                  </p>
-                                </div>
-                                <button
-                                  className="btn btn-sm btn-ghost"
-                                  onClick={() => startEdit(group)}
-                                  disabled={loading}
-                                >
-                                  <PencilIcon className="w-4 h-4" />
-                                  Edit Details
-                                </button>
-                              </div>
-                            )}
-
-                            {/* Member Management Section - Placeholder for future */}
-                            <div className="divider my-4">
-                              Member Management
-                            </div>
-                            <div className="alert alert-info">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                className="stroke-current shrink-0 w-6 h-6"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                ></path>
-                              </svg>
-                              <span>
-                                Member management will be available soon. You'll
-                                be able to add and remove users from groups
-                                here.
-                              </span>
-                            </div>
+                  return (
+                    <React.Fragment key={group.id}>
+                      {/* Main Row */}
+                      <tr
+                        className={`hover cursor-pointer ${
+                          expandedGroup === group.id ? "bg-base-300" : ""
+                        }`}
+                        onClick={() => toggleExpand(group.id)}
+                      >
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={selectedGroups.has(group.id)}
+                            onChange={() => toggleSelectGroup(group.id)}
+                          />
+                        </td>
+                        <td className="font-semibold">{group.name}</td>
+                        <td className="text-base-content/70">
+                          {group.description || "No description"}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <UserGroupIcon className="size-6" />
+                            <span className="badge badge-ghost">
+                              {group.memberCount}
+                            </span>
                           </div>
                         </td>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <div className="flex gap-2">
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => {
+                                setExpandedGroup(group.id);
+                                startEdit(group);
+                              }}
+                              disabled={loading}
+                            >
+                              <PencilIcon className="size-6" />
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => handleDeleteGroup(group.id)}
+                              disabled={loading}
+                            >
+                              <TrashIcon className="size-6 text-error" />
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          {expandedGroup === group.id ? (
+                            <ChevronUpIcon className="size-6" />
+                          ) : (
+                            <ChevronDownIcon className="size-6" />
+                          )}
+                        </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))
+
+                      {/* Expanded Row */}
+                      {expandedGroup === group.id && (
+                        <tr>
+                          <td colSpan={6} className="bg-base-100 p-0">
+                            <div className="p-6 border-t-2 border-primary/20">
+                              {/* Edit Mode */}
+                              {editingGroup === group.id ? (
+                                <div className="space-y-4">
+                                  <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-bold text-lg">
+                                      Edit Group Details
+                                    </h4>
+                                    <div className="flex gap-2">
+                                      <button
+                                        className="btn btn-sm btn-ghost"
+                                        onClick={cancelEdit}
+                                        disabled={loading}
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        className="btn btn-sm btn-primary"
+                                        onClick={() =>
+                                          handleUpdateGroup(group.id)
+                                        }
+                                        disabled={loading || !editName.trim()}
+                                      >
+                                        {loading ? (
+                                          <span className="loading loading-spinner loading-sm"></span>
+                                        ) : (
+                                          <>
+                                            <CheckIcon className="w-4 h-4" />
+                                            Save Changes
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="form-control">
+                                      <label className="label">
+                                        <span className="label-text font-semibold">
+                                          Group Name
+                                        </span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        className="input input-bordered w-full"
+                                        value={editName}
+                                        onChange={(e) =>
+                                          setEditName(e.target.value)
+                                        }
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                    <div className="form-control">
+                                      <label className="label">
+                                        <span className="label-text font-semibold">
+                                          Description
+                                        </span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        className="input input-bordered w-full"
+                                        value={editDescription}
+                                        onChange={(e) =>
+                                          setEditDescription(e.target.value)
+                                        }
+                                        disabled={loading}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex justify-between items-start mb-4">
+                                  <div>
+                                    <h4 className="font-bold text-lg">
+                                      {group.name}
+                                    </h4>
+                                    <p className="text-base-content/70">
+                                      {group.description || "No description"}
+                                    </p>
+                                  </div>
+                                  <button
+                                    className="btn btn-sm btn-ghost"
+                                    onClick={() => startEdit(group)}
+                                    disabled={loading}
+                                  >
+                                    <PencilIcon className="w-4 h-4" />
+                                    Edit Details
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Member Management Section */}
+                              <div className="divider my-4">
+                                Member Management
+                              </div>
+
+                              {isLoadingMembers ? (
+                                <div className="flex justify-center items-center py-8">
+                                  <span className="loading loading-spinner loading-lg"></span>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-6">
+                                  {/* Current Members */}
+                                  <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                      <h5 className="font-semibold flex items-center gap-2">
+                                        <UserGroupIcon className="w-5 h-5" />
+                                        Current Members ({currentMembers.length}
+                                        )
+                                      </h5>
+                                    </div>
+                                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                                      {currentMembers.length === 0 ? (
+                                        <div className="text-center py-4 text-base-content/60">
+                                          No members in this group yet
+                                        </div>
+                                      ) : (
+                                        currentMembers.map((user) => (
+                                          <div
+                                            key={user.id}
+                                            className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-300 transition"
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <AvatarCell name={user.name} />
+                                              <div>
+                                                <p className="font-medium">
+                                                  {user.name}
+                                                </p>
+                                                <p className="text-sm text-base-content/60">
+                                                  {user.email}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <button
+                                              className="btn btn-ghost btn-sm text-error hover:bg-error/20"
+                                              onClick={() =>
+                                                handleRemoveMember(
+                                                  group.id,
+                                                  user.id!
+                                                )
+                                              }
+                                              disabled={loading}
+                                            >
+                                              <XMarkIcon className="size-6" />
+                                            </button>
+                                          </div>
+                                        ))
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Add Members */}
+                                  <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                      <h5 className="font-semibold">
+                                        Add Members
+                                      </h5>
+                                    </div>
+                                    <div className="form-control mb-3">
+                                      <div className="input-group">
+                                        <span className="bg-base-300"></span>
+                                        <input
+                                          type="text"
+                                          placeholder="Search users..."
+                                          className="input input-bordered w-full"
+                                          value={memberSearchTerm}
+                                          onChange={(e) =>
+                                            setMemberSearchTerm(e.target.value)
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                                      {filteredAvailable.length === 0 ? (
+                                        <div className="text-center py-4 text-base-content/60">
+                                          {availableUsersForGroup.length === 0
+                                            ? "All users are already in this group"
+                                            : "No users found"}
+                                        </div>
+                                      ) : (
+                                        filteredAvailable.map((user) => (
+                                          <div
+                                            key={user.id}
+                                            className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-300 transition"
+                                          >
+                                            <div className="flex items-center gap-3">
+                                              <AvatarCell name={user.name} />
+                                              <div>
+                                                <p className="font-medium">
+                                                  {user.name}
+                                                </p>
+                                                <p className="text-sm text-base-content/60">
+                                                  {user.email}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <button
+                                              className="btn btn-ghost btn-sm text-success hover:bg-success/20"
+                                              onClick={() =>
+                                                handleAddMember(
+                                                  group.id,
+                                                  user.id!
+                                                )
+                                              }
+                                              disabled={loading}
+                                            >
+                                              <PlusIcon className="size-6" />
+                                            </button>
+                                          </div>
+                                        ))
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>

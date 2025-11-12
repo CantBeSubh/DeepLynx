@@ -40,7 +40,7 @@ public class GroupBusiness : IGroupBusiness
             groupQuery = groupQuery.Where(g => !g.IsArchived);
         }
 
-        return groupQuery
+        return await groupQuery
             .Select(g => new GroupResponseDto()
             {
                 Id = g.Id,
@@ -50,7 +50,9 @@ public class GroupBusiness : IGroupBusiness
                 LastUpdatedBy = g.LastUpdatedBy,
                 IsArchived = g.IsArchived,
                 OrganizationId = g.OrganizationId,
-            });
+                MemberCount = g.Users.Count(u => !u.IsArchived)
+            })
+            .ToListAsync();
     }
 
     /// <summary>
@@ -300,12 +302,16 @@ public class GroupBusiness : IGroupBusiness
     /// <exception cref="KeyNotFoundException">Returned if group or user not found</exception>
     public async Task<bool> RemoveUserFromGroup(long groupId, long userId)
     {
-        var group = await _context.Groups.FindAsync(groupId);
-        if (group == null || !group.IsArchived)
+        // Include the Users collection when loading the group
+        var group = await _context.Groups
+            .Include(g => g.Users)
+            .FirstOrDefaultAsync(g => g.Id == groupId);
+
+        if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
 
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-        if (user == null || !user.IsArchived)
+        if (user == null || user.IsArchived)
             throw new KeyNotFoundException($"User with id {userId} does not exist");
 
         group.Users.Remove(user);

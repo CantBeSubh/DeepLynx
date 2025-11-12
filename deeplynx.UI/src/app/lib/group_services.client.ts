@@ -2,7 +2,7 @@
 "use client";
 
 import api from "./api";
-import { GroupResponseDto } from "../(home)/types/responseDTOs";
+import { GroupResponseDto, UserResponseDto } from "../(home)/types/responseDTOs";
 
 /** ===== Client calls (browser; cookie/session-based) ===== */
 
@@ -30,8 +30,7 @@ export async function createGroup(
   name: string,
   description: string
 ): Promise<GroupResponseDto> {
-  const res = await api.post("/groups/CreateGroup", {
-    organizationId,
+  const res = await api.post(`/groups/CreateGroup?organizationId=${organizationId}`, {
     name,
     description,
   }, {
@@ -58,17 +57,17 @@ export async function deleteGroup(groupId: number | string): Promise<void> {
   await api.delete(`/groups/DeleteGroup/${groupId}`);
 }
 
-export async function getGroupMembers(groupId: number | string) {
+export async function getGroupMembers(groupId: number | string): Promise<UserResponseDto[]> {
   const res = await api.get(`/groups/GetGroupMembers/${groupId}`);
   return res.data;
 }
 
-export async function addMemberToGroup(
+export async function addUserToGroup(
   groupId: number | string,
   userId: number | string
 ): Promise<void> {
   const res = await api.post(
-    `/groups/AddMemberToGroup?groupId=${groupId}&userId=${userId}`,
+    `/groups/AddUserToGroup?groupId=${groupId}&userId=${userId}`,
     { groupId, userId },
     {
       headers: { "Content-Type": "application/json" },
@@ -77,14 +76,11 @@ export async function addMemberToGroup(
   return res.data;
 }
 
-export async function removeMemberFromGroup(
+export async function removeUserFromGroup(
   groupId: number | string,
   userId: number | string
 ): Promise<void> {
   await api.delete(
-    `/groups/RemoveMemberFromGroup?groupId=${groupId}&userId=${userId}`,
-    {
-      headers: { "Content-Type": "application/json" },
-    }
+    `/groups/RemoveUserFromGroup?groupId=${groupId}&userId=${userId}`
   );
 }
