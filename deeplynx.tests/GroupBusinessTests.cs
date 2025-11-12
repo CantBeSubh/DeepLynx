@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -572,24 +573,21 @@ namespace deeplynx.tests
         [Fact]
         public async Task RemoveUser_Succeeds_IfGroupUserExists()
         {
-            // Note: Same bug exists in RemoveUserFromGroup - inverted logic
-            // This test documents the current (buggy) behavior
-            
-            // Act & Assert - will fail due to inverted logic in business class
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.RemoveUserFromGroup(gid, uid));
-            
-            Assert.Contains($"Group with id {gid} not found", exception.Message);
+            // Act
+            var result = await _groupBusiness.RemoveUserFromGroup(gid, uid);
+    
+            // Assert
+            Assert.True(result);
         }
         
         [Fact]
-        public async Task RemoveUser_Fails_IfGroupUserNotExists()
+        public async Task RemoveUser_ReturnsFalse_IfUserNotInGroup()
         {
-            // Act & Assert - will fail due to inverted logic in business class
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.RemoveUserFromGroup(gid, uid2));
-            
-            Assert.Contains($"Group with id {gid} not found", exception.Message);
+            // Act
+            var result = await _groupBusiness.RemoveUserFromGroup(gid, uid2);
+    
+            // Assert
+            Assert.False(result);
         }
         
         [Fact]
@@ -605,11 +603,13 @@ namespace deeplynx.tests
         [Fact]
         public async Task RemoveUser_Fails_IfUserNotFound()
         {
+            // Arrange: User 99999 doesn't exist in DB
+    
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _groupBusiness.RemoveUserFromGroup(gid, 99999));
-            
-            Assert.Contains("Group with id", exception.Message); // Will fail on group check first due to bug
+    
+            Assert.Contains("User with id 99999 does not exist", exception.Message);
         }
         
         #endregion

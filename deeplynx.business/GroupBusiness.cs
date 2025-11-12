@@ -302,9 +302,8 @@ public class GroupBusiness : IGroupBusiness
     /// <exception cref="KeyNotFoundException">Returned if group or user not found</exception>
     public async Task<bool> RemoveUserFromGroup(long groupId, long userId)
     {
-        // Include the Users collection when loading the group
         var group = await _context.Groups
-            .Include(g => g.Users)
+            .Include(g => g.Users)  // Loads only users in THIS group
             .FirstOrDefaultAsync(g => g.Id == groupId);
 
         if (group == null || group.IsArchived)
@@ -313,6 +312,10 @@ public class GroupBusiness : IGroupBusiness
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
         if (user == null || user.IsArchived)
             throw new KeyNotFoundException($"User with id {userId} does not exist");
+
+        // Check if user is in the group
+        if (!group.Users.Any(u => u.Id == userId))
+            return false;  // User exists in DB but not in this group
 
         group.Users.Remove(user);
         await _context.SaveChangesAsync();
