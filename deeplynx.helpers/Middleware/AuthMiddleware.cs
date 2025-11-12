@@ -5,7 +5,11 @@ using Microsoft.AspNetCore.Routing;
 namespace deeplynx.helpers;
 
 // Attribute to decorate controllers/actions
-// Example usage: [AuthInOrg("read", "organization")]
+// Example usage: 
+// Multiple Separate Attributes
+// [Auth("read", "document")]
+// [Auth("write", "document")]
+// [Auth("delete", "document")]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class AuthAttribute : Attribute
 {
@@ -28,7 +32,7 @@ public class AuthMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IOrgRolePermissionService rolePermissionService)
+    public async Task InvokeAsync(HttpContext context, IOrgRolePermissionService orgRolePermissionService, IProjectRolePermissionService projectRolePermissionService)
     {
         var endpoint = context.GetEndpoint();
         if (endpoint == null)
@@ -36,8 +40,6 @@ public class AuthMiddleware
             await _next(context);
             return;
         }
-        
-        
 
         // Get all AuthInOrg attributes from the endpoint
         var authAttributes = endpoint.Metadata
@@ -59,47 +61,84 @@ public class AuthMiddleware
             return;
         }
         
-        // 1. First try organization route values
+        // Extract both organizationId and projectId from route or query
         int orgId = 0;
+        int projectId = 0;
+        
+        // Try to get organizationId
         var routeOrgId = context.GetRouteValue("organizationId")?.ToString();
         if (!string.IsNullOrEmpty(routeOrgId) && int.TryParse(routeOrgId, out orgId))
         {
             // Found organizationId in route
         }
-        // 2. Then try organization query parameters
         else if (context.Request.Query.TryGetValue("organizationId", out var queryOrgId) 
                  && int.TryParse(queryOrgId.FirstOrDefault(), out orgId))
         {
             // Found organizationId in query
         }
-        // 3. no org for you 
-        else
+        
+        // Try to get projectId
+        var routeProjectId = context.GetRouteValue("projectId")?.ToString();
+        if (!string.IsNullOrEmpty(routeProjectId) && int.TryParse(routeProjectId, out projectId))
+        {
+            // Found projectId in route
+        }
+        else if (context.Request.Query.TryGetValue("projectId", out var queryProjectId) 
+                 && int.TryParse(queryProjectId.FirstOrDefault(), out projectId))
+        {
+            // Found projectId in query
+        }
+
+        // Must have at least one of organizationId or projectId
+        if (orgId <= 0 && projectId <= 0)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsJsonAsync(new { error = "Bad Request: Invalid or missing orgId" });
+            await context.Response.WriteAsJsonAsync(new { error = "Bad Request: Invalid or missing organization or project ID value" });
             return;
         }
 
         // Check each permission requirement
         foreach (var authAttr in authAttributes)
         {
-            // Check if user's roles in this project have the required permission
-            var hasPermission = await rolePermissionService.PermissionInOrg(
-                userId,
-                orgId,
-                authAttr.Action,
-                authAttr.Resource
-            );
+            bool hasOrgPermission = false;
+            bool hasProjectPermission = false;
+
+            // Check organization permission if orgId is present
+            if (orgId > 0)
+            {
+                hasOrgPermission = await orgRolePermissionService.PermissionInOrg(
+                    userId,
+                    orgId,
+                    authAttr.Action,
+                    authAttr.Resource
+                );
+            }
+
+            // Check project permission if projectId is present
+            if (projectId > 0)
+            {
+                hasProjectPermission = await projectRolePermissionService.PermissionInProject(
+                    userId,
+                    projectId,
+                    authAttr.Action,
+                    authAttr.Resource
+                );
+            }
+
+            // User needs permission in at least one scope (org OR project)
+            // Only fail if they have neither org permission nor project permission
+            bool hasPermission = hasOrgPermission || hasProjectPermission;
 
             if (!hasPermission)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    error = "Forbidden: User role does not have required permissions",
+                    error = "Forbidden: User role does not have required permissions in organization or project",
                     required = new
                     {
-                        orgId,
+                        orgId = orgId > 0 ? orgId : (int?)null,
+                        projectId = projectId > 0 ? projectId : (int?)null,
                         action = authAttr.Action,
                         resource = authAttr.Resource
                     }
@@ -111,6 +150,4 @@ public class AuthMiddleware
         // All permission checks passed
         await _next(context);
     }
-    
-    
 }
