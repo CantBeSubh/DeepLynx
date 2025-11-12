@@ -50,4 +50,7 @@ public partial class OauthApplication
     
     [InverseProperty("UpdatedOauthApplications")]
     public virtual User? LastUpdatedByUser { get; set; }
+
+    [InverseProperty("OauthApplication")]
+    public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
 }

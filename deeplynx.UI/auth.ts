@@ -3,6 +3,7 @@ import NextAuth from "next-auth";
 import { JWT, JWTEncodeParams, JWTDecodeParams } from "next-auth/jwt";
 import Okta from "next-auth/providers/okta";
 import jsonWebToken from "jsonwebtoken";
+import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 
@@ -106,6 +107,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async jwt({ token, account, profile }): Promise<JWT> {
             // Initial sign in
             if (account && profile) {
+
+            // Read organization from cookie during sign in
+            const cookieStore = await cookies();
+            const orgSessionCookie = cookieStore.get("organizationSession");
+            let organizationId: number | undefined;
+            
+            if (orgSessionCookie) {
+                try {
+                    const orgSession = JSON.parse(orgSessionCookie.value);
+                    organizationId = orgSession.organizationId;
+                } catch (e) {
+                    console.error("Failed to parse org cookie:", e);
+                }
+            }
+            
+
                 return {
                     ...token,
                     access_token: account.access_token,
@@ -118,6 +135,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     name: profile.name || undefined,
                     email: profile.email || undefined,
                     sub: profile.sub || undefined,
+                    organizationId: organizationId,
                 };
             }
 
@@ -167,6 +185,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 session.user.oktaId = (token.oktaId || undefined) as string | undefined;
                 session.user.username = (token.username || undefined) as string | undefined;
                 session.user.groups = token.groups as string[] | undefined;
+                session.user.organizationId = token.organizationId as number | undefined;
             }
 
             // Add tokens to session
@@ -178,6 +197,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             return session;
         },
+
+        async redirect({ url, baseUrl }) {
+            // If redirecting to a specific URL within the app, allow it
+            if (url.startsWith(baseUrl)) {
+                return url;
+            }
+            
+            // After login, check if user has an organization selected
+            try {
+                const cookieStore = await cookies();
+                const orgSessionCookie = cookieStore.get("organizationSession");
+                
+                if (orgSessionCookie) {
+                    // User has an org selected, redirect to dashboard
+                    return `${baseUrl}`;
+                }
+            } catch (e) {
+                console.error("Failed to check organization cookie:", e);
+            }
+            
+            // No org selected, redirect to selection page
+            return `${baseUrl}/select-org`;
+        }
     },
     pages: {
         signIn: '/login/signin',

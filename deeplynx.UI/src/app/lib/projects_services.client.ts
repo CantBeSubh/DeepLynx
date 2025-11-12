@@ -5,8 +5,18 @@ import api from "./api";
 
 /** ===== Client calls (browser; cookie/session-based) ===== */
 
-export async function getAllProjects() {
-  const res = await api.get("/projects/GetAllProjects");
+// Update the getAllProjects service
+export async function getAllProjects(
+  organizationId?: number | string,
+  hideArchived: boolean = true
+) {
+  const params: Record<string, string | number | boolean> = { hideArchived };
+  
+  if (organizationId !== undefined) {
+    params.organizationId = organizationId;
+  }
+
+  const res = await api.get("/projects/GetAllProjects", { params });
   return res.data;
 }
 

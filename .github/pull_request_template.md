@@ -34,6 +34,7 @@ Uncomment this section if a screenshot is needed.
 <!-- We're here to help! -->
 
 - [ ] Changes are limited to a single goal / jira ticket
+- [ ] Documentation added for change
 - [ ] *All* future TODOs are captured in issues or jira tickets
 - [ ] I have read the [CONTRIBUTING](../blob/develop/CONTRIBUTING.md) document.
 - [ ] All relevant repo and/or project documentation has been updated to reflect the changes in this PR.

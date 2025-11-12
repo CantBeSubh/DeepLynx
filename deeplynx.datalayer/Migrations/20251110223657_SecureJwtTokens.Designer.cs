@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251110223657_SecureJwtTokens")]
+    partial class SecureJwtTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -901,10 +904,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<bool>("DefaultOrg")
-                        .HasColumnType("boolean")
-                        .HasColumnName("default_org");
-
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
@@ -937,9 +936,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasDatabaseName("idx_organizations_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_organizations_id");
-
-                    b.HasIndex(new[] { "Name" }, "unique_organization_name")
-                        .IsUnique();
 
                     b.ToTable("organizations", "deeplynx");
                 });
@@ -1055,10 +1051,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId", "OrganizationId", "LabelId", "Action" }, "permissions_unique_label_action")
                         .IsUnique();
 
-                    b.HasIndex(new[] { "OrganizationId", "Resource", "Action" }, "permissions_unique_org_resource_action")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "ProjectId", "Resource", "Action" }, "permissions_unique_project_resource_action")
+                    b.HasIndex(new[] { "Resource", "Action" }, "permissions_unique_resource_action")
                         .IsUnique();
 
                     b.ToTable("permissions", "deeplynx");
@@ -1109,7 +1102,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("OrganizationId")
+                    b.Property<long?>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
@@ -2093,8 +2086,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Projects")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("projects_organization_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");

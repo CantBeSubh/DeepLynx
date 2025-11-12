@@ -1,24 +1,27 @@
+// src/app/(home)/components/SideMenu.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getAllProjects } from "@/app/lib/projects_services.client";
+import { ProjectResponseDto } from "../types/responseDTOs";
 import {
   AdjustmentsHorizontalIcon,
   ArrowUpTrayIcon,
-  BookmarkSquareIcon,
-  BugAntIcon,
-  ChatBubbleLeftRightIcon,
+  BellIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   FolderIcon,
-  PresentationChartLineIcon,
+  HomeIcon,
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
   TagIcon,
-  BellIcon
 } from "@heroicons/react/24/outline";
 
 interface SideMenuProps {
@@ -29,11 +32,36 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
-  const { project } = useProjectSession();
+  const { project, setProject } = useProjectSession();
+  const { organization } = useOrganizationSession();
 
-  // State variables for selected item and menu collapse state
+  // State variables
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(false);
+  const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [activeProject, setActivepProject] = useState<ProjectResponseDto>()
+
+  // Memoize fetchProjects to prevent it from changing on every render
+  const fetchProjects = useCallback(async () => {
+    if (!organization) return;
+
+    try {
+      setLoadingProjects(true);
+      const data = await getAllProjects(organization.organizationId, true);
+      setProjects(data);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, [organization]);
+
+  // Fetch projects when organization changes
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   // Effect to set the selected item based on the current pathname
   useEffect(() => {
@@ -62,14 +90,24 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     onToggle(newState);
   };
 
+  // Function to handle project selection
+  const handleProjectClick = (selectedProject: ProjectResponseDto) => {
+    setProject({
+      projectId: selectedProject.id.toString(),
+      projectName: selectedProject.name,
+    });
+    setActivepProject(selectedProject)
+    router.push(`/project/${selectedProject.id}`);
+  };
+
   // Function to handle item click events
   const handleItemClick = (
     item: string,
     event: React.MouseEvent<HTMLElement>
   ) => {
     event.preventDefault();
-    setSelectedItem(item); // Set the clicked item as selected
-    router.push(item); // Navigate to the clicked item's path
+    setSelectedItem(item);
+    router.push(item);
   };
 
   // Function to check if an item is disabled
@@ -84,7 +122,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       "/contact",
       "/fileBug",
       "/upload_center",
-      "/data_catalog",
+      "project_homepage",
       "/member_management",
       "/event_management",
       "/tag_management",
@@ -104,25 +142,97 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     ].join(" ");
   };
 
+  // Check if a project is currently active
+  const isProjectActive = (projectId: string | number) => {
+    // Check if we're on the project page
+    const isOnProjectPage = pathname.includes(`/project/${projectId}`);
+
+    // Check if this is the current session project (for data catalog, etc.)
+    const isSessionProject = project?.projectId === projectId.toString();
+
+    return isOnProjectPage || isSessionProject;
+  };
+
   return (
-    <div className="fixed top-18 bottom-0 flex z-50">
+    <div className="fixed top-18 bottom-0 left-18 flex z-30">
       <aside
-        className={`h-full shadow-xl ${
-          isCollapsed ? "w-22" : "w-64"
-        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
+          } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
       >
+        {/* Projects Section */}
+        <div className="mt-5">
+          <div
+            className="flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-info/20 rounded transition"
+            onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
+          >
+            <div className="flex items-center min-w-0 flex-1">
+              <FolderIcon className="size-6 flex-shrink-0" />
+              {!isCollapsed && <div className="flex flex-col p-4 min-w-0">
+                <span className="text-xs opacity-70">{t.translations.PROJECTS}</span>
+                <h1 className="text-lg font-bold truncate">
+                  {activeProject?.name || "No Project"}
+                </h1>
+              </div>}
+            </div>
+            {!isCollapsed && (
+              <button className="btn btn-ghost btn-xs btn-circle flex-shrink-0">
+                {isProjectsExpanded ? (
+                  <ChevronUpIcon className="size-4" />
+                ) : (
+                  <ChevronDownIcon className="size-4" />
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Projects List shadow-[0_0_20px_rgba(0,0,0,0.3)]*/}
+          {!isCollapsed && isProjectsExpanded && (
+            <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto bg-[var(--base-400)] border border-white/10 rounded-lg ">
+              {loadingProjects ? (
+                <li className="py-2 px-4 text-sm text-primary-content/70">
+                  <span className="loading loading-spinner loading-sm"></span>
+                  <span className="ml-2">Loading...</span>
+                </li>
+              ) : projects.length === 0 ? (
+                <li className="py-2 px-4 text-sm text-base-content/70">
+                  No projects found
+                </li>
+              ) : (
+                projects.map((proj) => (
+                  <li key={proj.id}>
+                    <button
+                      onClick={() => handleProjectClick(proj)}
+                      className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${isProjectActive(proj.id)
+                        ? "bg-info/30 text-primary-content font-semibold"
+                        : "hover:bg-info/20 text-primary-content"
+                        }`}
+                    >
+                      <span className="truncate">{proj.name}</span>
+                      {isProjectActive(proj.id) && (
+                        <span className="ml-auto badge badge-xs flex-shrink-0">Active</span>
+                      )}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+
+
         {/* Home */}
-        <ul className="">
+        <ul className="mt-8">
           <li>
             <Link
-              href="/data_catalog"
-              onClick={(e) => handleItemClick("/data_catalog", e)}
-              className={getItemClass("/data_catalog")}
+              href={`/project/${project?.projectId}`}
+              prefetch={false}
+              onClick={(e) =>
+                handleItemClick(`/project/${project?.projectId}`, e)
+              }
+              className={getItemClass(`/project/${project?.projectId}`)}
             >
-              <FolderIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.DATA_CATALOG}</p>
-              )}
+              <RectangleGroupIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Project Dashboard</p>}
             </Link>
           </li>
           <li className="mt-2">
@@ -136,7 +246,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
-          <li className="mt-2">
+          {/* <li className="mt-2">
             <Link
               href="/tag_management"
               prefetch={false}
@@ -145,90 +255,30 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               <TagIcon className="size-6" />
               {!isCollapsed && <p className="ml-2">Tag Management</p>}
             </Link>
-          </li>
-          <li className="mt-2">
-            <Link
-              href={"/member_management"}
-              onClick={(e) => handleItemClick("/member_management", e)}
-              className={getItemClass("/member_management")}
-            >
-              <AdjustmentsHorizontalIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.MEMBER_MANAGEMENT}</p>
-              )}
-            </Link>
-          </li>
+          </li> */}
 
           <li className="mt-2">
-          <div className="flex items-center">
-            <Link 
+            <Link
               href="#"
               onClick={(e) => handleItemClick("/event_management", e)}
-              className={getItemClass("/event_management")}>
-              
+              className={getItemClass("/event_management")}
+            >
               <BellIcon className="size-6" />
-              {!isCollapsed && (
-                  <p className="ml-2">Event Management</p>
-              )}
-            </Link>
-          </div>
-        </li>
-        </ul>
-
-        <div className="divider divider-secondary" />
-
-        <ul className="flex-grow">
-          <li>
-            <Link
-              href={`/project/${project?.projectId}`}
-              prefetch={false}
-              onClick={(e) =>
-                handleItemClick(`/project/${project?.projectId}`, e)
-              }
-              className={getItemClass(`/project/${project?.projectId}`)}
-            >
-              <RectangleGroupIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.PROJECT_MANAGEMENT}</p>
-              )}
+              {!isCollapsed && <p className="ml-2">Event Management</p>}
             </Link>
           </li>
 
-          {/* <li className="mt-2">
-            <Link
-              href="#saved-searches"
-              onClick={(e) => handleItemClick("#saved-searches", e)}
-              className={getItemClass("#saved-searches")}
-            >
-              <BookmarkSquareIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.SAVED_SEARCHES}</p>
-              )}
-            </Link>
-          </li>
           <li className="mt-2">
             <Link
-              href="#timeseries-viewer"
-              onClick={(e) => handleItemClick("#timeseries-viewer", e)}
-              className={getItemClass("#timeseries-viewer")}
-            >
-              <PresentationChartLineIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.TIMESERIES_VIEWER}</p>
-              )}
-            </Link>
-          </li> */}
-          <li className="mt-2">
-            <Link
-              href="/project/${project?.projectId}/project_settings"
+              href={`/project/${project?.projectId || ""}/project_settings`}
               onClick={(e) =>
                 handleItemClick(
-                  `/project/${project?.projectId}/project_settings`,
+                  `/project/${project?.projectId || ""}/project_settings`,
                   e
                 )
               }
               className={getItemClass(
-                `/project/${project?.projectId}/project_settings`
+                `/project/${project?.projectId || ""}/project_settings`
               )}
             >
               <AdjustmentsHorizontalIcon className="size-6" />
@@ -239,68 +289,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
         </ul>
 
-        <div className="divider divider-secondary" />
-        {/* Last 4 Menu Items */}
-        {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
-        <div className="mt-auto">
-          <ul>
-            <li className="mt-2">
-              <button className={getItemClass("/help")}>
-                <a
-                  href={
-                    process.env.NEXT_PUBLIC_DOCS_PATH
-                      ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
-                      : "/docs"
-                  }
-                  className="flex items-center"
-                >
-                  <QuestionMarkCircleIcon className="size-6" />
-                  {!isCollapsed && (
-                    <div className="ml-2">{t.translations.HELP}</div>
-                  )}
-                </a>
-              </button>
-            </li>
-            {/* <li className="mt-2">
-              <Link
-                href="#"
-                prefetch={false}
-                onClick={(e) => {
-                  e.preventDefault();
-                  // open modal / external
-                }}
-                // onClick={(e) => handleItemClick("/contact", e)}
-                className={getItemClass("/contact")}
-              >
-                <ChatBubbleLeftRightIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.CONTACT}</p>
-                )}
-              </Link>
-            </li>
-            <li className="mt-2">
-              <Link
-                href="#"
-                prefetch={false}
-                onClick={(e) => {
-                  e.preventDefault();
-                  // open modal / external
-                }}
-                // onClick={(e) => handleItemClick("/fileBug", e)}
-                className={getItemClass("/fileBug")}
-              >
-                <BugAntIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.FILE_A_BUG}</p>
-                )}
-              </Link>
-            </li> */}
-          </ul>
-        </div>
+
+
       </aside>
-      {/* Toggle tab (sticking out to the right) */}
+
+      {/* Toggle tab */}
       <div
-        className="h-8 w-4 bg-secondary text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-16"
+        className="h-8 w-4 bg-base-300 brightness-120 text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-16"
         onClick={toggleMenu}
       >
         {isCollapsed ? (

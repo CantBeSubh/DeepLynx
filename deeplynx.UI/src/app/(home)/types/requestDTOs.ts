@@ -57,3 +57,12 @@ export type UpdateOauthApplicationRequestDto = {
   baseUrl?: string;
   appOwnerEmail?: string;
 }
+
+export type CreateObjectStorageRequestDto = {
+  name: string;
+  config: string;
+}
+
+export type UpdateObjectStorageRequestDto = {
+  name: string;
+}

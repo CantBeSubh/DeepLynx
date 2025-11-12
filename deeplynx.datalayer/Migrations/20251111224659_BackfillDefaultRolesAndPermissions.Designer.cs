@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251111224659_BackfillDefaultRolesAndPermissions")]
+    partial class BackfillDefaultRolesAndPermissions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1055,10 +1058,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId", "OrganizationId", "LabelId", "Action" }, "permissions_unique_label_action")
                         .IsUnique();
 
-                    b.HasIndex(new[] { "OrganizationId", "Resource", "Action" }, "permissions_unique_org_resource_action")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "ProjectId", "Resource", "Action" }, "permissions_unique_project_resource_action")
+                    b.HasIndex(new[] { "Resource", "Action" }, "permissions_unique_resource_action")
                         .IsUnique();
 
                     b.ToTable("permissions", "deeplynx");
