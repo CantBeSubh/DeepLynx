@@ -16,6 +16,7 @@ public class EdgeBusiness : IEdgeBusiness
     private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="EdgeBusiness" /> class.
@@ -25,11 +26,12 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="historicalEdgeBusiness">Passed in context of historical edge objects.</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
     public EdgeBusiness(
-        DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
+        DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness, IBulkCopyUpsertExecutor bulkCopyUpsertExecutor)
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
+        _bulkCopyUpsertExecutor = bulkCopyUpsertExecutor;
     }
 
     /// <summary>
@@ -327,54 +329,17 @@ public class EdgeBusiness : IEdgeBusiness
             LastUpdatedBy = edge.LastUpdatedBy
         };
     }
-    private static async Task EnsureRecordIdsExistOnce(
-        DeeplynxContext ctx, List<CreateEdgeRequestDto> edges)
-    {
-        var ids = edges.SelectMany(e => new[] { e.OriginId!.Value, e.DestinationId!.Value })
-            .Distinct()
-            .ToArray();
-
-        var existing = await ctx.Records
-            .Where(r => ids.Contains(r.Id))
-            .Select(r => r.Id)
-            .ToListAsync();
-
-        if (existing.Count != ids.Length)
-        {
-            var missing = ids.Except(existing).Take(10);
-            throw new KeyNotFoundException($"Missing record IDs: {string.Join(",", missing)}");
-        }
-    }
 
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
-        long projectId,
-        long dataSourceId,
-        List<CreateEdgeRequestDto> edges)
+        long projectId, long dataSourceId, List<CreateEdgeRequestDto> edges)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-
-        if (edges.Count == 0)
-            return new List<EdgeResponseDto>();
-
-        foreach (var e in edges)
-        {
-            if (!e.OriginId.HasValue || !e.DestinationId.HasValue)
-                throw new ValidationException("Destination and origin IDs are missing or invalid.");
-
-            if (e.OriginId == e.DestinationId)
-                throw new ValidationException("Destination and origin IDs cannot be the same.");
-        }
-
-        await EnsureRecordIdsExistOnce(_context, edges);
-
-        // EF is PER ROW! Use Npgsql directly for COPY/UPSERT
         var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
         if (conn.State != ConnectionState.Open) await conn.OpenAsync();
         await using var tx = await conn.BeginTransactionAsync();
 
-        // Variable copy DDL 
-        const string createTempSql = @"
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        var createTempSql = @"
         CREATE TEMP TABLE tmp_edges
         (
             project_id        BIGINT NOT NULL,
@@ -385,34 +350,12 @@ public class EdgeBusiness : IEdgeBusiness
             last_updated_at   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
             is_archived       BOOLEAN NOT NULL
         ) ON COMMIT DROP;";
-        await using (var cmd = new NpgsqlCommand(createTempSql, conn, tx))
-        {
-            await cmd.ExecuteNonQueryAsync();
-        }
 
-        // Binary copy here
-        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        await using (var writer = conn.BeginBinaryImport(@"
+        var copyCmd = @"
         COPY tmp_edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived)
-        FROM STDIN (FORMAT BINARY)"))
-        {
-            foreach (var e in edges)
-            {
-                await writer.StartRowAsync();
-                writer.Write(projectId, NpgsqlDbType.Bigint);
-                writer.Write(dataSourceId, NpgsqlDbType.Bigint);
-                writer.Write(e.OriginId!.Value, NpgsqlDbType.Bigint);
-                writer.Write(e.DestinationId!.Value, NpgsqlDbType.Bigint);
-                if (e.RelationshipId.HasValue) writer.Write(e.RelationshipId.Value, NpgsqlDbType.Bigint);
-                else writer.WriteNull();
-                writer.Write(now, NpgsqlDbType.Timestamp);
-                writer.Write(false, NpgsqlDbType.Boolean);
-            }
+        FROM STDIN (FORMAT BINARY)";
 
-            await writer.CompleteAsync();
-        }
-
-        const string upsertEdgesSql = @"
+        var upsertSql = @"
         INSERT INTO deeplynx.edges
         (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived)
         SELECT project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived
@@ -422,60 +365,40 @@ public class EdgeBusiness : IEdgeBusiness
               last_updated_at = EXCLUDED.last_updated_at
         RETURNING id, project_id, data_source_id, origin_id, destination_id, relationship_id;";
 
-        var upsertSql = upsertEdgesSql; 
+        var result = await _bulkCopyUpsertExecutor.CopyUpsertAsync<CreateEdgeRequestDto, EdgeResponseDto>(
+            conn, tx,
+            createTempSql,
+            copyCmd,
+            edges,
+            (w, e) =>
+            {
+                w.Write(projectId, NpgsqlDbType.Bigint);
+                w.Write(dataSourceId, NpgsqlDbType.Bigint);
+                w.Write(e.OriginId!.Value, NpgsqlDbType.Bigint);
+                w.Write(e.DestinationId!.Value, NpgsqlDbType.Bigint);
+                if (e.RelationshipId.HasValue) w.Write(e.RelationshipId.Value, NpgsqlDbType.Bigint);
+                else w.WriteNull();
+                w.Write(now, NpgsqlDbType.Timestamp);
+                w.Write(false, NpgsqlDbType.Boolean);
+            },
+            upsertSql,
+            r => new EdgeResponseDto
+            {
+                Id = r.GetInt64(r.GetOrdinal("id")),
+                ProjectId = r.GetInt64(r.GetOrdinal("project_id")),
+                DataSourceId = r.GetInt64(r.GetOrdinal("data_source_id")),
+                OriginId = r.GetInt64(r.GetOrdinal("origin_id")),
+                DestinationId = r.GetInt64(r.GetOrdinal("destination_id")),
+                RelationshipId = r.IsDBNull(r.GetOrdinal("relationship_id"))
+                    ? null
+                    : r.GetInt64(r.GetOrdinal("relationship_id"))
+            });
 
-        var result = new List<EdgeResponseDto>(edges.Count);
-        await using (var cmd = new NpgsqlCommand(upsertSql, conn, tx))
-        await using (var reader = await cmd.ExecuteReaderAsync())
-        {
-            var iId = reader.GetOrdinal("id");
-            var iProj = reader.GetOrdinal("project_id");
-            var iDs = reader.GetOrdinal("data_source_id");
-            var iOrig = reader.GetOrdinal("origin_id");
-            var iDest = reader.GetOrdinal("destination_id");
-            var iRel = reader.GetOrdinal("relationship_id");
-
-            while (await reader.ReadAsync())
-                result.Add(new EdgeResponseDto
-                {
-                    Id = reader.GetInt64(iId),
-                    ProjectId = reader.GetInt64(iProj),
-                    DataSourceId = reader.GetInt64(iDs),
-                    OriginId = reader.GetInt64(iOrig),
-                    DestinationId = reader.GetInt64(iDest),
-                    RelationshipId = reader.IsDBNull(iRel) ? null : reader.GetInt64(iRel)
-                });
-        }
-
-        //BulkInsertEdgeEvents(conn, tx, projectId, result);
+        // bulk events via a separate component
+        //await _eventsWriter.BulkInsertEdgeCreatesAsync(conn, tx, projectId, result);
 
         await tx.CommitAsync();
         return result;
-    }
-
-    private static async Task BulkInsertEdgeEvents(
-        Npgsql.NpgsqlConnection conn, Npgsql.NpgsqlTransaction tx,
-        long projectId, List<EdgeResponseDto> edges)
-    {
-        if (edges.Count == 0) return;
-
-        // Chunk to keep SQL text modest
-        const int chunk = 5000;
-        for (int i = 0; i < edges.Count; i += chunk)
-        {
-            var slice = edges.Skip(i).Take(chunk);
-            var values = string.Join(",",
-                slice.Select(e =>
-                    $"('create','edge',{e.Id}, NULL, {projectId}, '{{}}', {e.DataSourceId})"));
-
-            var sql = $@"
-            INSERT INTO events (operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id)
-            SELECT v.operation, v.entity_type, v.entity_id, v.entity_name, v.project_id, v.properties, v.data_source_id
-            FROM (VALUES {values}) AS v(operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id);";
-
-            await using var cmd = new Npgsql.NpgsqlCommand(sql, conn, tx);
-            await cmd.ExecuteNonQueryAsync();
-        }
     }
 
     /// <summary>
@@ -640,6 +563,51 @@ public class EdgeBusiness : IEdgeBusiness
         });
 
         return edge.Id;
+    }
+
+    private static async Task EnsureRecordIdsExistOnce(
+        DeeplynxContext ctx, List<CreateEdgeRequestDto> edges)
+    {
+        var ids = edges.SelectMany(e => new[] { e.OriginId!.Value, e.DestinationId!.Value })
+            .Distinct()
+            .ToArray();
+
+        var existing = await ctx.Records
+            .Where(r => ids.Contains(r.Id))
+            .Select(r => r.Id)
+            .ToListAsync();
+
+        if (existing.Count != ids.Length)
+        {
+            var missing = ids.Except(existing).Take(10);
+            throw new KeyNotFoundException($"Missing record IDs: {string.Join(",", missing)}");
+        }
+    }
+
+
+    private static async Task BulkInsertEdgeEvents(
+        NpgsqlConnection conn, NpgsqlTransaction tx,
+        long projectId, List<EdgeResponseDto> edges)
+    {
+        if (edges.Count == 0) return;
+
+        // Chunk to keep SQL text modest
+        const int chunk = 5000;
+        for (var i = 0; i < edges.Count; i += chunk)
+        {
+            var slice = edges.Skip(i).Take(chunk);
+            var values = string.Join(",",
+                slice.Select(e =>
+                    $"('create','edge',{e.Id}, NULL, {projectId}, '{{}}', {e.DataSourceId})"));
+
+            var sql = $@"
+            INSERT INTO events (operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id)
+            SELECT v.operation, v.entity_type, v.entity_id, v.entity_name, v.project_id, v.properties, v.data_source_id
+            FROM (VALUES {values}) AS v(operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id);";
+
+            await using var cmd = new NpgsqlCommand(sql, conn, tx);
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 
     /// <summary>

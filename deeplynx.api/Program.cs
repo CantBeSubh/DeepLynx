@@ -5,6 +5,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.graph;
 using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
+using deeplynx.helpers.BigData;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
@@ -207,6 +208,7 @@ try
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
     builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
     builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
+    builder.Services.AddScoped<IBulkCopyUpsertExecutor, BulkCopyUpsertExecutor>();
     
     builder.Services.AddOpenApi(options =>
     {

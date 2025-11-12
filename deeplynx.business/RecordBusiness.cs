@@ -17,6 +17,7 @@ public class RecordBusiness : IRecordBusiness
     private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RecordBusiness" /> class.
@@ -24,11 +25,12 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="context">The database context used for the record operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
-    public RecordBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
+    public RecordBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness, IBulkCopyUpsertExecutor bulkCopyUpsertExecutor)
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
+        _bulkCopyUpsertExecutor = bulkCopyUpsertExecutor;
     }
 
     /// <summary>
@@ -251,22 +253,22 @@ public class RecordBusiness : IRecordBusiness
         };
     }
 
+    // Adapter around your executor, focused on the records table
     public async Task<List<RecordResponseDto>> BulkCreateRecords(
-        long projectId,
-        long dataSourceId,
-        List<CreateRecordRequestDto> records)
+        long projectId, long dataSourceId, List<CreateRecordRequestDto> records)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
+        if (records.Count == 0) return new List<RecordResponseDto>();
 
-        if (records.Count == 0)
-            throw new Exception("Unable to bulk create records: no records selected for creation");
-
+        // One-shot validation for object storage references (optional, fast)
         await EnsureObjectStoragesExistOnce(projectId, records);
 
         var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
         if (conn.State != ConnectionState.Open) await conn.OpenAsync();
         await using var tx = await conn.BeginTransactionAsync();
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         const string createTempSql = @"
         CREATE TEMP TABLE tmp_records
@@ -285,87 +287,83 @@ public class RecordBusiness : IRecordBusiness
             is_archived         BOOLEAN NOT NULL,
             last_updated_by     BIGINT NULL
         ) ON COMMIT DROP;";
-        await using (var cmd = new NpgsqlCommand(createTempSql, conn, tx))
-        {
-            await cmd.ExecuteNonQueryAsync();
-        }
 
-        // copy rows to temp with BinaryImport 
-        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        await using (var writer = conn.BeginBinaryImport(@"
+        const string copyCmd = @"
         COPY tmp_records
         (project_id, data_source_id, name, description, uri,
          original_id, properties, class_id, object_storage_id, file_type,
          last_updated_at, is_archived, last_updated_by)
-        FROM STDIN (FORMAT BINARY)"))
-        {
-            foreach (var dto in records)
-            {
-                await writer.StartRowAsync();
-                writer.Write(projectId, NpgsqlDbType.Bigint);
-                writer.Write(dataSourceId, NpgsqlDbType.Bigint);
-                
-                if (dto.Name is null) writer.WriteNull();
-                else writer.Write(dto.Name, NpgsqlDbType.Text);
-                
-                if (dto.Description is null) writer.WriteNull();
-                else writer.Write(dto.Description, NpgsqlDbType.Text);
-                
-                if (dto.Uri is null) writer.WriteNull();
-                else writer.Write(dto.Uri, NpgsqlDbType.Text);
-                writer.Write(dto.OriginalId, NpgsqlDbType.Text);
-                
-                if (dto.Properties is null)
-                    writer.WriteNull();
-                else
-                    writer.Write(JsonSerializer.Serialize(dto.Properties),
-                        NpgsqlDbType.Jsonb);
-
-                if (dto.ClassId.HasValue) writer.Write(dto.ClassId.Value, NpgsqlDbType.Bigint);
-                else writer.WriteNull();
-                if (dto.ObjectStorageId.HasValue) writer.Write(dto.ObjectStorageId.Value, NpgsqlDbType.Bigint);
-                else writer.WriteNull();
-                if (dto.FileType is null) writer.WriteNull();
-                else writer.Write(dto.FileType, NpgsqlDbType.Text);
-
-                writer.Write(now, NpgsqlDbType.Timestamp); // last_updated_at
-                writer.Write(false, NpgsqlDbType.Boolean); // is_archived
-                writer.WriteNull(); // last_updated_by (NULL here; set if you actually have this)
-            }
-
-            await writer.CompleteAsync();
-        }
+        FROM STDIN (FORMAT BINARY)";
 
         const string upsertSql = @"
         INSERT INTO deeplynx.records
         (project_id, data_source_id, name, description, uri,
          original_id, properties, class_id, object_storage_id, file_type,
          last_updated_at, is_archived, last_updated_by)
-        SELECT
-         project_id, data_source_id, name, description, uri,
-         original_id, properties, class_id, object_storage_id, file_type,
-         last_updated_at, is_archived, last_updated_by
+        SELECT project_id, data_source_id, name, description, uri,
+               original_id, properties, class_id, object_storage_id, file_type,
+               last_updated_at, is_archived, last_updated_by
         FROM tmp_records
-        ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE SET
-            name              = COALESCE(EXCLUDED.name, records.name),
-            description       = COALESCE(EXCLUDED.description, records.description),
-            uri               = COALESCE(EXCLUDED.uri, records.uri),
-            properties        = COALESCE(EXCLUDED.properties, records.properties),
-            class_id          = COALESCE(EXCLUDED.class_id, records.class_id),
-            object_storage_id = COALESCE(EXCLUDED.object_storage_id, records.object_storage_id),
-            last_updated_at   = EXCLUDED.last_updated_at,
-            file_type         = COALESCE(EXCLUDED.file_type, records.file_type)
-        RETURNING *;";
+        ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE
+          SET name              = COALESCE(EXCLUDED.name, records.name),
+              description       = COALESCE(EXCLUDED.description, records.description),
+              uri               = COALESCE(EXCLUDED.uri, records.uri),
+              properties        = COALESCE(EXCLUDED.properties, records.properties),
+              class_id          = COALESCE(EXCLUDED.class_id, records.class_id),
+              object_storage_id = COALESCE(EXCLUDED.object_storage_id, records.object_storage_id),
+              last_updated_at   = EXCLUDED.last_updated_at,
+              file_type         = COALESCE(EXCLUDED.file_type, records.file_type)
+        RETURNING id, project_id, data_source_id, original_id, name, class_id, object_storage_id, file_type;";
 
-        // Serialize back to response DTO
-        var inserted = new List<RecordResponseDto>(records.Count);
-        await using (var cmd = new NpgsqlCommand(upsertSql, conn, tx))
-        await using (var reader = await cmd.ExecuteReaderAsync())
-        {
-            while (await reader.ReadAsync()) inserted.Add(MapRecord(reader)); // implement a lightweight mapper
-        }
+        var inserted = await _bulkCopyUpsertExecutor.CopyUpsertAsync<CreateRecordRequestDto, RecordResponseDto>(
+            conn, tx,
+            createTempSql,
+            copyCmd,
+            records,
+            (w, dto) =>
+            {
+                w.Write(projectId, NpgsqlDbType.Bigint);
+                w.Write(dataSourceId, NpgsqlDbType.Bigint);
+                if (dto.Name is null) w.WriteNull();
+                else w.Write(dto.Name, NpgsqlDbType.Text);
+                if (dto.Description is null) w.WriteNull();
+                else w.Write(dto.Description, NpgsqlDbType.Text);
+                if (dto.Uri is null) w.WriteNull();
+                else w.Write(dto.Uri, NpgsqlDbType.Text);
+                w.Write(dto.OriginalId, NpgsqlDbType.Text);
 
-        //await BulkInsertEventsForRecords(conn, tx, projectId, inserted);
+                if (dto.Properties is null) w.WriteNull();
+                else w.Write(JsonSerializer.Serialize(dto.Properties), NpgsqlDbType.Jsonb);
+
+                if (dto.ClassId.HasValue) w.Write(dto.ClassId.Value, NpgsqlDbType.Bigint);
+                else w.WriteNull();
+                if (dto.ObjectStorageId.HasValue) w.Write(dto.ObjectStorageId.Value, NpgsqlDbType.Bigint);
+                else w.WriteNull();
+                if (dto.FileType is null) w.WriteNull();
+                else w.Write(dto.FileType, NpgsqlDbType.Text);
+
+                w.Write(now, NpgsqlDbType.Timestamp);
+                w.Write(false, NpgsqlDbType.Boolean);
+                w.WriteNull(); // last_updated_by
+            },
+            upsertSql,
+            r => new RecordResponseDto
+            {
+                Id = r.GetInt64(r.GetOrdinal("id")),
+                ProjectId = r.GetInt64(r.GetOrdinal("project_id")),
+                DataSourceId = r.GetInt64(r.GetOrdinal("data_source_id")),
+                OriginalId = r.GetString(r.GetOrdinal("original_id")),
+                Name = r.IsDBNull(r.GetOrdinal("name")) ? null : r.GetString(r.GetOrdinal("name")),
+                ClassId = r.IsDBNull(r.GetOrdinal("class_id")) ? null : r.GetInt64(r.GetOrdinal("class_id")),
+                ObjectStorageId = r.IsDBNull(r.GetOrdinal("object_storage_id"))
+                    ? null
+                    : r.GetInt64(r.GetOrdinal("object_storage_id")),
+                FileType = r.IsDBNull(r.GetOrdinal("file_type")) ? null : r.GetString(r.GetOrdinal("file_type"))
+            });
+
+        // Bulk events (copy→insert), see next section
+        //await _eventsWriter.BulkInsertRecordCreatesAsync(conn, tx, projectId, inserted);
+
         await tx.CommitAsync();
         return inserted;
     }
@@ -732,6 +730,7 @@ public class RecordBusiness : IRecordBusiness
             }).ToList()
         }).ToList();
     }
+
     private static async Task BulkInsertEventsForRecords(
         NpgsqlConnection conn, NpgsqlTransaction tx, long projectId, List<RecordResponseDto> rows)
     {
@@ -827,28 +826,28 @@ public class RecordBusiness : IRecordBusiness
         if (!datasource) throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
     }
 
-    private async Task EnsureObjectStoragesExistOnce(long projectId, List<CreateRecordRequestDto> records)                                   
-    {                                                                                                                                        
-        var ids = records.Where(r => r.ObjectStorageId.HasValue)                                                                              
-            .Select(r => r.ObjectStorageId!.Value)                                                                                           
-            .Distinct()                                                                                                                       
-            .ToArray();                                                                                                                      
-        if (ids.Length == 0) return;                                                                                                         
-                                                                                                                                             
+    private async Task EnsureObjectStoragesExistOnce(long projectId, List<CreateRecordRequestDto> records)
+    {
+        var ids = records.Where(r => r.ObjectStorageId.HasValue)
+            .Select(r => r.ObjectStorageId!.Value)
+            .Distinct()
+            .ToArray();
+        if (ids.Length == 0) return;
+
         // One database round trip                                                                                                            
-        var ok = await _context.ObjectStorages                                                                                                
-            .Where(os => os.ProjectId == projectId && ids.Contains(os.Id))                                                                    
-            .Select(os => os.Id)                                                                                                              
-            .ToListAsync();                                                                                                                   
-                                                                                                                                             
-        if (ok.Count != ids.Length)                                                                                                          
-        {                                                                                                                                    
-            var missing = ids.Except(ok).Take(5);                                                                                            
-            throw new Exception(                                                                                                             
-                $"One or more object storage IDs do not exist in project {projectId} (e.g., {string.Join(",", missing)}).");                 
-        }                                                                                                                                    
-    }                                                                                                                                        
-                                                                                                                                             
+        var ok = await _context.ObjectStorages
+            .Where(os => os.ProjectId == projectId && ids.Contains(os.Id))
+            .Select(os => os.Id)
+            .ToListAsync();
+
+        if (ok.Count != ids.Length)
+        {
+            var missing = ids.Except(ok).Take(5);
+            throw new Exception(
+                $"One or more object storage IDs do not exist in project {projectId} (e.g., {string.Join(",", missing)}).");
+        }
+    }
+
     private async Task CheckObjectStorageExists(long projectId, long objectStorageId)
     {
         var referencedObjectStorage =
