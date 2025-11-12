@@ -183,7 +183,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = CreateHttpContextWithAuth("read", "organization");
             SetAuthenticatedUser(context, userId1);
-            context.Request.RouteValues["orgId"] = "not-a-number";
+            context.Request.RouteValues["organizationId"] = "not-a-number";
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
             var middleware = new AuthInOrgMiddleware(next);
@@ -201,7 +201,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = CreateHttpContextWithAuth("read", "organization");
             SetAuthenticatedUser(context, userId1);
-            context.Request.RouteValues["orgId"] = "";
+            context.Request.RouteValues["organizationId"] = "";
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
             var middleware = new AuthInOrgMiddleware(next);
@@ -223,7 +223,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = CreateHttpContextWithAuth("read", "organization");
             SetAuthenticatedUser(context, userId1);
-            context.Request.RouteValues["orgId"] = organizationId1.ToString();
+            context.Request.RouteValues["organizationId"] = organizationId1.ToString();
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "read", "organization"))
@@ -254,7 +254,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = CreateHttpContextWithAuth("read", "organization");
             SetAuthenticatedUser(context, userId1);
-            context.Request.QueryString = new QueryString($"?orgId={organizationId1}");
+            context.Request.QueryString = new QueryString($"?organizationId={organizationId1}");
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "read", "organization"))
@@ -285,8 +285,8 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = CreateHttpContextWithAuth("read", "organization");
             SetAuthenticatedUser(context, userId1);
-            context.Request.RouteValues["orgId"] = organizationId1.ToString();
-            context.Request.QueryString = new QueryString($"?orgId={organizationId2}");
+            context.Request.RouteValues["organizationId"] = organizationId1.ToString();
+            context.Request.QueryString = new QueryString($"?organizationId={organizationId2}");
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "read", "organization"))
@@ -322,7 +322,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = CreateHttpContextWithAuth("write", "organization");
             SetAuthenticatedUser(context, userId1);
-            context.Request.RouteValues["orgId"] = organizationId1.ToString();
+            context.Request.RouteValues["organizationId"] = organizationId1.ToString();
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "write", "organization"))
@@ -344,7 +344,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = CreateHttpContextWithAuth("read", "organization");
             SetAuthenticatedUser(context, userId1);
-            context.Request.RouteValues["orgId"] = organizationId1.ToString();
+            context.Request.RouteValues["organizationId"] = organizationId1.ToString();
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "read", "organization"))
@@ -380,7 +380,7 @@ namespace deeplynx.tests.Middleware
                     new AuthInOrgAttribute("write", "users")),
                 displayName: "Test");
             context.SetEndpoint(endpoint);
-            context.Request.RouteValues["orgId"] = organizationId1.ToString();
+            context.Request.RouteValues["organizationId"] = organizationId1.ToString();
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "read", "organization"))
@@ -425,7 +425,7 @@ namespace deeplynx.tests.Middleware
                     new AuthInOrgAttribute("delete", "users")), // User doesn't have this
                 displayName: "Test");
             context.SetEndpoint(endpoint);
-            context.Request.RouteValues["orgId"] = organizationId1.ToString();
+            context.Request.RouteValues["organizationId"] = organizationId1.ToString();
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "read", "organization"))
@@ -458,7 +458,7 @@ namespace deeplynx.tests.Middleware
                     new AuthInOrgAttribute("write", "users")),
                 displayName: "Test");
             context.SetEndpoint(endpoint);
-            context.Request.RouteValues["orgId"] = organizationId1.ToString();
+            context.Request.RouteValues["organizationId"] = organizationId1.ToString();
 
             _rolePermissionServiceMock
                 .Setup(x => x.PermissionInOrg(userId1, organizationId1, "delete", "organization"))

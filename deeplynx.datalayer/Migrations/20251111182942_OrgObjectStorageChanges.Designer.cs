@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251111182942_OrgObjectStorageChanges")]
+    partial class OrgObjectStorageChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -162,10 +165,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<long?>("ApplicationId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("application_id");
-
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasColumnType("text")
@@ -184,8 +183,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasName("api_keys_pkey");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex(new[] { "ApplicationId" }, "idx_api_keys_application_id");
 
                     b.ToTable("api_keys", "deeplynx");
                 });
@@ -801,8 +798,14 @@ namespace deeplynx.datalayer.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("expires_at");
+
+                    b.Property<DateTime>("LastUsedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_used_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<bool>("Revoked")
                         .ValueGeneratedOnAdd()
@@ -1794,20 +1797,12 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.ApiKey", b =>
                 {
-                    b.HasOne("deeplynx.datalayer.Models.OauthApplication", "OauthApplication")
-                        .WithMany("ApiKeys")
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("api_keys_application_id_fkey");
-
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
                         .WithMany("ApiKeys")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("api_keys_user_id_fkey");
-
-                    b.Navigation("OauthApplication");
 
                     b.Navigation("User");
                 });
@@ -2386,8 +2381,6 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.OauthApplication", b =>
                 {
-                    b.Navigation("ApiKeys");
-
                     b.Navigation("OauthTokens");
                 });
 
