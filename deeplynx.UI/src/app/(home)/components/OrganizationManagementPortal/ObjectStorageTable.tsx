@@ -5,16 +5,17 @@ import { archiveOrganization, getAllOrganizations } from "@/app/lib/organization
 import { Column } from "../../types/types";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import GenericTable from "../GenericTable";
-import CreateOrganization from "./CreateOrganizationModal";
-import EditOrganization from "./EditOrganizationModal";
+import CreateOrganization from "../SiteManagementPortal/CreateOrganizationModal";
+import EditOrganization from "../SiteManagementPortal/EditOrganizationModal";
+import CreateObjectStorage from "./CreateObjectStorage";
+import { OrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 interface OrganizationManagementProps {
-    initialOrganizations: OrganizationResponseDto[];
+    organization: OrganizationSession;
 }
 
-const SiteOrganizationManagement = ({ initialOrganizations }: OrganizationManagementProps) => {
+const ObjectStorageTable = ({ organization }: OrganizationManagementProps) => {
     const { t } = useLanguage();
-    const [data, setData] = useState<OrganizationResponseDto[]>(initialOrganizations);
     const [isOrganizationModalOpen, setIsOrganizationModalOpen] = useState(false);
     const [editOrganizationModal, setEditOrganizationModal] = useState(false);
     const [selectedOrganizationId, setSelectedOrganizationId] = useState<number | null>(null);
@@ -24,25 +25,17 @@ const SiteOrganizationManagement = ({ initialOrganizations }: OrganizationManage
     const [selectAll, setSelectAll] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        setSelectedOrganizations(new Array(data.length).fill(false));
-        setSelectAll(false);
-    }, [data.length]);
 
     const refreshOrganizations = async () => {
         try {
-            const updatedData = await getAllOrganizations();
-            setData(updatedData);
         } catch (err) {
-            console.error("Failed to refresh organizations:", err);
-            setError("Failed to refresh organizations.");
+            console.error("Failed to refresh object storage:", err);
+            setError("Failed to refresh object storage.");
         }
     };
 
     const handleSelectAll = () => {
-        const next = !selectAll;
-        setSelectAll(next);
-        setSelectedOrganizations(new Array(data.length).fill(next));
+
     };
 
     const handleCheckboxChange = (index: number) => {
@@ -53,27 +46,26 @@ const SiteOrganizationManagement = ({ initialOrganizations }: OrganizationManage
     };
 
     const handleDelete = async (index: number) => {
-        const organizationId = data[index].id as number;
         try {
-            await archiveOrganization(organizationId);
-            setData((prev) => prev.filter((_, i) => i !== index));
+            // await archiveOrganization(organizationId);
+            // setData((prev) => prev.filter((_, i) => i !== index));
         } catch (err) {
-            console.error("Failed to delete organization:", err);
-            setError("Failed to delete organization.");
+            console.error("Failed to delete object storage:", err);
+            setError("Failed to delete object storage.");
         }
     };
 
     const handleDeleteSelected = async () => {
-        const selectedOrgIds = data
-            .filter((_, i) => selectedOrganizations[i])
-            .map((org) => org.id);
-        try {
-            await Promise.all(selectedOrgIds.map((orgId) => archiveOrganization(orgId as number)));
-            setData((prev) => prev.filter((_, i) => !selectedOrganizations[i]));
-        } catch (err) {
-            console.error("Failed to delete selected organizations:", err);
-            setError("Failed to delete selected organizations.");
-        }
+        // const selectedOrgIds = data
+        //     .filter((_, i) => selectedOrganizations[i])
+        //     .map((org) => org.id);
+        // try {
+        //     await Promise.all(selectedOrgIds.map((orgId) => archiveOrganization(orgId as number)));
+        //     setData((prev) => prev.filter((_, i) => !selectedOrganizations[i]));
+        // } catch (err) {
+        //     console.error("Failed to delete selected organizations:", err);
+        //     setError("Failed to delete selected organizations.");
+        // }
     };
 
     const multipleSelected = () => selectedOrganizations.filter(Boolean).length > 1;
@@ -158,12 +150,12 @@ const SiteOrganizationManagement = ({ initialOrganizations }: OrganizationManage
                 </button>
             </div>
             {error && <div className="p-4 text-red-500">{error}</div>}
-            <GenericTable
+            {/* <GenericTable
                 columns={columns}
                 data={data}
                 enablePagination
-            />
-            <CreateOrganization
+            /> */}
+            <CreateObjectStorage
                 isOpen={isOrganizationModalOpen}
                 onClose={() => setIsOrganizationModalOpen(false)}
                 onOrganizationCreated={refreshOrganizations}
@@ -182,4 +174,4 @@ const SiteOrganizationManagement = ({ initialOrganizations }: OrganizationManage
     );
 };
 
-export default SiteOrganizationManagement;
+export default ObjectStorageTable;

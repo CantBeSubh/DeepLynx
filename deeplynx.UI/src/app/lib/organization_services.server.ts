@@ -8,3 +8,8 @@ export async function getAllOrganizationsServer(): Promise<OrganizationResponseD
     const res = await apiFetch("/organizations/GetAllOrganizations");
     return asJson<OrganizationResponseDto[]>(res)
 }
+
+// export async function getOrganizationServer(): Promise<OrganizationResponseDto[]> {
+//     const res = await apiFetch("/organizations/GetAllOrganizations");
+//     return asJson<OrganizationResponseDto[]>(res)
+// }
