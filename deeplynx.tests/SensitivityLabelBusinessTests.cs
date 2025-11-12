@@ -707,7 +707,6 @@ namespace deeplynx.tests
             testLabel.Name = "Updated Label Name";
             testLabel.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             
-            Context.SensitivityLabels.Update(testLabel);
             await Context.SaveChangesAsync();
 
             // Assert

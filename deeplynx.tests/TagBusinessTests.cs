@@ -761,7 +761,6 @@ namespace deeplynx.tests
             testTag.Name = "Updated Tag Name";
             testTag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-            Context.Tags.Update(testTag);
             await Context.SaveChangesAsync();
 
             // Assert
