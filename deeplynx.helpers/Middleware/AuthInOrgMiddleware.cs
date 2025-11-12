@@ -7,9 +7,9 @@ namespace deeplynx.helpers;
 // Attribute to decorate controllers/actions
 // Example usage: [AuthInOrg("read", "organization")]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
-public class AuthInOrgAttribute : Attribute
+public class AuthAttribute : Attribute
 {
-    public AuthInOrgAttribute(string action, string resource)
+    public AuthAttribute(string action, string resource)
     {
         Action = action;
         Resource = resource;
@@ -19,11 +19,11 @@ public class AuthInOrgAttribute : Attribute
     public string Resource { get; set; } 
 }
 
-public class AuthInOrgMiddleware
+public class AuthMiddleware
 {
     private readonly RequestDelegate _next;
 
-    public AuthInOrgMiddleware(RequestDelegate next)
+    public AuthMiddleware(RequestDelegate next)
     {
         _next = next;
     }
@@ -41,7 +41,7 @@ public class AuthInOrgMiddleware
 
         // Get all AuthInOrg attributes from the endpoint
         var authAttributes = endpoint.Metadata
-            .GetOrderedMetadata<AuthInOrgAttribute>();
+            .GetOrderedMetadata<AuthAttribute>();
         
         // If no auth attributes, return
         if (!authAttributes.Any())
@@ -59,18 +59,18 @@ public class AuthInOrgMiddleware
             return;
         }
         
-        // 1. First try route values
+        // 1. First try organization route values
         int orgId = 0;
-        var routeOrgId = context.GetRouteValue("orgId")?.ToString();
+        var routeOrgId = context.GetRouteValue("organizationId")?.ToString();
         if (!string.IsNullOrEmpty(routeOrgId) && int.TryParse(routeOrgId, out orgId))
         {
-            // Found in route
+            // Found organizationId in route
         }
-        // 2. Then try query parameters
-        else if (context.Request.Query.TryGetValue("orgId", out var queryOrgId) 
+        // 2. Then try organization query parameters
+        else if (context.Request.Query.TryGetValue("organizationId", out var queryOrgId) 
                  && int.TryParse(queryOrgId.FirstOrDefault(), out orgId))
         {
-            // Found in query
+            // Found organizationId in query
         }
         // 3. no org for you 
         else
