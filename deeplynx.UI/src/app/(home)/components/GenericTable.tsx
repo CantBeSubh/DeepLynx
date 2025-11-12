@@ -37,6 +37,7 @@ type GenericTableProps<T extends object> = {
   isAnyRowSelected?: boolean;
   deleteSelectedRows?: () => void;
   rowsPerPage?: number;
+  setRowsPerPage?: React.Dispatch<React.SetStateAction<number>>;
   pageLengthOptions?: number[];
   enablePageLengthChange?: boolean;
   enablePagination?: boolean;
@@ -50,7 +51,6 @@ type GenericTableProps<T extends object> = {
   paginationMetadata?: PaginationMetadata;
   onPageChange?: (pageNumber: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
-  // Update these lines:
   filters?: FilterConfig[];
   filterValues?: Record<string, string | number | undefined>;
   onFilterChange?: (filters: Record<string, string | number | undefined>) => void;
@@ -64,6 +64,7 @@ const GenericTable = <T extends object>({
   isAnyRowSelected,
   deleteSelectedRows,
   rowsPerPage = 10,
+  setRowsPerPage = () => { },
   pageLengthOptions = [10, 25, 50, 100, 500],
   enablePageLengthChange = false,
   enablePagination = false,
@@ -280,6 +281,7 @@ const GenericTable = <T extends object>({
 
   const handleRowLengthClick = (rowsNumber: number) => {
     setCurrentDisplayedRows(rowsNumber);
+    setRowsPerPage(rowsNumber)
     setCurrentPage(1); // Reset to first page when changing rows per page
     if (backendPagination && onPageSizeChange) {
       onPageSizeChange(rowsNumber);
@@ -307,7 +309,6 @@ const GenericTable = <T extends object>({
     return rowOptions;
   };
 
-  // Determine if pagination should be shown
   // Show pagination controls if enabled and there's data
   const showPagination =
     enablePagination &&
@@ -340,7 +341,6 @@ const GenericTable = <T extends object>({
             {/* Filter Button & Dropdown */}
             {filters && filters.length > 0 && (
               <div className="relative">
-                {/* Filter Button */}
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className="btn bg-base-100 btn-sm gap-2 py-4.5"
@@ -371,7 +371,7 @@ const GenericTable = <T extends object>({
                     {/* Filter Inputs */}
                     <div className="space-y-3 max-h-full overflow-y-auto pb-4">
                       {filters.map((filter) => {
-                        const inputType = filter.type || 'text'; // Support custom input types
+                        const inputType = filter.type || 'text';
 
                         return (
                           <div key={filter.key} className="form-control">
@@ -540,12 +540,6 @@ const GenericTable = <T extends object>({
       </table>
 
       <div className="flex justify-between">
-        {/* {showPagination && enablePageLengthChange && (
-          <div className="flex justify-start items-center p-2">
-            <p className="text-sm mr-2">Rows per page:</p>
-            <div className="flex join">{rowNumberSelect()}</div>
-          </div>
-        )} */}
         {showPageNavigation && (
           <div className="flex justify-end p-2 items-center">
             <p className="text-sm mr-2">Page:</p>

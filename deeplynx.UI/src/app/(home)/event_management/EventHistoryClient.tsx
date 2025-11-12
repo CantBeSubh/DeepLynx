@@ -16,6 +16,8 @@ import {
 
 const EventsHistoryClient = () => {
 
+  const [rowsPerPage, setRowsPerPage] = useState(25);
+
   const getThirtyDaysAgo = () => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
@@ -25,7 +27,7 @@ const EventsHistoryClient = () => {
   const [data, setData] = useState<EventResponseDto[]>([]);
   const [pagination, setPagination] = useState({
     pageNumber: 1,
-    pageSize: 25,
+    pageSize: rowsPerPage,
     totalCount: 0,
   });
   const [loading, setLoading] = useState(false);
@@ -78,7 +80,7 @@ const EventsHistoryClient = () => {
         setData([]);
         setPagination({
           pageNumber: 1,
-          pageSize: 25,
+          pageSize: rowsPerPage,
           totalCount: 0,
         });
       } finally {
@@ -90,7 +92,7 @@ const EventsHistoryClient = () => {
 
   // Initial fetch
   useEffect(() => {
-    fetchEvents(1, 25);
+    fetchEvents(1, rowsPerPage);
   }, [fetchEvents]);
 
   // Handle page changes
@@ -165,7 +167,6 @@ const EventsHistoryClient = () => {
             </Link>
           );
         }
-        // For other entity types, just display as text or add more conditions
         return <span>{row.entityName}</span>;
       },
     },
@@ -180,7 +181,6 @@ const EventsHistoryClient = () => {
     <div>
       <div className='bg-base-200/50 border-b border-base-300/30 pt-4 px-8'>
         <h1 className="text-2xl my-6 font-bold text-info-content">
-          {/*{t.translations.DATA_CATALOG}*/}
           Event History
         </h1>
       </div>
@@ -189,7 +189,7 @@ const EventsHistoryClient = () => {
         <div className="p-8 bg-base-100 min-h-screen">
           <GenericTableSkeleton
             totalColumns={7}
-            totalRows={10}
+            totalRows={rowsPerPage}
             title={true}
             searchBar={true}
             filters={true}
@@ -213,7 +213,8 @@ const EventsHistoryClient = () => {
             bordered={false}
             searchBar={true}
             filterPlaceholder='Search this page...'
-            rowsPerPage={25}
+            rowsPerPage={rowsPerPage}
+            setRowsPerPage={setRowsPerPage}
             filters={filterConfig}
             filterValues={filters}
             onFilterChange={handleFilterChange}
