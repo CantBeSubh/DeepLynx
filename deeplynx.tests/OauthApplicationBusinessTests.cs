@@ -222,14 +222,15 @@ namespace deeplynx.tests
             var savedApp = await Context.OauthApplications
                 .FirstOrDefaultAsync(a => a.ClientId == result.ClientId);
             Assert.NotNull(savedApp);
-            
+    
             // The stored hash should be different from the returned plain secret
             Assert.NotEqual(result.ClientSecretRaw, savedApp.ClientSecretHash);
-            
-            // The stored hash should contain salt and hash separated by colon
-            Assert.Contains(":", savedApp.ClientSecretHash);
-            var parts = savedApp.ClientSecretHash.Split(':');
-            Assert.Equal(2, parts.Length);
+    
+            // The stored hash should be a valid BCrypt hash (starts with $2a$, $2b$, or $2y$)
+            Assert.Matches(@"^\$2[aby]\$\d{2}\$.{53}$", savedApp.ClientSecretHash);
+    
+            // Verify that the plain secret can be verified against the stored hash
+            Assert.True(BCrypt.Net.BCrypt.Verify(result.ClientSecretRaw, savedApp.ClientSecretHash));
         }
 
         #endregion

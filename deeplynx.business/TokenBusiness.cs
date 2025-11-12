@@ -31,7 +31,7 @@ public class TokenBusiness : ITokenBusiness
     /// <exception cref="KeyNotFoundException">Returned if key not found</exception>
     /// <exception cref="InvalidOperationException">Returned if associated user not found</exception>
     /// <exception cref="UnauthorizedAccessException">Returned if secret does not match stored hash</exception>
-    public async Task<string> CreateToken(string apiSecret, string apiKey, double? expiration)
+    public async Task<string> CreateToken(string apiKey, string apiSecret, double? expiration)
     {
         // 1. Look up the API key record
         var apiKeyRecord = await _context.ApiKeys.FirstOrDefaultAsync(x => x.Key == apiKey);
