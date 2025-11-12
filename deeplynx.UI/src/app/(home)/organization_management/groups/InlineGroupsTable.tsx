@@ -36,8 +36,12 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
 }) => {
   // State management
   const [groups, setGroups] = useState<GroupResponseDto[]>(initialGroups);
-  const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
-  const [editingGroup, setEditingGroup] = useState<number | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<string | number | null>(
+    null
+  );
+  const [editingGroup, setEditingGroup] = useState<string | number | null>(
+    null
+  );
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,10 +55,12 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   const [editDescription, setEditDescription] = useState("");
 
   // Selection state
-  const [selectedGroups, setSelectedGroups] = useState<Set<number>>(new Set());
+  const [selectedGroups, setSelectedGroups] = useState<Set<string | number>>(
+    new Set()
+  );
 
-  // Toggle expand/collapse
-  const toggleExpand = (groupId: number) => {
+  // Update the toggleExpand function:
+  const toggleExpand = (groupId: string | number) => {
     if (expandedGroup === groupId) {
       setExpandedGroup(null);
       setEditingGroup(null);
@@ -106,7 +112,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   };
 
   // Update group
-  const handleUpdateGroup = async (groupId: number) => {
+  const handleUpdateGroup = async (groupId: string | number) => {
     if (!editName.trim()) {
       setError("Group name is required");
       return;
@@ -133,7 +139,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   };
 
   // Delete single group
-  const handleDeleteGroup = async (groupId: number) => {
+  const handleDeleteGroup = async (groupId: string | number) => {
     if (!confirm("Are you sure you want to delete this group?")) return;
 
     setLoading(true);
@@ -179,7 +185,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   };
 
   // Handle checkbox selection
-  const toggleSelectGroup = (groupId: number) => {
+  const toggleSelectGroup = (groupId: string | number) => {
     const newSelection = new Set(selectedGroups);
     if (newSelection.has(groupId)) {
       newSelection.delete(groupId);
@@ -299,16 +305,6 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
           <table className="table w-full">
             <thead className="bg-base-300">
               <tr>
-                <th className="w-12">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-sm"
-                    checked={
-                      selectedGroups.size === groups.length && groups.length > 0
-                    }
-                    onChange={toggleSelectAll}
-                  />
-                </th>
                 <th>Group Name</th>
                 <th>Description</th>
                 <th>Members</th>
@@ -347,14 +343,6 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                       }`}
                       onClick={() => toggleExpand(group.id)}
                     >
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm"
-                          checked={selectedGroups.has(group.id)}
-                          onChange={() => toggleSelectGroup(group.id)}
-                        />
-                      </td>
                       <td className="font-semibold">{group.name}</td>
                       <td className="text-base-content/70">
                         {group.description || "No description"}
