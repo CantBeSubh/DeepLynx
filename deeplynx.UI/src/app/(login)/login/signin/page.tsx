@@ -7,22 +7,25 @@ import { useLanguage } from "@/app/contexts/Language";
 import "@/app/globals.css";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function Signin() {
+function SigninContent() {
   const [isChecked, setChecked] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const { t } = useLanguage();
 
   useEffect(() => {
-    // If user is already authenticated, redirect to home
+    // If user is already authenticated, redirect to home or returnUrl
     if (status === "authenticated") {
-      router.push("/");
+      router.push(returnUrl || "/");
     }
-  }, [status, router]);
+  }, [status, router, returnUrl]);
 
   // Show loading while checking authentication status
   if (status === "loading") {
@@ -30,7 +33,7 @@ export default function Signin() {
       <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
         <div className="flex flex-col items-center sm:items-start mb-0">
           <Image
-            src="/assets/lynx-white.svg"
+            src="/assets/nexusWhite.png"
             alt="DeepLynx logo"
             width={265.8}
             height={113.9}
@@ -51,14 +54,15 @@ export default function Signin() {
   }
 
   const handleOktaSignIn = () => {
-    signIn("okta", { callbackUrl: "/" });
+    setIsSigningIn(true);
+    signIn("okta", { callbackUrl: returnUrl || "/" });
   };
 
   return (
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
       <div className="flex flex-col items-center sm:items-start mb-0">
         <Image
-          src="/assets/lynx-white.svg"
+          src="/assets/nexusWhite.png"
           alt="DeepLynx logo"
           width={265.8}
           height={113.9}
@@ -98,8 +102,12 @@ export default function Signin() {
 
               <button
                 onClick={handleOktaSignIn}
-                className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl hover:bg-gray-600 transition-colors"
+                disabled={isSigningIn}
+                className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
+                {isSigningIn && (
+                  <span className="loading loading-spinner loading-sm"></span>
+                )}
                 {t.translations.PIV_CAC_CARD_SIGN_IN}
               </button>
             </div>
@@ -125,5 +133,29 @@ export default function Signin() {
           ))} */}
       </footer>
     </div>
+  );
+}
+
+export default function Signin() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
+        <div className="flex flex-col items-center sm:items-start mb-0">
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
+        </div>
+        <div className="text-center text-white">
+          <div className="loading loading-spinner loading-lg"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SigninContent />
+    </Suspense>
   );
 }

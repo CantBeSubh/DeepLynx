@@ -5,7 +5,6 @@ using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,7 +25,7 @@ namespace deeplynx.tests
         public long pid;    // project ID
         public long lid;    // label ID
         public long lid2;   // archived label ID
-        public long uid;
+        public long uid;    // user ID
         public SensitivityLabelBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
@@ -168,6 +167,17 @@ namespace deeplynx.tests
             var createdLabel = await Context.SensitivityLabels.FindAsync(result.Id);
             Assert.NotNull(createdLabel);
             Assert.Equal(dto.Name, createdLabel.Name);
+            
+            // Ensure that the SensitivityLabel create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -194,6 +204,16 @@ namespace deeplynx.tests
             var createdLabel = await Context.SensitivityLabels.FindAsync(result.Id);
             Assert.NotNull(createdLabel);
             Assert.Equal(dto.Name, createdLabel.Name);
+            
+            // Ensure that the SensitivityLabel create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -214,15 +234,15 @@ namespace deeplynx.tests
             Assert.Equal("Event Test Label", result.Name);
             
             // Ensure that the SensitivityLabel create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "sensitivity_label",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -239,8 +259,8 @@ namespace deeplynx.tests
                 () => _labelBusiness.CreateSensitivityLabel(dto, pid, null));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -258,8 +278,8 @@ namespace deeplynx.tests
                 () => _labelBusiness.CreateSensitivityLabel(dto, pid, null));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -278,8 +298,8 @@ namespace deeplynx.tests
             Assert.Contains("Please provide only one of Project ID or Organization ID, not both", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -298,8 +318,8 @@ namespace deeplynx.tests
             Assert.Contains("One of Project ID or Organization ID must be provided", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -330,6 +350,17 @@ namespace deeplynx.tests
             Assert.NotNull(savedLabel);
             Assert.Equal("Updated Label", savedLabel.Name);
             Assert.Equal("Updated description", savedLabel.Description);
+            
+            // Ensure that the SensitivityLabel update event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -349,15 +380,15 @@ namespace deeplynx.tests
             Assert.Equal("Event Updated Label", result.Name);
             
             // Ensure that the SensitivityLabel update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "update",
-                EntityType = "sensitivity_label",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -376,8 +407,8 @@ namespace deeplynx.tests
             Assert.Contains("Sensitivity label with id 99999 not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -396,8 +427,8 @@ namespace deeplynx.tests
             Assert.Contains($"Sensitivity label with id {lid2} not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -419,15 +450,15 @@ namespace deeplynx.tests
             Assert.True(savedLabel.IsArchived);
             
             // Ensure that the SensitivityLabel archive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "archive",
-                EntityType = "sensitivity_label",
-                EntityId = lid,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(lid, actualEvent.EntityId);
         }
         
         [Fact]
@@ -440,8 +471,8 @@ namespace deeplynx.tests
             Assert.Contains($"Sensitivity label with id {lid2} not found or is archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -454,8 +485,8 @@ namespace deeplynx.tests
             Assert.Contains("Sensitivity label with id 99999 not found or is archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -477,15 +508,15 @@ namespace deeplynx.tests
             Assert.False(savedLabel.IsArchived);
             
             // Ensure that the SensitivityLabel unarchive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "unarchive",
-                EntityType = "sensitivity_label",
-                EntityId = lid2,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("unarchive", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(lid2, actualEvent.EntityId);
         }
         
         [Fact]
@@ -498,8 +529,8 @@ namespace deeplynx.tests
             Assert.Contains($"Sensitivity label with id {lid} not found or is not archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -512,8 +543,8 @@ namespace deeplynx.tests
             Assert.Contains("Sensitivity label with id 99999 not found or is not archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -534,15 +565,15 @@ namespace deeplynx.tests
             Assert.Null(deletedLabel);
             
             // Ensure that the SensitivityLabel delete event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "delete",
-                EntityType = "sensitivity_label",
-                EntityId = lid,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("delete", actualEvent.Operation);
+            Assert.Equal("sensitivity_label", actualEvent.EntityType);
+            Assert.Equal(lid, actualEvent.EntityId);
         }
         
         [Fact]
@@ -555,8 +586,8 @@ namespace deeplynx.tests
             Assert.Contains("Sensitivity label with id 99999 not found or is archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -569,13 +600,13 @@ namespace deeplynx.tests
             Assert.Contains($"Sensitivity label with id {lid2} not found or is archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
         
-    #region LastUpdatedBy Tests
+        #region LastUpdatedBy Tests
 
         [Fact]
         public async Task CreateSensitivityLabel_Success_StoresLastUpdatedByUserId()
@@ -677,7 +708,6 @@ namespace deeplynx.tests
             testLabel.Name = "Updated Label Name";
             testLabel.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             
-            Context.SensitivityLabels.Update(testLabel);
             await Context.SaveChangesAsync();
 
             // Assert
@@ -692,6 +722,7 @@ namespace deeplynx.tests
         }
 
         #endregion
+        
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();

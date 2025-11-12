@@ -21,6 +21,7 @@ public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly IOrganizationBusiness _organizationBusiness;
     private readonly ILogger<ProjectBusiness> _logger;
     private readonly IClassBusiness _classBusiness;
     private readonly IRoleBusiness _roleBusiness;
@@ -45,7 +46,7 @@ public class ProjectBusiness : IProjectBusiness
     public ProjectBusiness(
         DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,
         IClassBusiness classBusiness, IRoleBusiness roleBusiness, IDataSourceBusiness dataSourceBusiness,
-        IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
+        IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness, IOrganizationBusiness organizationBusiness)
     {
         _context = context;
         _logger = logger;
@@ -55,6 +56,7 @@ public class ProjectBusiness : IProjectBusiness
         _objectStorageBusiness = objectStorageBusiness;
         _eventBusiness = eventBusiness;
         _cacheBusiness = cacheBusiness;
+        _organizationBusiness = organizationBusiness;
     }
 
     /// <summary>
@@ -165,15 +167,42 @@ public class ProjectBusiness : IProjectBusiness
         await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
         ValidationHelper.ValidateModel(dto);
 
-        //Ensure org exists and is active
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId);
+        long orgId;
+
+        if (dto.OrganizationId.HasValue)
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId.Value);
+
+            orgId = dto.OrganizationId.Value;
+        }
+        else
+        {
+            var defaultOrg = await _context.Organizations
+                .Where(o => o.DefaultOrg && !o.IsArchived).FirstOrDefaultAsync();
+
+            if (defaultOrg != null)
+            {
+                orgId = defaultOrg.Id;
+            }
+            else
+            {
+                var orgRequestDto = new CreateOrganizationRequestDto()
+                {
+                    Name = "INL",
+                    Description = "Default Organization",
+                };
+                
+                var newDefaultOrg = await _organizationBusiness.CreateOrganization(orgRequestDto, true);
+                orgId = newDefaultOrg.Id;
+            }
+        }
 
         var project = new Project
         {
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
-            OrganizationId = dto.OrganizationId,
+            OrganizationId = orgId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
         };

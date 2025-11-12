@@ -28,6 +28,8 @@ namespace deeplynx.tests
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
         private Mock<IRoleBusiness> _roleBusiness = null!;
+        private Mock<IOrganizationBusiness> _organizationBusiness = null!;
+        
         public long pid;
         public long did;
         public long os1;
@@ -49,6 +51,7 @@ namespace deeplynx.tests
             _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _roleBusiness = new Mock<IRoleBusiness>();
+            _organizationBusiness = new Mock<IOrganizationBusiness>();
 
             _classBusiness = new ClassBusiness(
                 Context, _cacheBusiness, _recordBusiness.Object,
@@ -57,7 +60,7 @@ namespace deeplynx.tests
             _projectBusiness = new ProjectBusiness(
                 Context, _cacheBusiness, _mockLogger.Object,
                 _classBusiness, _roleBusiness.Object, _dataSourceBusiness.Object,
-                _objectStorageBusiness.Object, _eventBusiness);
+                _objectStorageBusiness.Object, _eventBusiness, _organizationBusiness.Object);
         }
 
         #region CreateClass Tests

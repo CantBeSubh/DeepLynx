@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using deeplynx.datalayer.Models;
@@ -30,10 +31,10 @@ namespace deeplynx.tests.Middleware
 
         private const string TEST_JWT_SECRET = "test-jwt-secret-key-for-signing-tokens-minimum-32-chars";
 
-            // Update the InitializeAsync method to set JWT_SECRET_KEY
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+
             // Set JWT_SECRET_KEY for all tests
             Environment.SetEnvironmentVariable("JWT_SECRET_KEY", TEST_JWT_SECRET);
             Config.ResetConfig();
@@ -252,7 +253,7 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            var token = GenerateHS256Token(user.Email, apiKey.Key, apiKey.Secret);
+            var token = await GenerateHS256TokenAsync(user.Email, apiKey.Key, apiKey.Secret);
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -305,8 +306,8 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            // Create expired token
-            var token = GenerateHS256Token(user.Email, apiKey.Key, apiKey.Secret, expiresInMinutes: -60);
+            // Create expired token (still creates OAuth record for consistency)
+            var token = await GenerateHS256TokenAsync(user.Email, apiKey.Key, apiKey.Secret, expiresInMinutes: -60);
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -334,8 +335,9 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            // Create token with wrong secret - USE THE NEW HELPER
-            var token = GenerateHS256TokenWithInvalidSignature(user.Email, apiKey.Key, "wrong-secret-key");
+            // Create token with wrong secret
+            var jti = Guid.NewGuid().ToString();
+            var token = GenerateHS256TokenWithInvalidSignature(user.Email, apiKey.Key, "wrong-secret-key", jti);
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -361,8 +363,9 @@ namespace deeplynx.tests.Middleware
             var user = await Context.Users.FindAsync(uid1);
             Assert.NotNull(user);
 
-            // Create token with invalid API key
-            var token = GenerateHS256Token(user.Email, "invalid-api-key", "some-secret");
+            // Create token with invalid API key (no OAuth record created since API key doesn't exist)
+            var jti = Guid.NewGuid().ToString();
+            var token = GenerateHS256TokenWithInvalidSignature(user.Email, "invalid-api-key", "some-secret", jti);
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -403,6 +406,45 @@ namespace deeplynx.tests.Middleware
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
         }
 
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndRevokedToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            var token = await GenerateHS256TokenAsync(user.Email, apiKey.Key, apiKey.Secret);
+            
+            // Revoke the token
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == "jti")?.Value;
+            var tokenHash = HashToken(jti!);
+            var oauthToken = await Context.OauthTokens.FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
+            Assert.NotNull(oauthToken);
+            oauthToken.Revoked = true;
+            await Context.SaveChangesAsync();
+
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+            
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
         #endregion
 
         #region HandleHS256Token Tests
@@ -418,7 +460,7 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            var token = GenerateHS256Token(user.Email, apiKey.Key, apiKey.Secret);
+            var token = await GenerateHS256TokenAsync(user.Email, apiKey.Key, apiKey.Secret);
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -442,7 +484,8 @@ namespace deeplynx.tests.Middleware
             var user = await Context.Users.FindAsync(uid1);
             Assert.NotNull(user);
 
-            var token = GenerateHS256Token(user.Email, "invalid-api-key", "some-secret");
+            // No OAuth token created since API key doesn't exist
+            var token = await GenerateHS256TokenAsync(user.Email, "invalid-api-key", "some-secret");
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -468,8 +511,8 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            // Create expired token (expired 1 hour ago)
-            var token = GenerateHS256Token(
+            // Create expired token (still creates OAuth record)
+            var token = await GenerateHS256TokenAsync(
                 user.Email,
                 apiKey.Key,
                 apiKey.Secret,
@@ -500,8 +543,23 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            // Create token with wrong secret - USE THE NEW HELPER
-            var token = GenerateHS256TokenWithInvalidSignature(user.Email, apiKey.Key, "wrong-secret-key");
+            // Create token with wrong secret - need to manually create OAuth record
+            // since GenerateHS256TokenWithInvalidSignature doesn't create one
+            var jti = Guid.NewGuid().ToString();
+            var token = GenerateHS256TokenWithInvalidSignature(user.Email, apiKey.Key, "wrong-secret-key", jti);
+    
+            // Manually create the OAuth token record so it passes the revocation check
+            var tokenHash = HashToken(jti);
+            var oauthToken = new OauthToken
+            {
+                TokenHash = tokenHash,
+                UserId = uid1,
+                ExpiresAt = DateTime.SpecifyKind(DateTimeOffset.UtcNow.AddMinutes(60).DateTime, DateTimeKind.Unspecified),
+                Revoked = false
+            };
+            Context.OauthTokens.Add(oauthToken);
+            await Context.SaveChangesAsync();
+    
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -522,7 +580,8 @@ namespace deeplynx.tests.Middleware
             // Arrange
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
             Config.ResetConfig();
-            var token = GenerateHS256Token("nonexistent@test.com", "test-key", "test-secret");
+            // No OAuth token created since user doesn't exist
+            var token = await GenerateHS256TokenAsync("nonexistent@test.com", "test-key", "test-secret");
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -535,6 +594,137 @@ namespace deeplynx.tests.Middleware
 
             // Cleanup
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleHS256Token_FailsValidation_WhenTokenRevoked()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
+
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            // Generate token with OAuth record
+            var token = await GenerateHS256TokenAsync(user.Email, apiKey.Key, apiKey.Secret);
+            
+            // Extract JTI and revoke the token
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+            var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == "jti")?.Value;
+            Assert.NotNull(jti);
+            
+            var tokenHash = HashToken(jti);
+            var oauthToken = await Context.OauthTokens.FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
+            Assert.NotNull(oauthToken);
+            
+            oauthToken.Revoked = true;
+            await Context.SaveChangesAsync();
+
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.False(result.Succeeded);
+            Assert.Contains("Token has been revoked", result.Failure?.Message ?? "");
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleHS256Token_FailsValidation_WhenTokenNotFoundInDatabase()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            // Create token manually without creating OAuth record
+            var jti = Guid.NewGuid().ToString();
+            var token = GenerateHS256TokenWithoutOAuthRecord(user.Email, apiKey.Key, jti);
+            
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.False(result.Succeeded);
+            Assert.Contains("Token has been revoked", result.Failure?.Message ?? "");
+            
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleHS256Token_FailsValidation_WhenJTIMissing()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            // Create token without JTI claim - don't add OAuth record
+            var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
+                    "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            var exp = DateTimeOffset.UtcNow.AddMinutes(60).ToUnixTimeSeconds();
+            var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(
+                    $"{{\"name\":\"{user.Email}\",\"apiKey\":\"{apiKey.Key}\",\"exp\":{exp}}}"))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            var message = $"{header}.{payload}";
+            var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? TEST_JWT_SECRET;
+            var secretKey = jwtSecret.Length < 32 ? jwtSecret.PadRight(32, '0') : jwtSecret;
+
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
+            var signature = Convert.ToBase64String(hash)
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            var token = $"{message}.{signature}";
+
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.False(result.Succeeded);
+            Assert.Contains("Token missing required claims", result.Failure?.Message ?? "");
+            
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleHS256Token_UsesCorrectTokenHash()
+        {
+            // Arrange - verifies that SHA256 hashing is consistent
+            var jti1 = "test-jti-1";
+            var jti2 = "test-jti-1"; // Same JTI
+            
+            // Act
+            var hash1 = HashToken(jti1);
+            var hash2 = HashToken(jti2);
+            
+            // Assert
+            Assert.Equal(hash1, hash2);
         }
 
         #endregion
@@ -553,7 +743,7 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(apiKey);
 
             // Create token with only preferred_username (no name claim)
-            var token = GenerateHS256TokenWithCustomClaims(
+            var token = await GenerateHS256TokenWithCustomClaimsAsync(
                 new Dictionary<string, string>
                 {
                     { "preferred_username", user.Email },
@@ -587,7 +777,7 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(apiKey);
 
             // Create token with only sub claim (no name or preferred_username)
-            var token = GenerateHS256TokenWithCustomClaims(
+            var token = await GenerateHS256TokenWithCustomClaimsAsync(
                 new Dictionary<string, string>
                 {
                     { "sub", user.Email },
@@ -621,7 +811,7 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(apiKey);
 
             // Create token with only email claim (no name, preferred_username, or sub)
-            var token = GenerateHS256TokenWithCustomClaims(
+            var token = await GenerateHS256TokenWithCustomClaimsAsync(
                 new Dictionary<string, string>
                 {
                     { "email", user.Email },
@@ -653,7 +843,7 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(apiKey);
 
             // Create token with only apiKey claim (no user identification claims)
-            var token = GenerateHS256TokenWithCustomClaims(
+            var token = await GenerateHS256TokenWithCustomClaimsAsync(
                 new Dictionary<string, string>
                 {
                     { "apiKey", apiKey.Key }
@@ -1300,7 +1490,7 @@ namespace deeplynx.tests.Middleware
 
         #endregion
 
-        // Helper methods
+        #region Helper Methods
 
         private NexusAuthenticationMiddleware CreateMiddleware()
         {
@@ -1338,41 +1528,60 @@ namespace deeplynx.tests.Middleware
             return context;
         }
 
-        private string GenerateHS256Token(
+        private async Task<string> GenerateHS256TokenAsync(
             string email,
             string apiKey,
-            string secret,  // This parameter is kept for backward compatibility but overridden
+            string secret,
             int expiresInMinutes = 60)
         {
+            // Generate a unique JTI
+            var jti = Guid.NewGuid().ToString();
+            
             var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
                     "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var exp = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes).ToUnixTimeSeconds();
             var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(
-                    $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"exp\":{exp}}}"))
+                    $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"jti\":\"{jti}\",\"exp\":{exp}}}"))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var message = $"{header}.{payload}";
     
-            // IMPORTANT: Always use JWT_SECRET_KEY for signing, not the API key secret
+            // Always use JWT_SECRET_KEY for signing
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? TEST_JWT_SECRET;
             var secretKey = jwtSecret.Length < 32 ? jwtSecret.PadRight(32, '0') : jwtSecret;
 
-            using var hmac = new System.Security.Cryptography.HMACSHA256(
-                Encoding.UTF8.GetBytes(secretKey));
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
             var signature = Convert.ToBase64String(hash)
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
-            return $"{message}.{signature}";
+            var token = $"{message}.{signature}";
+            
+            // Create OAuth token record in database
+            var tokenHash = HashToken(jti);
+            var oauthToken = new OauthToken
+            {
+                TokenHash = tokenHash,
+                UserId = uid1,
+                ExpiresAt = DateTime.SpecifyKind(DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes).DateTime, DateTimeKind.Unspecified),
+                Revoked = false
+            };
+            Context.OauthTokens.Add(oauthToken);
+            await Context.SaveChangesAsync();
+
+            return token;
         }
 
-        private string GenerateHS256TokenWithCustomClaims(
+        private async Task<string> GenerateHS256TokenWithCustomClaimsAsync(
             Dictionary<string, string> claims,
-            string secret,  // This parameter is kept for backward compatibility but overridden
+            string secret,
             int expiryMinutes = 5)
         {
+            // Generate a unique JTI
+            var jti = Guid.NewGuid().ToString();
+            
             var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
                     "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -1385,30 +1594,44 @@ namespace deeplynx.tests.Middleware
             {
                 claimsJson.Append($"\"{claim.Key}\":\"{claim.Value}\",");
             }
-            claimsJson.Append($"\"exp\":{exp}}}");
+            claimsJson.Append($"\"jti\":\"{jti}\",\"exp\":{exp}}}");
 
             var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(claimsJson.ToString()))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var message = $"{header}.{payload}";
     
-            // IMPORTANT: Always use JWT_SECRET_KEY for signing, not the API key secret
+            // Always use JWT_SECRET_KEY for signing
             var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? TEST_JWT_SECRET;
             var secretKey = jwtSecret.Length < 32 ? jwtSecret.PadRight(32, '0') : jwtSecret;
 
-            using var hmac = new System.Security.Cryptography.HMACSHA256(
-                Encoding.UTF8.GetBytes(secretKey));
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
             var signature = Convert.ToBase64String(hash)
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
-            return $"{message}.{signature}";
+            var token = $"{message}.{signature}";
+            
+            // Create OAuth token record in database
+            var tokenHash = HashToken(jti);
+            var oauthToken = new OauthToken
+            {
+                TokenHash = tokenHash,
+                UserId = uid1,
+                ExpiresAt = DateTime.SpecifyKind(DateTimeOffset.UtcNow.AddMinutes(expiryMinutes).DateTime, DateTimeKind.Unspecified),
+                Revoked = false
+            };
+            Context.OauthTokens.Add(oauthToken);
+            await Context.SaveChangesAsync();
+
+            return token;
         }
 
         private string GenerateHS256TokenWithInvalidSignature(
             string email,
             string apiKey,
             string wrongSecret,
+            string jti,
             int expiresInMinutes = 60)
         {
             var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
@@ -1417,7 +1640,7 @@ namespace deeplynx.tests.Middleware
 
             var exp = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes).ToUnixTimeSeconds();
             var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(
-                    $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"exp\":{exp}}}"))
+                    $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"jti\":\"{jti}\",\"exp\":{exp}}}"))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var message = $"{header}.{payload}";
@@ -1425,13 +1648,45 @@ namespace deeplynx.tests.Middleware
             // Use the WRONG secret to create an invalid signature
             var secretKey = wrongSecret.Length < 32 ? wrongSecret.PadRight(32, '0') : wrongSecret;
 
-            using var hmac = new System.Security.Cryptography.HMACSHA256(
-                Encoding.UTF8.GetBytes(secretKey));
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
             var signature = Convert.ToBase64String(hash)
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
+            // Note: Caller must create OAuth token record if needed for the test
             return $"{message}.{signature}";
+        }
+
+        private string GenerateHS256TokenWithoutOAuthRecord(string email, string apiKey, string jti, int expiresInMinutes = 60)
+        {
+            var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
+                    "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            var exp = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes).ToUnixTimeSeconds();
+            var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(
+                    $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"jti\":\"{jti}\",\"exp\":{exp}}}"))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            var message = $"{header}.{payload}";
+            
+            var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? TEST_JWT_SECRET;
+            var secretKey = jwtSecret.Length < 32 ? jwtSecret.PadRight(32, '0') : jwtSecret;
+
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secretKey));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
+            var signature = Convert.ToBase64String(hash)
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            // NOTE: No OAuth token record created
+            return $"{message}.{signature}";
+        }
+
+        private static string HashToken(string jti)
+        {
+            using var sha256 = SHA256.Create();
+            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(jti));
+            return Convert.ToBase64String(hashBytes);
         }
 
         private T InvokePrivateMethod<T>(string methodName, params object[] parameters)
@@ -1483,5 +1738,7 @@ namespace deeplynx.tests.Middleware
             await Context.SaveChangesAsync();
             akid1 = apiKey1.Id;
         }
+
+        #endregion
     }
 }

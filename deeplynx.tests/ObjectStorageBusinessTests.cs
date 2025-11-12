@@ -25,6 +25,8 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
     private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     private ProjectBusiness _projectBusiness;
+    private Mock<IOrganizationBusiness> _organizationBusiness = null!;
+    
     public long pid;
     public long pid2;
     public long os1;
@@ -39,6 +41,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
+        _organizationBusiness = new Mock<IOrganizationBusiness>();
         _objectStorageBusiness = new ObjectStorageBusiness(Context, _cacheBusiness);
         _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
@@ -56,7 +59,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             _mockRoleBusiness.Object,
             _mockDataSourceBusiness.Object, 
             _objectStorageBusiness,
-            _eventBusiness);
+            _eventBusiness, _organizationBusiness.Object);
     }
 
     #region GetAllObjectStorages Tests

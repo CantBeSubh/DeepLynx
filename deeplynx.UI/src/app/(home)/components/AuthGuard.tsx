@@ -4,6 +4,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Image from "next/image";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -45,10 +46,16 @@ export default function AuthGuard({
   // Show loading while checking authentication
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
+      <div className="min-h-screen flex items-center justify-center login">
         <div className="text-center">
           <div className="loading loading-spinner loading-lg"></div>
-          <p className="mt-4">Checking authentication...</p>
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
         </div>
       </div>
     );

@@ -147,11 +147,29 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                            ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
             var apiKey = jwtToken.Claims.FirstOrDefault(c => c.Type == "apiKey")?.Value;
+            var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == "jti")?.Value;
 
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(apiKey))
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(jti))
             {
                 Log.Warning("Token missing required claims");
                 return AuthenticateResult.Fail("Token missing required claims");
+            }
+
+            // Check if token is revoked
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+    
+                // Hash the JTI for lookup
+                var tokenHash = HashToken(jti);
+                var tokenRecord = await dbContext.OauthTokens
+                    .FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
+    
+                if (tokenRecord == null || tokenRecord.Revoked)
+                {
+                        Log.Warning($"Token not found or revoked - JTI: {jti}");
+                        return AuthenticateResult.Fail("Token has been revoked");
+                }
             }
 
             // Verify the API key still exists and is valid
@@ -443,5 +461,12 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         {
             Log.Error(ex, "Error during local dev user provisioning");
         }
+    }
+    
+    private static string HashToken(string jti)
+    {
+        using var sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(jti));
+        return Convert.ToBase64String(hashBytes);
     }
 }

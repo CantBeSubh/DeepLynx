@@ -2,6 +2,7 @@
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
@@ -28,6 +29,7 @@ type Props = {
 
 export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const { t } = useLanguage();
+  const { organization } = useOrganizationSession();
   const [multi, setMulti] = useState(false);
   const [showMultiFileWarning, setShowMultiFileWarning] = useState(false);
   const [uploadType, setUploadType] = useState<UploadType>("new");
@@ -48,6 +50,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   >({});
   const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
   const [isLoadingObjectStorage, setIsLoadingObjectStorage] = useState(false);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -212,52 +215,76 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     })();
   }, [projectId]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAllProjects();
-        setProjects(data);
-        if (data.length === 1) {
-          setProjectId(String(data[0].id));
-        }
-      } catch (error) {
-        console.error(error);
+  // Memoize the fetch projects function
+  const fetchProjects = useCallback(async () => {
+    if (!organization) {
+      setProjects([]);
+      setProjectId("");
+      setIsLoadingProjects(false);
+      return;
+    }
+
+    setIsLoadingProjects(true);
+
+    try {
+      const data = await getAllProjects(organization.organizationId, true);
+      setProjects(data);
+      if (data.length === 1) {
+        setProjectId(String(data[0].id));
       }
-    })();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      setProjects([]);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [organization]);
+
+  // Fetch projects filtered by organization
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   return (
     <div>
-      <div className="flex items-center bg-base-200/40 py-2 pl-12">
+      <div className="bg-base-200/40 pl-12 p-6">
         <h1 className="text-2xl font-bold text-base-content">
           {t.translations.UPLOAD_CENTER}
         </h1>
       </div>
 
       <div
-        className={`flex gap-8 p-10 lg:p-20 ${
-          showRightPanel ? "justify-between" : "justify-center"
-        }`}
+        className={`flex gap-8 p-10 lg:p-20 ${showRightPanel ? "justify-between" : "justify-center"
+          }`}
       >
         {/* LEFT */}
         <div
-          className={`w-full lg:w-3/5 ${
-            showRightPanel ? "" : "max-w-5xl mx-auto"
-          }`}
+          className={`w-full lg:w-3/5 ${showRightPanel ? "" : "max-w-5xl mx-auto"
+            }`}
         >
           <h2>{t.translations.START_UPLOAD_BY_CHOOSING_TYPE}</h2>
           <div className="p-4 space-y-4">
             <fieldset className="space-x-4">
               <label className="label flex-col items-start text-base-content font-bold">
-                <span className="label-text mb-1">Select a project</span>
+                <span className="label-text mb-1">
+                  Select a project
+                  {isLoadingProjects && (
+                    <span className="loading loading-spinner loading-xs ml-2"></span>
+                  )}
+                </span>
                 <select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
                   className="select select-info select-sm mt-2"
                   required
+                  disabled={!organization || isLoadingProjects}
                 >
                   <option value="" disabled>
-                    {t.translations.PROJECT}
+                    {!organization
+                      ? "Select an organization first"
+                      : isLoadingProjects
+                        ? "Loading projects..."
+                        : t.translations.PROJECT}
                   </option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -285,8 +312,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!projectId
                       ? "Select a project first"
                       : isLoadingDataSources
-                      ? "Loading data sources..."
-                      : "Data Sources"}
+                        ? "Loading data sources..."
+                        : "Data Sources"}
                   </option>
                   {dataSources.map((d) => (
                     <option key={d.id} value={String(d.id)}>
@@ -314,8 +341,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!projectId
                       ? "Select a project first"
                       : isLoadingObjectStorage
-                      ? "Loading object storages..."
-                      : "Object storages"}
+                        ? "Loading object storages..."
+                        : "Object storages"}
                   </option>
                   {objectStorage.map((object) => (
                     <option key={object.id} value={String(object.id)}>

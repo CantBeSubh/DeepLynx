@@ -12,7 +12,7 @@ interface OrganizationManagementProps {
     initialOrganizations: OrganizationResponseDto[];
 }
 
-const OrganizationManagement = ({ initialOrganizations }: OrganizationManagementProps) => {
+const SiteOrganizationManagement = ({ initialOrganizations }: OrganizationManagementProps) => {
     const { t } = useLanguage();
     const [data, setData] = useState<OrganizationResponseDto[]>(initialOrganizations);
     const [isOrganizationModalOpen, setIsOrganizationModalOpen] = useState(false);
@@ -182,4 +182,4 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
     );
 };
 
-export default OrganizationManagement;
+export default SiteOrganizationManagement;

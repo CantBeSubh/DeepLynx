@@ -29,6 +29,8 @@ namespace deeplynx.tests
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
         private Mock<IRoleBusiness> _mockRoleBusiness = null!;
+        private Mock<IOrganizationBusiness> _mockOrganizationBusiness = null!;
+        
         public long pid;
         public long pid2;
         public long dsid;
@@ -55,6 +57,7 @@ namespace deeplynx.tests
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
             _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+            _mockOrganizationBusiness =  new Mock<IOrganizationBusiness>();
 
             _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(Context, _cacheBusiness, _edgeBusiness, _mockRecordBusiness.Object, _eventBusiness);
@@ -65,7 +68,7 @@ namespace deeplynx.tests
             _projectBusiness = new ProjectBusiness(
                 Context, _cacheBusiness, _mockLogger.Object, _classBusiness,
                 _mockRoleBusiness.Object, _dataSourceBusiness,
-                _mockObjectStorageBusiness.Object, _eventBusiness);
+                _mockObjectStorageBusiness.Object, _eventBusiness, _mockOrganizationBusiness.Object );
         }
 
         #region CreateEdge Tests

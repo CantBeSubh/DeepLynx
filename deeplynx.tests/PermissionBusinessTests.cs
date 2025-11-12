@@ -923,9 +923,8 @@ namespace deeplynx.tests
 
         protected override async Task SeedTestDataAsync()
         {
-            // await CleanupTestData();
             await base.SeedTestDataAsync();
-    
+
             // Create test user
             var user = new User
             {
@@ -1037,14 +1036,6 @@ namespace deeplynx.tests
 
             // delete permission 4 to test "not found" scenarios
             Context.Permissions.Remove(permission4);
-            await Context.SaveChangesAsync();
-        }
-
-        private async Task CleanupTestData()
-        {
-            // Remove all permissions (or just test-specific ones)
-            var existingPerms = await Context.Permissions.ToListAsync();
-            Context.Permissions.RemoveRange(existingPerms);
             await Context.SaveChangesAsync();
         }
     }

@@ -16,33 +16,6 @@ export const getAllOauthApplications = async (hideArchived: boolean = true): Pro
     }
 };
 
-// //Fetch OAuth Application by ID
-// export const getOauthApplication = async (applicationId: number, hideArchived: boolean = true): Promise<OauthApplicationResponseDto> => {
-//     try {
-//         const res = await api.get<OauthApplicationResponseDto>(
-//             `/oauth-applications/GetOauthApplication/${applicationId}`,
-//             { params: { hideArchived } }
-//         );
-//         return res.data;
-//     } catch (error) {
-//         console.error(`Error fetching OAuth application ${applicationId}:`, error);
-//         throw error;
-//     }
-// };
-
-//Create an OAuth Application
-// export const createOauthApplication = async (dto: CreateOauthApplicationRequestDto): Promise<OauthApplicationSecureResponseDto> => {
-//     try {
-//         const res = await api.post<OauthApplicationSecureResponseDto>(
-//             `/oauth-applications/CreateOauthApplication`,
-//             dto
-//         );
-//         return res.data;
-//     } catch (error) {
-//         console.error("Error creating OAuth application:", error);
-//         throw error;
-//     }
-// };
 
 export async function createOauthApplication(dto: CreateOauthApplicationRequestDto) {
     const res = await api.post("/oauth-applications/CreateOauthApplication", dto, {
@@ -54,7 +27,6 @@ export async function createOauthApplication(dto: CreateOauthApplicationRequestD
 //Update an OAuth Application
 export const updateOauthApplication = async (applicationId: number, dto: UpdateOauthApplicationRequestDto): Promise<OauthApplicationResponseDto> => {
     try {
-        console.log("made it", dto)
         const res = await api.put<OauthApplicationResponseDto>(
             `/oauth-applications/UpdateOauthApplication/${applicationId}`,
             dto

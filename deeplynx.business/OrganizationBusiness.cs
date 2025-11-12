@@ -98,18 +98,24 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// </summary>
     /// <param name="dto">A data transfer object with details on the organization to be created.</param>
     /// <returns>The created organization.</returns>
-    public async Task<OrganizationResponseDto> CreateOrganization(CreateOrganizationRequestDto dto)
+    public async Task<OrganizationResponseDto> CreateOrganization(CreateOrganizationRequestDto dto, bool isDefault = false)
     {
         ValidationHelper.ValidateModel(dto);
         var organization = new Organization
         {
             Name = dto.Name,
             Description = dto.Description,
+            DefaultOrg = isDefault,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null // TODO: Implement user ID here when JWT tokens are ready
         };
 
         _context.Organizations.Add(organization);
+        if (isDefault)
+        {
+            await MakePreviousDefaultsFalse(organization.Id);
+        }
+
         await _context.SaveChangesAsync();
 
         // Log create Organization event
@@ -152,10 +158,17 @@ public class OrganizationBusiness : IOrganizationBusiness
 
         organization.Name = dto.Name ?? organization.Name;
         organization.Description = dto.Description ?? organization.Description;
+        organization.DefaultOrg = dto.DefaultOrg ?? organization.DefaultOrg;
         organization.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         organization.LastUpdatedBy = null; // TODO: handled in the future by JWT
 
         _context.Organizations.Update(organization);
+
+        if (dto.DefaultOrg != null && dto.DefaultOrg == true)
+        {
+            await MakePreviousDefaultsFalse(organization.Id);
+        }
+        
         await _context.SaveChangesAsync();
 
         // log update Organization event
@@ -351,4 +364,22 @@ public class OrganizationBusiness : IOrganizationBusiness
 
         return true;
     }
+
+    private async Task MakePreviousDefaultsFalse(long defaultOrganizationId)
+    {
+        var previousDefaults = 
+            await _context.Organizations
+                .Where(o => o.DefaultOrg && o.Id != defaultOrganizationId)
+                .ToListAsync();
+
+        if (previousDefaults.Count > 0)
+        {
+            foreach (var defaultOrg in previousDefaults)
+            {
+                defaultOrg.DefaultOrg = false;
+                _context.Organizations.Update(defaultOrg);
+            }
+        }
+    }
+    
 }

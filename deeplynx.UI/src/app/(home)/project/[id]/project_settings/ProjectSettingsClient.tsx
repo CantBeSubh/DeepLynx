@@ -75,13 +75,13 @@ export default function ProjectSettingsClient({
             ),
         },
         {
-          label: "Roles",
-          content: (
-            <RolesTable
-              id={selectedProjectId}
-              data={roles}
-            />
-          ),
+            label: "Roles",
+            content: (
+                <RolesTable
+                    id={selectedProjectId}
+                    data={roles}
+                />
+            ),
         },
         //  TODO POST FY: ADD BACK DATA SOURCE / OBJ STORAGE
         // {
@@ -128,42 +128,36 @@ export default function ProjectSettingsClient({
     }, [searchParams]);
 
     return (
-        <div className="">
-            <div className="">
-                <div className="">
-                    <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
-                        <div>
-                            <h1 className="text-2xl font-bold text-info-content">
-                                {t.translations.PROJECT_SETTINGS}
-                            </h1>
-
-                            <ProjectDropdownSingleSelect
-                                projects={projects}
-                                onSelectionChange={handleProjectChange}
-                                defaultSelectedId={initialProject?.id.toString() || ""}
-                            />
-                        </div>
-                    </div>
-                    <div className="flex justify-end space-x-4 pt-4">
-                        <button
-                            onClick={handleAddButtonClick}
-                            className="btn btn-secondary text-white"
-                        >
-                            <PlusIcon className="size-6" />
-                            {activeTab === "Members" ? t.translations.MEMBER : t.translations.ROLE}
-                        </button>
-                        <div className="flex flex-col">
-                            {/* TODO POST FY
-                            {activeTab === "Members" && <MemberSearchBar />} */}
-                        </div>
-                    </div>
+        <div>
+            <div className="bg-base-200/40 pl-12 p-6">
+                <h1 className="text-2xl font-bold text-base-content">
+                    {t.translations.PROJECT_SETTINGS}
+                </h1>
+                <div className="mt-2">
+                    <ProjectDropdownSingleSelect
+                        projects={projects}
+                        onSelectionChange={handleProjectChange}
+                        defaultSelectedId={selectedProjectId === undefined
+                            || selectedProjectId === null
+                            ? undefined
+                            : String(selectedProjectId)}
+                    />
                 </div>
+            </div>
+            <div className="p-2 flex justify-between items-center">
                 <Tabs
                     tabs={tabData}
                     className="tabs tabs-border ml-5"
                     onTabChange={handleTabChange}
                     activeTab={activeTab}
                 />
+                <button
+                    onClick={handleAddButtonClick}
+                    className="btn btn-secondary text-white mr-6"
+                >
+                    <PlusIcon className="size-6" />
+                    {activeTab === "Members" ? t.translations.MEMBER : t.translations.ROLE}
+                </button>
             </div>
 
             <AddProjectMember
