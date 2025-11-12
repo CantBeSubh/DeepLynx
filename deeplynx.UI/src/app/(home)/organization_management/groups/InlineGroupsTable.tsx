@@ -400,9 +400,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
         )}
 
         {/* Groups Table */}
-        <div className="bg-base-200 rounded-lg shadow-lg overflow-hidden">
+        <div className=" rounded-lg shadow-xl overflow-hidden border-2 border-primary ">
           <table className="table w-full">
-            <thead className="bg-base-300">
+            <thead className="">
               <tr>
                 <th className="w-12">
                   <input
@@ -456,7 +456,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                       {/* Main Row */}
                       <tr
                         className={`hover cursor-pointer ${
-                          expandedGroup === group.id ? "bg-base-300" : ""
+                          expandedGroup === group.id ? "bg-base-200" : ""
                         }`}
                         onClick={() => toggleExpand(group.id)}
                       >
@@ -615,9 +615,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                                   <span className="loading loading-spinner loading-lg"></span>
                                 </div>
                               ) : (
-                                <div className="grid grid-cols-2 gap-6">
+                                <div className="grid grid-cols-2 gap-6 max-h-96">
                                   {/* Current Members */}
-                                  <div>
+                                  <div className="flex flex-col">
                                     <div className="flex justify-between items-center mb-3">
                                       <h5 className="font-semibold flex items-center gap-2">
                                         <UserGroupIcon className="w-5 h-5" />
@@ -625,7 +625,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                                         )
                                       </h5>
                                     </div>
-                                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                                    <div className="space-y-2 max-h-80 overflow-y-auto">
                                       {currentMembers.length === 0 ? (
                                         <div className="text-center py-4 text-base-content/60">
                                           No members in this group yet
@@ -666,7 +666,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                                   </div>
 
                                   {/* Add Members */}
-                                  <div>
+                                  <div className="flex flex-col">
                                     <div className="flex justify-between items-center mb-3">
                                       <h5 className="font-semibold">
                                         Add Members
@@ -686,7 +686,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                                         />
                                       </div>
                                     </div>
-                                    <div className="space-y-2 max-h-72 overflow-y-auto">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
                                       {filteredAvailable.length === 0 ? (
                                         <div className="text-center py-4 text-base-content/60">
                                           {availableUsersForGroup.length === 0
