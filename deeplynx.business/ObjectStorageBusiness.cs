@@ -21,20 +21,39 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Gets all the object storages for a project
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storages belong</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived ObjectStorages from the result </param>
-    public async Task<List<ObjectStorageResponseDto>> GetAllObjectStorages(long projectId, bool hideArchived)
+    public async Task<List<ObjectStorageResponseDto>> GetAllObjectStorages(long? organizationId, long? projectId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        
-        var objectStoragesQuery = _context.ObjectStorages.Where(os => os.ProjectId == projectId);
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified");
+        }
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
+
+        IQueryable<ObjectStorage> query = _context.ObjectStorages;
+
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else // organizationId.HasValue is guaranteed by the first check
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
 
         if (hideArchived)
         {
-            objectStoragesQuery = objectStoragesQuery.Where(os => !os.IsArchived);
+            query = query.Where(os => !os.IsArchived);
         }
 
-        var objectStorages = await objectStoragesQuery.ToListAsync();
+        var objectStorages = await query.ToListAsync();
         return objectStorages
             .Select(os => new ObjectStorageResponseDto()
             {
@@ -42,6 +61,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
                 Name = os.Name,
                 Type = os.Type,
                 ProjectId = os.ProjectId,
+                OrganizationId = os.OrganizationId,
                 Default = os.Default,
                 LastUpdatedAt = os.LastUpdatedAt,
                 LastUpdatedBy = os.LastUpdatedBy,
@@ -53,97 +73,160 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Gets a single object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived object storage from the result</param>
     /// <exception cref="KeyNotFoundException">Thrown when the object storage is not found or archived</exception>
-    public async Task<ObjectStorageResponseDto> GetObjectStorage(long projectId, long objectStorageId, 
+    public async Task<ObjectStorageResponseDto> GetObjectStorage(long? organizationId, long? projectId, long objectStorageId, 
         bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        var objectStorage =
-            await _context.ObjectStorages
-                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
-                .FirstOrDefaultAsync();
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified");
+        }
+
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
+    
+        var query = _context.ObjectStorages
+            .Where(os => os.Id == objectStorageId);
+    
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else // organizationId.HasValue is guaranteed by the first check
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
         
+        if (hideArchived)
+        {
+            query = query.Where(os => !os.IsArchived);
+        }
+    
+        var objectStorage = await query
+            .Select(os => new ObjectStorageResponseDto
+            {
+                Id = os.Id,
+                Name = os.Name,
+                Type = os.Type,
+                ProjectId = os.ProjectId,
+                OrganizationId = os.OrganizationId,
+                Default = os.Default,
+                LastUpdatedAt = os.LastUpdatedAt,
+                LastUpdatedBy = os.LastUpdatedBy,
+                IsArchived = os.IsArchived,
+            })
+            .FirstOrDefaultAsync();
+    
         if (objectStorage == null)
         {
-            throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
+            throw new KeyNotFoundException($"Object storage with id {objectStorageId} in {(projectId.HasValue ? $"project {projectId.Value}" : $"organization {organizationId.Value}")} not found");
         }
-
-        if (hideArchived && objectStorage.IsArchived)
-        {
-            throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
-        }
-
-        return new ObjectStorageResponseDto
-        {
-            Id = objectStorage.Id,
-            Name = objectStorage.Name,
-            Type = objectStorage.Type,
-            ProjectId = objectStorage.ProjectId,
-            Default = objectStorage.Default,
-            LastUpdatedAt = objectStorage.LastUpdatedAt,
-            LastUpdatedBy = objectStorage.LastUpdatedBy,
-            IsArchived = objectStorage.IsArchived,
-        };
+        
+        return objectStorage;
     }
     
     /// <summary>
     /// Gets default object storage for project
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <exception cref="KeyNotFoundException">Thrown when the object storage is not found or archived</exception>
-    public async Task<ObjectStorageResponseDto> GetDefaultObjectStorage(long projectId)
+    public async Task<ObjectStorageResponseDto> GetDefaultObjectStorage(long? organizationId, long? projectId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        var objectStorage = await _context.ObjectStorages
-                .Where(os => os.ProjectId == projectId && os.Default == true)
-                .FirstOrDefaultAsync();
-        
-        if (objectStorage == null)
+        if (!projectId.HasValue && !organizationId.HasValue)
         {
-            throw new KeyNotFoundException($"Default object storage for project {projectId} not found");
+            throw new ArgumentException("Either projectId or organizationId must be specified");
         }
         
-        //Todo: update stored procedure to mark archived object storages default column as false
-        if (objectStorage.IsArchived)
+        if (projectId.HasValue && organizationId.HasValue)
         {
-            throw new KeyNotFoundException($"Found archived default object storage");
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
         }
 
-        return new ObjectStorageResponseDto
+        var query = _context.ObjectStorages.Where(os => os.Default && !os.IsArchived);
+        if (projectId.HasValue)
         {
-            Id = objectStorage.Id,
-            Name = objectStorage.Name,
-            Type = objectStorage.Type,
-            ProjectId = objectStorage.ProjectId,
-            Default = objectStorage.Default,
-            LastUpdatedAt = objectStorage.LastUpdatedAt,
-            LastUpdatedBy = objectStorage.LastUpdatedBy,
-            IsArchived = objectStorage.IsArchived,
-        };
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
+    
+        var objectStorage = await query
+            .Select(os => new ObjectStorageResponseDto
+            {
+                Id = os.Id,
+                Name = os.Name,
+                Type = os.Type,
+                ProjectId = os.ProjectId,
+                OrganizationId = os.OrganizationId,
+                Default = os.Default,
+                LastUpdatedAt = os.LastUpdatedAt,
+                LastUpdatedBy = os.LastUpdatedBy,
+                IsArchived = os.IsArchived,
+            })
+            .FirstOrDefaultAsync();
+    
+        if (objectStorage == null)
+        {
+            throw new KeyNotFoundException($"Default object storage for {(projectId.HasValue ? $"project {projectId.Value}" : $"organization {organizationId.Value}")} not found");
+        }
+        
+        return objectStorage;
     }
 
     /// <summary>
     /// Creates an object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="dto">A data transfer object with details on the new object storage to be created.</param>
     /// <param name = "makeDefault"> A boolean that tells whether to make the object storage default or not</param>
     public async Task<ObjectStorageResponseDto> CreateObjectStorage(
-        long projectId,
+        long? organizationId, 
+        long? projectId,
         CreateObjectStorageRequestDto dto,
         bool makeDefault = false)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Must specify project or organization ID");
+        }
+
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
+        
         ValidationHelper.ValidateModel(dto);
 
-        var objectStorageWithSameName = 
-            await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == dto.Name);
-        if (objectStorageWithSameName != null)
+
+        bool objectStorageWithSameName;
+        if (projectId.HasValue)
         {
-            throw new InvalidOperationException($"Object storage with name {dto.Name} already exists");
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            objectStorageWithSameName = await _context.ObjectStorages.AnyAsync(os => os.ProjectId == projectId && os.Name == dto.Name);
+        }
+        else
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            objectStorageWithSameName = await _context.ObjectStorages.AnyAsync(os => os.OrganizationId == organizationId && os.Name == dto.Name);
+        }
+        
+        if (objectStorageWithSameName)
+        {
+            throw new InvalidOperationException($"Object storage with name {dto.Name} in {(projectId.HasValue ? $"project {projectId.Value}" : $"organization {organizationId.Value}")} already exists");
         }
         
         string type;
@@ -168,6 +251,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Type = type,
             Default = makeDefault,
             ProjectId = projectId,
+            OrganizationId = organizationId,
             Config = dto.Config.ToString(),
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null // TODO: Implement user ID here when JWT tokens are ready
@@ -175,8 +259,8 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         
         _context.ObjectStorages.Add(newObjectStorage);
         
-        if (makeDefault)
-            await MakePreviousDefaultsFalse(projectId, newObjectStorage.Id);
+        if (makeDefault && projectId.HasValue)
+            await MakePreviousDefaultsFalse(organizationId, projectId, newObjectStorage.Id);
         
         await _context.SaveChangesAsync();
 
@@ -186,6 +270,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Name = newObjectStorage.Name,
             Type = newObjectStorage.Type,
             ProjectId = newObjectStorage.ProjectId,
+            OrganizationId = newObjectStorage.OrganizationId,
             Default = newObjectStorage.Default,
             LastUpdatedAt = newObjectStorage.LastUpdatedAt,
             LastUpdatedBy = newObjectStorage.LastUpdatedBy,
@@ -196,34 +281,49 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Updates an object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <param name="dto">A data transfer object with details on object storage fields to be updated</param>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<ObjectStorageResponseDto> UpdateObjectStorage(long projectId, long objectStorageId,
+    public async Task<ObjectStorageResponseDto> UpdateObjectStorage(long? organizationId, long? projectId, long objectStorageId,
         UpdateObjectStorageRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Must specify project or organization ID");
+        }
+
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
+        
         ValidationHelper.ValidateModel(dto);
-        var updatedObjectStorage = 
-            await _context.ObjectStorages
-            .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
-            .FirstOrDefaultAsync();
+
+        var query = _context.ObjectStorages.Where(os => os.Id == objectStorageId && !os.IsArchived);
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
+
+        var updatedObjectStorage = await query.FirstOrDefaultAsync();
+        
         if (updatedObjectStorage == null)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
-        }
-
-        if (updatedObjectStorage.IsArchived)
-        {
-            throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
         }
         
         updatedObjectStorage.Name = dto.Name;
         updatedObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         updatedObjectStorage.LastUpdatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
         
-        _context.ObjectStorages.Update(updatedObjectStorage);
         await _context.SaveChangesAsync();
 
         return new ObjectStorageResponseDto
@@ -243,17 +343,36 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Hard deletes an object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> DeleteObjectStorage(long projectId, long objectStorageId)
+    public async Task<bool> DeleteObjectStorage(long? organizationId, long? projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Must specify project or organization ID");
+        }
+
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
         
-        var objectStorage = 
-            await _context.ObjectStorages
-                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
-                .FirstOrDefaultAsync();
+        var query = _context.ObjectStorages.Where(os => os.Id == objectStorageId);
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
+        
+        
+        var objectStorage = await query.FirstOrDefaultAsync();
         
         if (objectStorage == null)
         { 
@@ -273,17 +392,35 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Soft deletes (archives) a data storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> ArchiveObjectStorage(long projectId, long objectStorageId)
+    public async Task<bool> ArchiveObjectStorage(long? organizationId, long? projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Must specify project or organization ID");
+        }
+
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
         
-        var objectStorage =
-            await _context.ObjectStorages
-                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
-                .FirstOrDefaultAsync();
+        var query = _context.ObjectStorages.Where(os => os.Id == objectStorageId);
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
+        
+        var objectStorage = await query.FirstOrDefaultAsync();
         
         if (objectStorage == null)
         {
@@ -302,7 +439,6 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         }
 
         objectStorage.IsArchived = true;
-        _context.ObjectStorages.Update(objectStorage);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -310,17 +446,35 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Unarchives a data storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> UnarchiveObjectStorage(long projectId, long objectStorageId)
+    public async Task<bool> UnarchiveObjectStorage(long? organizationId, long? projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Must specify project or organization ID");
+        }
+
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
         
-        var objectStorage = 
-            await _context.ObjectStorages
-                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
-                .FirstOrDefaultAsync();
+        var query = _context.ObjectStorages.Where(os => os.Id == objectStorageId);
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
+        
+        var objectStorage = await query.FirstOrDefaultAsync();
         
         if (objectStorage == null)
         {
@@ -333,7 +487,6 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         }
         
         objectStorage.IsArchived = false;
-        _context.ObjectStorages.Update(objectStorage);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -341,19 +494,37 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Changes the default object storage
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">ID of the project in which the object storage belongs</param>
     /// <param name="objectStorageId">ID of the object storage to change to default</param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException"></exception>
     /// <exception cref="Exception"></exception>
-    public async Task<ObjectStorageResponseDto> SetDefaultObjectStorage(long projectId, long objectStorageId)
+    public async Task<ObjectStorageResponseDto> SetDefaultObjectStorage(long? organizationId, long? projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Must specify project or organization ID");
+        }
+
+        if (projectId.HasValue && organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified, not both");
+        }
         
-        var defaultObjectStorage = 
-            await _context.ObjectStorages
-                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
-                .FirstOrDefaultAsync();
+        var query = _context.ObjectStorages.Where(os => os.Id == objectStorageId);
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            query = query.Where(os => os.ProjectId == projectId);
+        }
+        else
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
+            query = query.Where(os => os.OrganizationId == organizationId);
+        }
+        
+        var defaultObjectStorage = await query.FirstOrDefaultAsync();
         
         if (defaultObjectStorage == null)
         {
@@ -371,9 +542,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             defaultObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             defaultObjectStorage.LastUpdatedBy = null; // TODO: handled in future by JWT.
 
-            await MakePreviousDefaultsFalse(projectId, defaultObjectStorage.Id);
-            _context.ObjectStorages.Update(defaultObjectStorage);
+            await MakePreviousDefaultsFalse(organizationId, projectId, defaultObjectStorage.Id);
             await _context.SaveChangesAsync();
+        }
+        else
+        {
+            throw new InvalidOperationException($"Object storage with id {objectStorageId} is already default");
         }
 
         return new ObjectStorageResponseDto
@@ -388,13 +562,21 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             IsArchived = defaultObjectStorage.IsArchived,
         };
     }
-
-    private async Task MakePreviousDefaultsFalse(long projectId, long defaultObjectStorageId)
+    
+    private async Task MakePreviousDefaultsFalse(long? organizationId, long? projectId, long defaultObjectStorageId)
     {
-        var previousDefaults = 
-            await _context.ObjectStorages
-                .Where(os => os.ProjectId == projectId && os.Default == true && os.Id != defaultObjectStorageId)
-                .ToListAsync();
+        var defaultsQuery = _context.ObjectStorages.Where(os => os.Default && os.Id != defaultObjectStorageId);
+
+        if (projectId.HasValue)
+        {
+            defaultsQuery = defaultsQuery.Where(os => os.ProjectId == projectId.Value);
+        } 
+        else if (organizationId.HasValue)
+        {
+            defaultsQuery = defaultsQuery.Where(os => os.OrganizationId == organizationId.Value);
+        }
+        
+        var previousDefaults = await defaultsQuery.ToListAsync();
         
         if (previousDefaults.Count > 0)
         {

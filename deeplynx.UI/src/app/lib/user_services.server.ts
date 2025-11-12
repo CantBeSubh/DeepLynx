@@ -7,10 +7,13 @@ import { apiFetch, asJson } from "./api.server";
 
 /** ---- Server-safe calls (no browser cookies; safe in prerender/SSR) ---- */
 
-export async function getAllUsersServer(projectId?: number): Promise<UserResponseDto[]> {
+export async function getAllUsersServer(projectId?: number, organizationId?: number): Promise<UserResponseDto[]> {
   const params: Record<string, string> = {};
   if (projectId !== undefined) {
     params.projectId = String(projectId);
+  }
+  if (organizationId !== undefined) {
+    params.organizationId = String(organizationId);
   }
   const qs = new URLSearchParams(params);
   const res = await apiFetch(`users/GetAllUsers?${qs.toString()}`);

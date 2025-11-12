@@ -50,6 +50,7 @@ export type GroupResponseDto = {
   lastUpdatedBy?: string | null;
   isArchived: boolean;
   organizationId: number | string;
+  memberCount?: number;
 }
 
 export type HistoricalRecordResponseDto = {
@@ -190,6 +191,7 @@ export type UserResponseDto =
     isSysAdmin: boolean;
     isArchived: boolean;
     isActive: boolean;
+    role?: string;
   }
 
 export type GraphResponseDto = {

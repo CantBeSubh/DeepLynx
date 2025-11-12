@@ -1,23 +1,42 @@
+// src/app/(home)/organization_management/OrganizationManagementClient.tsx
 "use client";
 
 import React, { useState } from "react";
 import Tabs from "../components/Tabs";
-import { OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
+import {
+  GroupResponseDto,
+  OrganizationResponseDto,
+  ProjectResponseDto,
+  UserResponseDto,
+} from "../types/responseDTOs";
 import UsersTable from "../components/SiteManagementPortal/UsersTable";
-import TagManagementPage from "../tag_management/page";
 import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
 import { useLanguage } from "@/app/contexts/Language";
 import ObjectStorageTable from "../components/OrganizationManagementPortal/ObjectStorageTable";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import TagManagementClient from "../tag_management/TagManagementClient";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import InlineGroupsTable from "./groups/InlineGroupsTable";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
+  initialProjects: ProjectResponseDto[];
+  initialGroups: GroupResponseDto[];
+  initialSelectedProject?: ProjectResponseDto;
 }
 
-const OrganizationManagementClient = ({ members }: OrganizationManagementProps) => {
+const OrganizationManagementClient = ({
+  members,
+  initialProjects,
+  initialGroups,
+  initialSelectedProject,
+}: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
   const { t } = useLanguage();
   const { organization, setOrganization } = useOrganizationSession();
+  const { project } = useProjectSession();
+  console.log("Groups", initialGroups);
+  console.log("Members", members);
 
   const tabData = [
     {
@@ -30,11 +49,22 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
     },
     {
       label: "Groups",
-      content: "content here",
+      content: (
+        <InlineGroupsTable
+          initialGroups={initialGroups}
+          availableUsers={members}
+          organizationId={organization?.organizationId}
+        />
+      ),
     },
     {
       label: "Tags and Security Labels",
-      content: "content here",
+      content: (
+        <TagManagementClient
+          initialProjects={initialProjects}
+          initialSelectedProject={initialSelectedProject}
+        />
+      ),
     },
     // {
     //   label: "Object Storage",
@@ -47,7 +77,7 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
       ) : (
         <div>No organization selected</div>
       ),
-    }
+    },
   ];
 
   const handleTabChange = (label: string) => {
@@ -57,7 +87,9 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
   return (
     <div>
       <div className="bg-base-200/40 pl-12 p-6">
-        <h1 className="text-2xl font-bold text-base-content">{t.translations.ORGANIZATION_MANAGEMENT}</h1>
+        <h1 className="text-2xl font-bold text-base-content">
+          {t.translations.ORGANIZATION_MANAGEMENT}
+        </h1>
       </div>
       <div className="p-2">
         <Tabs

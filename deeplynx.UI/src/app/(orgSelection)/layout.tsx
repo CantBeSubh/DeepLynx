@@ -1,7 +1,7 @@
+// src/app/(orgSelection)/layout.tsx
 import { RBACProvider } from "../(home)/rbac/RBACContext";
 import { OrganizationSessionProvider } from "../contexts/OrganizationSessionProvider";
 
-// app/(selection)/layout.tsx
 export default function SelectionLayout({
   children,
 }: {
