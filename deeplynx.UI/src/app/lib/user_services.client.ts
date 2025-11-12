@@ -25,6 +25,26 @@ export async function getAllUsers(organizationId?: number | string, projectId?: 
   }
 }
 
+export async function getCurrentUser() {
+  try {
+    const res = await api.get(`/users/GetCurrentUser`);
+    return res.data;
+  } catch (error) {
+    console.error("API call failed getting current user:", error);
+    throw error;
+  }
+}
+
+export async function getLocalDevUser() {
+  try {
+    const res = await api.get(`/users/GetLocalDevUser`);
+    return res.data;
+  } catch (error) {
+    console.error("API call failed getting local dev user:", error);
+    throw error;
+  }
+}
+
 export async function getDataOverview(userId: string) {
   try {
     const res = await api.get(`/users/GetDataOverview/${encodeURIComponent(userId)}`);

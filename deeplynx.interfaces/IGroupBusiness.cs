@@ -13,4 +13,5 @@ public interface IGroupBusiness
     Task<bool> DeleteGroup(long groupId);
     Task<bool> AddUserToGroup(long userId, long groupId);
     Task<bool> RemoveUserFromGroup(long userId, long groupId);
+    Task<IEnumerable<UserResponseDto>> GetGroupMembers(long groupId);
 }

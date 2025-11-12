@@ -1,10 +1,10 @@
 // src/app/(home)/components/AuthGuard.tsx
 "use client";
 
-import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Image from "next/image";
+import { useSafeSession } from "@/app/hooks/useSafeSession";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -15,12 +15,12 @@ export default function AuthGuard({
   children,
   redirectTo = "/login/signin",
 }: AuthGuardProps) {
-  const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Check if auth is disabled
   const disableAuth =
     process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
+  const { data: session, status } = useSafeSession();
 
   useEffect(() => {
     // Skip auth check if disabled
@@ -67,7 +67,7 @@ export default function AuthGuard({
       <div className="min-h-screen flex items-center justify-center bg-base-100">
         <div className="text-center">
           <div className="loading loading-spinner loading-lg"></div>
-          <p className="mt-4">Redirecting to login...</p>
+          <p className="mt-4 text-base-content">Redirecting to login...</p>
         </div>
       </div>
     );

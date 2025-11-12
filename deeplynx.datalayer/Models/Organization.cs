@@ -44,9 +44,13 @@ public partial class Organization
 
     [InverseProperty("Organization")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<ObjectStorage> ObjectStorages { get; set; } = new List<ObjectStorage>();
 
     [InverseProperty("Organization")]
     public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
+    
 
     [InverseProperty("Organization")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();

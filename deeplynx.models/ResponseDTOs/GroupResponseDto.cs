@@ -9,4 +9,5 @@ public class GroupResponseDto
     public long? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; }
     public long? OrganizationId { get; set; }
+    public int MemberCount { get; set; }
 }

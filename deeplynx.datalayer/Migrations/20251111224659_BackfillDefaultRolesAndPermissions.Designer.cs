@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251111224659_BackfillDefaultRolesAndPermissions")]
+    partial class BackfillDefaultRolesAndPermissions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -870,11 +873,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OrganizationId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("organization_id");
-
-                    b.Property<long?>("ProjectId")
+                    b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -889,16 +888,11 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_object_storages_last_updated_by");
 
-                    b.HasIndex(new[] { "OrganizationId" }, "IX_object_storages_organization_id");
-
                     b.HasIndex(new[] { "ProjectId" }, "IX_object_storages_project_id");
 
                     b.HasIndex(new[] { "Id" }, "idx_object_storage_id");
 
-                    b.ToTable("object_storages", "deeplynx", t =>
-                        {
-                            t.HasCheckConstraint("ck_object_storages_ProjectXorOrg", "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)");
-                        });
+                    b.ToTable("object_storages", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
@@ -2012,18 +2006,14 @@ namespace deeplynx.datalayer.Migrations
                         .HasForeignKey("LastUpdatedBy")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
-                        .WithMany("ObjectStorages")
-                        .HasForeignKey("OrganizationId");
-
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("ObjectStorages")
                         .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("object_storage_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
-
-                    b.Navigation("Organization");
 
                     b.Navigation("Project");
                 });
@@ -2399,8 +2389,6 @@ namespace deeplynx.datalayer.Migrations
             modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
                 {
                     b.Navigation("Groups");
-
-                    b.Navigation("ObjectStorages");
 
                     b.Navigation("OrganizationUsers");
 

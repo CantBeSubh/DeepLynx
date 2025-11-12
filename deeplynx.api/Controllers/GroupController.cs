@@ -70,6 +70,27 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
+        /// Get all members of a group
+        /// </summary>
+        /// <param name="groupId">ID of the group</param>
+        /// <returns>List of users in the group</returns>
+        [HttpGet("GetGroupMembers/{groupId}", Name = "api_get_group_members")]
+        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetGroupMembers(long groupId)
+        {
+            try
+            {
+                var members = await _groupBusiness.GetGroupMembers(groupId);
+                return Ok(members);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while retrieving members for group {groupId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
         /// Create a Group
         /// </summary>
         /// <param name="dto">Data structure of group to create</param>
@@ -188,7 +209,7 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpPost("AddUserToGroup", Name = "api_add_user_to_group")]
         public async Task<ActionResult> AddUserToGroup(
-            [FromQuery] long groupId, 
+            [FromQuery] long groupId,
             [FromQuery] long userId)
         {
             try
@@ -212,7 +233,7 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpDelete("RemoveUserFromGroup", Name = "api_remove_user_from_group")]
         public async Task<ActionResult> RemoveUserFromGroup(
-            [FromQuery] long groupId, 
+            [FromQuery] long groupId,
             [FromQuery] long userId)
         {
             try
