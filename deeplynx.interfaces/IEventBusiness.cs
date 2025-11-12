@@ -9,4 +9,11 @@ public interface IEventBusiness
     Task<List<EventResponseDto>> GetAllEventsByUserProjectSubscriptions(long userId, long projectId);
     Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto);
     Task<List<EventResponseDto>> BulkCreateEvents(long projectId, List<CreateEventRequestDto> events);
+    Task BulkInsertEventsWithCopyAsync(
+        Npgsql.NpgsqlConnection conn,
+        Npgsql.NpgsqlTransaction tx,
+        IReadOnlyList<CreateEventRequestDto> events,
+        long projectId,
+        long? userId,
+        CancellationToken ct = default);
 }

@@ -1,22 +1,38 @@
 using deeplynx.interfaces;
+using Npgsql;
 
 namespace deeplynx.helpers.BigData;
 
 public sealed class BulkCopyUpsertExecutor : IBulkCopyUpsertExecutor
 {
+    /// <summary>
+    ///     Bulk upload to a PostgreSQL Database using binary copy and single instance upserting
+    /// </summary>
+    /// <param name="conn">NPGSQL PostgreSQL Connection</param>
+    /// <param name="tx">NPGSQL PostgreSQL Transaction for rollback</param>
+    /// <param name="createTempSql">DDL statement to define temp table schema</param>
+    /// <param name="copyCommandText">SQL statement to copy data into temp table</param>
+    /// <param name="rows">Input enumerable data of generic type to be inserted</param>
+    /// <param name="writeRow">Delegate map to handle per row binary writes of 'rows'</param>
+    /// <param name="upsertSql">SQL Statement to handle data specific PG update and conflict resolution</param>
+    /// <param name="mapRow">Map generic return list fields from upserted results</param>
+    /// <param name="ct">Optional cancellation token to end long requests</param>
+    /// <returns>Generic type list of ORM rows created</returns>
     public async Task<List<TOut>> CopyUpsertAsync<TIn, TOut>(
-        Npgsql.NpgsqlConnection conn,
-        Npgsql.NpgsqlTransaction tx,
+        NpgsqlConnection conn,
+        NpgsqlTransaction tx,
         string createTempSql,
         string copyCommandText,
         IEnumerable<TIn> rows,
-        Action<Npgsql.NpgsqlBinaryImporter, TIn> writeRow,
+        Action<NpgsqlBinaryImporter, TIn> writeRow,
         string upsertSql,
-        Func<Npgsql.NpgsqlDataReader, TOut> mapRow,
+        Func<NpgsqlDataReader, TOut> mapRow,
         CancellationToken ct = default)
     {
-        await using (var cmd = new Npgsql.NpgsqlCommand(createTempSql, conn, tx))
+        await using (var cmd = new NpgsqlCommand(createTempSql, conn, tx))
+        {
             await cmd.ExecuteNonQueryAsync(ct);
+        }
 
         await using (var writer = conn.BeginBinaryImport(copyCommandText))
         {
@@ -25,16 +41,18 @@ public sealed class BulkCopyUpsertExecutor : IBulkCopyUpsertExecutor
                 await writer.StartRowAsync(ct);
                 writeRow(writer, row);
             }
+
             await writer.CompleteAsync(ct);
         }
 
         var result = new List<TOut>();
-        await using (var upsert = new Npgsql.NpgsqlCommand(upsertSql, conn, tx))
+        await using (var upsert = new NpgsqlCommand(upsertSql, conn, tx))
         await using (var reader = await upsert.ExecuteReaderAsync(ct))
         {
             while (await reader.ReadAsync(ct))
                 result.Add(mapRow(reader));
         }
+
         return result;
     }
 }

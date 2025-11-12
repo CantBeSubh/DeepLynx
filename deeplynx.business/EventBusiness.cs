@@ -5,6 +5,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using NpgsqlTypes;
 
 public class EventBusiness : IEventBusiness
 {
@@ -13,7 +14,7 @@ public class EventBusiness : IEventBusiness
     private readonly INotificationBusiness _notificationBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="EventBusiness" /> class.
+    ///     Initializes a new instance of the <see cref="EventBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -29,7 +30,7 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Retrieves all events without pagination.
+    ///     Retrieves all events without pagination.
     /// </summary>
     /// <param name="projectId">Optional filter to only include events matching the projectId</param>
     /// <param name="organizationId">Optional filter </param>
@@ -66,13 +67,13 @@ public class EventBusiness : IEventBusiness
                     ProjectName = e.Project != null ? e.Project.Name : null,
                     DataSourceName = e.DataSource != null ? e.DataSource.Name : null
                 })
-                .ToListAsync();
-        
+            .ToListAsync();
+
         return items;
     }
 
     /// <summary>
-    /// Retrieves all project events with pagination.
+    ///     Retrieves all project events with pagination.
     /// </summary>
     /// <param name="queryDto">Filter criteria and pagination parameters</param>
     /// <returns>Paginated response containing events and pagination metadata</returns>
@@ -101,9 +102,7 @@ public class EventBusiness : IEventBusiness
             }
 
             if (queryDto.lastUpdatedBy.HasValue)
-            {
                 eventQuery = eventQuery.Where(e => e.LastUpdatedBy == queryDto.lastUpdatedBy.Value);
-            }
 
             if (!string.IsNullOrWhiteSpace(queryDto.operation))
             {
@@ -183,7 +182,7 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Retrieves all project events for projects that the user is a member of, with pagination.
+    ///     Retrieves all project events for projects that the user is a member of, with pagination.
     /// </summary>
     /// <param name="queryDto">Filter criteria and pagination parameters</param>
     /// <returns>Paginated response containing events and pagination metadata</returns>
@@ -241,9 +240,7 @@ public class EventBusiness : IEventBusiness
             }
 
             if (queryDto.lastUpdatedBy.HasValue)
-            {
                 eventQuery = eventQuery.Where(e => e.LastUpdatedBy == queryDto.lastUpdatedBy.Value);
-            }
 
             if (!string.IsNullOrWhiteSpace(queryDto.operation))
             {
@@ -323,7 +320,7 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Retrieves all project events that the user is subscribed to.
+    ///     Retrieves all project events that the user is subscribed to.
     /// </summary>
     /// <param name="userId">The ID of the user to which the subscription belongs</param>
     /// <param name="projectId">The ID of the project to which the subscription belongs</param>
@@ -377,7 +374,7 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Creates a new Event based on the event data provided.
+    ///     Creates a new Event based on the event data provided.
     /// </summary>
     /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
@@ -435,7 +432,7 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Bulk creates Events based on the event data provided.
+    ///     Bulk creates Events based on the event data provided.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the event belongs</param>
     /// <param name="events">A List of data transfer objects with details on the new event to be created.</param>
@@ -495,5 +492,85 @@ public class EventBusiness : IEventBusiness
             await _notificationBusiness.SendBulkEventNotifications(response);
 
         return response;
+    }
+
+    /// <summary>
+    ///     Bulk creates Events based on the event data provided using the copy executor.
+    /// </summary>
+    /// <param name="conn">NPGSQL PostgreSQL Connection</param>
+    /// <param name="tx">NPGSQL PostgreSQL Transaction for rollback</param>
+    /// <param name="events">Event objects to upsert</param>
+    /// <param name="projectId">The ID of the project to which the event belongs</param>
+    /// <param name="userId">The ID of the user who will be the last to update these</param>
+    /// <param name="ct">Optional cancellation token to end long rquests</param>
+    /// <returns>The list of new Events which were created.</returns>
+    public async Task BulkInsertEventsWithCopyAsync(
+        NpgsqlConnection conn,
+        NpgsqlTransaction tx,
+        IReadOnlyList<CreateEventRequestDto> events,
+        long projectId,
+        long? userId,
+        CancellationToken ct = default)
+    {
+        if (events.Count == 0) return;
+
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        const string createTempSql = @"
+            CREATE TEMP TABLE tmp_events
+            (
+                project_id      BIGINT NOT NULL,
+                operation       TEXT   NOT NULL,
+                entity_type     TEXT   NOT NULL,
+                entity_id       BIGINT NOT NULL,
+                entity_name     TEXT   NULL,
+                data_source_id  BIGINT NULL,
+                properties      JSONB  NOT NULL,
+                last_updated_by BIGINT NULL,
+                last_updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
+            ) ON COMMIT DROP;";
+
+        const string copyCmd = @"
+            COPY tmp_events
+            (project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at)
+            FROM STDIN (FORMAT BINARY)";
+
+        const string insertSql = @"
+            INSERT INTO deeplynx.events
+            (project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at)
+            SELECT project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at
+            FROM tmp_events;";
+
+        await using (var cmd = new NpgsqlCommand(createTempSql, conn, tx))
+        {
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
+
+        await using (var writer = conn.BeginBinaryImport(copyCmd))
+        {
+            foreach (var e in events)
+            {
+                await writer.StartRowAsync(ct);
+                writer.Write(projectId, NpgsqlDbType.Bigint);
+                writer.Write(e.Operation, NpgsqlDbType.Text);
+                writer.Write(e.EntityType, NpgsqlDbType.Text);
+                writer.Write(e.EntityId, NpgsqlDbType.Bigint);
+                if (e.EntityName is null) writer.WriteNull();
+                else writer.Write(e.EntityName, NpgsqlDbType.Text);
+                if (e.DataSourceId.HasValue) writer.Write(e.DataSourceId.Value, NpgsqlDbType.Bigint);
+                else writer.WriteNull();
+                writer.Write(e.Properties ?? "{}", NpgsqlDbType.Jsonb);
+                if (userId.HasValue) writer.Write(userId.Value, NpgsqlDbType.Bigint);
+                else writer.WriteNull();
+                writer.Write(now, NpgsqlDbType.Timestamp);
+            }
+
+            await writer.CompleteAsync(ct);
+        }
+
+        await using (var cmd = new NpgsqlCommand(insertSql, conn, tx))
+        {
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
     }
 }

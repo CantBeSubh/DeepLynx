@@ -3,6 +3,7 @@ using System.Data;
 using System.Text.Json;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,10 @@ namespace deeplynx.business;
 
 public class EdgeBusiness : IEdgeBusiness
 {
+    private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
     private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="EdgeBusiness" /> class.
@@ -26,7 +27,8 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="historicalEdgeBusiness">Passed in context of historical edge objects.</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
     public EdgeBusiness(
-        DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness, IBulkCopyUpsertExecutor bulkCopyUpsertExecutor)
+        DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness,
+        IBulkCopyUpsertExecutor bulkCopyUpsertExecutor)
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
@@ -330,6 +332,13 @@ public class EdgeBusiness : IEdgeBusiness
         };
     }
 
+    /// <summary>
+    ///     Asynchronously creates new edges for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+    /// <param name="edges">Enumerable list of edge request data transfer objects containing edge details</param>
+    /// <returns>Enumerable list of created edges</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, long dataSourceId, List<CreateEdgeRequestDto> edges)
     {
@@ -394,8 +403,15 @@ public class EdgeBusiness : IEdgeBusiness
                     : r.GetInt64(r.GetOrdinal("relationship_id"))
             });
 
-        // bulk events via a separate component
-        //await _eventsWriter.BulkInsertEdgeCreatesAsync(conn, tx, projectId, result);
+        // events logging
+        var events = new List<CreateEventRequestDto>(result.Count);
+        events.AddRange(result.Select(e => new CreateEventRequestDto
+        {
+            Operation = "create", EntityType = "edge",
+            EntityId = e.Id, ProjectId = e.ProjectId,
+            DataSourceId = e.DataSourceId, Properties = "{}"
+        }));
+        await _eventBusiness.BulkInsertEventsWithCopyAsync(conn, tx, events, projectId, UserContextStorage.UserId);
 
         await tx.CommitAsync();
         return result;
@@ -581,32 +597,6 @@ public class EdgeBusiness : IEdgeBusiness
         {
             var missing = ids.Except(existing).Take(10);
             throw new KeyNotFoundException($"Missing record IDs: {string.Join(",", missing)}");
-        }
-    }
-
-
-    private static async Task BulkInsertEdgeEvents(
-        NpgsqlConnection conn, NpgsqlTransaction tx,
-        long projectId, List<EdgeResponseDto> edges)
-    {
-        if (edges.Count == 0) return;
-
-        // Chunk to keep SQL text modest
-        const int chunk = 5000;
-        for (var i = 0; i < edges.Count; i += chunk)
-        {
-            var slice = edges.Skip(i).Take(chunk);
-            var values = string.Join(",",
-                slice.Select(e =>
-                    $"('create','edge',{e.Id}, NULL, {projectId}, '{{}}', {e.DataSourceId})"));
-
-            var sql = $@"
-            INSERT INTO events (operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id)
-            SELECT v.operation, v.entity_type, v.entity_id, v.entity_name, v.project_id, v.properties, v.data_source_id
-            FROM (VALUES {values}) AS v(operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id);";
-
-            await using var cmd = new NpgsqlCommand(sql, conn, tx);
-            await cmd.ExecuteNonQueryAsync();
         }
     }
 

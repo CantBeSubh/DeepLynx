@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -14,10 +15,10 @@ namespace deeplynx.business;
 
 public class RecordBusiness : IRecordBusiness
 {
+    private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
     private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RecordBusiness" /> class.
@@ -25,7 +26,8 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="context">The database context used for the record operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
-    public RecordBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness, IBulkCopyUpsertExecutor bulkCopyUpsertExecutor)
+    public RecordBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness,
+        IBulkCopyUpsertExecutor bulkCopyUpsertExecutor)
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
@@ -253,7 +255,15 @@ public class RecordBusiness : IRecordBusiness
         };
     }
 
-    // Adapter around your executor, focused on the records table
+    /// <summary>
+    ///     Create new records
+    /// </summary>
+    /// <param name="projectId">The ID of the project under which to create the record</param>
+    /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
+    /// <param name="records">Enumerable list for of record transfer objects containing details on the records to be created</param>
+    /// <returns>The newly created metadata record</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
+    /// <exception cref="Exception">Returned on other general errors</exception>
     public async Task<List<RecordResponseDto>> BulkCreateRecords(
         long projectId, long dataSourceId, List<CreateRecordRequestDto> records)
     {
@@ -261,8 +271,7 @@ public class RecordBusiness : IRecordBusiness
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         if (records.Count == 0) return new List<RecordResponseDto>();
 
-        // One-shot validation for object storage references (optional, fast)
-        await EnsureObjectStoragesExistOnce(projectId, records);
+        await EnsureMultipleObjectStoragesExistOnce(projectId, records);
 
         var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
         if (conn.State != ConnectionState.Open) await conn.OpenAsync();
@@ -344,7 +353,7 @@ public class RecordBusiness : IRecordBusiness
 
                 w.Write(now, NpgsqlDbType.Timestamp);
                 w.Write(false, NpgsqlDbType.Boolean);
-                w.WriteNull(); // last_updated_by
+                w.WriteNull();
             },
             upsertSql,
             r => new RecordResponseDto
@@ -361,8 +370,15 @@ public class RecordBusiness : IRecordBusiness
                 FileType = r.IsDBNull(r.GetOrdinal("file_type")) ? null : r.GetString(r.GetOrdinal("file_type"))
             });
 
-        // Bulk events (copy→insert), see next section
-        //await _eventsWriter.BulkInsertRecordCreatesAsync(conn, tx, projectId, inserted);
+        // events logging
+        var events = new List<CreateEventRequestDto>(inserted.Count);
+        events.AddRange(inserted.Select(r => new CreateEventRequestDto
+        {
+            Operation = "create", EntityType = "record",
+            EntityId = r.Id, EntityName = r.Name, ProjectId = r.ProjectId,
+            DataSourceId = r.DataSourceId, Properties = "{}"
+        }));
+        await _eventBusiness.BulkInsertEventsWithCopyAsync(conn, tx, events, projectId, UserContextStorage.UserId);
 
         await tx.CommitAsync();
         return inserted;
@@ -731,39 +747,6 @@ public class RecordBusiness : IRecordBusiness
         }).ToList();
     }
 
-    private static async Task BulkInsertEventsForRecords(
-        NpgsqlConnection conn, NpgsqlTransaction tx, long projectId, List<RecordResponseDto> rows)
-    {
-        if (rows.Count == 0) return;
-
-        // Example: minimally log “create” events via INSERT … SELECT over VALUES
-        // (If you have an events service that must be used, pass the full list to it once;
-        // avoid a per-row loop of awaits.)
-        const string sql = @"
-        INSERT INTO events (operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id)
-        SELECT x.operation, x.entity_type, x.entity_id, x.entity_name, x.project_id, x.properties, x.data_source_id
-        FROM (VALUES {0}) AS x(operation, entity_type, entity_id, entity_name, project_id, properties, data_source_id);";
-
-        // Build VALUES tuples in manageable chunks to keep the SQL size reasonable
-        const int chunk = 5000;
-        for (var i = 0; i < rows.Count; i += chunk)
-        {
-            var slice = rows.Skip(i).Take(chunk);
-            var values = string.Join(",",
-                slice.Select(e =>
-                    $"('create','record',{e.Id}, {SqlLiteralOrNull(e.Name)}, {projectId}, '{{}}', {e.DataSourceId})"));
-
-            var stmt = string.Format(sql, values);
-            await using var cmd = new NpgsqlCommand(stmt, conn, tx);
-            await cmd.ExecuteNonQueryAsync();
-        }
-
-        static string SqlLiteralOrNull(string? s)
-        {
-            return s is null ? "NULL" : $"'{s.Replace("'", "''")}'";
-        }
-    }
-
     private static RecordResponseDto MapRecord(NpgsqlDataReader r)
     {
         return new RecordResponseDto
@@ -826,7 +809,16 @@ public class RecordBusiness : IRecordBusiness
         if (!datasource) throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
     }
 
-    private async Task EnsureObjectStoragesExistOnce(long projectId, List<CreateRecordRequestDto> records)
+    /// <summary>
+    ///     Make sure every object storage ID exists, filtering in memory with one DB trip
+    /// </summary>
+    /// <param name="projectId">
+    ///     Shared project ID of the object storages
+    ///     <param name="records">
+    ///         Records with object storages to check
+    ///         <exception cref="KeyNotFoundException">If an object storage ID is not found</exception>
+    ///         <returns>Exception if obj storage ID not exist</returns>
+    private async Task EnsureMultipleObjectStoragesExistOnce(long projectId, List<CreateRecordRequestDto> records)
     {
         var ids = records.Where(r => r.ObjectStorageId.HasValue)
             .Select(r => r.ObjectStorageId!.Value)
@@ -843,7 +835,7 @@ public class RecordBusiness : IRecordBusiness
         if (ok.Count != ids.Length)
         {
             var missing = ids.Except(ok).Take(5);
-            throw new Exception(
+            throw new KeyNotFoundException(
                 $"One or more object storage IDs do not exist in project {projectId} (e.g., {string.Join(",", missing)}).");
         }
     }
