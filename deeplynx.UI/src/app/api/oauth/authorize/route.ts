@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
     if (!session || !session.tokens?.access_token) {
       // User not authenticated - redirect to login page
       const returnUrl = `/api/oauth/authorize${request.nextUrl.search}`;
-      const loginUrl = new URL('/login/signin', request.url);
+      
+      // FIXED: Use the request's origin (which includes the correct host/domain)
+      // or construct the URL without a base to make it relative
+      const loginUrl = new URL('/login/signin', request.nextUrl.origin);
       loginUrl.searchParams.set('returnUrl', returnUrl);
 
       console.log(`User not authenticated, redirecting to login: ${loginUrl.toString()}`);
