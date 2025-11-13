@@ -10,8 +10,9 @@ public class CreatePermissionRequestDto
     public string? Description { get; set; }
     [Required]
     public string Action { get; set; }
-    [Required]
-    public long LabelId { get; set; }
+    
+    public string? Resource { get; set; }
+    public long? LabelId { get; set; }
     public long? ProjectId { get; set; }
     public long? OrganizationId { get; set; }
 }

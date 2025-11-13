@@ -4,6 +4,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using deeplynx.models.Configuration;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -137,6 +138,37 @@ namespace deeplynx.tests
             var createdOrg = await Context.Organizations.FindAsync(result.Id);
             Assert.NotNull(createdOrg);
             Assert.Equal(dto.Name, createdOrg.Name);
+        }
+        
+        [Fact]
+        public async Task CreateOrganization_Success_CreatesDefaultPermissions()
+        {
+            // Arrange
+            var dto = new CreateOrganizationRequestDto
+            {
+                Name = "New Test Organization",
+                Description = "New Test Organization Description",
+            };
+            
+            // Act
+            var result = await _organizationBusiness.CreateOrganization(dto);
+            
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.False(result.IsArchived);
+            
+            // verify org was actually created in database
+            var createdOrg = await Context.Organizations.FindAsync(result.Id);
+            Assert.NotNull(createdOrg);
+            Assert.Equal(dto.Name, createdOrg.Name);
+            
+            var defaultPermssions =  await Context.Permissions.Where(p => p.OrganizationId == result.Id).ToListAsync();
+            Assert.True(defaultPermssions.Count > 0);
+            Assert.True(defaultPermssions.All(p => p.IsDefault));
+            Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultPermssions.Count);
+            
         }
 
         [Fact]

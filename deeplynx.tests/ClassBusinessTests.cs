@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.Context;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -68,6 +69,7 @@ namespace deeplynx.tests
         public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
         {
             // Arrange
+            UserContextStorage.UserId = uid;
             var now = DateTime.UtcNow;
             var dto = new CreateClassRequestDto
             {
@@ -85,6 +87,8 @@ namespace deeplynx.tests
             Assert.Equal(dto.Name, result.Name);
             Assert.Equal(dto.Description, result.Description);
             Assert.Equal(pid, result.ProjectId);
+            Assert.Equal(result.LastUpdatedBy, uid);
+            
 
             // Ensure the create event is logged
             var eventList = await Context.Events.ToListAsync();
@@ -103,6 +107,7 @@ namespace deeplynx.tests
         public async Task CreateClasses_Success_OnBulkCreate()
         {
             // Arrange
+            UserContextStorage.UserId = uid;
             var now = DateTime.UtcNow;
             var bulkDto = new List<CreateClassRequestDto>
             {
@@ -127,6 +132,9 @@ namespace deeplynx.tests
             Assert.Equal(2, result.Count);
             Assert.Equal("Test Class 1", result.First().Name);
             Assert.Equal("Test Class 2", result.Last().Name);
+            Assert.Equal(uid, result[0].LastUpdatedBy);
+            Assert.Equal(uid, result[1].LastUpdatedBy);
+            
 
             // Ensure the create event is logged for each class create
             var eventList = await Context.Events.ToListAsync();

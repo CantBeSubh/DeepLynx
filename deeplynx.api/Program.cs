@@ -207,6 +207,8 @@ try
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
     builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
     builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
+    builder.Services.AddTransient<ISysAdminService, SysAdminService>();
+    builder.Services.AddTransient<IOauthHandshakeBusiness, OauthHandshakeBusiness>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -288,7 +290,12 @@ try
                 new()
                 {
                     Name = "OauthApplication",
-                    Description = "Handles operations related to registered Oauth Application management"
+                    Description = "Handles operations related to registered Oauth2 Application management."
+                },
+                new()
+                {
+                    Name = "OauthHandshake",
+                    Description = "Facilitates the Oauth2 Handshake between Nexus and external apps, with Nexus acting as an Oauth2 provider."
                 },
                 new()
                 {
@@ -388,8 +395,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
-    app.UseMiddleware<AuthInProjectMiddleware>(); //Project level RBAC
-    app.UseMiddleware<AuthInOrgMiddleware>(); //Project level RBAC
+    app.UseMiddleware<AuthMiddleware>(); //Organization and project RBAC
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")

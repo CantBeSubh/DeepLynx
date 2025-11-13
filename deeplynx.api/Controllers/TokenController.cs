@@ -39,7 +39,7 @@ public class TokenController : ControllerBase
     {
         try
         {
-            var token = await _tokenBusiness.CreateToken(tokenDto.ApiSecret, tokenDto.ApiKey, tokenDto.ExpirationMinutes);
+            var token = await _tokenBusiness.CreateToken(tokenDto.ApiKey, tokenDto.ApiSecret, tokenDto.ExpirationMinutes);
             return Ok(token);
         }
         catch (KeyNotFoundException ex)

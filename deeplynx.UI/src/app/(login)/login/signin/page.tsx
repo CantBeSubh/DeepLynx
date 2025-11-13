@@ -32,9 +32,13 @@ function SigninContent() {
       return;
     }
 
-    // If user is already authenticated, redirect to home or returnUrl
-    if (status === "authenticated") {
-      router.push(returnUrl || "/");
+    // If user is already authenticated and there's a returnUrl, redirect to it
+    if (status === "authenticated" && returnUrl) {
+      console.log(`User authenticated, redirecting to: ${returnUrl}`);
+      router.push(returnUrl);
+    } else if (status === "authenticated") {
+      // If authenticated but no returnUrl, go home
+      router.push("/");
     }
   }, [status, router, isAuthDisabled]);
 
@@ -80,14 +84,39 @@ function SigninContent() {
     );
   }
 
-  // If authenticated, don't render login form (redirect will happen)
+  // If authenticated, show loading while redirecting
   if (status === "authenticated") {
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
+        <div className="flex flex-col items-center sm:items-start mb-0">
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
+        </div>
+        <div className="text-center text-white">
+          <div className="loading loading-spinner loading-lg"></div>
+          <p className="mt-4">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
-  const handleOktaSignIn = () => {
+  const handleOktaSignIn = async () => {
     setIsSigningIn(true);
-    signIn("okta", { callbackUrl: returnUrl || "/" });
+    
+    // Construct the callback URL to include the returnUrl
+    const callbackUrl = returnUrl || "/";
+    
+    console.log(`Signing in with Okta, will redirect to: ${callbackUrl}`);
+    
+    await signIn("okta", { 
+      callbackUrl: callbackUrl,
+      redirect: true 
+    });
   };
 
   return (

@@ -338,28 +338,12 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
     }
 
     /// <summary>
-    /// Used to hash the client secret. This hashed version will be stored in the database.
+    /// Used to hash the client secret using BCrypt. This hashed version will be stored in the database.
     /// </summary>
     /// <param name="secret"></param>
     /// <returns></returns>
     private string HashSecret(string secret)
     {
-        using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-        {
-            var salt = new byte[32];
-            rng.GetBytes(salt);
-
-            using (var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
-               secret,
-               salt,
-               100000,
-               System.Security.Cryptography.HashAlgorithmName.SHA256))
-            {
-                var hash = pbkdf2.GetBytes(32);
-                var saltBase64 = Convert.ToBase64String(salt);
-                var hashBase64 = Convert.ToBase64String(hash);
-                return $"{saltBase64}:{hashBase64}";
-            }
-        }
+        return BCrypt.Net.BCrypt.HashPassword(secret);
     }
 }

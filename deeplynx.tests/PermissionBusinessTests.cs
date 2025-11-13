@@ -403,25 +403,6 @@ namespace deeplynx.tests
             Assert.Empty(eventList);
         }
 
-        [Fact]
-        public async Task CreatePermission_Fails_IfNoLabelId()
-        {
-            // Arrange
-            var dto = new CreatePermissionRequestDto
-            {
-                Name = "No Label Permission",
-                Action = "test"
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(
-                () => _permissionBusiness.CreatePermission(dto, pid, null));
-
-            // Ensure that no event was logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Empty(eventList);
-        }
-
         #endregion
 
         #region UpdatePermission Tests
@@ -918,6 +899,99 @@ namespace deeplynx.tests
             Assert.Equal("Updated Name", updatedObjectStorage.Name);
         }
 
+        #endregion
+        
+        #region UniqueConstraintTests
+
+        [Fact]
+        public async Task AddPermission_Fails_WhenDuplicateLabelActionInProject()
+        {
+            var permission8 = new Permission
+            {
+                Name = "Default Permission with Project",
+                Action = "write",
+                LabelId = lid,
+                ProjectId = pid,
+                IsDefault = true
+            };
+            Context.Permissions.Add(permission8);
+            await Assert.ThrowsAsync<DbUpdateException>(()=> Context.SaveChangesAsync());
+        }
+        
+        [Fact]
+        public async Task AddPermission_Fails_WhenDuplicateLabelActionInOrganization()
+        {
+            var permission1 = new Permission
+            {
+                Name = "Default Permission with Project",
+                Action = "write",
+                LabelId = lid,
+                OrganizationId = oid,
+                IsDefault = true
+            };
+            
+            var permission2 = new Permission
+            {
+                Name = "Default Permission with Project",
+                Action = "write",
+                LabelId = lid,
+                OrganizationId = oid,
+                IsDefault = true
+            };
+            Context.Permissions.Add(permission1);
+            Context.Permissions.Add(permission2);
+            await Assert.ThrowsAsync<DbUpdateException>(()=> Context.SaveChangesAsync());
+        }
+        
+        [Fact]
+        public async Task AddPermission_Fails_WhenDuplicateResourceActionInOrganization()
+        {
+            var permission1 = new Permission
+            {
+                Name = "Default Permission with Project",
+                Action = "write",
+                Resource = "project",
+                OrganizationId = oid,
+                IsDefault = true
+            };
+            
+            var permission2 = new Permission
+            {
+                Name = "Default Permission with Project",
+                Action = "write",
+                Resource = "project",
+                OrganizationId = oid,
+                IsDefault = true
+            };
+            Context.Permissions.Add(permission1);
+            Context.Permissions.Add(permission2);
+            await Assert.ThrowsAsync<DbUpdateException>(()=> Context.SaveChangesAsync());
+        }
+        
+        [Fact]
+        public async Task AddPermission_Fails_WhenDuplicateResourceActionInProject()
+        {
+            var permission1 = new Permission
+            {
+                Name = "Default Permission with Project",
+                Action = "write",
+                Resource = "test duplicate",
+                ProjectId = pid,
+                IsDefault = true
+            };
+            
+            var permission2 = new Permission
+            {
+                Name = "Default Permission with Project",
+                Action = "write",
+                Resource = "test duplicate",
+                ProjectId = pid,
+                IsDefault = true
+            };
+            Context.Permissions.Add(permission1);
+            Context.Permissions.Add(permission2);
+            await Assert.ThrowsAsync<DbUpdateException>(()=> Context.SaveChangesAsync());
+        }
         #endregion
 
         protected override async Task SeedTestDataAsync()
