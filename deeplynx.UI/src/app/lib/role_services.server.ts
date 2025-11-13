@@ -46,7 +46,12 @@ export async function getRoleByIdServer(
 }
 
 export async function createRoleServer(
-  body: RoleResponseDto,
+  body: {
+    name: string;
+    description?: string | null;
+    projectId?: number | null;
+    organizationId?: number | null;
+  },
   params?: {
     projectId?: number;
     organizationId?: number;

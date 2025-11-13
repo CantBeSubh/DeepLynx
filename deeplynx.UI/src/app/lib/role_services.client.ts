@@ -61,7 +61,12 @@ export async function getRoleById(
 }
 
 export async function createRole(
-  body: RoleResponseDto,
+  body: {
+    name: string;
+    description?: string | null;
+    projectId?: number | null;
+    organizationId?: number | null;
+  },
   params?: {
     projectId?: number;
     organizationId?: number;

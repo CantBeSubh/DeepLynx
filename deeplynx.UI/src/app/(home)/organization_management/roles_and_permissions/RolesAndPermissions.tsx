@@ -16,7 +16,13 @@ import {
   PermissionResponseDto,
   RoleResponseDto,
 } from "../../types/responseDTOs";
-import { getPermissionsByRole } from "@/app/lib/role_services.client";
+import {
+  createRole,
+  getPermissionsByRole,
+} from "@/app/lib/role_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import CreateRoleModal from "./CreateRoleModal";
+import toast from "react-hot-toast";
 
 interface RolesAndPermissionsProps {
   initialRoles: RoleResponseDto[];
@@ -43,6 +49,42 @@ const RolesAndPermissions = ({
   const [rolePermissions, setRolePermissions] = useState<
     Record<number, PermissionResponseDto[]>
   >({});
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { organization } = useOrganizationSession();
+
+  const handleCreateRole = async (data: {
+    name: string;
+    description: string | null;
+  }) => {
+    if (!organization?.organizationId) {
+      throw new Error("No organization selected");
+    }
+
+    const orgId = Number(organization.organizationId);
+
+    try {
+      const newRole = await createRole(
+        {
+          name: data.name,
+          description: data.description,
+          organizationId: orgId,
+        },
+        { organizationId: orgId }
+      );
+
+      // Add the new role to the state
+      setRoles((prev) => [...prev, newRole]);
+
+      // Optionally select the new role
+      setSelectedRoleId(newRole.id);
+      toast.success("Created new role");
+    } catch (error) {
+      console.error("Error creating role:", error);
+      toast.error("Failed to create new role");
+      throw error;
+    }
+  };
 
   // Group permissions by resource (or use a default category)
   const groupPermissionsByResource = (): PermissionCategory[] => {
@@ -150,6 +192,7 @@ const RolesAndPermissions = ({
             <div className="p-3 border-t border-base-300">
               <button
                 disabled={rolesLocked}
+                onClick={() => setIsCreateModalOpen(true)}
                 className="btn btn-primary btn-sm w-full gap-2"
               >
                 <PlusIcon className="w-4 h-4" />
@@ -260,6 +303,12 @@ const RolesAndPermissions = ({
           </div>
         )}
       </div>
+      <CreateRoleModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateRole}
+        organizationId={organization?.organizationId || 0}
+      />
     </div>
   );
 
@@ -268,10 +317,10 @@ const RolesAndPermissions = ({
     <div style={{ height: "calc(100vh - 27rem)" }}>
       <div className="card bg-base-100 shadow-xl h-full flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
-          <table className="table table-zebra table-pin-rows table-pin-cols">
-            <thead>
+          <table className="table">
+            <thead className="sticky top-0 z-20 bg-base-100">
               <tr>
-                <th className="bg-base-200 z-50">Permission</th>
+                <th className="sticky left-0 bg-base-200 z-30">Permission</th>
                 {roles.map((role) => (
                   <th key={role.id} className="text-center">
                     <div className="flex flex-col items-center gap-1">
@@ -292,7 +341,7 @@ const RolesAndPermissions = ({
                     </div>
                   </th>
                 ))}
-                <th className="text-center">Actions</th>
+                <th className="text-center bg-base-100">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -302,7 +351,7 @@ const RolesAndPermissions = ({
                   <tr className="bg-base-200">
                     <td
                       colSpan={roles.length + 2}
-                      className="font-semibold text-sm"
+                      className="font-semibold text-sm sticky left-0"
                     >
                       {category.label}
                     </td>
@@ -310,7 +359,7 @@ const RolesAndPermissions = ({
                   {/* Permission Rows */}
                   {category.permissions.map((perm) => (
                     <tr key={perm.id} className="hover">
-                      <td className="sticky left-0 bg-base-100 z-10">
+                      <td className="sticky left-0 z-10">
                         <div className="flex flex-col">
                           <span className="font-medium text-sm">
                             {perm.name}
@@ -331,7 +380,7 @@ const RolesAndPermissions = ({
                           perm.id
                         );
                         return (
-                          <td key={role.id} className="text-center bg-base-100">
+                          <td key={role.id} className="text-center">
                             {hasPermission ? (
                               <CheckIcon className="size-8 text-success mx-auto" />
                             ) : (
@@ -340,7 +389,7 @@ const RolesAndPermissions = ({
                           </td>
                         );
                       })}
-                      <td className="text-center bg-base-100">
+                      <td className="text-center">
                         <button
                           className="btn btn-ghost btn-xs btn-circle"
                           title="Edit Permission"
@@ -367,14 +416,12 @@ const RolesAndPermissions = ({
           <h1 className="text-2xl font-bold">Roles & Permissions</h1>
           <button
             onClick={() => setRolesLocked(!rolesLocked)}
-            className={`btn btn-sm gap-2 ${
-              rolesLocked ? "btn-error" : "btn-ghost"
-            }`}
+            className={`btn gap-2 ${rolesLocked ? "btn-error" : "btn-primary"}`}
           >
             {rolesLocked ? (
-              <LockClosedIcon className="w-5 h-5" />
+              <LockClosedIcon className="size-6" />
             ) : (
-              <LockOpenIcon className="w-5 h-5" />
+              <LockOpenIcon className="size-6" />
             )}
             {rolesLocked ? "Roles Locked" : "Lock Roles"}
           </button>
