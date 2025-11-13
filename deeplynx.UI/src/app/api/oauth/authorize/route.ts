@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // User is authenticated - forward request to C# backend
-    const backendUrl = process.env.BACKEND_BASE_URL || "http://localhost:5095";
+    const backendUrl = process.env.BACKEND_BASE_URL || "http://localhost:5095/api/v1";
 
     // Build the target URL with properly formatted query parameters
     const targetUrl = new URL(`${backendUrl}/oauth/authorize`);
