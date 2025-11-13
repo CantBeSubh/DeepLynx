@@ -1,5 +1,12 @@
 // src/app/(home)/organization_management/roles_and_permissions/RolesAndPermissions.tsx
 
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import {
+  archiveRole,
+  createRole,
+  getPermissionsByRole,
+  updateRole,
+} from "@/app/lib/role_services.client";
 import {
   CheckIcon,
   ExclamationCircleIcon,
@@ -12,17 +19,14 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import {
   PermissionResponseDto,
   RoleResponseDto,
 } from "../../types/responseDTOs";
-import {
-  createRole,
-  getPermissionsByRole,
-} from "@/app/lib/role_services.client";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import CreateRoleModal from "./CreateRoleModal";
-import toast from "react-hot-toast";
+import DeleteRoleModal from "./DeleteRoleModal";
+import EditRoleModal from "./EditRoleModal";
 
 interface RolesAndPermissionsProps {
   initialRoles: RoleResponseDto[];
@@ -84,6 +88,81 @@ const RolesAndPermissions = ({
       toast.error("Failed to create new role");
       throw error;
     }
+  };
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [roleToEdit, setRoleToEdit] = useState<RoleResponseDto | null>(null);
+
+  const handleUpdateRole = async (
+    roleId: number,
+    data: { name?: string | null; description?: string | null }
+  ) => {
+    try {
+      const updatedRole = await updateRole(roleId, data);
+
+      setRoles((prev) =>
+        prev.map((role) => (role.id === roleId ? updatedRole : role))
+      );
+      toast.success("Role updated successfully");
+    } catch (error) {
+      console.error("Error updating role:", error);
+      toast.error("Failed to upload Role");
+      throw error;
+    }
+  };
+
+  const handleEditClick = (role: RoleResponseDto) => {
+    setRoleToEdit(role);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setRoleToEdit(null);
+  };
+
+  // Add state (after your other modal states)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<RoleResponseDto | null>(
+    null
+  );
+
+  // Add delete handler
+  const handleDeleteRole = async () => {
+    if (!roleToDelete) return;
+
+    try {
+      await archiveRole(roleToDelete.id); // Changed from deleteRole to archiveRole
+
+      // Remove the role from state (it's now archived, so hide it)
+      setRoles((prev) => prev.filter((role) => role.id !== roleToDelete.id));
+
+      // If the deleted role was selected, select another role or null
+      if (selectedRoleId === roleToDelete.id) {
+        const remainingRoles = roles.filter(
+          (role) => role.id !== roleToDelete.id
+        );
+        setSelectedRoleId(remainingRoles[0]?.id || null);
+      }
+
+      toast.success("Role archived successfully");
+    } catch (error) {
+      console.error("Error archiving role:", error);
+      toast.error("Failed to archive role");
+      throw error;
+    }
+  };
+
+  // Add handler to open delete modal
+  const handleDeleteClick = (role: RoleResponseDto) => {
+    setRoleToDelete(role);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Add handler to close delete modal
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setRoleToDelete(null);
   };
 
   // Group permissions by resource (or use a default category)
@@ -230,18 +309,20 @@ const RolesAndPermissions = ({
                 <div className="flex gap-2">
                   <button
                     disabled={rolesLocked && !isStandardRole(currentRole)}
+                    onClick={() => handleEditClick(currentRole)}
                     className="btn btn-ghost btn-sm btn-circle"
                     title="Edit Role"
                   >
-                    <PencilIcon className="w-4 h-4" />
+                    <PencilIcon className="size-6" />
                   </button>
                   {!isStandardRole(currentRole) && (
                     <button
                       disabled={rolesLocked}
+                      onClick={() => handleDeleteClick(currentRole)}
                       className="btn btn-ghost btn-sm btn-circle text-error"
                       title="Delete Role"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="size-6" />
                     </button>
                   )}
                 </div>
@@ -303,12 +384,6 @@ const RolesAndPermissions = ({
           </div>
         )}
       </div>
-      <CreateRoleModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateRole}
-        organizationId={organization?.organizationId || 0}
-      />
     </div>
   );
 
@@ -332,6 +407,15 @@ const RolesAndPermissions = ({
                             STD
                           </div>
                         )}
+                        {/* Edit button for role */}
+                        <button
+                          disabled={rolesLocked && !isStandardRole(role)}
+                          onClick={() => handleEditClick(role)}
+                          className="btn btn-ghost btn-xs btn-circle"
+                          title="Edit Role"
+                        >
+                          <PencilIcon className="size-4" />
+                        </button>
                       </div>
                       {role.description && (
                         <span className="text-xs text-base-content/60 font-normal">
@@ -392,9 +476,9 @@ const RolesAndPermissions = ({
                       <td className="text-center">
                         <button
                           className="btn btn-ghost btn-xs btn-circle"
-                          title="Edit Permission"
+                          title="Edit Role"
                         >
-                          <PencilIcon className="size-8" />
+                          <PencilIcon className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -473,6 +557,28 @@ const RolesAndPermissions = ({
       {/* Render Selected Layout */}
       {activeLayout === "split-view" && <SplitViewLayout />}
       {activeLayout === "matrix" && <MatrixViewLayout />}
+
+      {/* Add the modals */}
+      <CreateRoleModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateRole}
+        organizationId={organization?.organizationId || 0}
+      />
+
+      <EditRoleModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSubmit={handleUpdateRole}
+        role={roleToEdit}
+      />
+
+      <DeleteRoleModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleDeleteRole}
+        role={roleToDelete}
+      />
     </div>
   );
 };
