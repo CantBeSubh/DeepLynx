@@ -385,7 +385,7 @@ try
 /* ╔════════════════════════════╗
    ║      App Base Path         ║
    ╚════════════════════════════╝ */
-    PathString basePath = "/api";
+    PathString basePath = "/api/v1";
     app.UsePathBase(basePath);
     
     app.UseStaticFiles();
@@ -416,10 +416,7 @@ try
 
     // Conditional image hosting
     var imageSrc = "/images/lynx-white.png";
-    if (!string.IsNullOrEmpty(hostedLink))
-    {
-        imageSrc = $"{hostedLink}/api/{imageSrc}";
-    }
+
     // Build the HTML content with our image src string interpolation
     var scalarHeaderContent = $@"
     <div class='references-header'>
@@ -448,7 +445,7 @@ try
 
         if (!string.IsNullOrEmpty(hostedLink))
         {
-            var hostedLinkWithApi = string.Concat(hostedLink + "/api");
+            var hostedLinkWithApi = string.Concat(hostedLink + "/api/v1");
             options.Servers = new List<ScalarServer> { new ScalarServer(hostedLinkWithApi) };
         }
     });
