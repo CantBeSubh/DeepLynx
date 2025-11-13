@@ -99,13 +99,14 @@ public class TimeseriesBusiness(
     /// <summary>
     /// Uploads a time series file and kicks off the processing for DuckDB
     /// </summary>
+    /// /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="file">This is the entire file attached as form data in the request</param>
     /// <returns>An object of the uploaded file information</returns>
     /// <exception cref="ArgumentException">If the file is null or has no data</exception>
     /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
-    public async Task<RecordResponseDto> UploadFile(long projectId, long dataSourceId, IFormFile file)
+    public async Task<RecordResponseDto> UploadFile( long currentUserId, long projectId, long dataSourceId, IFormFile file)
     {
         var fileType = Path.GetExtension(file.FileName);
         if (fileType != ".csv" && fileType != ".parquet")
@@ -147,7 +148,7 @@ public class TimeseriesBusiness(
             
             
             // create record for file's db table
-            var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
+            var recordClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Timeseries");
             var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
             var fileName = file.FileName;
 
@@ -303,11 +304,12 @@ public class TimeseriesBusiness(
     /// <summary>
     /// Merges the file chunks and creates the finalized uploaded file and kicks off the processing for DuckDB
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="request">The request, which contains the UploadID and FileName</param>
     /// <returns>An object of the uploaded file information</returns>
-    public async Task<RecordResponseDto> CompleteUpload(long projectId, long dataSourceId,
+    public async Task<RecordResponseDto> CompleteUpload(long currentUserId, long projectId, long dataSourceId,
         TimeseriesUploadCompleteRequestDto request)
     {
         var dataSourceFolderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
@@ -344,7 +346,7 @@ public class TimeseriesBusiness(
             
             Directory.Delete(tempFolderPath, true); // Clean up the datasource folder
 
-            var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
+            var recordClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Timeseries");
             var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
             var fileName = request.FileName;
 
@@ -669,12 +671,13 @@ public class TimeseriesBusiness(
     /// <summary>
     /// Generic select all for given table
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <param name="tableName"></param>
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns>All data for given table</returns>
-    public async Task<RecordResponseDto> ExportTimeseriesTable(long projectId, long dataSourceId, string tableName, string fileType)
+    public async Task<RecordResponseDto> ExportTimeseriesTable(long currentUserId, long projectId, long dataSourceId, string tableName, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -699,7 +702,7 @@ public class TimeseriesBusiness(
             throw new NotSupportedException($"file type {fileType} not supported");
         }
 
-        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
+        var reportClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Report");
         var timeseriesObjectStorageMethod = await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == "Timeseries Default");
         if (timeseriesObjectStorageMethod == null)
         {
@@ -731,13 +734,14 @@ public class TimeseriesBusiness(
     /// <summary>
     /// Queries a table and retrieves every nth row
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="rowNumber"></param>
     /// <param name="tableName"></param>
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns>Data</returns>
-    public async Task<RecordResponseDto> InterpolateRows(long projectId, long dataSourceId, string rowNumber, string tableName, string fileType)
+    public async Task<RecordResponseDto> InterpolateRows(long currentUserId, long projectId, long dataSourceId, string rowNumber, string tableName, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -771,7 +775,7 @@ public class TimeseriesBusiness(
             """
         };
 
-        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
+        var reportClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Report");
         var timeseriesObjectStorageMethod = await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == "Timeseries Default");
         if (timeseriesObjectStorageMethod == null)
         {
@@ -805,12 +809,13 @@ public class TimeseriesBusiness(
     /// This allows the user to query timeseries data in duckDb. Creates the command using an sql string
     /// The connection is read only so any write operations will be blocked.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="request"> The request which includes the query string</param>
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The data source ID</param>
     /// /// <param name="fileType">The type of file to convert query to</param>
     /// <returns></returns>
-    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId, string fileType)
+    public async Task<RecordResponseDto> QueryTimeseries(long currentUserId, TimeseriesQueryRequestDto request, long projectId, long dataSourceId, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -831,7 +836,7 @@ public class TimeseriesBusiness(
             throw new NotSupportedException($"file type {fileType} not supported");
         }
 
-        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
+        var reportClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Report");
         var timeseriesObjectStorageMethod = await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == "Timeseries Default");
         if (timeseriesObjectStorageMethod == null)
         {

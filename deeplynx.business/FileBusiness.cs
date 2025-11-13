@@ -46,6 +46,7 @@ public class FileBusiness
     /// <param name="objectStorageId">Id of the object storage method to use</param>
     /// <param name="file">file to upload</param>
     public async Task<RecordResponseDto> UploadFile( 
+        long currentUserId,
         long projectId,
         long? dataSourceId,
         long? objectStorageId,
@@ -102,7 +103,7 @@ public class FileBusiness
         
         var uri = await fileBusiness.UploadFile(projectId, realDataSourceId, configData, file, guid);
         
-        var fileClass = await _classBusiness.GetClassInfo(projectId, "File");
+        var fileClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "File");
         var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject()

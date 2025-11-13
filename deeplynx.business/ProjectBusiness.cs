@@ -158,12 +158,12 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Creates a new project based on the data transfer object supplied.
     /// </summary>
-    /// <param name="userId">Name of user creating the project</param>
+    /// <param name="currentUserId">Name of user creating the project</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(long userId, CreateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(long currentUserId, CreateProjectRequestDto dto)
     {
-        await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
+        await ExistenceHelper.EnsureUserExistsAsync(_context, currentUserId);
         ValidationHelper.ValidateModel(dto);
 
         long orgId;
@@ -255,7 +255,7 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name }),
         });
 
-        await SetProjectDefaults(projectId, userId);
+        await SetProjectDefaults(currentUserId, projectId);
 
         return projectResponseDto;
     }
@@ -817,7 +817,7 @@ public class ProjectBusiness : IProjectBusiness
         }).ToList();
     }
 
-    private async Task SetProjectDefaults(long projectId, long userId)
+    private async Task SetProjectDefaults(long currentUserId, long projectId)
     {
         // ===============================
         // CREATE DEFAULT CLASSES
@@ -829,7 +829,7 @@ public class ProjectBusiness : IProjectBusiness
             new CreateClassRequestDto { Name = "Report" },
             new CreateClassRequestDto { Name = "File" }
         };
-        var cls = await _classBusiness.BulkCreateClasses(projectId, defaultClasses);
+        var cls = await _classBusiness.BulkCreateClasses(currentUserId, projectId, defaultClasses);
 
         // ===============================
         // CREATE DEFAULT DATA SOURCE
@@ -915,7 +915,7 @@ public class ProjectBusiness : IProjectBusiness
         await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions);
         await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
 
-        await AddMemberToProject(projectId, adminRoleId, userId, null);
+        await AddMemberToProject(projectId, adminRoleId, currentUserId, null);
     }
 
     private void SetDefaultPermissions(Project project)

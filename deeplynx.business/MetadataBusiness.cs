@@ -56,7 +56,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long currentUserId, long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -64,7 +64,7 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
 
-        return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId);
     }
     
     /// <summary>
@@ -80,7 +80,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="ArgumentNullException">If file is null.</exception>
     /// <exception cref="ArgumentException">If file is empty or not a .json file.</exception>
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
-    public async Task<MetadataResponseDto> CreateMetadataFromFile(long projectId, long dataSourceId, IFormFile file)
+    public async Task<MetadataResponseDto> CreateMetadataFromFile(long currentUserId, long projectId, long dataSourceId, IFormFile file)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -120,7 +120,7 @@ public class MetadataBusiness : IMetadataBusiness
             throw new JsonException($"Error reading JSON from file: {ex.Message}", ex);
         }
         
-        return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId);
     }
     
     /// <summary>
@@ -131,6 +131,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     private async Task<MetadataResponseDto> ParseMetadata(
+        long currentUserId,
         CreateMetadataRequestDto metadataRequestDto,
         long dataSourceId,
         long projectId)
@@ -152,7 +153,7 @@ public class MetadataBusiness : IMetadataBusiness
             var classesToInsert = BuildClasses(classes, records);
             if (classesToInsert.Any())
             {
-                classMap = await BulkUpsertClasses(projectId, classesToInsert, metadataResponseDto);
+                classMap = await BulkUpsertClasses(currentUserId, projectId, classesToInsert, metadataResponseDto);
                 // load class IDs into records objects before insert
                 UpdateRecordsWithIds(records, classMap);
             }
@@ -357,16 +358,18 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts classes and returns a mapping of class name to ID
     /// </summary>
+    /// <param name="currentUserId"></param>
     /// <param name="projectId"></param>
     /// <param name="classes"></param>
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of class name to class ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertClasses(
+        long currentUserId,
         long projectId,
         List<CreateClassRequestDto> classes,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _classBusiness.BulkCreateClasses(projectId, classes);
+        var inserted = await _classBusiness.BulkCreateClasses(currentUserId, projectId, classes);
         metadataResponseDto.Classes = inserted;
         return inserted.ToDictionary(c => c.Name, c => c.Id);
     }
