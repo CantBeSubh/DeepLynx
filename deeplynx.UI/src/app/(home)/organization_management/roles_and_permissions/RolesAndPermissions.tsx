@@ -9,7 +9,6 @@ import {
   PlusIcon,
   ShieldCheckIcon,
   TrashIcon,
-  UsersIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import React, { useEffect, useState } from "react";
@@ -93,10 +92,8 @@ const RolesAndPermissions = ({
     return rolePermissions[roleId]?.some((p) => p.id === permissionId) || false;
   };
 
-  // Determine if role is "standard" (you might need to add an isDefault field to RoleResponseDto)
+  // Determine if role is "standard"
   const isStandardRole = (role: RoleResponseDto): boolean => {
-    // You might want to add a field to your DTO to indicate this
-    // For now, we'll use a simple check - adjust based on your needs
     return (
       role.name === "Admin" || role.name === "User" || role.name === "Viewer"
     );
@@ -104,87 +101,85 @@ const RolesAndPermissions = ({
 
   // Layout 1: Split View (Master-Detail)
   const SplitViewLayout = () => (
-    <div className="flex gap-6 h-[calc(100vh-12rem)]">
+    <div className="flex gap-6" style={{ height: "calc(100vh - 27rem)" }}>
       {/* Left Sidebar - Roles List */}
       <div className="w-80 flex-shrink-0">
-        <div className="bg-white rounded-lg border border-gray-200 h-full flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-900">Roles</h2>
-            <p className="text-xs text-gray-500 mt-1">{roles.length} total</p>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {roles.map((role) => (
-              <button
-                key={role.id}
-                onClick={() => setSelectedRoleId(role.id)}
-                className={`w-full px-4 py-3 text-left border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                  selectedRoleId === role.id
-                    ? "bg-blue-50 border-l-4 border-l-blue-600"
-                    : ""
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheckIcon
-                      className={`w-4 h-4 ${
-                        selectedRoleId === role.id
-                          ? "text-blue-600"
-                          : "text-gray-400"
-                      }`}
-                    />
-                    <span className="font-medium text-gray-900 text-sm">
-                      {role.name}
-                    </span>
+        <div className="card bg-base-100 shadow-xl h-full flex flex-col border-2 border-primary">
+          <div className="card-body p-0">
+            <div className="px-4 py-3 border-base-300">
+              <h2 className="card-title text-base">Roles</h2>
+              <p className="text-xs text-base-content/60 mt-1">
+                {roles.length} total
+              </p>
+            </div>
+            <div className="divider px-3"></div>
+            <div className="flex-1 overflow-y-auto">
+              {roles.map((role) => (
+                <button
+                  key={role.id}
+                  onClick={() => setSelectedRoleId(role.id)}
+                  className={`w-full px-4 py-3 text-left border-b border-base-300 hover:bg-base-200 transition-colors ${
+                    selectedRoleId === role.id
+                      ? "bg-primary/10 border-l-4 border-l-primary"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheckIcon
+                        className={`w-4 h-4 ${
+                          selectedRoleId === role.id
+                            ? "text-primary"
+                            : "text-base-content/40"
+                        }`}
+                      />
+                      <span className="font-medium text-sm">{role.name}</span>
+                    </div>
+                    {isStandardRole(role) && (
+                      <div className="badge badge-info badge-sm">STD</div>
+                    )}
                   </div>
-                  {isStandardRole(role) && (
-                    <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
-                      STD
-                    </span>
+                  {role.description && (
+                    <p className="text-xs text-base-content/60 mt-1 ml-6 truncate">
+                      {role.description}
+                    </p>
                   )}
-                </div>
-                {role.description && (
-                  <p className="text-xs text-gray-500 mt-1 truncate">
-                    {role.description}
-                  </p>
-                )}
+                </button>
+              ))}
+            </div>
+            <div className="p-3 border-t border-base-300">
+              <button
+                disabled={rolesLocked}
+                className="btn btn-primary btn-sm w-full gap-2"
+              >
+                <PlusIcon className="w-4 h-4" />
+                New Role
               </button>
-            ))}
-          </div>
-          <div className="p-3 border-t border-gray-200">
-            <button
-              disabled={rolesLocked}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300"
-            >
-              <PlusIcon className="w-4 h-4" />
-              New Role
-            </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Right Panel - Role Details & Permissions */}
-      <div className="flex-1 bg-white rounded-lg border border-gray-200 overflow-y-auto">
-        {currentRole && (
+      <div className="flex-1 card bg-base-100 shadow-xl flex flex-col overflow-hidden border-2 border-primary">
+        {currentRole ? (
           <>
-            <div className="px-6 py-4 border-b border-gray-200">
+            {/* Fixed Header Section */}
+            <div className="px-6 py-4 border-base-300 flex-shrink-0">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      {currentRole.name}
-                    </h2>
+                    <h2 className="card-title">{currentRole.name}</h2>
                     {isStandardRole(currentRole) && (
-                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded">
-                        Standard Role
-                      </span>
+                      <div className="badge badge-primary">Standard Role</div>
                     )}
                   </div>
                   {currentRole.description && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-base-content/70 mt-1">
                       {currentRole.description}
                     </p>
                   )}
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-base-content/60 mt-2">
                     Last updated:{" "}
                     {new Date(currentRole.lastUpdatedAt).toLocaleDateString()}
                   </p>
@@ -192,14 +187,16 @@ const RolesAndPermissions = ({
                 <div className="flex gap-2">
                   <button
                     disabled={rolesLocked && !isStandardRole(currentRole)}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                    className="btn btn-ghost btn-sm btn-circle"
+                    title="Edit Role"
                   >
                     <PencilIcon className="w-4 h-4" />
                   </button>
                   {!isStandardRole(currentRole) && (
                     <button
                       disabled={rolesLocked}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                      className="btn btn-ghost btn-sm btn-circle text-error"
+                      title="Delete Role"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
@@ -208,48 +205,46 @@ const RolesAndPermissions = ({
               </div>
             </div>
 
-            <div className="p-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">
-                Permissions
-              </h3>
+            <div className="divider px-3"></div>
+
+            {/* Scrollable Permissions Section */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <h3 className="text-sm font-semibold mb-4">Permissions</h3>
               {permissionCategories.length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  No permissions available.
-                </p>
+                <div className="alert">
+                  <span>No permissions available.</span>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {permissionCategories.map((category) => (
-                    <div
-                      key={category.id}
-                      className="border border-gray-200 rounded-lg p-4"
-                    >
-                      <div className="font-medium text-gray-900 mb-3">
-                        {category.label}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {category.permissions.map((perm) => {
-                          const hasPermission = roleHasPermission(
-                            currentRole.id,
-                            perm.id
-                          );
-                          return (
-                            <label
-                              key={perm.id}
-                              className="flex items-center gap-2 cursor-pointer"
-                              title={perm.description || perm.name}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={hasPermission}
-                                disabled={rolesLocked}
-                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
-                              />
-                              <span className="text-sm text-gray-700">
-                                {perm.name}
-                              </span>
-                            </label>
-                          );
-                        })}
+                    <div key={category.id} className="card bg-base-200">
+                      <div className="card-body p-4">
+                        <h4 className="card-title text-sm mb-3">
+                          {category.label}
+                        </h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {category.permissions.map((perm) => {
+                            const hasPermission = roleHasPermission(
+                              currentRole.id,
+                              perm.id
+                            );
+                            return (
+                              <label
+                                key={perm.id}
+                                className="label cursor-pointer justify-start gap-2"
+                                title={perm.description || perm.name}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={hasPermission}
+                                  disabled={rolesLocked}
+                                  className="checkbox checkbox-primary checkbox-sm"
+                                />
+                                <span className="label-text">{perm.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -257,6 +252,12 @@ const RolesAndPermissions = ({
               )}
             </div>
           </>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-base-content/60">
+              Select a role to view details
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -264,116 +265,92 @@ const RolesAndPermissions = ({
 
   // Layout 2: Permission Matrix View
   const MatrixViewLayout = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+    <div style={{ height: "calc(100vh - 27rem)" }}>
+      <div className="card bg-base-100 shadow-xl h-full flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto">
+          <table className="table table-zebra table-pin-rows table-pin-cols">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                  Role
-                </th>
-                {permissionCategories.map((category) => (
-                  <th
-                    key={category.id}
-                    colSpan={category.permissions.length}
-                    className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-l border-gray-200"
-                  >
-                    {category.label}
-                  </th>
-                ))}
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-2 sticky left-0 bg-gray-50"></th>
-                {permissionCategories.map((category) => (
-                  <React.Fragment key={category.id}>
-                    {category.permissions.map((perm, idx) => (
-                      <th
-                        key={perm.id}
-                        className={`px-2 py-2 text-xs text-gray-500 ${
-                          idx === 0 ? "border-l border-gray-200" : ""
-                        }`}
-                        title={perm.name}
-                      >
-                        {perm.action.charAt(0).toUpperCase()}
-                      </th>
-                    ))}
-                  </React.Fragment>
-                ))}
-                <th className="px-6 py-2"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {roles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheckIcon className="w-4 h-4 text-blue-600" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">
-                            {role.name}
-                          </span>
-                          {isStandardRole(role) && (
-                            <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
-                              STD
-                            </span>
-                          )}
-                        </div>
-                        {role.description && (
-                          <span className="text-xs text-gray-500">
-                            {role.description}
-                          </span>
+                <th className="bg-base-200 z-50">Permission</th>
+                {roles.map((role) => (
+                  <th key={role.id} className="text-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheckIcon className="w-4 h-4 text-primary" />
+                        <span className="font-medium">{role.name}</span>
+                        {isStandardRole(role) && (
+                          <div className="badge badge-primary badge-xs">
+                            STD
+                          </div>
                         )}
                       </div>
+                      {role.description && (
+                        <span className="text-xs text-base-content/60 font-normal">
+                          {role.description}
+                        </span>
+                      )}
                     </div>
-                  </td>
-                  {permissionCategories.map((category) => (
-                    <React.Fragment key={category.id}>
-                      {category.permissions.map((perm, idx) => {
+                  </th>
+                ))}
+                <th className="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {permissionCategories.map((category) => (
+                <React.Fragment key={category.id}>
+                  {/* Category Header Row */}
+                  <tr className="bg-base-200">
+                    <td
+                      colSpan={roles.length + 2}
+                      className="font-semibold text-sm"
+                    >
+                      {category.label}
+                    </td>
+                  </tr>
+                  {/* Permission Rows */}
+                  {category.permissions.map((perm) => (
+                    <tr key={perm.id} className="hover">
+                      <td className="sticky left-0 bg-base-100 z-10">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">
+                            {perm.name}
+                          </span>
+                          {perm.description && (
+                            <span className="text-xs text-base-content/60">
+                              {perm.description}
+                            </span>
+                          )}
+                          <span className="text-xs text-base-content/50 mt-1">
+                            Action: {perm.action}
+                          </span>
+                        </div>
+                      </td>
+                      {roles.map((role) => {
                         const hasPermission = roleHasPermission(
                           role.id,
                           perm.id
                         );
                         return (
-                          <td
-                            key={perm.id}
-                            className={`px-2 py-4 text-center ${
-                              idx === 0 ? "border-l border-gray-200" : ""
-                            }`}
-                          >
+                          <td key={role.id} className="text-center bg-base-100">
                             {hasPermission ? (
-                              <CheckIcon className="w-4 h-4 text-green-600 mx-auto" />
+                              <CheckIcon className="size-8 text-success mx-auto" />
                             ) : (
-                              <XMarkIcon className="w-4 h-4 text-gray-300 mx-auto" />
+                              <XMarkIcon className="size-8 text-base-300 mx-auto" />
                             )}
                           </td>
                         );
                       })}
-                    </React.Fragment>
-                  ))}
-                  <td className="px-6 py-4 text-right whitespace-nowrap">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        disabled={rolesLocked && !isStandardRole(role)}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-50"
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </button>
-                      {!isStandardRole(role) && (
+                      <td className="text-center bg-base-100">
                         <button
-                          disabled={rolesLocked}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-50"
+                          className="btn btn-ghost btn-xs btn-circle"
+                          title="Edit Permission"
                         >
-                          <TrashIcon className="w-4 h-4" />
+                          <PencilIcon className="size-8" />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -387,28 +364,22 @@ const RolesAndPermissions = ({
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Roles & Permissions
-          </h1>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setRolesLocked(!rolesLocked)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                rolesLocked
-                  ? "border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
-                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {rolesLocked ? (
-                <LockClosedIcon className="w-4 h-4" />
-              ) : (
-                <LockOpenIcon className="w-4 h-4" />
-              )}
-              {rolesLocked ? "Roles Locked" : "Lock Roles"}
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold">Roles & Permissions</h1>
+          <button
+            onClick={() => setRolesLocked(!rolesLocked)}
+            className={`btn btn-sm gap-2 ${
+              rolesLocked ? "btn-error" : "btn-ghost"
+            }`}
+          >
+            {rolesLocked ? (
+              <LockClosedIcon className="w-5 h-5" />
+            ) : (
+              <LockOpenIcon className="w-5 h-5" />
+            )}
+            {rolesLocked ? "Roles Locked" : "Lock Roles"}
+          </button>
         </div>
-        <p className="text-gray-600">
+        <p className="text-base-content/70">
           Define and manage organization-level roles and permissions. These
           settings will propagate to all projects.
         </p>
@@ -416,41 +387,35 @@ const RolesAndPermissions = ({
 
       {/* Lock Warning Banner */}
       {rolesLocked && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-          <ExclamationCircleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="alert alert-warning mb-6">
+          <ExclamationCircleIcon className="w-5 h-5 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-amber-900">
-              Roles & Permissions Locked
-            </p>
-            <p className="text-sm text-amber-700 mt-1">
+            <h3 className="font-bold">Roles & Permissions Locked</h3>
+            <div className="text-xs">
               Projects cannot create or modify roles at the project level.
-            </p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Layout Selector */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          View Layout:
+        <label className="label">
+          <span className="label-text font-medium">View Layout:</span>
         </label>
-        <div className="flex gap-2">
+        <div className="btn-group">
           <button
             onClick={() => setActiveLayout("split-view")}
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-              activeLayout === "split-view"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+            className={`btn border-2 border-primary mr-3 ${
+              activeLayout === "split-view" ? "btn-primary" : "btn-ghost"
             }`}
           >
             Split View
           </button>
           <button
             onClick={() => setActiveLayout("matrix")}
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-              activeLayout === "matrix"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+            className={`btn border-2 border-primary ${
+              activeLayout === "matrix" ? "btn-primary" : "btn-ghost"
             }`}
           >
             Matrix View

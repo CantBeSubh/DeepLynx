@@ -102,6 +102,9 @@ const OrganizationManagementPage = async ({
     ? projects.find((p) => String(p.id) === fromProject) || projects[0]
     : projects[0];
 
+  console.log("roles", roles);
+  console.log("Permissions", permissions);
+
   return (
     <OrganizationManagmentClient
       members={members}
