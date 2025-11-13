@@ -324,7 +324,7 @@ public class RecordBusiness : IRecordBusiness
               file_type         = COALESCE(EXCLUDED.file_type, records.file_type)
         RETURNING id, project_id, data_source_id, original_id, name, class_id, object_storage_id, file_type;";
 
-        var inserted = await _bulkCopyUpsertExecutor.CopyUpsertAsync<CreateRecordRequestDto, RecordResponseDto>(
+        var inserted = await _bulkCopyUpsertExecutor.CopyUpsertAsync(
             conn, tx,
             createTempSql,
             copyCmd,
@@ -356,19 +356,8 @@ public class RecordBusiness : IRecordBusiness
                 w.WriteNull();
             },
             upsertSql,
-            r => new RecordResponseDto
-            {
-                Id = r.GetInt64(r.GetOrdinal("id")),
-                ProjectId = r.GetInt64(r.GetOrdinal("project_id")),
-                DataSourceId = r.GetInt64(r.GetOrdinal("data_source_id")),
-                OriginalId = r.GetString(r.GetOrdinal("original_id")),
-                Name = r.IsDBNull(r.GetOrdinal("name")) ? null : r.GetString(r.GetOrdinal("name")),
-                ClassId = r.IsDBNull(r.GetOrdinal("class_id")) ? null : r.GetInt64(r.GetOrdinal("class_id")),
-                ObjectStorageId = r.IsDBNull(r.GetOrdinal("object_storage_id"))
-                    ? null
-                    : r.GetInt64(r.GetOrdinal("object_storage_id")),
-                FileType = r.IsDBNull(r.GetOrdinal("file_type")) ? null : r.GetString(r.GetOrdinal("file_type"))
-            });
+            MapRecord
+        );
 
         // events logging
         var events = new List<CreateEventRequestDto>(inserted.Count);
@@ -383,7 +372,6 @@ public class RecordBusiness : IRecordBusiness
         await tx.CommitAsync();
         return inserted;
     }
-
 
     /// <summary>
     ///     Updates a record with new information
@@ -747,25 +735,6 @@ public class RecordBusiness : IRecordBusiness
         }).ToList();
     }
 
-    private static RecordResponseDto MapRecord(NpgsqlDataReader r)
-    {
-        return new RecordResponseDto
-        {
-            Id = r.GetInt64(r.GetOrdinal("id")),
-            ProjectId = r.GetInt64(r.GetOrdinal("project_id")),
-            DataSourceId = r.GetInt64(r.GetOrdinal("data_source_id")),
-            Name = r.IsDBNull(r.GetOrdinal("name")) ? null : r.GetString(r.GetOrdinal("name")),
-            Description = r.IsDBNull(r.GetOrdinal("description")) ? null : r.GetString(r.GetOrdinal("description")),
-            Uri = r.IsDBNull(r.GetOrdinal("uri")) ? null : r.GetString(r.GetOrdinal("uri")),
-            OriginalId = r.GetString(r.GetOrdinal("original_id")),
-            ClassId = r.IsDBNull(r.GetOrdinal("class_id")) ? null : r.GetInt64(r.GetOrdinal("class_id")),
-            ObjectStorageId = r.IsDBNull(r.GetOrdinal("object_storage_id"))
-                ? null
-                : r.GetInt64(r.GetOrdinal("object_storage_id")),
-            FileType = r.IsDBNull(r.GetOrdinal("file_type")) ? null : r.GetString(r.GetOrdinal("file_type"))
-        };
-    }
-
     /// <summary>
     ///     Private method used to calculate json depth of properties (should be less than three)
     /// </summary>
@@ -846,5 +815,34 @@ public class RecordBusiness : IRecordBusiness
             await _context.ObjectStorages.FirstOrDefaultAsync(o => o.ProjectId == projectId && o.Id == objectStorageId);
         if (referencedObjectStorage == null)
             throw new KeyNotFoundException($"Object storage with ID {objectStorageId} does not exist");
+    }
+
+    /// <summary>
+    ///     Map an NPGSQL data reader to a return DTO usually during high scale read operations
+    /// </summary>
+    /// <param name="r">NPGSQL reader object containing DTO params</param>
+    /// <returns>A response data transfer object with fields mapped from the pg reader</returns>
+    private static RecordResponseDto MapRecord(NpgsqlDataReader r)
+    {
+        var iId = r.GetOrdinal("id");
+        var iProj = r.GetOrdinal("project_id");
+        var iDs = r.GetOrdinal("data_source_id");
+        var iOrig = r.GetOrdinal("original_id");
+        var iName = r.GetOrdinal("name");
+        var iCls = r.GetOrdinal("class_id");
+        var iObj = r.GetOrdinal("object_storage_id");
+        var iType = r.GetOrdinal("file_type");
+
+        return new RecordResponseDto
+        {
+            Id = r.GetInt64(iId),
+            ProjectId = r.GetInt64(iProj),
+            DataSourceId = r.GetInt64(iDs),
+            OriginalId = r.GetString(iOrig),
+            Name = r.IsDBNull(iName) ? null : r.GetString(iName),
+            ClassId = r.IsDBNull(iCls) ? null : r.GetInt64(iCls),
+            ObjectStorageId = r.IsDBNull(iObj) ? null : r.GetInt64(iObj),
+            FileType = r.IsDBNull(iType) ? null : r.GetString(iType)
+        };
     }
 }

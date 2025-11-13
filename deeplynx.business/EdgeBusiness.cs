@@ -374,7 +374,7 @@ public class EdgeBusiness : IEdgeBusiness
               last_updated_at = EXCLUDED.last_updated_at
         RETURNING id, project_id, data_source_id, origin_id, destination_id, relationship_id;";
 
-        var result = await _bulkCopyUpsertExecutor.CopyUpsertAsync<CreateEdgeRequestDto, EdgeResponseDto>(
+        var result = await _bulkCopyUpsertExecutor.CopyUpsertAsync(
             conn, tx,
             createTempSql,
             copyCmd,
@@ -391,17 +391,8 @@ public class EdgeBusiness : IEdgeBusiness
                 w.Write(false, NpgsqlDbType.Boolean);
             },
             upsertSql,
-            r => new EdgeResponseDto
-            {
-                Id = r.GetInt64(r.GetOrdinal("id")),
-                ProjectId = r.GetInt64(r.GetOrdinal("project_id")),
-                DataSourceId = r.GetInt64(r.GetOrdinal("data_source_id")),
-                OriginId = r.GetInt64(r.GetOrdinal("origin_id")),
-                DestinationId = r.GetInt64(r.GetOrdinal("destination_id")),
-                RelationshipId = r.IsDBNull(r.GetOrdinal("relationship_id"))
-                    ? null
-                    : r.GetInt64(r.GetOrdinal("relationship_id"))
-            });
+            MapEdge
+        );
 
         // events logging
         var events = new List<CreateEventRequestDto>(result.Count);
@@ -736,5 +727,30 @@ public class EdgeBusiness : IEdgeBusiness
             ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
             : _context.DataSources.Any(p => p.Id == datasourceId);
         if (!datasource) throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+    }
+
+    /// <summary>
+    ///     Map an NPGSQL data reader to a return DTO usually during high scale read operations
+    /// </summary>
+    /// <param name="r">NPGSQL reader object containing DTO params</param>
+    /// <returns>A response data transfer object with fields mapped from the pg reader</returns>
+    private static EdgeResponseDto MapEdge(NpgsqlDataReader r)
+    {
+        var iId = r.GetOrdinal("id");
+        var iProj = r.GetOrdinal("project_id");
+        var iDs = r.GetOrdinal("data_source_id");
+        var iOrig = r.GetOrdinal("origin_id");
+        var iDest = r.GetOrdinal("destination_id");
+        var iRel = r.GetOrdinal("relationship_id");
+
+        return new EdgeResponseDto
+        {
+            Id = r.GetInt64(iId),
+            ProjectId = r.GetInt64(iProj),
+            DataSourceId = r.GetInt64(iDs),
+            OriginId = r.GetInt64(iOrig),
+            DestinationId = r.GetInt64(iDest),
+            RelationshipId = r.IsDBNull(iRel) ? null : r.GetInt64(iRel)
+        };
     }
 }

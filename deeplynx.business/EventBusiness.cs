@@ -571,4 +571,37 @@ public class EventBusiness : IEventBusiness
             insertSql,
             ct);
     }
+
+    /// <summary>
+    ///     Map an NPGSQL data reader to a return DTO usually during high scale read operations
+    /// </summary>
+    /// <param name="r">NPGSQL reader object containing DTO params</param>
+    /// <returns>A response data transfer object with fields mapped from the pg reader</returns>
+    private static Func<NpgsqlDataReader, EventResponseDto> MakeEventMapper(NpgsqlDataReader r)
+    {
+        var iId = r.GetOrdinal("id");
+        var iOp = r.GetOrdinal("operation");
+        var iType = r.GetOrdinal("entity_type");
+        var iEid = r.GetOrdinal("entity_id");
+        var iEname = r.GetOrdinal("entity_name");
+        var iProj = r.GetOrdinal("project_id");
+        var iDs = r.GetOrdinal("data_source_id");
+        var iProps = r.GetOrdinal("properties");
+        var iLuat = r.GetOrdinal("last_updated_at");
+        var iLuBy = r.GetOrdinal("last_updated_by");
+
+        return rr => new EventResponseDto
+        {
+            Id = rr.GetInt64(iId),
+            Operation = rr.GetString(iOp),
+            EntityType = rr.GetString(iType),
+            EntityId = rr.GetInt64(iEid),
+            EntityName = rr.IsDBNull(iEname) ? null : rr.GetString(iEname),
+            ProjectId = rr.GetInt64(iProj),
+            DataSourceId = rr.IsDBNull(iDs) ? null : rr.GetInt64(iDs),
+            Properties = rr.GetFieldValue<string>(iProps), // or JSON -> string
+            LastUpdatedAt = rr.GetDateTime(iLuat),
+            LastUpdatedBy = rr.IsDBNull(iLuBy) ? null : rr.GetInt64(iLuBy)
+        };
+    }
 }
