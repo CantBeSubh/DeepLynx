@@ -6,18 +6,21 @@ namespace deeplynx.helpers.BigData;
 public sealed class BulkCopyUpsertExecutor : IBulkCopyUpsertExecutor
 {
     /// <summary>
-    ///     Bulk upsert to a PostgreSQL Database using binary copy and single instance upserting
+    /// Performs a high-throughput bulk upsert using:
+    /// 1) CREATE TEMP TABLE (staging)
+    /// 2) COPY BINARY into the temp table
+    /// 3) A single INSERT ... SELECT ... ON CONFLICT ... RETURNING
     /// </summary>
-    /// <param name="conn">NPGSQL PostgreSQL Connection</param>
-    /// <param name="tx">NPGSQL PostgreSQL Transaction for rollback</param>
-    /// <param name="createTempSql">DDL statement to define temp table schema</param>
-    /// <param name="copyCommandText">SQL statement to copy data into temp table</param>
-    /// <param name="rows">Input enumerable data of generic type to be inserted</param>
-    /// <param name="writeRow">Delegate map to handle per row binary writes of 'rows'</param>
-    /// <param name="upsertSql">SQL Statement to handle data specific PG update and conflict resolution</param>
-    /// <param name="mapRow">Map generic return list fields from upserted results</param>
-    /// <param name="ct">Optional cancellation token to end long requests</param>
-    /// <returns>Generic type list of ORM rows created</returns>
+    /// <param name="conn">Open Npgsql connection</param>
+    /// <param name="tx">Active transaction covering COPY and UPSERT</param>
+    /// <param name="createTempSql">DDL to create the staging temp table (column order must match copyCommandText)</param>
+    /// <param name="copyCommandText">COPY command text (e.g., 'COPY tmp_x (col1, col2, ...) FROM STDIN (FORMAT BINARY)')</param>
+    /// <param name="rows">Input rows to write via COPY</param>
+    /// <param name="writeRow">Delegate that writes one row to the binary importer (columns must match the COPY list)</param>
+    /// <param name="upsertSql">Final INSERT ... SELECT ... ON CONFLICT ... RETURNING statement</param>
+    /// <param name="mapRow">Maps one returned row from the data reader to <typeparamref name="TOut" /></param>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>List of objects mapped from the UPSERT's RETURNING clause</returns>
     public async Task<List<TOut>> CopyUpsertAsync<TIn, TOut>(
         NpgsqlConnection conn,
         NpgsqlTransaction tx,
@@ -57,17 +60,19 @@ public sealed class BulkCopyUpsertExecutor : IBulkCopyUpsertExecutor
     }
 
     /// <summary>
-    ///     Bulk insert to a PostgreSQL Database using binary copy and single instance upserting
+    /// Performs a high-throughput bulk insert using:
+    /// 1) CREATE TEMP TABLE (staging)
+    /// 2) COPY BINARY into the temp table
+    /// 3) A single INSERT ... SELECT from the temp table (no RETURNING)
     /// </summary>
-    /// <param name="conn">NPGSQL PostgreSQL Connection</param>
-    /// <param name="tx">NPGSQL PostgreSQL Transaction for rollback</param>
-    /// <param name="createTempSql">DDL statement to define temp table schema</param>
-    /// <param name="copyCommandText">SQL statement to copy data into temp table</param>
-    /// <param name="rows">Input enumerable data of generic type to be inserted</param>
-    /// <param name="writeRow">Delegate map to handle per row binary writes of 'rows'</param>
-    /// <param name="insertSql">SQL Statement to handle data specific inserts</param>
-    /// <param name="ct">Optional cancellation token to end long requests</param>
-    /// <returns>Generic type list of ORM rows created</returns>
+    /// <param name="conn">Open Npgsql connection</param>
+    /// <param name="tx">Active transaction covering COPY and UPSERT</param>
+    /// <param name="createTempSql">DDL to create the staging temp table (column order must match copyCommandText)</param>
+    /// <param name="copyCommandText">COPY command text (e.g., 'COPY tmp_x (col1, col2, ...) FROM STDIN (FORMAT BINARY)')</param>
+    /// <param name="rows">Input rows to write via COPY</param>
+    /// <param name="writeRow">Delegate that writes one row to the binary importer (columns must match the COPY list)</param>
+    /// <param name="insertSql">Final INSERT ... SELECT ... ON CONFLICT ... RETURNING statement</param>
+    /// <param name="ct">Cancellation token</param>
     public async Task<int> CopyInsertAsync<TIn>(
         NpgsqlConnection conn, NpgsqlTransaction tx,
         string createTempSql, string copyCommandText,
