@@ -603,8 +603,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task RemoveUser_Fails_IfUserNotFound()
         {
-            // Arrange: User 99999 doesn't exist in DB
-    
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _groupBusiness.RemoveUserFromGroup(gid, 99999));
