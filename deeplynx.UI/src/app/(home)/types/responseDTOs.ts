@@ -159,18 +159,16 @@ export type ProjectStatResponseDto = {
 }
 
 //which one
-export type RoleResponseDto =
-  {
-    roleId: number;
-    id: number;
-    name: string;
-    description?: string | null;
-    lastUpdatedAt?: string | null;
-    lastUpdatedBy?: string | null;
-    isArchived?: boolean;
-    projectId: number;
-    organizationId?: number | null;
-  }
+export type RoleResponseDto = {
+  id: number;
+  name: string;
+  description: string | null;
+  lastUpdatedAt: string;
+  lastUpdatedBy: number;
+  isArchived: boolean;
+  projectId: number;
+  organizationId: number;
+}
 
 export type TagResponseDto = {
   id: number;

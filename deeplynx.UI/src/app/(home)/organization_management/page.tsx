@@ -1,27 +1,24 @@
 // src/app/(home)/organization_management/page.tsx
 
-import React from "react";
-import OrganizationManagmentClient from "./OrganizationManagementClient";
+import { getAllGroups } from "@/app/lib/group_services.server";
+import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllUsersServer } from "@/app/lib/user_services.server";
+import { getAllRolesServer } from "@/app/lib/role_services.server"; // Add this import
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { mapToProjectResponseDtos } from "../page";
 import {
   GroupResponseDto,
-  OauthApplicationResponseDto,
-  OrganizationResponseDto,
   ProjectResponseDto,
   UserResponseDto,
+  RoleResponseDto,
+  PermissionResponseDto,
 } from "../types/responseDTOs";
-import { getAllOrganizationsServer } from "@/app/lib/organization_services.server";
-import { getAllOauthApplicationsServer } from "@/app/lib/oauth_services.server";
-import { getAllUsersServer } from "@/app/lib/user_services.server";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-import { mapToProjectResponseDtos } from "../page";
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { getAllGroups } from "@/app/lib/group_services.server";
+import OrganizationManagmentClient from "./OrganizationManagementClient";
+import { getAllPermissionsServer } from "@/app/lib/permissions_services.server";
 
 export const dynamic = "force-dynamic";
 
-// Mapping function for groups (if needed)
 const mapToGroupResponseDtos = (group: GroupResponseDto): GroupResponseDto => {
   return {
     ...group,
@@ -33,11 +30,9 @@ const OrganizationManagementPage = async ({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) => {
-  // Get organization from cookies
   const cookieStore = await cookies();
   const orgSessionCookie = cookieStore.get("organizationSession");
 
-  // Check if cookie exists before accessing its value
   if (!orgSessionCookie) {
     redirect("/select-org");
   }
@@ -69,6 +64,30 @@ const OrganizationManagementPage = async ({
     console.error("getAllGroups failed:", error);
   }
 
+  // Fetch roles filtered by organization
+  let roles: RoleResponseDto[] = [];
+  try {
+    const apiRoles = await getAllRolesServer({
+      organizationId: Number(organizationId),
+      hideArchived: true,
+    });
+    roles = apiRoles;
+  } catch (error) {
+    console.error("getAllRolesServer failed:", error);
+  }
+
+  // Fetch permissions filtered by organization
+  let permissions: PermissionResponseDto[] = [];
+  try {
+    const apiPermissions = await getAllPermissionsServer({
+      organizationId: Number(organizationId),
+      hideArchived: true,
+    });
+    permissions = apiPermissions;
+  } catch (error) {
+    console.error("getAllPermissionsServer failed:", error);
+  }
+
   // Fetch users filtered by organization
   const members = (await getAllUsersServer(
     undefined,
@@ -79,7 +98,6 @@ const OrganizationManagementPage = async ({
   const fromProject =
     typeof params.fromProject === "string" ? params.fromProject : "";
 
-  // Find the initial selected project or use the first one
   const initialSelectedProject = fromProject
     ? projects.find((p) => String(p.id) === fromProject) || projects[0]
     : projects[0];
@@ -89,7 +107,9 @@ const OrganizationManagementPage = async ({
       members={members}
       initialProjects={projects}
       initialGroups={groups}
+      initialRoles={roles}
       initialSelectedProject={initialSelectedProject}
+      initialPermissions={permissions}
     />
   );
 };
