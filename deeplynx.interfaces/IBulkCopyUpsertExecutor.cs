@@ -1,15 +1,27 @@
+using Npgsql;
+
 namespace deeplynx.interfaces;
 
 public interface IBulkCopyUpsertExecutor
 {
     Task<List<TOut>> CopyUpsertAsync<TIn, TOut>(
-        Npgsql.NpgsqlConnection conn,
-        Npgsql.NpgsqlTransaction tx,
+        NpgsqlConnection conn,
+        NpgsqlTransaction tx,
         string createTempSql,
         string copyCommandText,
         IEnumerable<TIn> rows,
-        Action<Npgsql.NpgsqlBinaryImporter, TIn> writeRow,
+        Action<NpgsqlBinaryImporter, TIn> writeRow,
         string upsertSql,
-        Func<Npgsql.NpgsqlDataReader, TOut> mapRow,
+        Func<NpgsqlDataReader, TOut> mapRow,
+        CancellationToken ct = default);
+
+    Task<int> CopyInsertAsync<TIn>(
+        NpgsqlConnection conn,
+        NpgsqlTransaction tx,
+        string createTempSql,
+        string copyCommandText,
+        IEnumerable<TIn> rows,
+        Action<NpgsqlBinaryImporter, TIn> writeRow,
+        string insertSql,
         CancellationToken ct = default);
 }

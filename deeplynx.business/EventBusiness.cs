@@ -9,6 +9,7 @@ using NpgsqlTypes;
 
 public class EventBusiness : IEventBusiness
 {
+    private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
     private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly INotificationBusiness _notificationBusiness;
@@ -18,15 +19,19 @@ public class EventBusiness : IEventBusiness
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
+    /// <param name="notificationBusiness">Used to access notification operations</param>
+    /// <param name="bulkCopyUpsertExecutor">Used to access bulk upsert operations</param>
     public EventBusiness(
         DeeplynxContext context,
         ICacheBusiness cacheBusiness,
-        INotificationBusiness notificationBusiness
+        INotificationBusiness notificationBusiness,
+        IBulkCopyUpsertExecutor bulkCopyUpsertExecutor
     )
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
         _notificationBusiness = notificationBusiness;
+        _bulkCopyUpsertExecutor = bulkCopyUpsertExecutor;
     }
 
     /// <summary>
@@ -512,65 +517,58 @@ public class EventBusiness : IEventBusiness
         long? userId,
         CancellationToken ct = default)
     {
-        if (events.Count == 0) return;
+        if (events is null || events.Count == 0) return;
+
+        // If your table is not public.events, fully-qualify it and quote as needed:
+        // e.g., deeplynx.events or deeplynx."Events"
+        const string createTempSql = @"
+        CREATE TEMP TABLE tmp_events
+        (
+            project_id      BIGINT NOT NULL,
+            operation       TEXT   NOT NULL,
+            entity_type     TEXT   NOT NULL,
+            entity_id       BIGINT NOT NULL,
+            entity_name     TEXT   NULL,
+            data_source_id  BIGINT NULL,
+            properties      JSONB  NOT NULL,
+            last_updated_by BIGINT NULL,
+            last_updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
+        ) ON COMMIT DROP;";
+
+        const string copyCmd = @"
+        COPY tmp_events
+        (project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at)
+        FROM STDIN (FORMAT BINARY)";
+
+        // adjust table identifier to your real one (schema + quoting)
+        const string insertSql = @"
+        INSERT INTO deeplynx.events
+        (project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at)
+        SELECT project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at
+        FROM tmp_events;";
 
         var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-        const string createTempSql = @"
-            CREATE TEMP TABLE tmp_events
-            (
-                project_id      BIGINT NOT NULL,
-                operation       TEXT   NOT NULL,
-                entity_type     TEXT   NOT NULL,
-                entity_id       BIGINT NOT NULL,
-                entity_name     TEXT   NULL,
-                data_source_id  BIGINT NULL,
-                properties      JSONB  NOT NULL,
-                last_updated_by BIGINT NULL,
-                last_updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL
-            ) ON COMMIT DROP;";
-
-        const string copyCmd = @"
-            COPY tmp_events
-            (project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at)
-            FROM STDIN (FORMAT BINARY)";
-
-        const string insertSql = @"
-            INSERT INTO deeplynx.events
-            (project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at)
-            SELECT project_id, operation, entity_type, entity_id, entity_name, data_source_id, properties, last_updated_by, last_updated_at
-            FROM tmp_events;";
-
-        await using (var cmd = new NpgsqlCommand(createTempSql, conn, tx))
-        {
-            await cmd.ExecuteNonQueryAsync(ct);
-        }
-
-        await using (var writer = conn.BeginBinaryImport(copyCmd))
-        {
-            foreach (var e in events)
+        await _bulkCopyUpsertExecutor.CopyInsertAsync(
+            conn, tx,
+            createTempSql, copyCmd,
+            events,
+            (w, e) =>
             {
-                await writer.StartRowAsync(ct);
-                writer.Write(projectId, NpgsqlDbType.Bigint);
-                writer.Write(e.Operation, NpgsqlDbType.Text);
-                writer.Write(e.EntityType, NpgsqlDbType.Text);
-                writer.Write(e.EntityId, NpgsqlDbType.Bigint);
-                if (e.EntityName is null) writer.WriteNull();
-                else writer.Write(e.EntityName, NpgsqlDbType.Text);
-                if (e.DataSourceId.HasValue) writer.Write(e.DataSourceId.Value, NpgsqlDbType.Bigint);
-                else writer.WriteNull();
-                writer.Write(e.Properties ?? "{}", NpgsqlDbType.Jsonb);
-                if (userId.HasValue) writer.Write(userId.Value, NpgsqlDbType.Bigint);
-                else writer.WriteNull();
-                writer.Write(now, NpgsqlDbType.Timestamp);
-            }
-
-            await writer.CompleteAsync(ct);
-        }
-
-        await using (var cmd = new NpgsqlCommand(insertSql, conn, tx))
-        {
-            await cmd.ExecuteNonQueryAsync(ct);
-        }
+                w.Write(projectId, NpgsqlDbType.Bigint);
+                w.Write(e.Operation, NpgsqlDbType.Text);
+                w.Write(e.EntityType, NpgsqlDbType.Text);
+                w.Write(e.EntityId, NpgsqlDbType.Bigint);
+                if (e.EntityName is null) w.WriteNull();
+                else w.Write(e.EntityName, NpgsqlDbType.Text);
+                if (e.DataSourceId.HasValue) w.Write(e.DataSourceId.Value, NpgsqlDbType.Bigint);
+                else w.WriteNull();
+                w.Write(e.Properties ?? "{}", NpgsqlDbType.Jsonb);
+                if (userId.HasValue) w.Write(userId.Value, NpgsqlDbType.Bigint);
+                else w.WriteNull();
+                w.Write(now, NpgsqlDbType.Timestamp);
+            },
+            insertSql,
+            ct);
     }
 }

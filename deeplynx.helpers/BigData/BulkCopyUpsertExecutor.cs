@@ -6,7 +6,7 @@ namespace deeplynx.helpers.BigData;
 public sealed class BulkCopyUpsertExecutor : IBulkCopyUpsertExecutor
 {
     /// <summary>
-    ///     Bulk upload to a PostgreSQL Database using binary copy and single instance upserting
+    ///     Bulk upsert to a PostgreSQL Database using binary copy and single instance upserting
     /// </summary>
     /// <param name="conn">NPGSQL PostgreSQL Connection</param>
     /// <param name="tx">NPGSQL PostgreSQL Transaction for rollback</param>
@@ -54,5 +54,53 @@ public sealed class BulkCopyUpsertExecutor : IBulkCopyUpsertExecutor
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     Bulk insert to a PostgreSQL Database using binary copy and single instance upserting
+    /// </summary>
+    /// <param name="conn">NPGSQL PostgreSQL Connection</param>
+    /// <param name="tx">NPGSQL PostgreSQL Transaction for rollback</param>
+    /// <param name="createTempSql">DDL statement to define temp table schema</param>
+    /// <param name="copyCommandText">SQL statement to copy data into temp table</param>
+    /// <param name="rows">Input enumerable data of generic type to be inserted</param>
+    /// <param name="writeRow">Delegate map to handle per row binary writes of 'rows'</param>
+    /// <param name="insertSql">SQL Statement to handle data specific inserts</param>
+    /// <param name="ct">Optional cancellation token to end long requests</param>
+    /// <returns>Generic type list of ORM rows created</returns>
+    public async Task<int> CopyInsertAsync<TIn>(
+        NpgsqlConnection conn, NpgsqlTransaction tx,
+        string createTempSql, string copyCommandText,
+        IEnumerable<TIn> rows,
+        Action<NpgsqlBinaryImporter, TIn> writeRow,
+        string insertSql,
+        CancellationToken ct = default)
+    {
+        if (conn is null) throw new ArgumentNullException(nameof(conn));
+        if (createTempSql is null) throw new ArgumentNullException(nameof(createTempSql));
+        if (copyCommandText is null) throw new ArgumentNullException(nameof(copyCommandText));
+        if (rows is null) throw new ArgumentNullException(nameof(rows));
+        if (writeRow is null) throw new ArgumentNullException(nameof(writeRow));
+        if (insertSql is null) throw new ArgumentNullException(nameof(insertSql));
+
+        await using (var cmd = new NpgsqlCommand(createTempSql, conn, tx))
+        {
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
+
+        await using (var writer = conn.BeginBinaryImport(copyCommandText))
+        {
+            foreach (var row in rows)
+            {
+                if (row is null) throw new ArgumentException("One or more rows were null");
+                await writer.StartRowAsync(ct);
+                writeRow(writer, row);
+            }
+
+            await writer.CompleteAsync(ct);
+        }
+
+        await using var insert = new NpgsqlCommand(insertSql, conn, tx);
+        return await insert.ExecuteNonQueryAsync(ct);
     }
 }
