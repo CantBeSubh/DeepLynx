@@ -45,7 +45,9 @@ export async function GET(request: NextRequest) {
       const location = backendResponse.headers.get('Location');
       if (location) {
         console.log(`C# backend returned redirect to: ${location}`);
-        return NextResponse.redirect(location);
+        // IMPORTANT: Return the redirect directly to the browser
+        // NextResponse.redirect() will send a 307 redirect to the client
+        return NextResponse.redirect(location, { status: 302 });
       }
     }
 
