@@ -207,9 +207,12 @@ public class ProjectBusiness : IProjectBusiness
         };
 
         _context.Projects.Add(project);
+        
+        SetDefaultPermissions(project);
+        
         await _context.SaveChangesAsync();
         var projectId = project.Id;
-
+        
         var projectResponseDto = new ProjectResponseDto
         {
             Id = projectId,
@@ -223,7 +226,7 @@ public class ProjectBusiness : IProjectBusiness
 
         // Update the Project Cache List
         var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-
+        
         if (cachedProjectList == null)
         {
             cachedProjectList = new List<ProjectResponseDto>();
@@ -878,7 +881,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Instance Default",
             Config = config
         };
-        await _objectStorageBusiness.CreateObjectStorage(projectId, objectStorageRequestDto, true);
+        await _objectStorageBusiness.CreateObjectStorage(null, projectId, objectStorageRequestDto, true);
 
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT
@@ -893,7 +896,7 @@ public class ProjectBusiness : IProjectBusiness
             }
 
         };
-        var obj = await _objectStorageBusiness.CreateObjectStorage(projectId, timeseriesObjectStorageMethod);
+        var obj = await _objectStorageBusiness.CreateObjectStorage(null, projectId, timeseriesObjectStorageMethod);
 
         // ===============================
         // CREATE DEFAULT PROJECT ROLES
@@ -913,5 +916,24 @@ public class ProjectBusiness : IProjectBusiness
         await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
 
         await AddMemberToProject(projectId, adminRoleId, userId, null);
+    }
+
+    private void SetDefaultPermissions(Project project)
+    {
+        var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
+
+        foreach (var defaultPermission in defaultPermissions)
+        {
+            var permission = new Permission
+            {
+                Name = defaultPermission.Name,
+                Resource = defaultPermission.Resource,
+                Action = defaultPermission.Action,
+                Description = defaultPermission.Description,
+                Project= project,
+                IsDefault = true
+            };
+            _context.Permissions.Add(permission);
+        }
     }
 }

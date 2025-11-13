@@ -23,7 +23,7 @@ const TagManagementPage = async ({
   return (
     <TagManagementClient
       initialProjects={projects}
-      initialSelectedProjects={initialSelectedProject}
+      initialSelectedProject={initialSelectedProject}
     />
   );
 };

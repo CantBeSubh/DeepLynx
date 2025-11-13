@@ -6,11 +6,11 @@ using deeplynx.helpers.Context;
 
 namespace deeplynx.api.Controllers;
 
-// <summary>
-/// Controller creating tokens for api only users.
+/// <summary>
+/// Controller for creating tokens and managing API keys.
 /// </summary>
 /// <remarks>
-/// This controller provides endpoints to create tokens and api keys.
+/// This controller provides endpoints to create JWT tokens, manage API keys, and handle token revocation.
 /// </remarks>
 [ApiController]
 [Authorize]
@@ -19,8 +19,9 @@ public class TokenController : ControllerBase
 {
     private readonly IEventBusiness _eventBusiness;
     private readonly ITokenBusiness _tokenBusiness;
-    private readonly ILogger<RecordController> _logger;
-    public TokenController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness, ILogger<RecordController> logger)
+    private readonly ILogger<TokenController> _logger;
+    
+    public TokenController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness, ILogger<TokenController> logger)
     {
         _eventBusiness = eventBusiness;
         _tokenBusiness = tokenBusiness;
@@ -30,66 +31,132 @@ public class TokenController : ControllerBase
     /// <summary>
     /// Create JWT Token
     /// </summary>
-    /// <param name="tokenDto"></param>
-    /// <returns>Jwt token</returns>
+    /// <param name="tokenDto">Token creation request with API key, secret, and optional expiration</param>
+    /// <returns>JWT token string</returns>
     [AllowAnonymous]
     [HttpPost("CreateToken", Name = "api_create_token")]
-    public IActionResult CreateToken([FromBody] CreateTokenDto tokenDto)
+    public async Task<IActionResult> CreateToken([FromBody] CreateTokenDto tokenDto)
     {
-        return Ok(_tokenBusiness.CreateToken(tokenDto.ApiSecret, tokenDto.ApiKey, tokenDto.ExpirationMinutes));
-    }
-
-    /// <summary>
-    /// Create API Secret
-    /// </summary>
-    /// <returns>Api secret and api key</returns>
-    [HttpPost("CreateApiKey", Name = "api_create_api_key")]
-    public IActionResult CreateApiKey()
-    {
-        var tokenDto = _tokenBusiness.CreateApiKey();
-        return Ok(tokenDto);
-    }
-
-    /// <summary>
-    /// Delete API Secret
-    /// </summary>
-    /// <param name="key">key to be deleted</param>
-    /// <returns>Api secret and api key</returns>
-    [HttpDelete("DeleteApiKey/{key}", Name = "api_delete_api_key")]
-    async public Task<IActionResult> DeleteApiKey(string key)
-    {
-        var userId = UserContextStorage.UserId;
         try
         {
-            await _tokenBusiness.DeleteApiKey(userId, key);
-            return Ok(new { message = $"Deleted key {key}" });
+            var token = await _tokenBusiness.CreateToken(tokenDto.ApiKey, tokenDto.ApiSecret, tokenDto.ExpirationMinutes);
+            return Ok(token);
         }
-        catch (Exception exc)
+        catch (KeyNotFoundException ex)
         {
-            var message = $"An error occurred while deleting key {key}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating token");
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "An error occurred while creating the token" });
         }
     }
 
     /// <summary>
-    /// Get all api keys associated with a user
+    /// Create API Key and Secret
     /// </summary>
-    /// <returns>api keys associated with the user</returns>
+    /// <param name="clientId">Optional OAuth client ID to associate with the API key</param>
+    /// <returns>API key and secret (secret only returned once)</returns>
+    [HttpPost("CreateApiKey", Name = "api_create_api_key")]
+    public async Task<IActionResult> CreateApiKey([FromQuery] string? clientId = null)
+    {
+        try
+        {
+            var userId = UserContextStorage.UserId;
+            var tokenDto = await _tokenBusiness.CreateApiKey(userId, clientId);
+            return Ok(tokenDto);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating API key");
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "An error occurred while creating the API key" });
+        }
+    }
+
+    /// <summary>
+    /// Delete API Key
+    /// </summary>
+    /// <param name="key">API key to be deleted</param>
+    /// <returns>Success message</returns>
+    [HttpDelete("DeleteApiKey/{key}", Name = "api_delete_api_key")]
+    public async Task<IActionResult> DeleteApiKey(string key)
+    {
+        try
+        {
+            var userId = UserContextStorage.UserId;
+            await _tokenBusiness.DeleteApiKey(userId, key);
+            return Ok(new { message = $"Successfully deleted API key" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error deleting API key {key}");
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "An error occurred while deleting the API key" });
+        }
+    }
+
+    /// <summary>
+    /// Get all API keys associated with the current user
+    /// </summary>
+    /// <returns>List of API keys (secrets are never returned)</returns>
     [HttpGet("GetAllUserKeys", Name = "api_get_all_user_keys")]
     public async Task<ActionResult<List<string>>> GetAllUserKeys()
     {
-        var userId = UserContextStorage.UserId;
         try
         {
+            var userId = UserContextStorage.UserId;
             var keys = await _tokenBusiness.GetAllUserKeys(userId);
             return Ok(keys);
         }
-        catch (Exception exc)
+        catch (Exception ex)
         {
-            var message = $"An error occurred while retrieving keys for user {userId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
+            _logger.LogError(ex, "Error retrieving user API keys");
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "An error occurred while retrieving API keys" });
+        }
+    }
+
+    /// <summary>
+    /// Revoke all active tokens for the current user
+    /// </summary>
+    /// <returns>Number of tokens revoked</returns>
+    [HttpPost("RevokeAllUserTokens", Name = "api_revoke_all_user_tokens")]
+    public async Task<IActionResult> RevokeAllUserTokens()
+    {
+        try
+        {
+            var userId = UserContextStorage.UserId;
+            var revokedCount = await _tokenBusiness.RevokeAllUserTokens(userId);
+            
+            return Ok(new { 
+                message = $"Successfully revoked {revokedCount} token(s)", 
+                revokedCount 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error revoking all user tokens");
+            return StatusCode(StatusCodes.Status500InternalServerError, 
+                new { message = "An error occurred while revoking tokens" });
         }
     }
 }

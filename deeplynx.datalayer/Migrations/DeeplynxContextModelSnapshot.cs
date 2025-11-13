@@ -162,6 +162,10 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<long?>("ApplicationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("application_id");
+
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasColumnType("text")
@@ -180,6 +184,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasName("api_keys_pkey");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex(new[] { "ApplicationId" }, "idx_api_keys_application_id");
 
                     b.ToTable("api_keys", "deeplynx");
                 });
@@ -795,14 +801,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expires_at");
-
-                    b.Property<DateTime>("LastUsedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("last_used_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnName("expires_at");
 
                     b.Property<bool>("Revoked")
                         .ValueGeneratedOnAdd()
@@ -870,7 +870,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("ProjectId")
+                    b.Property<long?>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
+                    b.Property<long?>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -885,11 +889,16 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_object_storages_last_updated_by");
 
+                    b.HasIndex(new[] { "OrganizationId" }, "IX_object_storages_organization_id");
+
                     b.HasIndex(new[] { "ProjectId" }, "IX_object_storages_project_id");
 
                     b.HasIndex(new[] { "Id" }, "idx_object_storage_id");
 
-                    b.ToTable("object_storages", "deeplynx");
+                    b.ToTable("object_storages", "deeplynx", t =>
+                        {
+                            t.HasCheckConstraint("ck_object_storages_ProjectXorOrg", "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
@@ -1052,10 +1061,16 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Resource" }, "idx_permissions_resource");
 
-                    b.HasIndex(new[] { "ProjectId", "OrganizationId", "LabelId", "Action" }, "permissions_unique_label_action")
+                    b.HasIndex(new[] { "OrganizationId", "LabelId", "Action" }, "permissions_unique_org_label_action")
                         .IsUnique();
 
-                    b.HasIndex(new[] { "Resource", "Action" }, "permissions_unique_resource_action")
+                    b.HasIndex(new[] { "OrganizationId", "Resource", "Action" }, "permissions_unique_org_resource_action")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "ProjectId", "LabelId", "Action" }, "permissions_unique_project_label_action")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "ProjectId", "Resource", "Action" }, "permissions_unique_project_resource_action")
                         .IsUnique();
 
                     b.ToTable("permissions", "deeplynx");
@@ -1785,12 +1800,20 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.ApiKey", b =>
                 {
+                    b.HasOne("deeplynx.datalayer.Models.OauthApplication", "OauthApplication")
+                        .WithMany("ApiKeys")
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("api_keys_application_id_fkey");
+
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
                         .WithMany("ApiKeys")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("api_keys_user_id_fkey");
+
+                    b.Navigation("OauthApplication");
 
                     b.Navigation("User");
                 });
@@ -1995,14 +2018,18 @@ namespace deeplynx.datalayer.Migrations
                         .HasForeignKey("LastUpdatedBy")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
+                        .WithMany("ObjectStorages")
+                        .HasForeignKey("OrganizationId");
+
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("ObjectStorages")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("object_storage_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("Project");
                 });
@@ -2365,6 +2392,8 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.OauthApplication", b =>
                 {
+                    b.Navigation("ApiKeys");
+
                     b.Navigation("OauthTokens");
                 });
 
@@ -2376,6 +2405,8 @@ namespace deeplynx.datalayer.Migrations
             modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
                 {
                     b.Navigation("Groups");
+
+                    b.Navigation("ObjectStorages");
 
                     b.Navigation("OrganizationUsers");
 

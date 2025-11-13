@@ -222,14 +222,15 @@ namespace deeplynx.tests
             var savedApp = await Context.OauthApplications
                 .FirstOrDefaultAsync(a => a.ClientId == result.ClientId);
             Assert.NotNull(savedApp);
-            
+    
             // The stored hash should be different from the returned plain secret
             Assert.NotEqual(result.ClientSecretRaw, savedApp.ClientSecretHash);
-            
-            // The stored hash should contain salt and hash separated by colon
-            Assert.Contains(":", savedApp.ClientSecretHash);
-            var parts = savedApp.ClientSecretHash.Split(':');
-            Assert.Equal(2, parts.Length);
+    
+            // The stored hash should be a valid BCrypt hash (starts with $2a$, $2b$, or $2y$)
+            Assert.Matches(@"^\$2[aby]\$\d{2}\$.{53}$", savedApp.ClientSecretHash);
+    
+            // Verify that the plain secret can be verified against the stored hash
+            Assert.True(BCrypt.Net.BCrypt.Verify(result.ClientSecretRaw, savedApp.ClientSecretHash));
         }
 
         #endregion
@@ -239,10 +240,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllOauthApplications_ExcludesArchived()
         {
-            // Arrange: reset test data to avoid race conditions
-            await CleanupTestData();
-            await SeedTestDataAsync();
-
             // Act
             var result = await _oauthApplicationBusiness.GetAllOauthApplications();
             var applications = result.ToList();
@@ -270,9 +267,9 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllOauthApplications_ReturnsEmptyList_WhenNoApplications()
         {
-            // Arrange
-            await CleanupTestData();
-
+            // clear database for emptied list of apps
+            await base.SeedTestDataAsync();
+            
             // Act
             var result = await _oauthApplicationBusiness.GetAllOauthApplications();
             var applications = result.ToList();
@@ -783,14 +780,6 @@ namespace deeplynx.tests
 
             // delete app 3
             Context.OauthApplications.Remove(app3);
-            await Context.SaveChangesAsync();
-        }
-
-        private async Task CleanupTestData()
-        {
-            // Remove all oauth applications
-            var existingApps = await Context.OauthApplications.ToListAsync();
-            Context.OauthApplications.RemoveRange(existingApps);
             await Context.SaveChangesAsync();
         }
     }

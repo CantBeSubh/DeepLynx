@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using deeplynx.helpers;
 using Npgsql;
 using System.Text.Json;
+using deeplynx.helpers.Context;
 
 namespace deeplynx.business;
 
@@ -131,7 +132,7 @@ public class ClassBusiness : IClassBusiness
             Description = dto.Description,
             Uuid = dto.Uuid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = UserContextStorage.UserId,
             IsArchived = false
         };
 
@@ -190,7 +191,8 @@ public class ClassBusiness : IClassBusiness
         var parameters = new List<NpgsqlParameter>
         {
             new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new NpgsqlParameter("@lastUpdatedBy", UserContextStorage.UserId),
         };
         
         // establish "dynamic" parameters (new for each dto in the list)
@@ -198,12 +200,12 @@ public class ClassBusiness : IClassBusiness
         {
             new NpgsqlParameter($"@p{i}_name", dto.Name),
             new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_uuid", (object?)dto.Uuid ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_uuid", (object?)dto.Uuid ?? DBNull.Value)
         }));
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", classes.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, NULL)"));
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, @lastUpdatedBy)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -255,7 +257,7 @@ public class ClassBusiness : IClassBusiness
         updatedClass.Description = dto.Description ?? updatedClass.Description;
         updatedClass.Uuid = dto.Uuid ?? updatedClass.Uuid;
         updatedClass.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        updatedClass.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
+        updatedClass.LastUpdatedBy = UserContextStorage.UserId;
 
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
@@ -326,6 +328,7 @@ public class ClassBusiness : IClassBusiness
             
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
+        var lastUpdatedBy = UserContextStorage.UserId;
 
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -336,7 +339,7 @@ public class ClassBusiness : IClassBusiness
                 // and all child objects with class_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
                     "CALL deeplynx.archive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    classId, lastUpdatedAt
+                    classId, lastUpdatedAt, lastUpdatedBy
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
@@ -388,6 +391,7 @@ public class ClassBusiness : IClassBusiness
             
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
+        var lastUpdatedBy = UserContextStorage.UserId;
 
         // run unarchive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -398,7 +402,7 @@ public class ClassBusiness : IClassBusiness
                 // and all child objects with class_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
                     "CALL deeplynx.unarchive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    classId, lastUpdatedAt
+                    classId, lastUpdatedAt, lastUpdatedBy
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure

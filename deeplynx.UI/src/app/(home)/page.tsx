@@ -7,7 +7,9 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-function mapToProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
+export function mapToProjectResponseDtos(
+  p: ProjectResponseDto
+): ProjectResponseDto {
   return {
     id: String(p.id),
     name: p.name ?? "",

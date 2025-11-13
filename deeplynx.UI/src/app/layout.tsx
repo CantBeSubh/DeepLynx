@@ -12,6 +12,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const isAuthDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
   return (
     // Set a safe default to prevent a white flash; will be replaced by script
     <html lang="en" data-theme="light" suppressHydrationWarning>
@@ -51,15 +54,22 @@ export default function RootLayout({
 
       {/* Use DaisyUI tokens so colors switch with the theme */}
       <body className="min-h-screen bg-base-100 text-base-content">
-        <SessionProvider>
+        {isAuthDisabled ? (
+          // No SessionProvider when auth is disabled
           <LanguageProvider>
             {children}
             <Toaster />
           </LanguageProvider>
-        </SessionProvider>
+        ) : (
+          // Use SessionProvider when auth is enabled
+          <SessionProvider>
+            <LanguageProvider>
+              {children}
+              <Toaster />
+            </LanguageProvider>
+          </SessionProvider>
+        )}
       </body>
     </html>
   );
 }
-
-

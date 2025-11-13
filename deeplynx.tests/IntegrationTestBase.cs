@@ -111,10 +111,6 @@ public class IntegrationTestBase : IAsyncLifetime
     /// </summary>
     protected async Task CleanDatabaseAsync()
     {
-        var oauthApplications = await Context.OauthApplications.ToListAsync();
-        Context.OauthApplications.RemoveRange(oauthApplications);
-        await Context.SaveChangesAsync();
-
         var subscriptions = await Context.Subscriptions.ToListAsync();
         Context.Subscriptions.RemoveRange(subscriptions);
         await Context.SaveChangesAsync();
@@ -125,6 +121,18 @@ public class IntegrationTestBase : IAsyncLifetime
 
         var events = await Context.Events.ToListAsync();
         Context.Events.RemoveRange(events);
+        await Context.SaveChangesAsync();
+        
+        var tokens = await Context.OauthTokens.ToListAsync();
+        Context.OauthTokens.RemoveRange(tokens);
+        await Context.SaveChangesAsync();
+        
+        var apiKeys = await Context.ApiKeys.ToListAsync();
+        Context.ApiKeys.RemoveRange(apiKeys);
+        await Context.SaveChangesAsync();
+        
+        var oauthApplications = await Context.OauthApplications.ToListAsync();
+        Context.OauthApplications.RemoveRange(oauthApplications);
         await Context.SaveChangesAsync();
 
         var permissions = await Context.Permissions.ToListAsync();
@@ -162,7 +170,11 @@ public class IntegrationTestBase : IAsyncLifetime
         var roles = await Context.Roles.ToListAsync();
         Context.Roles.RemoveRange(roles);
         await Context.SaveChangesAsync();
-
+        
+        var objectStorages = await Context.ObjectStorages.ToListAsync();
+        Context.ObjectStorages.RemoveRange(objectStorages);
+        await Context.SaveChangesAsync();
+        
         var projects = await Context.Projects.ToListAsync();
         Context.Projects.RemoveRange(projects);
         await Context.SaveChangesAsync();

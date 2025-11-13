@@ -7,23 +7,61 @@ import { useLanguage } from "@/app/contexts/Language";
 import "@/app/globals.css";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSafeSession } from "@/app/hooks/useSafeSession";
 
-export default function Signin() {
+function SigninContent() {
   const [isChecked, setChecked] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSafeSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl");
   const { t } = useLanguage();
 
+  // Check if auth is disabled
+  const isAuthDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
   useEffect(() => {
-    // If user is already authenticated, redirect to home
-    if (status === "authenticated") {
+    // If auth is disabled, redirect immediately to home
+    if (isAuthDisabled) {
+      router.push("/");
+      return;
+    }
+
+    // If user is already authenticated and there's a returnUrl, redirect to it
+    if (status === "authenticated" && returnUrl) {
+      console.log(`User authenticated, redirecting to: ${returnUrl}`);
+      router.push(returnUrl);
+    } else if (status === "authenticated") {
+      // If authenticated but no returnUrl, go home
       router.push("/");
     }
-  }, [status, router]);
+  }, [status, router, isAuthDisabled]);
+
+  // If auth is disabled, show loading while redirecting
+  if (isAuthDisabled) {
+    return (
+      <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
+        <div className="flex flex-col items-center sm:items-start mb-0">
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
+        </div>
+        <div className="text-center text-white">
+          <div className="loading loading-spinner loading-lg"></div>
+          <p className="mt-4">Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Show loading while checking authentication status
   if (status === "loading") {
@@ -46,14 +84,39 @@ export default function Signin() {
     );
   }
 
-  // If authenticated, don't render login form (redirect will happen)
+  // If authenticated, show loading while redirecting
   if (status === "authenticated") {
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
+        <div className="flex flex-col items-center sm:items-start mb-0">
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
+        </div>
+        <div className="text-center text-white">
+          <div className="loading loading-spinner loading-lg"></div>
+          <p className="mt-4">Redirecting...</p>
+        </div>
+      </div>
+    );
   }
 
-  const handleOktaSignIn = () => {
+  const handleOktaSignIn = async () => {
     setIsSigningIn(true);
-    signIn("okta", { callbackUrl: "/" });
+    
+    // Construct the callback URL to include the returnUrl
+    const callbackUrl = returnUrl || "/";
+    
+    console.log(`Signing in with Okta, will redirect to: ${callbackUrl}`);
+    
+    await signIn("okta", { 
+      callbackUrl: callbackUrl,
+      redirect: true 
+    });
   };
 
   return (
@@ -131,5 +194,31 @@ export default function Signin() {
           ))} */}
       </footer>
     </div>
+  );
+}
+
+export default function Signin() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
+          <div className="flex flex-col items-center sm:items-start mb-0">
+            <Image
+              src="/assets/nexusWhite.png"
+              alt="DeepLynx logo"
+              width={265.8}
+              height={113.9}
+              priority
+            />
+          </div>
+          <div className="text-center text-white">
+            <div className="loading loading-spinner loading-lg"></div>
+            <p className="mt-4">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <SigninContent />
+    </Suspense>
   );
 }
