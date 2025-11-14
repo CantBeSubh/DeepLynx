@@ -28,7 +28,7 @@ public class TagBusiness : ITagBusiness
         _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
     }
-    
+
     /// <summary>
     /// Retrieves all tags for a specified project.
     /// </summary>
@@ -38,23 +38,23 @@ public class TagBusiness : ITagBusiness
     public async Task<List<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-        
+
         var tagQuery = _context.Tags
             .Where(t => t.ProjectId == projectId);
-            
+
         if (hideArchived)
         {
             tagQuery = tagQuery.Where(t => !t.IsArchived);
         }
-            
+
         return await tagQuery.Select(t => new TagResponseDto()
-            {
-                Id = t.Id,
-                Name = t.Name,
-                ProjectId = t.ProjectId,
-                LastUpdatedBy = t.LastUpdatedBy,
-                LastUpdatedAt = t.LastUpdatedAt,
-            })
+        {
+            Id = t.Id,
+            Name = t.Name,
+            // ProjectId = t.ProjectId,
+            LastUpdatedBy = t.LastUpdatedBy,
+            LastUpdatedAt = t.LastUpdatedAt,
+        })
             .ToListAsync();
     }
 
@@ -77,7 +77,7 @@ public class TagBusiness : ITagBusiness
         {
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
         }
-        
+
         if (hideArchived && tag.IsArchived)
         {
             throw new KeyNotFoundException($"Tag with id {tagId} is archived");
@@ -87,7 +87,7 @@ public class TagBusiness : ITagBusiness
         {
             Id = tag.Id,
             Name = tag.Name,
-            ProjectId = tag.ProjectId,
+            // ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
             LastUpdatedAt = tag.LastUpdatedAt,
             IsArchived = tag.IsArchived,
@@ -106,26 +106,26 @@ public class TagBusiness : ITagBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
-        
-        
+
+
         var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == dto.Name);
         if (existingTag != null)
         {
             throw new Exception($"Tag for project {projectId} with name {dto.Name} already exists");
         }
-        
+
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(dto.Name))
         {
             throw new ValidationException("Name is required and cannot be empty or whitespace");
         }
-        
+
         /*// Validate 'CreatedBy' field
         if (string.IsNullOrWhiteSpace(dto.CreatedBy))
         {
             throw new ValidationException("CreatedBy is required and cannot be empty or whitespace");
         }*/
-        
+
         var tag = new Tag
         {
             Name = dto.Name,
@@ -136,7 +136,7 @@ public class TagBusiness : ITagBusiness
 
         _context.Tags.Add(tag);
         await _context.SaveChangesAsync();
-        
+
         // Log Tag Create Event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -145,7 +145,7 @@ public class TagBusiness : ITagBusiness
             EntityType = "tag",
             EntityId = tag.Id,
             EntityName = tag.Name,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
+            Properties = JsonSerializer.Serialize(new { tag.Name }),
             DataSourceId = null,
         });
 
@@ -153,7 +153,7 @@ public class TagBusiness : ITagBusiness
         {
             Id = tag.Id,
             Name = tag.Name,
-            ProjectId = tag.ProjectId,
+            // ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
             LastUpdatedAt = tag.LastUpdatedAt
         };
@@ -167,11 +167,11 @@ public class TagBusiness : ITagBusiness
     /// <param name="tags">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<List<TagResponseDto>> BulkCreateTags(
-        long projectId, 
+        long projectId,
         List<CreateTagRequestDto> tags)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        
+
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
             INSERT INTO deeplynx.tags (project_id, name, last_updated_at, is_archived, last_updated_by)
@@ -187,17 +187,17 @@ public class TagBusiness : ITagBusiness
             new NpgsqlParameter("@projectId", projectId),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
-        
+
         // establish "dynamic" parameters (new for each dto in the list)
         parameters.AddRange(tags.SelectMany((dto, i) => new[]
         {
             new NpgsqlParameter($"@p{i}_name", dto.Name)
         }));
-        
+
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", tags.Select((dto, i) =>
             $"(@projectId, @p{i}_name, @now, false, NUll)"));
-        
+
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
 
@@ -205,9 +205,9 @@ public class TagBusiness : ITagBusiness
         var result = await _context.Database
             .SqlQueryRaw<TagResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
-        
+
         // log tag create event for each tag created
-        var events = new List<CreateEventRequestDto>{ };
+        var events = new List<CreateEventRequestDto> { };
         foreach (var item in result)
         {
             events.Add(new CreateEventRequestDto
@@ -217,12 +217,12 @@ public class TagBusiness : ITagBusiness
                 EntityType = "tag",
                 EntityId = item.Id,
                 EntityName = item.Name,
-                Properties = JsonSerializer.Serialize(new {item.Name}),
+                Properties = JsonSerializer.Serialize(new { item.Name }),
                 DataSourceId = null,
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
-        
+
         return result;
     }
 
@@ -242,7 +242,7 @@ public class TagBusiness : ITagBusiness
         {
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
         }
-        
+
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
         {
@@ -250,12 +250,12 @@ public class TagBusiness : ITagBusiness
         }
 
         tag.Name = tagRequestDto.Name ?? tag.Name;
-        tag.LastUpdatedBy= null; // TODO: handled in future by JWT.
+        tag.LastUpdatedBy = null; // TODO: handled in future by JWT.
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        
+
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
-        
+
         // Log tag update event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -265,20 +265,20 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             EntityName = tag.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
+            Properties = JsonSerializer.Serialize(new { tag.Name }),
         });
 
         return new TagResponseDto
         {
             Id = tag.Id,
             Name = tag.Name,
-            ProjectId = tag.ProjectId,
+            // ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
             LastUpdatedAt = tag.LastUpdatedAt,
             IsArchived = tag.IsArchived,
         };
     }
-    
+
     /// <summary>
     /// Deletes a specific tag by its ID for a specified project.
     /// </summary>
@@ -291,13 +291,13 @@ public class TagBusiness : ITagBusiness
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId)
             throw new KeyNotFoundException($"Tag with id {tagId} not found.");
-        
+
         _context.Tags.Remove(tag);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Archives a specific tag by its ID for a specified project.
     /// </summary>
@@ -316,7 +316,7 @@ public class TagBusiness : ITagBusiness
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
-        
+
         // Log tag soft delete event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -326,12 +326,12 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             EntityName = tag.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
+            Properties = JsonSerializer.Serialize(new { tag.Name }),
         });
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Unarchives a specific tag by its ID for a specified project.
     /// </summary>
@@ -351,7 +351,7 @@ public class TagBusiness : ITagBusiness
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
-        
+
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
             Operation = "unarchive",
@@ -360,12 +360,12 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             EntityName = tag.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
+            Properties = JsonSerializer.Serialize(new { tag.Name }),
         });
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Validates that all provided tag names exist in the database for the specified project.
     /// Used by MetadataBusiness to enforce tagsMutable settings.
@@ -393,11 +393,11 @@ public class TagBusiness : ITagBusiness
 
         // Query for existing tags (excluding archived)
         var existingTags = await _context.Tags
-            .Where(t => t.ProjectId == projectId 
+            .Where(t => t.ProjectId == projectId
                         && !t.IsArchived
                         && cleanTagNames.Contains(t.Name))
             .ToListAsync();
-    
+
         var foundTagNames = existingTags.Select(t => t.Name).ToHashSet();
         var missingTagNames = cleanTagNames.Where(name => !foundTagNames.Contains(name)).ToList();
 
@@ -406,7 +406,7 @@ public class TagBusiness : ITagBusiness
             throw new KeyNotFoundException(
                 $"Tags not found with names: {string.Join(", ", missingTagNames)}");
         }
-    
+
         return existingTags.Select(t => new TagResponseDto
         {
             Id = t.Id,

@@ -293,9 +293,9 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_object_storages_last_updated_by");
-            
-            entity.ToTable( e => e.HasCheckConstraint(
-                "ck_object_storages_ProjectXorOrg", 
+
+            entity.ToTable(e => e.HasCheckConstraint(
+                "ck_object_storages_ProjectXorOrg",
                 "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"));
 
             entity.HasOne(d => d.LastUpdatedByUser)
@@ -606,6 +606,17 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+
+            entity.HasOne(t => t.Organization)
+            .WithMany(o => o.Tags)
+            .HasForeignKey(t => t.OrganizationId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(t => t.Project)
+            .WithMany(p => p.Tags)
+            .HasForeignKey(t => t.ProjectId)
+            .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_tags_last_updated_by");
 
