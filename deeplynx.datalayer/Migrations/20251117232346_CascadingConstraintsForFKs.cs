@@ -14,7 +14,7 @@ namespace deeplynx.datalayer.Migrations
                 name: "FK_events_data_sources_data_source_id",
                 schema: "deeplynx",
                 table: "events");
-            
+
             migrationBuilder.DropForeignKey(
                 name: "FK_events_projects_project_id",
                 schema: "deeplynx",

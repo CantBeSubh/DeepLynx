@@ -12,7 +12,7 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20251117230155_CascadingConstraintsForFKs")]
+    [Migration("20251117232346_CascadingConstraintsForFKs")]
     partial class CascadingConstraintsForFKs
     {
         /// <inheritdoc />
