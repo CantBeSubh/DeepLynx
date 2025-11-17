@@ -185,7 +185,8 @@ public class ClassBusiness : IClassBusiness
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, classes.description),
                 uuid = COALESCE(EXCLUDED.uuid, classes.uuid),
-                last_updated_at = @now
+                last_updated_at = @now,
+                last_updated_by = @lastUpdatedBy
            RETURNING id, project_id, name, description, uuid, last_updated_at, last_updated_by, is_archived;
         ";
 
@@ -194,7 +195,7 @@ public class ClassBusiness : IClassBusiness
         {
             new NpgsqlParameter("@projectId", projectId),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new NpgsqlParameter("@lastUpdatedBy", currentUserId),
+            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
         };
         
         // establish "dynamic" parameters (new for each dto in the list)

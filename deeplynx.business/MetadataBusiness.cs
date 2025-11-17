@@ -202,7 +202,7 @@ public class MetadataBusiness : IMetadataBusiness
             CheckRecordsByOriginalId(recordMap, edges);
             // load relationship, origin and destination IDs into classes before insert
             UpdateEdgesWithIds(edges, relMap, recordMap);
-            metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
+            metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, edges);
         }
         
         return metadataResponseDto;
