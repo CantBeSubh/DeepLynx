@@ -166,7 +166,7 @@ namespace deeplynx.business
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source.</returns>
-        public async Task<DataSourceResponseDto> CreateDataSource(long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false)
+        public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             if (dto == null)
@@ -183,14 +183,14 @@ namespace deeplynx.business
                 Config = dto.Config?.ToString(),
                 Type = dto.Type,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
+                LastUpdatedBy = currentUserId,
                 IsArchived = false
             };
 
             await _context.DataSources.AddAsync(dataSource);
             
             if (makeDefault)
-                await MakePreviousDefaultsFalse(projectId, dataSource.Id);
+                await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
             
             await _context.SaveChangesAsync();
             
@@ -232,6 +232,7 @@ namespace deeplynx.business
         /// <returns>The updated data source.</returns>
         /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
         public async Task<DataSourceResponseDto> UpdateDataSource(
+            long currentUserId,
             long projectId,
             long dataSourceId,
             UpdateDataSourceRequestDto dto)
@@ -250,7 +251,7 @@ namespace deeplynx.business
             dataSource.BaseUri = dto.BaseUri ?? dataSource.BaseUri;
             dataSource.Config = dto.Config?.ToString() != null ? dto.Config.ToString() : new JsonObject().ToString();
             dataSource.Type = dto.Type ?? dataSource.Type;
-            dataSource.LastUpdatedBy = null; // TODO: handled in future by JWT.
+            dataSource.LastUpdatedBy = currentUserId;
             dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
             //_context.DataSources.Update(dataSource);
@@ -313,7 +314,7 @@ namespace deeplynx.business
         /// <param name="dataSourceId">The ID of the data source to archive</param>
         /// <returns>Boolean true on successful archival.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-        public async Task<bool> ArchiveDataSource(long projectId, long dataSourceId)
+        public async Task<bool> ArchiveDataSource(long currentUserId, long projectId, long dataSourceId)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
@@ -323,7 +324,8 @@ namespace deeplynx.business
             
             dataSource.IsArchived = true;
             dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.DataSources.Update(dataSource);
+            dataSource.LastUpdatedBy = currentUserId;
+            
             await _context.SaveChangesAsync();
             
             // Log dataSource archive event
@@ -348,7 +350,7 @@ namespace deeplynx.business
         /// <param name="dataSourceId">The ID of the data source to unarchive</param>
         /// <returns>Boolean true on successful unarchive action.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-        public async Task<bool> UnarchiveDataSource(long projectId, long dataSourceId)
+        public async Task<bool> UnarchiveDataSource(long currentUserId, long projectId, long dataSourceId)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
@@ -358,6 +360,7 @@ namespace deeplynx.business
             
             dataSource.IsArchived = false;
             dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            dataSource.LastUpdatedBy = currentUserId;
             _context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
             
@@ -384,6 +387,7 @@ namespace deeplynx.business
         /// <returns>The updated data source.</returns>
         /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
         public async Task<DataSourceResponseDto> SetDefaultDataSource(
+            long currentUserId,
             long projectId,
             long dataSourceId)
         {
@@ -398,10 +402,10 @@ namespace deeplynx.business
             if (!dataSource.Default)
             {
                 dataSource.Default = true;
-                dataSource.LastUpdatedBy = null; // TODO: handled in future by JWT.
+                dataSource.LastUpdatedBy = currentUserId;
                 dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-                await MakePreviousDefaultsFalse(projectId, dataSource.Id);
+                await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
                 await _context.SaveChangesAsync();
 
                 await _eventBusiness.CreateEvent(new CreateEventRequestDto
@@ -434,7 +438,7 @@ namespace deeplynx.business
             };
         }
         
-        private async Task MakePreviousDefaultsFalse(long projectId, long defaultDataSourceId)
+        private async Task MakePreviousDefaultsFalse(long currentUserId, long projectId, long defaultDataSourceId)
         {
             var previousDefaults = 
                 await _context.DataSources
@@ -446,6 +450,8 @@ namespace deeplynx.business
                 foreach (var previousDefault in previousDefaults)
                 {
                     previousDefault.Default = false;
+                    previousDefault.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                    previousDefault.LastUpdatedBy = currentUserId;
                     _context.DataSources.Update(previousDefault);
                 }
             }

@@ -840,7 +840,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
-        await _dataSourceBusiness.CreateDataSource(projectId, defaultDataSource, true);
+        await _dataSourceBusiness.CreateDataSource(currentUserId, projectId, defaultDataSource, true);
 
         // ===============================
         // CREATE DEFAULT OBJECT STORAGE

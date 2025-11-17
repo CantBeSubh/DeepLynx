@@ -228,7 +228,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(uid, pid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -264,7 +264,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _dataSourceBusiness.CreateDataSource(pid, null));
+                () => _dataSourceBusiness.CreateDataSource(uid, pid, null));
 
             // Ensure that datasource create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -283,7 +283,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(uid, pid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -315,13 +315,12 @@ namespace deeplynx.tests
             var beforeCreate = DateTime.UtcNow;
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(uid, pid, dto);
 
             // Assert
             Assert.True(result.LastUpdatedAt >= beforeCreate);
             Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
-            // CreatedBy is null in current implementation (TODO: JWT implementation)
-            Assert.Null(result.LastUpdatedBy);
+            Assert.Equal(uid, result.LastUpdatedBy);
             // Ensure that datasource create event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
@@ -362,7 +361,7 @@ namespace deeplynx.tests
             var beforeUpdate = DateTime.UtcNow;
 
             // Act
-            var result = await _dataSourceBusiness.UpdateDataSource(pid, did, dto);
+            var result = await _dataSourceBusiness.UpdateDataSource(uid, pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -402,7 +401,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.UpdateDataSource(pid, did, updateDto);
+            var result = await _dataSourceBusiness.UpdateDataSource(uid, pid, did, updateDto);
 
             // Assert
             Assert.NotNull(result);
@@ -439,7 +438,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UpdateDataSource(pid, 999, dto));
+                () => _dataSourceBusiness.UpdateDataSource(uid, pid, 999, dto));
 
             Assert.Contains("Data Source with id 999 not found", exception.Message);
 
@@ -460,7 +459,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UpdateDataSource(pid2, did, dto)); // did belongs to pid not pid2
+                () => _dataSourceBusiness.UpdateDataSource(uid, pid2, did, dto)); // did belongs to pid not pid2
 
             Assert.Contains($"Data Source with id {did} not found", exception.Message);
 
@@ -481,7 +480,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UpdateDataSource(pid, did3, dto)); // DataSource 3 is archived
+                () => _dataSourceBusiness.UpdateDataSource(uid, pid, did3, dto)); // DataSource 3 is archived
 
             Assert.Contains($"Data Source with id {did3} not found", exception.Message);
 
@@ -502,7 +501,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.UpdateDataSource(pid, did, dto);
+            var result = await _dataSourceBusiness.UpdateDataSource(uid, pid, did, dto);
 
             // Assert
             Assert.NotNull(result.Config);
@@ -576,7 +575,7 @@ namespace deeplynx.tests
         public async Task ArchiveDataSource_ValidDataSource_ArchivesSuccessfully()
         {
             // Act
-            var result = await _dataSourceBusiness.ArchiveDataSource(pid, did);
+            var result = await _dataSourceBusiness.ArchiveDataSource(uid, pid, did);
 
             // Assert
             Assert.True(result);
@@ -604,7 +603,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.ArchiveDataSource(pid, 999));
+                () => _dataSourceBusiness.ArchiveDataSource(uid, pid, 999));
 
             Assert.Contains("Data Source with id 999 not found", exception.Message);
 
@@ -618,7 +617,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.ArchiveDataSource(2, 1));
+                () => _dataSourceBusiness.ArchiveDataSource(uid, 2, 1));
 
             Assert.Contains("Project with id 2 not found", exception.Message);
 
@@ -632,7 +631,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.ArchiveDataSource(pid, 3)); // DataSource 3 is already archived
+                () => _dataSourceBusiness.ArchiveDataSource(uid, pid, 3)); // DataSource 3 is already archived
 
             Assert.Contains("Data Source with id 3 not found", exception.Message);
 
@@ -648,7 +647,7 @@ namespace deeplynx.tests
             var initialCount = (await _dataSourceBusiness.GetAllDataSources(pid, true)).Count();
 
             // Act
-            await _dataSourceBusiness.ArchiveDataSource(pid, did);
+            await _dataSourceBusiness.ArchiveDataSource(uid, pid, did);
             var finalCount = (await _dataSourceBusiness.GetAllDataSources(pid, true)).Count();
 
             // Assert
@@ -693,8 +692,8 @@ namespace deeplynx.tests
             // so for now we take the sequential approach
 
             // Act
-            await _dataSourceBusiness.UpdateDataSource(pid, did, dto1);
-            await _dataSourceBusiness.UpdateDataSource(pid, did, dto2);
+            await _dataSourceBusiness.UpdateDataSource(uid, pid, did, dto1);
+            await _dataSourceBusiness.UpdateDataSource(uid, pid, did, dto2);
 
             // Assert
             // Verify it was actually updated in database
@@ -726,7 +725,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(uid, pid, dto);
 
             // Assert
             Assert.NotNull(result.Config);
@@ -754,7 +753,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(uid, pid, dto);
 
             // Assert
             Assert.Equal("Test with émojis 🚀 and ñ special chars", result.Name);
@@ -832,7 +831,7 @@ namespace deeplynx.tests
         public async Task UnarchiveDataSource_ValidArchivedDataSource_UnarchivesSuccessfully()
         {
             // Act
-            var result = await _dataSourceBusiness.UnarchiveDataSource(pid, did3);
+            var result = await _dataSourceBusiness.UnarchiveDataSource(uid, pid, did3);
 
             // Assert
             Assert.True(result);
@@ -848,7 +847,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UnarchiveDataSource(pid, 99999));
+                () => _dataSourceBusiness.UnarchiveDataSource(uid, pid, 99999));
 
             Assert.Contains("Data Source with id 99999 not found", ex.Message);
             // Ensure that data source unarchive event was NOT logged
@@ -861,7 +860,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UnarchiveDataSource(pid2, did3));  // did3 is archived and belongs to pid
+                () => _dataSourceBusiness.UnarchiveDataSource(uid, pid2, did3));  // did3 is archived and belongs to pid
 
             Assert.Contains($"Data Source with id {did3} not found", ex.Message);
             // Ensure that data source unarchive event was NOT logged
@@ -874,7 +873,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UnarchiveDataSource(pid, did)); // did is not archived
+                () => _dataSourceBusiness.UnarchiveDataSource(uid, pid, did)); // did is not archived
 
             Assert.Contains($"Data Source with id {did} not found", ex.Message);
             // Ensure that data source unarchive event was NOT logged
