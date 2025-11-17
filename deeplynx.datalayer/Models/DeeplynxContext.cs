@@ -293,6 +293,10 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_object_storages_last_updated_by");
+            
+            entity.ToTable( e => e.HasCheckConstraint(
+                "ck_object_storages_ProjectXorOrg", 
+                "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"));
 
             entity.ToTable(e => e.HasCheckConstraint(
                 "ck_object_storages_ProjectXorOrg",

@@ -108,6 +108,8 @@ spec:
               value: ${SUPPORT_EMAIL}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
+            - name: SUPERUSER_EMAIL
+              value: ${SUPERUSER_EMAIL}
             - name: TENANT_MODE
               value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
@@ -249,6 +251,8 @@ spec:
               value: ${TENANT_MODE}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
+            - name: SUPERUSER_EMAIL
+              value: ${SUPERUSER_EMAIL}
             # Backend may also need these environment variables
             - name: OKTA_CLIENT_SECRET
               valueFrom:
@@ -425,7 +429,7 @@ spec:
                 name: deeplynx-service
                 port:
                   number: 80
-          - path: /api
+          - path: /api/v1
             pathType: Prefix
             backend:
               service:

@@ -80,7 +80,7 @@ public class FileBusiness
         }
         else
         {
-            var defaultObjectStorageResponseDto = await _objectStorageBusiness.GetDefaultObjectStorage(projectId);
+            var defaultObjectStorageResponseDto = await _objectStorageBusiness.GetDefaultObjectStorage(null, projectId);
             objectStorage = await _context.ObjectStorages.FindAsync(defaultObjectStorageResponseDto.Id);
         }
 
@@ -143,7 +143,7 @@ public class FileBusiness
             throw new KeyNotFoundException("Record needs an object storage id");
         }
         
-        var objectStorage = await _objectStorageBusiness.GetObjectStorage(projectId, record.ObjectStorageId.Value, true);
+        var objectStorage = await _objectStorageBusiness.GetObjectStorage(null, projectId, record.ObjectStorageId.Value, true);
         
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
         
@@ -176,7 +176,7 @@ public class FileBusiness
         {
             throw new KeyNotFoundException("Record needs an object storage id");
         }
-        var objectStorage = await _objectStorageBusiness.GetObjectStorage(projectId, record.ObjectStorageId.Value, true);
+        var objectStorage = await _objectStorageBusiness.GetObjectStorage(null, projectId, record.ObjectStorageId.Value, true);
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
         return await fileBusiness.DownloadFile(record);
     }
@@ -198,7 +198,7 @@ public class FileBusiness
         {
             throw new KeyNotFoundException("Record needs an object storage id");
         }
-        var objectStorage = await _objectStorageBusiness.GetObjectStorage(projectId, record.ObjectStorageId.Value, true);
+        var objectStorage = await _objectStorageBusiness.GetObjectStorage(null, projectId, record.ObjectStorageId.Value, true);
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
         await fileBusiness.DeleteFile(record);
         return await _recordBusiness.DeleteRecord(projectId, recordId);

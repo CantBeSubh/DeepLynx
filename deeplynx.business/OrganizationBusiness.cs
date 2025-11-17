@@ -5,6 +5,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using deeplynx.models.Configuration;
 
 namespace deeplynx.business;
 
@@ -111,11 +112,15 @@ public class OrganizationBusiness : IOrganizationBusiness
         };
 
         _context.Organizations.Add(organization);
+        
         if (isDefault)
         {
             await MakePreviousDefaultsFalse(organization.Id);
         }
 
+        
+        SetDefaultPermissions(organization);
+        
         await _context.SaveChangesAsync();
 
         // Log create Organization event
@@ -382,4 +387,23 @@ public class OrganizationBusiness : IOrganizationBusiness
         }
     }
     
+    
+    private void SetDefaultPermissions(Organization organization)
+    {
+        var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
+
+        foreach (var defaultPermission in defaultPermissions)
+        {
+            var permission = new Permission
+            {
+                Name = defaultPermission.Name,
+                Resource = defaultPermission.Resource,
+                Action = defaultPermission.Action,
+                Description = defaultPermission.Description,
+                Organization = organization,
+                IsDefault = true
+            };
+            _context.Permissions.Add(permission);
+        }
+    }
 }

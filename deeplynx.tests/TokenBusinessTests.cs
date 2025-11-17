@@ -44,7 +44,7 @@ namespace deeplynx.tests
         public async Task CreateToken_ReturnsJwt_WhenVerifySucceeds_AndSecretExists()
         {
             // Act - Pass the PLAINTEXT secret to CreateToken
-            var jwt = await _tokenBusiness.CreateToken(plaintextSecret1, apiKey1, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(apiKey1, plaintextSecret1, expiration: 5);
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(jwt));
@@ -71,7 +71,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-                _tokenBusiness.CreateToken(wrongSecret, apiKey1, expiration: 5));
+                _tokenBusiness.CreateToken(apiKey1, wrongSecret, expiration: 5));
             Assert.Contains("Invalid API credentials", ex.Message);
         }
 
@@ -84,7 +84,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _tokenBusiness.CreateToken(someSecret, nonExistentApiKey, expiration: 5));
+                _tokenBusiness.CreateToken(nonExistentApiKey, plaintextSecret1, expiration: 5));
             Assert.Contains("API key not found", ex.Message);
         }
 
@@ -110,7 +110,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _tokenBusiness.CreateToken(plaintextSecret1, apiKey1, expiration: 5));
+                _tokenBusiness.CreateToken(apiKey1, plaintextSecret1, expiration: 5));
             Assert.Contains("archived", ex.Message);
         }
 
@@ -135,7 +135,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(apiKey, plaintextSecret, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -166,7 +166,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(apiKey, plaintextSecret, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -212,7 +212,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(apiKey, plaintextSecret, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -241,7 +241,7 @@ namespace deeplynx.tests
             });
             await Context.SaveChangesAsync();
 
-            var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+            var jwt = await _tokenBusiness.CreateToken(apiKey, plaintextSecret, expiration: 5);
             var handler = new JwtSecurityTokenHandler();
             var parsed = handler.ReadJwtToken(jwt);
             var jti = parsed.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
@@ -278,7 +278,7 @@ namespace deeplynx.tests
                 });
                 Context.SaveChanges();
 
-                var jwt = await _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
+                var jwt = await _tokenBusiness.CreateToken(apiKey, plaintextSecret, expiration: 5);
                 tokens.Add(jwt);
             }
 
@@ -313,7 +313,7 @@ namespace deeplynx.tests
                 ApplicationId = applicationId
             });
             await Context.SaveChangesAsync();
-            var jwt1 = await _tokenBusiness.CreateToken(secret1, apiKey, expiration: 5);
+            var jwt1 = await _tokenBusiness.CreateToken(apiKey, secret1, expiration: 5);
 
             // Create token for other user
             var apiKey2 = "user2-key";
@@ -327,7 +327,7 @@ namespace deeplynx.tests
                 ApplicationId = applicationId
             });
             await Context.SaveChangesAsync();
-            var jwt2 = await _tokenBusiness.CreateToken(secret2, apiKey2, expiration: 5);
+            var jwt2 = await _tokenBusiness.CreateToken(apiKey2, secret2, expiration: 5);
 
             // Act
             await _tokenBusiness.RevokeAllUserTokens(uid1);
@@ -538,6 +538,67 @@ namespace deeplynx.tests
 
         #endregion
 
+        # region Helper Methods
+
+        // Helper methods (copied directly from OauthApplicationBusiness)
+        private string GenerateClientId()
+        {
+            var bytes = new byte[32];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            var base64 = Convert.ToBase64String(bytes);
+            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
+        }
+
+        private string GenerateClientSecret()
+        {
+            var bytes = new byte[64];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            var base64 = Convert.ToBase64String(bytes);
+            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
+        }
+
+        private string HashSecret(string secret)
+        {
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                var salt = new byte[32];
+                rng.GetBytes(salt);
+
+                using (var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
+                   secret,
+                   salt,
+                   100000,
+                   System.Security.Cryptography.HashAlgorithmName.SHA256))
+                {
+                    var hash = pbkdf2.GetBytes(32);
+                    var saltBase64 = Convert.ToBase64String(salt);
+                    var hashBase64 = Convert.ToBase64String(hash);
+                    return $"{saltBase64}:{hashBase64}";
+                }
+            }
+        }
+        
+        // Helpers copied from TokenBusiness
+        private string HashToken(string jti)
+        {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(jti));
+            return Convert.ToBase64String(hashBytes);
+        }
+        
+        public string HashApiSecret(string apiKey)
+        {
+            return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
+        }
+        
+        # endregion
+        
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
@@ -603,63 +664,6 @@ namespace deeplynx.tests
             
             // Set the JWT signing secret environment variable
             Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
-        }
-
-        // Helper methods (copied directly from OauthApplicationBusiness)
-        private string GenerateClientId()
-        {
-            var bytes = new byte[32];
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(bytes);
-            }
-            var base64 = Convert.ToBase64String(bytes);
-            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
-        }
-
-        private string GenerateClientSecret()
-        {
-            var bytes = new byte[64];
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(bytes);
-            }
-            var base64 = Convert.ToBase64String(bytes);
-            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
-        }
-
-        private string HashSecret(string secret)
-        {
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-            {
-                var salt = new byte[32];
-                rng.GetBytes(salt);
-
-                using (var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
-                   secret,
-                   salt,
-                   100000,
-                   System.Security.Cryptography.HashAlgorithmName.SHA256))
-                {
-                    var hash = pbkdf2.GetBytes(32);
-                    var saltBase64 = Convert.ToBase64String(salt);
-                    var hashBase64 = Convert.ToBase64String(hash);
-                    return $"{saltBase64}:{hashBase64}";
-                }
-            }
-        }
-        
-        // Helpers copied from TokenBusiness
-        private string HashToken(string jti)
-        {
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
-            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(jti));
-            return Convert.ToBase64String(hashBytes);
-        }
-        
-        public string HashApiSecret(string apiKey)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
         }
     }
 }
