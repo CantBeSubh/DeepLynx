@@ -911,7 +911,7 @@ public class ProjectBusiness : IProjectBusiness
             new CreateRoleRequestDto { Name = "Admin" },
             new CreateRoleRequestDto { Name = "User" }
         };
-        var roles = await _roleBusiness.BulkCreateRoles(projectId, defaultRoles);
+        var roles = await _roleBusiness.BulkCreateRoles(currentUserId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
         var userRoleId = roles.Single(r => r.Name == "User").Id;
 

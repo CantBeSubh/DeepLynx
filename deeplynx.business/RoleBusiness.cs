@@ -112,7 +112,7 @@ public class RoleBusiness : IRoleBusiness
     /// <returns>The newly created role</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
     public async Task<RoleResponseDto> CreateRole(
-        CreateRoleRequestDto dto, long? projectId = null, long? organizationId = null)
+        long currentUserId, CreateRoleRequestDto dto, long? projectId = null, long? organizationId = null)
     {
         // ensure one and only one of projectID or organizationID is supplied
         if (!projectId.HasValue && !organizationId.HasValue)
@@ -131,7 +131,7 @@ public class RoleBusiness : IRoleBusiness
             Name = dto.Name,
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
+            LastUpdatedBy = currentUserId,
             ProjectId = projectId,
             OrganizationId = organizationId,
         };
@@ -170,7 +170,7 @@ public class RoleBusiness : IRoleBusiness
     /// <param name="projectId"></param>
     /// <param name="roles"></param>
     /// <returns></returns>
-    public async Task<List<RoleResponseDto>> BulkCreateRoles(long projectId, List<CreateRoleRequestDto> roles)
+    public async Task<List<RoleResponseDto>> BulkCreateRoles(long currentUserId, long projectId, List<CreateRoleRequestDto> roles)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
@@ -181,7 +181,8 @@ public class RoleBusiness : IRoleBusiness
             VALUES {0}
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, roles.description),
-                last_updated_at = @now
+                last_updated_at = @now,
+                last_updated_by = @lastUpdatedBy
             RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;
         ";
 
@@ -189,7 +190,8 @@ public class RoleBusiness : IRoleBusiness
         var parameters = new List<NpgsqlParameter>
         {
             new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
         };
 
         // establish "dynamic" parameters (new for each dto in the list)
@@ -201,7 +203,7 @@ public class RoleBusiness : IRoleBusiness
 
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", roles.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @p{i}_desc, @now, NULL)"));
+            $"(@projectId, @p{i}_name, @p{i}_desc, @now, @lastUpdatedBy)"));
 
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -238,7 +240,7 @@ public class RoleBusiness : IRoleBusiness
     /// <param name="dto">Data Transfer Object containing new role information</param>
     /// <returns>The newly updated role</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<RoleResponseDto> UpdateRole(long roleId, UpdateRoleRequestDto dto)
+    public async Task<RoleResponseDto> UpdateRole(long currentUserId, long roleId, UpdateRoleRequestDto dto)
     {
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
@@ -247,7 +249,7 @@ public class RoleBusiness : IRoleBusiness
         role.Name = dto.Name ?? role.Name;
         role.Description = dto.Description ?? role.Description;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        role.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
+        role.LastUpdatedBy = currentUserId;
 
         _context.Roles.Update(role);
         await _context.SaveChangesAsync();
@@ -284,7 +286,7 @@ public class RoleBusiness : IRoleBusiness
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is already archived</exception>
     /// <exception cref="DependencyDeletionException">Returned if role removal from project members fails</exception>
-    public async Task<bool> ArchiveRole(long roleId)
+    public async Task<bool> ArchiveRole(long currentUserId, long roleId)
     {
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
@@ -298,6 +300,8 @@ public class RoleBusiness : IRoleBusiness
         {
             try
             {
+                //Todo: update archive procedure to include lastUpdatedBy
+                
                 // run the archive role procedure, which archives this role and
                 // removes this role from anyone holding it in any projects
                 var archived = await _context.Database.ExecuteSqlRawAsync(
@@ -340,7 +344,7 @@ public class RoleBusiness : IRoleBusiness
     /// <param name="roleId">ID of role to unarchive</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is not archived</exception>
-    public async Task<bool> UnarchiveRole(long roleId)
+    public async Task<bool> UnarchiveRole(long currentUserId, long roleId)
     {
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || !role.IsArchived)
@@ -348,7 +352,7 @@ public class RoleBusiness : IRoleBusiness
 
         role.IsArchived = false;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        role.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
+        role.LastUpdatedBy = currentUserId;
         _context.Roles.Update(role);
         await _context.SaveChangesAsync();
 

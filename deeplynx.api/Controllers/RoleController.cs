@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -86,7 +87,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var role = await _roleBusiness.CreateRole(dto, projectId, organizationId);
+                var currentUserId = UserContextStorage.UserId;
+                var role = await _roleBusiness.CreateRole(currentUserId, dto, projectId, organizationId);
                 return Ok(role);
             }
             catch (Exception exc)
@@ -110,7 +112,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var role = await _roleBusiness.UpdateRole(roleId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var role = await _roleBusiness.UpdateRole(currentUserId, roleId, dto);
                 return Ok(role);
             }
             catch (Exception exc)
@@ -152,7 +155,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _roleBusiness.ArchiveRole(roleId);
+                var currentUserId = UserContextStorage.UserId;
+                await _roleBusiness.ArchiveRole(currentUserId, roleId);
                 return Ok(new { message = $"Archived role {roleId}" });
             }
             catch (Exception exc)
@@ -173,7 +177,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _roleBusiness.UnarchiveRole(roleId);
+                var currentUserId = UserContextStorage.UserId;
+                await _roleBusiness.UnarchiveRole(currentUserId, roleId);
                 return Ok(new { message = $"Unarchived role {roleId}" });
             }
             catch (Exception exc)
