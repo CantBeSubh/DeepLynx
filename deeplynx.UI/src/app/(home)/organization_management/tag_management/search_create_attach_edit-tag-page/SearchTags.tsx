@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import SimpleFilterInput from "../../components/SimpleFilterComponent";
-import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
 import {
   attachTagToRecord,
   unAttachTagFromRecord,
 } from "@/app/lib/record_services.client";
 import toast from "react-hot-toast";
 import { LinkSlashIcon } from "@heroicons/react/24/outline";
+import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
+import {
+  TagResponseDto,
+  RecordResponseDto,
+} from "@/app/(home)/types/responseDTOs";
 
 export const parseTags = (
   tags: string | TagResponseDto[] | undefined | null

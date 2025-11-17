@@ -1,11 +1,14 @@
 import { createTag } from "@/app/lib/tag_services.client";
 import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
-import { fullTextSearch } from "@/app/lib/query_services.client";
-import { FileViewerTableRow } from "../../types/types";
 import { attachTagToRecord } from "@/app/lib/record_services.client";
+import {
+  TagResponseDto,
+  RecordResponseDto,
+} from "@/app/(home)/types/responseDTOs";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { fullTextSearch } from "@/app/lib/query_services.client";
+import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null

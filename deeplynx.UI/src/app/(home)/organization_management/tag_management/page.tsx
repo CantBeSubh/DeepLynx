@@ -1,7 +1,7 @@
 import React from "react";
 import TagManagementClient from "./TagManagementClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-import { ProjectResponseDto } from "../types/responseDTOs";
+import { ProjectResponseDto } from "../../types/responseDTOs";
 
 const TagManagementPage = async ({
   searchParams,

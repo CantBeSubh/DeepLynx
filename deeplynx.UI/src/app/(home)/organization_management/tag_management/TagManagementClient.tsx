@@ -6,12 +6,6 @@ import {
   updateTag,
   deleteTag,
 } from "@/app/lib/tag_services.client";
-import {
-  ProjectResponseDto,
-  RecordResponseDto,
-  TagResponseDto,
-} from "../types/responseDTOs";
-import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
 import { getRecordsByTags } from "@/app/lib/record_services.client";
 import toast from "react-hot-toast";
 import SearchTags, {
@@ -26,6 +20,12 @@ import AttachTags, {
 import EditTags, {
   EditTagsNameFields,
 } from "./search_create_attach_edit-tag-page/EditTags";
+import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
+import {
+  TagResponseDto,
+  ProjectResponseDto,
+  RecordResponseDto,
+} from "../../types/responseDTOs";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -194,8 +194,19 @@ const TagManagementClient = ({
   const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id));
 
   return (
-    <div>
-      <div className="items-center pl-12 py-2 pb-4">
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Tags & Security Labels</h1>
+        <p className="text-base-content/70 mt-2">
+          Define organization-level tags and security labels for attribute-based
+          access controls. These settings will propagate to all projects within
+          the organization.
+        </p>
+      </div>
+
+      <div className="mb-4">
+        <div>Select Project:</div>
         <ProjectDropdownSingleSelect
           projects={projects}
           onSelectionChange={handleProjectChange}
@@ -203,106 +214,118 @@ const TagManagementClient = ({
         />
       </div>
 
-      <div className="grid grid-cols-[20%_40%_40%] p-6 transition-all">
-        <div className="card shadow-xl rounded-lg p-6 mr-6">
-          <ul>
-            {menuItems.map((item) => (
-              <li
-                key={item}
-                onClick={() => setSelectedMenuItems(item)}
-                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-bold ${
-                  selectedMenuItem === item
-                    ? "bg-info/50 text-info-content"
-                    : "hover:bg-base-200"
-                }`}
-              >
-                {item}
-              </li>
-            ))}
-          </ul>
+      {/* Main Grid with Height Constraint */}
+      <div
+        className="grid grid-cols-[20%_40%_40%] gap-6"
+        style={{ height: "calc(100vh - 24rem)" }}
+      >
+        {/* Left Menu */}
+        <div className="card shadow-xl bg-base-100 h-full overflow-hidden">
+          <div className="card-body p-0">
+            <ul className="menu">
+              {menuItems.map((item) => (
+                <li key={item}>
+                  <a
+                    onClick={() => setSelectedMenuItems(item)}
+                    className={`font-bold ${
+                      selectedMenuItem === item ? "active" : ""
+                    }`}
+                  >
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        <div className="card shadow-xl rounded-lg p-6 mr-6">
-          {selectedMenuItem === "Search Tags" && (
-            <SearchTags
-              loading={loading}
-              error={error}
-              filteredTags={filteredTags}
-              tags={tags}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedTagIds={selectedTagIds}
-              setSelectedTagIds={setSelectedTagIds}
-              projectId={selectedProject}
-              onSearchByTags={handleSearchByTags}
-            />
-          )}
-          {selectedMenuItem === "Create Tag" && (
-            <CreateTag
-              projectId={selectedProject}
-              onTagCreated={refetchTags}
-              selectedTagIds={selectedTagIds}
-              setSelectedTagIds={setSelectedTagIds}
-            />
-          )}
-          {selectedMenuItem === "Attach Tags" && (
-            <AttachTags
-              loading={loading}
-              error={error}
-              filteredTags={filteredTags}
-              tags={tags}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedTagIds={selectedTagIds}
-              setSelectedTagIds={setSelectedTagIds}
-            />
-          )}
-          {selectedMenuItem === "Edit Tags" && (
-            <EditTags
-              loading={loading}
-              error={error}
-              filteredTags={filteredTags}
-              tags={tags}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedTagIds={selectedTagIds}
-              setSelectedTagIds={setSelectedTagIds}
-            />
-          )}
+        {/* Middle Panel */}
+        <div className="card shadow-xl bg-base-100 h-full overflow-y-auto">
+          <div className="card-body">
+            {selectedMenuItem === "Search Tags" && (
+              <SearchTags
+                loading={loading}
+                error={error}
+                filteredTags={filteredTags}
+                tags={tags}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedTagIds={selectedTagIds}
+                setSelectedTagIds={setSelectedTagIds}
+                projectId={selectedProject}
+                onSearchByTags={handleSearchByTags}
+              />
+            )}
+            {selectedMenuItem === "Create Tag" && (
+              <CreateTag
+                projectId={selectedProject}
+                onTagCreated={refetchTags}
+                selectedTagIds={selectedTagIds}
+                setSelectedTagIds={setSelectedTagIds}
+              />
+            )}
+            {selectedMenuItem === "Attach Tags" && (
+              <AttachTags
+                loading={loading}
+                error={error}
+                filteredTags={filteredTags}
+                tags={tags}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedTagIds={selectedTagIds}
+                setSelectedTagIds={setSelectedTagIds}
+              />
+            )}
+            {selectedMenuItem === "Edit Tags" && (
+              <EditTags
+                loading={loading}
+                error={error}
+                filteredTags={filteredTags}
+                tags={tags}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedTagIds={selectedTagIds}
+                setSelectedTagIds={setSelectedTagIds}
+              />
+            )}
+          </div>
         </div>
 
-        <div className="card shadow-xl rounded-lg p-6">
-          {selectedMenuItem === "Search Tags" && (
-            <SearchTagsRecordsList
-              projectId={selectedProject}
-              selectedTagIds={selectedTagIds}
-              onClearSelectedTags={() => setSelectedTagIds(new Set())}
-              recordsFromTagSearch={recordsFromTagSearch}
-              isSearchingByTags={isSearchingByTags}
-              onClearSearch={handleClearSearch}
-              onRefreshSearch={handleRefreshSearch}
-            />
-          )}
-          {selectedMenuItem === "Create Tag" && (
-            <CreateTagRecordsList
-              projectId={selectedProject}
-              selectedTagIds={selectedTagIds}
-            />
-          )}
-          {selectedMenuItem === "Attach Tags" && (
-            <AttachTagsRecordsList
-              projectId={selectedProject}
-              selectedTagIds={selectedTagIds}
-              onClearSelectedTags={() => setSelectedTagIds(new Set())}
-            />
-          )}
-          {selectedMenuItem === "Edit Tags" && (
-            <EditTagsNameFields
-              selectedTags={selectedTags}
-              onUpdateTag={handleUpdateTag}
-              onDeleteTag={handleDeleteTag}
-            />
-          )}
+        {/* Right Panel */}
+        <div className="card shadow-xl bg-base-100 h-full overflow-y-auto">
+          <div className="card-body">
+            {selectedMenuItem === "Search Tags" && (
+              <SearchTagsRecordsList
+                projectId={selectedProject}
+                selectedTagIds={selectedTagIds}
+                onClearSelectedTags={() => setSelectedTagIds(new Set())}
+                recordsFromTagSearch={recordsFromTagSearch}
+                isSearchingByTags={isSearchingByTags}
+                onClearSearch={handleClearSearch}
+                onRefreshSearch={handleRefreshSearch}
+              />
+            )}
+            {selectedMenuItem === "Create Tag" && (
+              <CreateTagRecordsList
+                projectId={selectedProject}
+                selectedTagIds={selectedTagIds}
+              />
+            )}
+            {selectedMenuItem === "Attach Tags" && (
+              <AttachTagsRecordsList
+                projectId={selectedProject}
+                selectedTagIds={selectedTagIds}
+                onClearSelectedTags={() => setSelectedTagIds(new Set())}
+              />
+            )}
+            {selectedMenuItem === "Edit Tags" && (
+              <EditTagsNameFields
+                selectedTags={selectedTags}
+                onUpdateTag={handleUpdateTag}
+                onDeleteTag={handleDeleteTag}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

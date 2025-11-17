@@ -1,7 +1,7 @@
+import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
+import { TagResponseDto } from "@/app/(home)/types/responseDTOs";
 import React, { useState } from "react";
-import { TagResponseDto } from "../../types/responseDTOs";
 import toast from "react-hot-toast";
-import SimpleFilterInput from "../../components/SimpleFilterComponent";
 
 interface Props {
   loading: boolean;
