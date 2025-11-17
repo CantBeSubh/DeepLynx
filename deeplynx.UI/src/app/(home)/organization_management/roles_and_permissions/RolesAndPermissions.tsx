@@ -453,7 +453,7 @@ const RolesAndPermissions = ({
 
   // Layout 1: Split View (Master-Detail)
   const SplitViewLayout = () => (
-    <div className="flex gap-6" style={{ height: "calc(100vh - 27rem)" }}>
+    <div className="flex gap-6" style={{ height: "calc(100vh - 28rem)" }}>
       {/* Left Sidebar - Roles List */}
       <div className="w-80 flex-shrink-0">
         <div className="card bg-base-100 shadow-xl h-full flex flex-col border-2 border-primary">
@@ -637,7 +637,7 @@ const RolesAndPermissions = ({
               ) : (
                 <div className="space-y-4">
                   {permissionCategories.map((category) => (
-                    <div key={category.id} className="card bg-base-200">
+                    <div key={category.id} className="card bg-base-200/25">
                       <div className="card-body p-4">
                         <h4 className="card-title text-sm mb-3">
                           {category.label}
@@ -695,7 +695,7 @@ const RolesAndPermissions = ({
 
   // Layout 2: Permission Matrix View
   const MatrixViewLayout = () => (
-    <div style={{ height: "calc(100vh - 27rem)" }}>
+    <div style={{ height: "calc(100vh - 28rem)" }}>
       <div className="card bg-base-100 shadow-xl h-full flex flex-col overflow-hidden">
         {/* Add Edit Controls Header */}
         <div className="px-6 py-3 border-b border-base-300 flex items-center justify-between">
@@ -821,7 +821,6 @@ const RolesAndPermissions = ({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  // Only allow editing if in edit mode AND not a standard role
                                   if (isEditingMatrix && !isStandard) {
                                     handleToggleMatrixPermission(
                                       role.id,
@@ -835,9 +834,9 @@ const RolesAndPermissions = ({
                                     : "cursor-default"
                                 } ${
                                   isStandard && isEditingMatrix
-                                    ? "opacity-50"
+                                    ? "opacity-60 ring-2 ring-warning rounded-lg p-1" // Add warning ring
                                     : ""
-                                }`} // Visually indicate standard roles are locked
+                                }`}
                                 title={
                                   isStandard && isEditingMatrix
                                     ? "Standard role permissions cannot be modified"
@@ -853,6 +852,8 @@ const RolesAndPermissions = ({
                                     className={`size-8 mx-auto ${
                                       isEditingMatrix && !isStandard
                                         ? "text-success hover:text-success/70"
+                                        : isStandard && isEditingMatrix
+                                        ? "text-warning" // Change to warning color
                                         : "text-success"
                                     }`}
                                   />
@@ -861,6 +862,8 @@ const RolesAndPermissions = ({
                                     className={`size-8 mx-auto ${
                                       isEditingMatrix && !isStandard
                                         ? "text-base-300 hover:text-success/50"
+                                        : isStandard && isEditingMatrix
+                                        ? "text-warning/50" // Change to warning color
                                         : "text-base-300"
                                     }`}
                                   />
