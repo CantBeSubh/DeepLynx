@@ -5,6 +5,7 @@ import {
   archiveRole,
   createRole,
   getPermissionsByRole,
+  setPermissionsForRole,
   updateRole,
 } from "@/app/lib/role_services.client";
 import {
@@ -18,7 +19,7 @@ import {
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   PermissionResponseDto,
@@ -165,6 +166,185 @@ const RolesAndPermissions = ({
     setRoleToDelete(null);
   };
 
+  // Add state for permission editing (after your other state declarations)
+  const [isEditingPermissions, setIsEditingPermissions] = useState(false);
+  const [tempPermissions, setTempPermissions] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Add handler to start editing permissions
+  const handleStartEditingPermissions = () => {
+    if (!currentRole) return;
+
+    // Initialize temp permissions with current permissions
+    const currentPermissionIds =
+      rolePermissions[currentRole.id]?.map((p) => Number(p.id)) || [];
+    setTempPermissions(new Set(currentPermissionIds));
+    setIsEditingPermissions(true);
+  };
+
+  // Add handler to toggle a permission in edit mode
+  const handleTogglePermission = (permissionId: number) => {
+    setTempPermissions((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(permissionId)) {
+        newSet.delete(permissionId);
+      } else {
+        newSet.add(permissionId);
+      }
+      return newSet;
+    });
+  };
+
+  // Add handler to save permission changes
+  const handleSavePermissions = async () => {
+    if (!currentRole) return;
+
+    try {
+      await setPermissionsForRole(currentRole.id, Array.from(tempPermissions));
+
+      // Update the rolePermissions state
+      const updatedPerms = permissions.filter((p) =>
+        tempPermissions.has(Number(p.id))
+      );
+      setRolePermissions((prev) => ({
+        ...prev,
+        [currentRole.id]: updatedPerms,
+      }));
+
+      setIsEditingPermissions(false);
+      toast.success("Permissions updated successfully");
+    } catch (error) {
+      console.error("Error updating permissions:", error);
+      toast.error("Failed to update permissions");
+      throw error;
+    }
+  };
+
+  // Add handler to cancel editing
+  const handleCancelEditingPermissions = () => {
+    setIsEditingPermissions(false);
+    setTempPermissions(new Set());
+  };
+
+  // Add this handler after your other handlers
+  const handleRoleSelection = (roleId: number) => {
+    if (isEditingPermissions) {
+      toast.error("Please save or cancel your changes before switching roles");
+      return;
+    }
+    setSelectedRoleId(roleId);
+  };
+
+  // Add state for matrix editing (after your other state declarations)
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [isEditingMatrix, setIsEditingMatrix] = useState(false);
+  const [matrixTempPermissions, setMatrixTempPermissions] = useState<
+    Record<number, Set<number>>
+  >({});
+
+  // Initialize matrix editing with current permissions for all roles
+  const handleStartEditingMatrix = () => {
+    const initialMatrix: Record<number, Set<number>> = {};
+
+    roles.forEach((role) => {
+      const rolePerms =
+        rolePermissions[role.id]?.map((p) => Number(p.id)) || [];
+      initialMatrix[role.id] = new Set(rolePerms);
+    });
+
+    setMatrixTempPermissions(initialMatrix);
+    setIsEditingMatrix(true);
+  };
+
+  // Toggle a permission for a specific role in matrix edit mode
+  const handleToggleMatrixPermission = (
+    roleId: number,
+    permissionId: number
+  ) => {
+    // Store current scroll position
+    const scrollTop = tableContainerRef.current?.scrollTop || 0;
+    const scrollLeft = tableContainerRef.current?.scrollLeft || 0;
+
+    setMatrixTempPermissions((prev) => {
+      const updated = { ...prev };
+      if (!updated[roleId]) {
+        updated[roleId] = new Set();
+      }
+
+      const roleSet = new Set(updated[roleId]);
+      if (roleSet.has(permissionId)) {
+        roleSet.delete(permissionId);
+      } else {
+        roleSet.add(permissionId);
+      }
+
+      updated[roleId] = roleSet;
+      return updated;
+    });
+
+    // Restore scroll position after state update
+    requestAnimationFrame(() => {
+      if (tableContainerRef.current) {
+        tableContainerRef.current.scrollTop = scrollTop;
+        tableContainerRef.current.scrollLeft = scrollLeft;
+      }
+    });
+  };
+
+  // Save all matrix changes
+  const handleSaveMatrixPermissions = async () => {
+    try {
+      // Update permissions for all roles that changed
+      const updatePromises = roles.map((role) => {
+        const newPermissions = Array.from(matrixTempPermissions[role.id] || []);
+        return setPermissionsForRole(role.id, newPermissions);
+      });
+
+      await Promise.all(updatePromises);
+
+      // Update the rolePermissions state for all roles
+      const updatedRolePermissions: Record<number, PermissionResponseDto[]> =
+        {};
+      roles.forEach((role) => {
+        const permIds = matrixTempPermissions[role.id] || new Set();
+        updatedRolePermissions[role.id] = permissions.filter((p) =>
+          permIds.has(Number(p.id))
+        );
+      });
+
+      setRolePermissions((prev) => ({
+        ...prev,
+        ...updatedRolePermissions,
+      }));
+
+      setIsEditingMatrix(false);
+      setMatrixTempPermissions({});
+      toast.success("All permissions updated successfully");
+    } catch (error) {
+      console.error("Error updating matrix permissions:", error);
+      toast.error("Failed to update permissions");
+      throw error;
+    }
+  };
+
+  // Cancel matrix editing
+  const handleCancelEditingMatrix = () => {
+    setIsEditingMatrix(false);
+    setMatrixTempPermissions({});
+  };
+
+  // Check if a role has a permission in matrix edit mode
+  const matrixRoleHasPermission = (
+    roleId: number,
+    permissionId: number
+  ): boolean => {
+    if (isEditingMatrix) {
+      return matrixTempPermissions[roleId]?.has(permissionId) || false;
+    }
+    return roleHasPermission(roleId, permissionId);
+  };
+
   // Group permissions by resource (or use a default category)
   const groupPermissionsByResource = (): PermissionCategory[] => {
     const grouped = permissions.reduce((acc, perm) => {
@@ -238,11 +418,16 @@ const RolesAndPermissions = ({
               {roles.map((role) => (
                 <button
                   key={role.id}
-                  onClick={() => setSelectedRoleId(role.id)}
-                  className={`w-full px-4 py-3 text-left border-b border-base-300 hover:bg-base-200 transition-colors ${
+                  onClick={() => handleRoleSelection(role.id)}
+                  disabled={isEditingPermissions}
+                  className={`w-full px-4 py-3 text-left border-b border-base-300 transition-colors ${
                     selectedRoleId === role.id
                       ? "bg-primary/10 border-l-4 border-l-primary"
                       : ""
+                  } ${
+                    isEditingPermissions
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-base-200 cursor-pointer"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -286,14 +471,15 @@ const RolesAndPermissions = ({
       <div className="flex-1 card bg-base-100 shadow-xl flex flex-col overflow-hidden border-2 border-primary">
         {currentRole ? (
           <>
-            {/* Fixed Header Section */}
             <div className="px-6 py-4 border-base-300 flex-shrink-0">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-3">
                     <h2 className="card-title">{currentRole.name}</h2>
                     {isStandardRole(currentRole) && (
-                      <div className="badge badge-primary">Standard Role</div>
+                      <div className="badge badge-info">
+                        Standard Role (Read-Only)
+                      </div>
                     )}
                   </div>
                   {currentRole.description && (
@@ -308,10 +494,14 @@ const RolesAndPermissions = ({
                 </div>
                 <div className="flex gap-2">
                   <button
-                    disabled={rolesLocked && !isStandardRole(currentRole)}
+                    disabled={isStandardRole(currentRole)} // Changed: always disabled for standard roles
                     onClick={() => handleEditClick(currentRole)}
                     className="btn btn-ghost btn-sm btn-circle"
-                    title="Edit Role"
+                    title={
+                      isStandardRole(currentRole)
+                        ? "Standard roles cannot be edited"
+                        : "Edit Role"
+                    }
                   >
                     <PencilIcon className="size-6" />
                   </button>
@@ -328,12 +518,57 @@ const RolesAndPermissions = ({
                 </div>
               </div>
             </div>
-
             <div className="divider px-3"></div>
-
             {/* Scrollable Permissions Section */}
             <div className="flex-1 overflow-y-auto p-6">
-              <h3 className="text-sm font-semibold mb-4">Permissions</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold">Permissions</h3>
+                {!isEditingPermissions ? (
+                  <button
+                    disabled={rolesLocked || isStandardRole(currentRole)} // Changed: also disabled for standard roles
+                    onClick={handleStartEditingPermissions}
+                    className="btn btn-primary btn-sm gap-2"
+                    title={
+                      isStandardRole(currentRole)
+                        ? "Standard role permissions cannot be modified"
+                        : rolesLocked
+                        ? "Roles are locked"
+                        : "Edit Permissions"
+                    }
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                    Edit Permissions
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCancelEditingPermissions}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSavePermissions}
+                      className="btn btn-primary btn-sm gap-2"
+                    >
+                      <CheckIcon className="w-4 h-4" />
+                      Save Changes
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Add info alert for standard roles */}
+              {isStandardRole(currentRole) && (
+                <div className="alert alert-info mb-4">
+                  <ExclamationCircleIcon className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">
+                    This is a standard role and cannot be modified. Create a
+                    custom role if you need different permissions.
+                  </span>
+                </div>
+              )}
+
               {permissionCategories.length === 0 ? (
                 <div className="alert">
                   <span>No permissions available.</span>
@@ -348,20 +583,30 @@ const RolesAndPermissions = ({
                         </h4>
                         <div className="grid grid-cols-2 gap-3">
                           {category.permissions.map((perm) => {
-                            const hasPermission = roleHasPermission(
-                              currentRole.id,
-                              perm.id
-                            );
+                            const hasPermission = isEditingPermissions
+                              ? tempPermissions.has(Number(perm.id))
+                              : roleHasPermission(
+                                  currentRole.id,
+                                  Number(perm.id)
+                                );
+
                             return (
                               <label
                                 key={perm.id}
-                                className="label cursor-pointer justify-start gap-2"
+                                className={`label justify-start gap-2 ${
+                                  isEditingPermissions
+                                    ? "cursor-pointer"
+                                    : "cursor-default"
+                                }`}
                                 title={perm.description || perm.name}
                               >
                                 <input
                                   type="checkbox"
                                   checked={hasPermission}
-                                  disabled={rolesLocked}
+                                  onChange={() =>
+                                    handleTogglePermission(Number(perm.id))
+                                  }
+                                  disabled={!isEditingPermissions}
                                   className="checkbox checkbox-primary checkbox-sm"
                                 />
                                 <span className="label-text">{perm.name}</span>
@@ -391,7 +636,38 @@ const RolesAndPermissions = ({
   const MatrixViewLayout = () => (
     <div style={{ height: "calc(100vh - 27rem)" }}>
       <div className="card bg-base-100 shadow-xl h-full flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-auto">
+        {/* Add Edit Controls Header */}
+        <div className="px-6 py-3 border-b border-base-300 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Permission Matrix</h3>
+          {!isEditingMatrix ? (
+            <button
+              disabled={rolesLocked}
+              onClick={handleStartEditingMatrix}
+              className="btn btn-primary btn-sm gap-2"
+            >
+              <PencilIcon className="w-4 h-4" />
+              Edit Matrix
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelEditingMatrix}
+                className="btn btn-ghost btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveMatrixPermissions}
+                className="btn btn-primary btn-sm gap-2"
+              >
+                <CheckIcon className="w-4 h-4" />
+                Save All Changes
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div ref={tableContainerRef} className="flex-1 overflow-auto">
           <table className="table">
             <thead className="sticky top-0 z-20 bg-base-100">
               <tr>
@@ -403,19 +679,23 @@ const RolesAndPermissions = ({
                         <ShieldCheckIcon className="w-4 h-4 text-primary" />
                         <span className="font-medium">{role.name}</span>
                         {isStandardRole(role) && (
-                          <div className="badge badge-primary badge-xs">
-                            STD
-                          </div>
+                          <div className="badge badge-info badge-xs">STD</div>
                         )}
-                        {/* Edit button for role */}
-                        <button
-                          disabled={rolesLocked && !isStandardRole(role)}
-                          onClick={() => handleEditClick(role)}
-                          className="btn btn-ghost btn-xs btn-circle"
-                          title="Edit Role"
-                        >
-                          <PencilIcon className="size-4" />
-                        </button>
+                        {/* Only show edit role button when not in matrix edit mode */}
+                        {!isEditingMatrix && (
+                          <button
+                            disabled={isStandardRole(role)} // Changed: always disabled for standard roles
+                            onClick={() => handleEditClick(role)}
+                            className="btn btn-ghost btn-xs btn-circle"
+                            title={
+                              isStandardRole(role)
+                                ? "Standard roles cannot be edited"
+                                : "Edit Role"
+                            }
+                          >
+                            <PencilIcon className="size-4" />
+                          </button>
+                        )}
                       </div>
                       {role.description && (
                         <span className="text-xs text-base-content/60 font-normal">
@@ -425,7 +705,6 @@ const RolesAndPermissions = ({
                     </div>
                   </th>
                 ))}
-                <th className="text-center bg-base-100">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -459,27 +738,68 @@ const RolesAndPermissions = ({
                         </div>
                       </td>
                       {roles.map((role) => {
-                        const hasPermission = roleHasPermission(
+                        const hasPermission = matrixRoleHasPermission(
                           role.id,
-                          perm.id
+                          Number(perm.id)
                         );
+                        const isStandard = isStandardRole(role); // Check if standard role
+
                         return (
                           <td key={role.id} className="text-center">
-                            {hasPermission ? (
-                              <CheckIcon className="size-8 text-success mx-auto" />
-                            ) : (
-                              <XMarkIcon className="size-8 text-base-300 mx-auto" />
-                            )}
+                            <div
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // Only allow editing if in edit mode AND not a standard role
+                                if (isEditingMatrix && !isStandard) {
+                                  handleToggleMatrixPermission(
+                                    role.id,
+                                    Number(perm.id)
+                                  );
+                                }
+                              }}
+                              className={`inline-block ${
+                                isEditingMatrix && !isStandard
+                                  ? "cursor-pointer hover:scale-110 transition-transform"
+                                  : "cursor-default"
+                              } ${
+                                isStandard && isEditingMatrix
+                                  ? "opacity-50"
+                                  : ""
+                              }`} // Visually indicate standard roles are locked
+                              title={
+                                isStandard && isEditingMatrix
+                                  ? "Standard role permissions cannot be modified"
+                                  : isEditingMatrix
+                                  ? "Click to toggle"
+                                  : hasPermission
+                                  ? "Has permission"
+                                  : "No permission"
+                              }
+                            >
+                              {hasPermission ? (
+                                <CheckIcon
+                                  className={`size-8 mx-auto ${
+                                    isEditingMatrix && !isStandard
+                                      ? "text-success hover:text-success/70"
+                                      : "text-success"
+                                  }`}
+                                />
+                              ) : (
+                                <XMarkIcon
+                                  className={`size-8 mx-auto ${
+                                    isEditingMatrix && !isStandard
+                                      ? "text-base-300 hover:text-success/50"
+                                      : "text-base-300"
+                                  }`}
+                                />
+                              )}
+                            </div>
                           </td>
                         );
                       })}
                       <td className="text-center">
-                        <button
-                          className="btn btn-ghost btn-xs btn-circle"
-                          title="Edit Role"
-                        >
-                          <PencilIcon className="w-4 h-4" />
-                        </button>
+                        {/* Removed individual permission edit button */}
                       </td>
                     </tr>
                   ))}
