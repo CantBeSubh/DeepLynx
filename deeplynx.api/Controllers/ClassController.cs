@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers
     /// This controller provides endpoints to create, update, delete, and retrieve class information.
     /// </remarks>
     [ApiController]
-    [Route("projects/{projectId}/classes")]
+    [Route("organizations/{organizationId}/projects/{projectId}/classes")]
     [Authorize]
     public class ClassController : ControllerBase
     {
@@ -33,11 +33,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all classes
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses", Name = "api_get_all_classes")]
         public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
+            long organizationId,
             long projectId, 
             [FromQuery] bool hideArchived = true)
         {
@@ -57,12 +59,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a class
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="classId">The ID of the class to retrieve</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}", Name = "api_get_a_class")]
         public async Task<ActionResult<ClassResponseDto>> GetClass(
+            long organizationId,
             long projectId, 
             long classId, 
             [FromQuery] bool hideArchived = true)
@@ -85,11 +89,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a class
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="dto">The request DTO for classes</param>
         /// <returns>Class response DTOs</returns>
         [HttpPost("CreateClass", Name = "api_create_a_class")]
-        public async Task<ActionResult<ClassResponseDto>> CreateClass(long projectId,
+        public async Task<ActionResult<ClassResponseDto>> CreateClass(
+            long organizationId,
+            long projectId,
             [FromBody] CreateClassRequestDto dto)
         {
             try
@@ -108,11 +115,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create many classes
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="classes">List of request DTOs for classes</param>
         /// <returns>Bulk class response DTOs</returns>
         [HttpPost("BulkCreateClasses", Name = "api_create_many_classes")]
         public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
+            long organizationId,
             long projectId,
             [FromBody] List<CreateClassRequestDto> classes)
         {
@@ -132,12 +141,17 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update a class
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// /// <param name="classId">The ID of the class to update</param>
         /// <param name="dto">The request DTO for the class</param>
         /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}", Name = "api_update_a_class")]
-        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] UpdateClassRequestDto dto)
+        public async Task<ActionResult<ClassResponseDto>> UpdateClass(
+            long organizationId,
+            long projectId, 
+            long classId, 
+            [FromBody] UpdateClassRequestDto dto)
         {
             try
             {
@@ -155,11 +169,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Delete a class
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="classId">The ID of the class to delete.</param>
-        /// <param name="projectId">The ID of the project to which the class belongs.</param>
         /// <returns>A message stating the class was successfully deleted.</returns>
         [HttpDelete("DeleteClass/{classId}", Name = "api_delete_a_class")]
-        public async Task<IActionResult> DeleteClass(long projectId, long classId)
+        public async Task<IActionResult> DeleteClass(
+            long organizationId, 
+            long projectId, 
+            long classId)
         {
             try
             {
@@ -177,11 +195,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive a class
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="classId">The ID of the class to archive.</param>
-        /// <param name="projectId">The ID of the project to which the class belongs.</param>
         /// <returns>A message stating the class was successfully archived.</returns>
         [HttpDelete("ArchiveClass/{classId}", Name = "api_archive_a_class")]
-        public async Task<IActionResult> ArchiveClass(long projectId, long classId)
+        public async Task<IActionResult> ArchiveClass(
+            long organizationId,
+            long projectId, 
+            long classId)
         {
             try
             {
@@ -199,11 +221,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Unarchive a class
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="classId">The ID of the class to unarchive.</param>
-        /// <param name="projectId">The ID of the project to which the class belongs.</param>
         /// <returns>A message stating the class was successfully unarchived.</returns>
         [HttpPut("UnarchiveClass/{classId}", Name = "api_unarchive_a_class")]
-        public async Task<IActionResult> UnarchiveClass(long projectId, long classId)
+        public async Task<IActionResult> UnarchiveClass(
+            long organizationId,
+            long projectId, 
+            long classId)
         {
             try
             {

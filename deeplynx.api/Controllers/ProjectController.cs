@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("projects")]
+    [Route("organizations/{organizationId}/projects")]
     [Authorize]
     public class ProjectController : ControllerBase
     {
@@ -29,13 +29,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all projects
         /// </summary>
-        /// <param name="organizationId">(Optional)ID of an organization to filter by</param>
+        /// <param name="organizationId">ID of the organization to list projects from</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
         [HttpGet("GetAllProjects", Name = "api_get_all_projects")]
         public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects(
-            [FromQuery] long? organizationId,
+            long organizationId,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -57,12 +57,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">The ID by which to retrieve the project</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>The given project to return</returns>
         [HttpGet("GetProject/{projectId}", Name = "api_get_a_project")]
         
         public async Task<ActionResult<ProjectResponseDto>> GetProject(
+            long organizationId,
             long projectId,
             [FromQuery] bool hideArchived = true)
         {
@@ -82,15 +84,18 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a project
         /// </summary>
+        /// <param name="organizationId">The organization to which the project will belong</param>
         /// <param name="dto">A data transfer object with details on the new project to be created.</param>
         /// <returns>The new project which was just created.</returns>
         [HttpPost("CreateProject", Name = "api_create_a_project")]
-        public async Task<ActionResult<ProjectResponseDto>> CreateProject([FromBody] CreateProjectRequestDto dto)
+        public async Task<ActionResult<ProjectResponseDto>> CreateProject(
+            long organizationId,
+            [FromBody] CreateProjectRequestDto dto)
         {
             try
             {
                 var currentUserId = UserContextStorage.UserId;
-                var project = await _projectBusiness.CreateProject(currentUserId, dto);
+                var project = await _projectBusiness.CreateProject(currentUserId, organizationId, dto);
                 return Ok(project);
             }
             catch (Exception exc)
@@ -104,11 +109,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update a project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">The ID of the project to update</param>
         /// <param name="dto">A data transfer object with details on the project to be updated.</param>
         /// <returns>The project which was just updated.</returns>
         [HttpPut("UpdateProject/{projectId}", Name = "api_update_a_project")]
-        public async Task<ActionResult<ProjectResponseDto>> UpdateProject(long projectId, [FromBody] UpdateProjectRequestDto dto)
+        public async Task<ActionResult<ProjectResponseDto>> UpdateProject(
+            long organizationId,
+            long projectId, 
+            [FromBody] UpdateProjectRequestDto dto)
         {
             try
             {
@@ -126,10 +135,11 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Delete a project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID of the project to delete.</param>
         /// <returns>Boolean true on successful deletion.</returns>
         [HttpDelete("DeleteProject/{projectId}", Name = "api_delete_a_project")]
-        public async Task<IActionResult> DeleteProject(long projectId)
+        public async Task<IActionResult> DeleteProject(long organizationId, long projectId)
         {
             try
             {
@@ -147,10 +157,11 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive a project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID of the project to archive.</param>
         /// <returns>A message stating the project was successfully archived.</returns>
         [HttpDelete("ArchiveProject/{projectId}", Name = "api_archive_a_project")]
-        public async Task<IActionResult> ArchiveProject(long projectId)
+        public async Task<IActionResult> ArchiveProject(long organizationId, long projectId)
         {
             try
             {
@@ -168,10 +179,11 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Unarchive a project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID of the project to unarchive.</param>
         /// <returns>A message stating the project was successfully unarchived.</returns>
         [HttpPut("UnarchiveProject/{projectId}", Name = "api_unarchive_a_project")]
-        public async Task<IActionResult> UnarchiveProject(long projectId)
+        public async Task<IActionResult> UnarchiveProject(long organizationId, long projectId)
         {
             try
             {
@@ -189,10 +201,11 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get project stats 
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID of the project to display stats about.</param>
         /// <returns>Project stats</returns>
         [HttpGet("ProjectStats/{projectId}", Name = "api_get_a_projects_stats")]
-        public async Task<ActionResult<ProjectStatResponseDto>> ProjectStats(long projectId)
+        public async Task<ActionResult<ProjectStatResponseDto>> ProjectStats(long organizationId, long projectId)
         {
             try
             {
@@ -210,12 +223,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Retrieves all records for multiple projects.
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the projects belong</param>
         /// <param name="projects">Array of project ids whose records are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("MultiProjectRecords", Name = "api_multiproject_records")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetMultiProjectRecords(
-            [FromQuery]long[] projects,
+            long organizationId,
+            [FromQuery] long[] projects,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -234,10 +249,11 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// List Project Members
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">(Optional)ID of the project</param>
         /// <returns>A list of groups and users in the project, along with their roles</returns>
         [HttpGet("GetProjectMembers/{projectId}", Name = "api_get_project_members")]
-        public async Task<ActionResult> GetProjectMembers(long projectId)
+        public async Task<ActionResult> GetProjectMembers(long organizationId, long projectId)
         {
             try
             {
@@ -255,6 +271,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Add User or Group to Project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID of project</param>
         /// <param name="roleId">(Optional) ID of member role</param>
         /// <param name="userId">ID of user if user is member</param>
@@ -262,6 +279,7 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpPost("AddMemberToProject", Name = "api_add_member_to_project")]
         public async Task<ActionResult> AddMemberToProject(
+            long organizationId,
             [FromQuery] long projectId, [FromQuery] long? roleId, 
             [FromQuery] long? userId, [FromQuery] long? groupId)
         {
@@ -281,6 +299,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update Member Role in Project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID of project</param>
         /// <param name="roleId">ID of role</param>
         /// <param name="userId">ID of user if user is member</param>
@@ -288,6 +307,7 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpPut("UpdateProjectMemberRole", Name = "api_update_project_member_role")]
         public async Task<ActionResult> UpdateProjectMemberRole(
+            long organizationId,
             [FromQuery] long projectId, [FromQuery] long roleId, 
             [FromQuery] long? userId, [FromQuery] long? groupId)
         {
@@ -307,12 +327,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Remove User or Group from Project
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID of the project</param>
         /// <param name="userId">ID of the user if user is member</param>
         /// <param name="groupId">ID of the group if group is member</param>
         /// <returns></returns>
         [HttpDelete("RemoveMemberFromProject", Name = "api_remove_member_from_project")]
         public async Task<ActionResult> RemoveMemberFromProject(
+            long organizationId,
             [FromQuery] long projectId,
             [FromQuery] long? userId, 
             [FromQuery] long? groupId)

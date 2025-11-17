@@ -159,49 +159,22 @@ public class ProjectBusiness : IProjectBusiness
     /// Creates a new project based on the data transfer object supplied.
     /// </summary>
     /// <param name="userId">Name of user creating the project</param>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(long userId, CreateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(
+        long userId, long organizationId, CreateProjectRequestDto dto)
     {
         await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         ValidationHelper.ValidateModel(dto);
-
-        long orgId;
-
-        if (dto.OrganizationId.HasValue)
-        {
-            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId.Value);
-
-            orgId = dto.OrganizationId.Value;
-        }
-        else
-        {
-            var defaultOrg = await _context.Organizations
-                .Where(o => o.DefaultOrg && !o.IsArchived).FirstOrDefaultAsync();
-
-            if (defaultOrg != null)
-            {
-                orgId = defaultOrg.Id;
-            }
-            else
-            {
-                var orgRequestDto = new CreateOrganizationRequestDto()
-                {
-                    Name = "INL",
-                    Description = "Default Organization",
-                };
-                
-                var newDefaultOrg = await _organizationBusiness.CreateOrganization(orgRequestDto, true);
-                orgId = newDefaultOrg.Id;
-            }
-        }
 
         var project = new Project
         {
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
-            OrganizationId = orgId,
+            OrganizationId = organizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
         };

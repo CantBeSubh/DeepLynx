@@ -47,7 +47,8 @@ namespace deeplynx.tests
         private long rid2;
         private long gid; // group ID
         private long gid2;
-        private long oid; // org ID
+        private long oid; // org IDs
+        private long oid2;
 
         public ProjectBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -93,12 +94,11 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST",
-                OrganizationId = oid
+                Abbreviation = "TST"
             };
             
             // Act
-            var result = await _projectBusiness.CreateProject(uid, dto);
+            var result = await _projectBusiness.CreateProject(uid, oid, dto);
            
             // Assert
             Assert.True(result.Id > 0);
@@ -127,11 +127,10 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST",
-                OrganizationId = oid
+                Abbreviation = "TST"
             };
             // Act
-            var result = await _projectBusiness.CreateProject(uid, dto);
+            var result = await _projectBusiness.CreateProject(uid, oid, dto);
            
             Assert.Equal("TST", result.Abbreviation);
             
@@ -148,12 +147,11 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST",
-                OrganizationId = oid
+                Abbreviation = "TST"
             };
 
             // Act
-            var project = await _projectBusiness.CreateProject(uid, dto);
+            var project = await _projectBusiness.CreateProject(uid, oid, dto);
 
             // Assert
             Assert.Equal(dto.Name, project.Name);
@@ -183,12 +181,11 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST",
-                OrganizationId = oid
+                Abbreviation = "TST"
             };
 
             // Act
-            var project = await _projectBusiness.CreateProject(uid, dto);
+            var project = await _projectBusiness.CreateProject(uid, oid, dto);
 
             // Assert
             Assert.Equal(dto.Name, project.Name);
@@ -216,12 +213,11 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST",
-                OrganizationId = oid
+                Abbreviation = "TST"
             };
 
             // Act
-            var project = await _projectBusiness.CreateProject(uid, dto);
+            var project = await _projectBusiness.CreateProject(uid, oid, dto);
 
             // Assert
             Assert.Equal(dto.Name, project.Name);
@@ -259,11 +255,11 @@ namespace deeplynx.tests
         public async Task CreateProject_Fails_IfNoName()
         {
             // Arrange
-            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description", OrganizationId = oid };
+            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description"};
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _projectBusiness.CreateProject(uid, dto));
+                () => _projectBusiness.CreateProject(uid, oid, dto));
 
             // Ensure that no project create event is logged
             var eventList = await Context.Events.ToListAsync();
@@ -274,11 +270,11 @@ namespace deeplynx.tests
         public async Task CreateProject_Fails_IfNoUser()
         {
             // Arrange
-            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description", OrganizationId = oid };
+            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description"};
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.CreateProject(uid2, dto));
+                () => _projectBusiness.CreateProject(uid2, oid, dto));
 
             Assert.Contains($"User with id {uid2} does not exist", exception.Message);
         }
@@ -287,11 +283,11 @@ namespace deeplynx.tests
         public async Task CreateProject_Fails_IfEmptyName()
         {
             // Arrange
-            var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description", OrganizationId = oid };
+            var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description"};
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _projectBusiness.CreateProject(uid, dto));
+                () => _projectBusiness.CreateProject(uid, oid, dto));
 
             // Ensure that no project create event is logged
             var eventList = await Context.Events.ToListAsync();
@@ -305,12 +301,11 @@ namespace deeplynx.tests
             var dto = new CreateProjectRequestDto
             {
                 Name = "Idaho Test",
-                Description = "Test Description",
-                OrganizationId = oid
+                Description = "Test Description"
             };
 
             // Act
-            var result = await _projectBusiness.CreateProject(uid, dto);
+            var result = await _projectBusiness.CreateProject(uid, oid, dto);
 
             // Assert
             result.Id.Should().BeGreaterThan(0);
@@ -332,7 +327,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateProject_Success_IfNoOrgId()
+        public async Task CreateProject_Fails_IfNonExistentOrgId()
         {
             // Arrange: seed a default org in the DB
             var defaultOrg = new Organization { Name = "Default Org", DefaultOrg = true, IsArchived = false };
@@ -342,50 +337,16 @@ namespace deeplynx.tests
             var dto = new CreateProjectRequestDto
             {
                 Name = "Project Without OrgId",
-                Description = "Should use existing default org",
-                OrganizationId = null
+                Description = "Should use existing default org"
             };
 
-            // Act
-            var result = await _projectBusiness.CreateProject(uid, dto);
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _projectBusiness.CreateProject(uid, oid2, dto));
 
-            // Assert
-            Assert.True(result.Id > 0);
-            Assert.Equal(defaultOrg.Id, result.OrganizationId);
-
-            var persisted = await Context.Projects.FindAsync(result.Id);
-            Assert.NotNull(persisted);
-            Assert.Equal(defaultOrg.Id, persisted!.OrganizationId);
-
-            // Ensure we did NOT create a new org since a default already existed
-            _organizationBusiness.Verify(
-                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
-                Times.Never);
-        }
-
-        [Fact]
-        public async Task CreateProject_Success_IfNoOrgIdNoDefaultOrg()
-        {
-            // Arrange: ensure no default org exists
-            foreach (var o in Context.Organizations.Where(o => o.DefaultOrg)) o.DefaultOrg = false;
-            await Context.SaveChangesAsync();
-
-            // Replace the mock with the real OrganizationBusiness just for this test
-            var realOrgBiz = new OrganizationBusiness(Context, _eventBusiness, new Mock<ILogger<OrganizationBusiness>>().Object);
-            _projectBusiness = new ProjectBusiness(
-                Context, _cacheBusiness, _mockLogger.Object,
-                _classBusiness, _roleBusiness, _dataSourceBusiness,
-                _objectStorageBusiness.Object, _eventBusiness, realOrgBiz);
-
-            var dto = new CreateProjectRequestDto { Name = "No OrgId", Description = "auto default", OrganizationId = null };
-
-            // Act
-            var result = await _projectBusiness.CreateProject(uid, dto);
-
-            // Assert
-            Assert.True(result.Id > 0);
-            var createdDefault = await Context.Organizations.FirstAsync(o => o.DefaultOrg && !o.IsArchived);
-            Assert.Equal(createdDefault.Id, result.OrganizationId);
+            // Ensure that no project create event is logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         #endregion
@@ -857,15 +818,13 @@ namespace deeplynx.tests
             {
                 Name = "Test Project",
                 Description = "Test Description",
-                Abbreviation = "TST",
-                OrganizationId = oid
+                Abbreviation = "TST"
             };
 
             // Assert
             Assert.Equal("Test Project", dto.Name);
             Assert.Equal("Test Description", dto.Description);
             Assert.Equal("TST", dto.Abbreviation);
-            Assert.Equal(oid, dto.OrganizationId);
         }
 
         [Fact]
@@ -1449,9 +1408,15 @@ namespace deeplynx.tests
 
             // Add org
             var testOrg = new Organization { Name = "Test Org" };
-            Context.Organizations.Add(testOrg);
+            var deletedOrg = new Organization { Name = "Delete Me" };
+            Context.Organizations.AddRange(testOrg, deletedOrg);
             await Context.SaveChangesAsync();
             oid = testOrg.Id;
+            oid2 = deletedOrg.Id;
+
+            // delete org 2
+            Context.Organizations.Remove(deletedOrg);
+            await Context.SaveChangesAsync();
 
             // Add projects
             var testProj = new Project
