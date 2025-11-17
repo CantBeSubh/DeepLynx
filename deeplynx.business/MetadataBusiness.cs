@@ -50,6 +50,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
@@ -71,6 +72,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// Check file format and file properties and deserialize into our CreateMetadataRequestDto.
     /// Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="file">The .json file containing the metadata contents.</param>
@@ -126,6 +128,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Individually call the bulk create functions of all metadata fields and append to return object.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
