@@ -10,13 +10,13 @@ import {
   RoleResponseDto,
   PermissionResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "../components/SiteManagementPortal/UsersTable";
-import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
+import UsersTable from "./users/UsersTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import TagManagementClient from "../tag_management/TagManagementClient";
 import InlineGroupsTable from "./groups/InlineGroupsTable";
 import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
+import OrganizationSettings from "./settings/OrganizationSettings";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
