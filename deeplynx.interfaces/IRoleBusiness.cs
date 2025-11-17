@@ -4,10 +4,10 @@ namespace deeplynx.interfaces;
 
 public interface IRoleBusiness
 {
-    Task<IEnumerable<RoleResponseDto>> GetAllRoles(long? projectId, long? organizationId, bool hideArchived = true);
+    Task<IEnumerable<RoleResponseDto>> GetAllRoles(long? organizationId, long? projectId, bool hideArchived = true);
     Task<RoleResponseDto> GetRole(long roleId, bool hideArchived = true);
-    Task<RoleResponseDto> CreateRole(CreateRoleRequestDto role, long? projectId, long? organizationId);
-    Task<List<RoleResponseDto>> BulkCreateRoles(long projectId, List<CreateRoleRequestDto> dtos);
+    Task<RoleResponseDto> CreateRole(CreateRoleRequestDto role, long organizationId, long? projectId);
+    Task<List<RoleResponseDto>> BulkCreateRoles(long organizationId, long? projectId, List<CreateRoleRequestDto> dtos);
     Task<RoleResponseDto> UpdateRole(long roleId, UpdateRoleRequestDto role);
     Task<bool> ArchiveRole(long roleId);
     Task<bool> UnarchiveRole(long roleId);

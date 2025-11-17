@@ -31,25 +31,42 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Get all roles for a given project and/or organization
     /// </summary>
-    /// <param name="projectId">ID of the project across which to search</param>
-    /// <param name="organizationId">ID of the organization across which to search</param>
+    /// <param name="projectId">(Optional) ID of the project across which to search</param>
+    /// <param name="organizationId">(Optional) ID of the organization across which to search</param>
     /// <param name="hideArchived">Flag indicating whether to search on archived roles</param>
     /// <returns>A list of roles</returns>
     public async Task<IEnumerable<RoleResponseDto>> GetAllRoles(
-        long? projectId, long? organizationId, bool hideArchived = true)
+        long? organizationId, long? projectId,bool hideArchived = true)
     {
+        // We need at least either organizationId or projectId - can have both in logic that follows
+        if (!projectId.HasValue && !organizationId.HasValue)
+        {
+            throw new ArgumentException("Either projectId or organizationId must be specified");
+        }
+        
         var roleQuery = _context.Roles.AsQueryable();
 
         if (projectId.HasValue)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
+        
+            // If org is also provided, validate the relationship
+            if (organizationId.HasValue)
+            {
+                var project = await _context.Projects.FindAsync(projectId.Value);
+                if (project?.OrganizationId != organizationId.Value)
+                {
+                    throw new ArgumentException($"Project {projectId.Value} does not belong to organization {organizationId.Value}");
+                }
+            }
+        
             roleQuery = roleQuery.Where(r => r.ProjectId == projectId);
         }
-
-        if (organizationId.HasValue)
+        else // Only organizationId
         {
-            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value, hideArchived);
-            roleQuery = roleQuery.Where(r => r.OrganizationId == organizationId);
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId!.Value, hideArchived);
+            roleQuery = roleQuery.Where(r => r.OrganizationId == organizationId 
+                                             && r.ProjectId == null);
         }
 
         if (hideArchived)
@@ -107,25 +124,48 @@ public class RoleBusiness : IRoleBusiness
     /// Create a new role
     /// </summary>
     /// <param name="dto">Data Transfer Object containing new role information</param>
-    /// <param name="projectId">ID of the project to which the role belongs</param>
-    /// <param name="organizationId">ID of the organization to which the role belongs</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>The newly created role</returns>
-    /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
+    /// <exception cref="ArgumentException">Returned for invalid project/org pair</exception>
     public async Task<RoleResponseDto> CreateRole(
-        CreateRoleRequestDto dto, long? projectId = null, long? organizationId = null)
+        CreateRoleRequestDto dto, long organizationId, long? projectId = null)
     {
-        // ensure one and only one of projectID or organizationID is supplied
-        if (!projectId.HasValue && !organizationId.HasValue)
-            throw new ArgumentException("One of Project ID or Organization ID must be provided");
-        if (projectId.HasValue && organizationId.HasValue)
-            throw new ArgumentException("Please provide only one of Project ID or Organization ID, not both");
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        if (organizationId.HasValue)
-            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
-
         ValidationHelper.ValidateModel(dto);
+        
+        // Ensure organization exists (always required)
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
+
+        // If we have a projectId here, this is a project level role, make sure it exists
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+            
+            // We can also check here for proper project/org connection
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project?.OrganizationId != organizationId)
+            {
+                throw new ArgumentException($"Project {projectId.Value} does not belong to organization {organizationId}");
+            }
+        }
+        
+        // Check for existing role with same name - this is just 1 extra query to DB
+        // Alternative to this is just letting DB throw exception
+        var existingRole = projectId.HasValue
+            ? await _context.Roles
+                .FirstOrDefaultAsync(r => r.OrganizationId == organizationId 
+                                          && r.ProjectId == projectId 
+                                          && r.Name == dto.Name)
+            : await _context.Roles
+                .FirstOrDefaultAsync(r => r.OrganizationId == organizationId 
+                                          && r.ProjectId == null 
+                                          && r.Name == dto.Name);
+        
+        if (existingRole != null)
+        {
+            throw new InvalidOperationException ($"A role with the name '{dto.Name}' already exists in this {(projectId.HasValue ? "project" : "organization")}");
+        }
+
         var role = new Role
         {
             Name = dto.Name,
@@ -167,28 +207,58 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Upsert multiple roles at a time
     /// </summary>
-    /// <param name="projectId"></param>
+    /// <param name="organizationId">(Required) Role organization</param>
+    /// <param name="projectId">(Optional) Role project</param>
     /// <param name="roles"></param>
-    /// <returns></returns>
-    public async Task<List<RoleResponseDto>> BulkCreateRoles(long projectId, List<CreateRoleRequestDto> roles)
+    /// <returns>List of created roles</returns>
+    public async Task<List<RoleResponseDto>> BulkCreateRoles(long organizationId, long? projectId, List<CreateRoleRequestDto> roles)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        // There may be a better way to handle this, but let's avoid touching DB unless we have roles supplied
+        if (roles == null || roles.Count == 0)
+        {
+            return new List<RoleResponseDto>();
+        }
+        
+        // Ensure organization exists (always required)
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
+    
+        // If projectId is provided, ensure it exists and belongs to the organization
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+        
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project?.OrganizationId != organizationId)
+            {
+                throw new ArgumentException($"Project {projectId.Value} does not belong to organization {organizationId}");
+            }
+        }
 
-        // TODO: add support for organization roles
         // Bulk insert into roles; if there is a name collision, update the description if present
-        var sql = @"
-            INSERT INTO deeplynx.roles (project_id, name, description, last_updated_at, last_updated_by)
-            VALUES {0}
-            ON CONFLICT (project_id, name) DO UPDATE SET
-                description = COALESCE(EXCLUDED.description, roles.description),
-                last_updated_at = @now
-            RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;
-        ";
-
+        // Use different SQL based on whether it's org-level or project-level role
+        var sql = projectId.HasValue 
+            ? @"
+                INSERT INTO deeplynx.roles (project_id, organization_id, name, description, last_updated_at, last_updated_by)
+                VALUES {0}
+                ON CONFLICT (organization_id, project_id, name) WHERE project_id IS NOT NULL
+                DO UPDATE SET
+                    description = COALESCE(EXCLUDED.description, roles.description),
+                    last_updated_at = @now
+                RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;"
+                    : @"
+                INSERT INTO deeplynx.roles (project_id, organization_id, name, description, last_updated_at, last_updated_by)
+                VALUES {0}
+                ON CONFLICT (organization_id, name) WHERE project_id IS NULL
+                DO UPDATE SET
+                    description = COALESCE(EXCLUDED.description, roles.description),
+                    last_updated_at = @now
+                RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;";
+        
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@projectId", projectId.HasValue ? (object)projectId.Value : DBNull.Value),
+            new NpgsqlParameter("@organizationId", organizationId),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
 
@@ -201,7 +271,7 @@ public class RoleBusiness : IRoleBusiness
 
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", roles.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @p{i}_desc, @now, NULL)"));
+            $"(@projectId, @organizationId, @p{i}_name, @p{i}_desc, @now, NULL)"));
 
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -211,12 +281,13 @@ public class RoleBusiness : IRoleBusiness
             .SqlQueryRaw<RoleResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
 
-        // for each created class Bulk log events
+        // for each created role Bulk log events
         var events = new List<CreateEventRequestDto> { };
         foreach (var item in result)
         {
             events.Add(new CreateEventRequestDto
             {
+                OrganizationId = organizationId,
                 ProjectId = projectId,
                 Operation = "create",
                 EntityType = "role",
@@ -226,7 +297,12 @@ public class RoleBusiness : IRoleBusiness
                 Properties = JsonSerializer.Serialize(new {item.Name}),
             });
         }
-        await _eventBusiness.BulkCreateEvents(projectId, events);
+        
+        // Not sure if events org scoped too, so for now only logging for projects
+        if (projectId.HasValue)
+        {
+            await _eventBusiness.BulkCreateEvents(projectId.Value, events);
+        }
 
         return result;
     }
@@ -243,7 +319,31 @@ public class RoleBusiness : IRoleBusiness
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // If name is being changed, check for conflicts; 1 extra query to DB
+        // Alternative is to let DB throw exception
+        if (dto.Name != null && dto.Name != role.Name)
+        {
+            var existingRole = role.ProjectId.HasValue
+                ? await _context.Roles
+                    .FirstOrDefaultAsync(r => r.OrganizationId == role.OrganizationId
+                                              && r.ProjectId == role.ProjectId
+                                              && r.Name == dto.Name)
 
+                : await _context.Roles
+                    .FirstOrDefaultAsync(r => r.OrganizationId == role.OrganizationId
+                                              && r.ProjectId == null
+                                              && r.Name == dto.Name);
+
+            if (existingRole != null)
+            {
+                var scope = role.ProjectId.HasValue ? "project" : "organization";
+                throw new InvalidOperationException(
+                    $"A role with the name '{dto.Name}' already exists in this {scope}");
+            }
+        }
+
+        // We have done our dup. checks on DTO and are now free to change role
         role.Name = dto.Name ?? role.Name;
         role.Description = dto.Description ?? role.Description;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
