@@ -181,7 +181,27 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
+            
+            // Add cascade delete for Project
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_project_id_fkey");
 
+            // Add cascade delete for DataSource
+            entity.HasOne(d => d.DataSource)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.DataSourceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_data_source_id_fkey");
+            
+            // Add cascade delete for Organization
+            entity.HasOne(d => d.Organization)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_organization_id_fkey");
         });
 
         modelBuilder.Entity<Group>(entity =>
@@ -303,8 +323,20 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-
-            entity.HasOne(d => d.Project).WithMany(p => p.ObjectStorages).HasConstraintName("object_storage_project_id_fkey");
+            
+            // Add cascade delete for Project
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.ObjectStorages)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("object_storage_project_id_fkey");
+            
+            // Add cascade delete for Organization
+            entity.HasOne(d => d.Organization)
+                .WithMany(p => p.ObjectStorages)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("object_storage_organization_id_fkey");
         });
 
         modelBuilder.Entity<Organization>(entity =>
