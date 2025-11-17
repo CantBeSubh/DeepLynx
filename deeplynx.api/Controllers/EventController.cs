@@ -9,7 +9,7 @@ namespace deeplynx.api.Controllers
     /// Controller for fetching events that match user subscriptions.
     /// </summary>
     /// <remarks>
-    /// This controller provides an endpoint retrieve project events that match the user's subscriptions.
+    /// This controller provides endpoints to retrieve events at organization and project levels.
     /// </remarks>
 
     [ApiController]
@@ -19,22 +19,122 @@ namespace deeplynx.api.Controllers
     {
         private readonly IEventBusiness _eventBusiness;
         private readonly ILogger<EventController> _logger;
-        public EventController(IEventBusiness eventBusiness,  ILogger<EventController> logger)
+        
+        public EventController(IEventBusiness eventBusiness, ILogger<EventController> logger)
         {
             _eventBusiness = eventBusiness;
             _logger = logger;
         }
         
+        // ==================== Organization-level endpoints ====================
+        
         /// <summary>
-        /// Get All Events
+        /// Get All Events for an Organization (Admin only)
         /// </summary>
         /// <param name="organizationId">Required organization ID to filter events</param>
-        /// <param name="projectId">Optional project ID to further filter events</param>
-        /// <returns></returns>
-        [HttpGet("GetAllEvents", Name = "api_get_all_events")]
-        public async Task<ActionResult<List<EventResponseDto>>> GetAllEvents(
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId
+        [HttpGet("organizations/{organizationId}", Name = "api_get_all_events_org")]
+        public async Task<ActionResult<List<EventResponseDto>>> GetAllEventsForOrganization(
+            [FromRoute] long organizationId
+        )
+        {
+            try
+            {
+                var events = await _eventBusiness.GetAllEvents(organizationId, null);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Query Events for an Organization (Paginated, Admin only)
+        /// </summary>
+        /// <param name="organizationId">Required organization ID</param>
+        /// <param name="queryDto">Filter criteria and pagination parameters</param>
+        [HttpGet("organizations/{organizationId}/query", Name = "api_query_events_org")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsForOrganization(
+            [FromRoute] long organizationId,
+            [FromQuery] EventsQueryRequestDTO? queryDto
+        )
+        {
+            try
+            {
+                var events = await _eventBusiness.QueryEvents(organizationId, queryDto, null);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Get events by user subscriptions at organization level.
+        /// Returns all organization-level events that match the user's subscriptions.
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="userId">The ID of the user</param>
+        [HttpGet("organizations/{organizationId}/users/{userId}/subscriptions", Name = "api_get_events_by_user_subscriptions_org")]
+        public async Task<ActionResult<List<EventResponseDto>>> GetEventsByUserSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromRoute] long userId)
+        {
+            try
+            {
+                var events = await _eventBusiness.GetAllEventsByUserSubscriptions(organizationId, userId, null);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Query events by user subscriptions at organization level (Paginated).
+        /// Returns all organization-level events that match the user's subscriptions with filtering.
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="queryDto">Filter criteria and pagination parameters</param>
+        [HttpGet("organizations/{organizationId}/users/{userId}/subscriptions/query", Name = "api_query_events_by_user_subscriptions_org")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUserSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromRoute] long userId,
+            [FromQuery] EventsQueryRequestDTO? queryDto)
+        {
+            try
+            {
+                var events = await _eventBusiness.QueryEventsByUserSubscriptions(organizationId, userId, queryDto, null);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        // ==================== Project-level endpoints ====================
+
+        /// <summary>
+        /// Get All Events for a Project
+        /// </summary>
+        /// <param name="organizationId">Required organization ID</param>
+        /// <param name="projectId">Required project ID to filter events</param>
+        [HttpGet("organizations/{organizationId}/projects/{projectId}", Name = "api_get_all_events_project")]
+        public async Task<ActionResult<List<EventResponseDto>>> GetAllEventsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId
         )
         {
             try
@@ -51,18 +151,21 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get All Events (Paginated)
+        /// Query Events for a Project (Paginated)
         /// </summary>
+        /// <param name="organizationId">Required organization ID</param>
+        /// <param name="projectId">Required project ID</param>
         /// <param name="queryDto">Filter criteria and pagination parameters</param>
-        /// <returns></returns>
-        [HttpGet("QueryEvents", Name = "api_query_events_paginated")]
-        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
+        [HttpGet("organizations/{organizationId}/projects/{projectId}/query", Name = "api_query_events_project")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
             [FromQuery] EventsQueryRequestDTO? queryDto
         )
         {
             try
             {
-                var events = await _eventBusiness.QueryEvents(queryDto);
+                var events = await _eventBusiness.QueryEvents(organizationId, queryDto, projectId);
                 return Ok(events);
             }
             catch (Exception e)
@@ -74,15 +177,23 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get all events by user project membership (Paginated).
+        /// Query events by user project membership (Paginated).
+        /// Returns events from projects the user is a member of.
         /// </summary>
-        [HttpGet("QueryEventsByUser", Name = "api_query_events_by_user")]
-        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUser(
+        /// <param name="organizationId">Required organization ID</param>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="projectId">Required project ID</param>
+        /// <param name="queryDto">Filter criteria and pagination parameters</param>
+        [HttpGet("organizations/{organizationId}/projects/{projectId}/users/{userId}", Name = "api_query_events_by_user_project")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUserForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long userId,
+            [FromRoute] long projectId,
             [FromQuery] EventsQueryRequestDTO? queryDto)
         {
             try
             {
-                var events = await _eventBusiness.QueryEventsByUser(queryDto);
+                var events = await _eventBusiness.QueryEventsByUser(organizationId, userId, queryDto, projectId);
                 return Ok(events);
             }
             catch (Exception e)
@@ -92,24 +203,51 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Get events by user subscriptions at organization and/or project level.
-        /// Organization-level subscriptions return all events in the organization.
-        /// Project-level subscriptions return only events in that specific project.
+        /// Get events by user subscriptions at project level.
+        /// Returns project-specific events that match the user's subscriptions.
         /// </summary>
         /// <param name="organizationId">The ID of the organization</param>
         /// <param name="userId">The ID of the user</param>
-        /// <param name="projectId">Optional project ID to filter events to a specific project</param>
-        [HttpGet("GetEventsByUserSubscriptions", Name = "api_get_events_by_user_subscriptions")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEventsByUserSubscriptions(
-            [FromQuery] long organizationId,
-            [FromQuery] long userId,
-            [FromQuery] long? projectId)
+        /// <param name="projectId">The ID of the project</param>
+        [HttpGet("organizations/{organizationId}/projects/{projectId}/users/{userId}/subscriptions", Name = "api_get_events_by_user_subscriptions_project")]
+        public async Task<ActionResult<List<EventResponseDto>>> GetEventsByUserSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long userId,
+            [FromRoute] long projectId)
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsByUserSubscriptions(userId, organizationId, projectId);
+                var events = await _eventBusiness.GetAllEventsByUserSubscriptions(organizationId, userId, projectId);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Query events by user subscriptions at project level (Paginated).
+        /// Returns project-specific events that match the user's subscriptions with filtering.
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="userId">The ID of the user</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="queryDto">Filter criteria and pagination parameters</param>
+        [HttpGet("organizations/{organizationId}/projects/{projectId}/users/{userId}/subscriptions/query", Name = "api_query_events_by_user_subscriptions_project")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUserSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long userId,
+            [FromRoute] long projectId,
+            [FromQuery] EventsQueryRequestDTO? queryDto)
+        {
+            try
+            {
+                var events = await _eventBusiness.QueryEventsByUserSubscriptions(organizationId, userId, queryDto, projectId);
                 return Ok(events);
             }
             catch (Exception e)
