@@ -187,7 +187,7 @@ public class MetadataBusiness : IMetadataBusiness
         if (records.Any())
         {
             Console.WriteLine("creating record map");
-            recordMap = await BulkUpsertRecords(projectId, dataSourceId, records, metadataResponseDto);
+            recordMap = await BulkUpsertRecords(currentUserId, projectId, dataSourceId, records, metadataResponseDto);
             
             // Record Tags
             var recordTags = BuildRecordTags(records, tagMap, recordMap);
@@ -420,12 +420,13 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of record name to record ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRecords(
+        long currentUserId,
         long projectId,
         long dataSourceId,
         List<CreateRecordRequestDto> records,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
+        var inserted = await _recordBusiness.BulkCreateRecords(currentUserId, projectId, dataSourceId, records);
         metadataResponseDto.Records = inserted;
         return inserted.ToDictionary(r => r.OriginalId, r => r.Id);
     }

@@ -121,7 +121,7 @@ public class FileBusiness
         };
         
         // return the newly created metadata record for the file
-        return await _recordBusiness.CreateRecord(projectId, realDataSourceId, recordRequest);
+        return await _recordBusiness.CreateRecord(currentUserId, projectId, realDataSourceId, recordRequest);
     }
 
     /// <summary>
@@ -161,7 +161,7 @@ public class FileBusiness
             FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             
         };
-        return await _recordBusiness.UpdateRecord(projectId, recordId, updateRecordRequest);
+        return await _recordBusiness.UpdateRecord(currentUserId, projectId, recordId, updateRecordRequest);
     }
     
     /// <summary>

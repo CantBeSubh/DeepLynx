@@ -169,7 +169,7 @@ public class TimeseriesBusiness(
                 FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             };
 
-            return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+            return await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, recordRequest);
         }
         catch (Exception ex)
         {
@@ -367,7 +367,7 @@ public class TimeseriesBusiness(
                 FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             };
 
-            return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+            return await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, recordRequest);
         }
         catch (Exception ex)
         {
@@ -724,7 +724,7 @@ public class TimeseriesBusiness(
             FileType = fileType
         };
         
-        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        var recordResponse = await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, recordRequest);
         
         // meant to run in background so don't await!
         RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);
@@ -797,7 +797,7 @@ public class TimeseriesBusiness(
             FileType = fileType
         };
 
-        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        var recordResponse = await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, recordRequest);
         
         // meant to run in background so don't await!
         RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);
@@ -857,7 +857,7 @@ public class TimeseriesBusiness(
             ObjectStorageId = timeseriesObjectStorageMethod.Id,
             FileType = fileType
         };
-        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        var recordResponse = await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, recordRequest);
         
         // meant to run in background so don't await!
         RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);

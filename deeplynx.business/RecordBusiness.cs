@@ -200,7 +200,7 @@ public class RecordBusiness : IRecordBusiness
     /// <returns>The newly created metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
-    public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, CreateRecordRequestDto dto)
+    public async Task<RecordResponseDto> CreateRecord(long currentUserId, long projectId, long dataSourceId, CreateRecordRequestDto dto)
     {
        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -232,7 +232,7 @@ public class RecordBusiness : IRecordBusiness
             Description = dto.Description,
             ClassId = dto.ClassId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId,
             FileType = dto.FileType
         };
 
@@ -280,6 +280,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<List<RecordResponseDto>> BulkCreateRecords(
+        long currentUserId, 
         long projectId, 
         long dataSourceId, 
         List<CreateRecordRequestDto> records)
@@ -315,6 +316,7 @@ public class RecordBusiness : IRecordBusiness
                 class_id = COALESCE(EXCLUDED.class_id, records.class_id),
                 object_storage_id = COALESCE(EXCLUDED.object_storage_id, records.object_storage_id),
                 last_updated_at = @now,
+                last_updated_by = @lastUpdatedBy,
                 file_type = COALESCE(EXCLUDED.file_type, records.file_type)
             RETURNING *;                                                          
         ";
@@ -324,7 +326,8 @@ public class RecordBusiness : IRecordBusiness
        {
            new NpgsqlParameter("@projectId", projectId),
            new NpgsqlParameter("@dataSourceId", dataSourceId),
-           new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+           new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+           new NpgsqlParameter("@lastUpdatedBy", currentUserId)
        };
        
        // establish "dynamic" parameters (new for each dto in the list)
@@ -343,7 +346,7 @@ public class RecordBusiness : IRecordBusiness
        // stringify the params and comma separate them
        var valueTuples = string.Join(", ", records.Select((dto, i) =>
            $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @p{i}_file_type, @now, false, NULL)"));
+           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @p{i}_file_type, @now, false, @lastUpdatedBy)"));
         
        // put everything together and execute the query
        sql = string.Format(sql, valueTuples);
@@ -381,7 +384,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dto">The data transfer object containing details on the record to be updated</param>
     /// <returns>The newly updated metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, UpdateRecordRequestDto dto)
+    public async Task<RecordResponseDto> UpdateRecord(long currentUserId, long projectId, long recordId, UpdateRecordRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record= await _context.Records.FindAsync(recordId);
@@ -409,7 +412,7 @@ public class RecordBusiness : IRecordBusiness
         record.Description = dto.Description ?? record.Description;
         record.ClassId = dto.ClassId ?? record.ClassId;
         record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        record.LastUpdatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
+        record.LastUpdatedBy = currentUserId;
         record.FileType = dto.FileType ?? record.FileType;
         
         _context.Records.Update(record);
@@ -476,7 +479,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="recordId">The record to be archived</param>
     /// <returns>Boolean indicating record was archived</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
-    public async Task<bool> ArchiveRecord(long projectId, long recordId)
+    public async Task<bool> ArchiveRecord(long currentUserId, long projectId, long recordId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
@@ -492,6 +495,8 @@ public class RecordBusiness : IRecordBusiness
         {
             try
             {
+                //Todo: update procedure to use lastUpdatedBy
+                
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
@@ -537,7 +542,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="recordId">The record to be unarchived</param>
     /// <returns>Boolean indicating record was unarchived</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to unarchive was not found.</exception>
-    public async Task<bool> UnarchiveRecord(long projectId, long recordId)
+    public async Task<bool> UnarchiveRecord(long currentUserId, long projectId, long recordId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
@@ -553,6 +558,8 @@ public class RecordBusiness : IRecordBusiness
         {
             try
             {
+                //Todo: update procedure to use lastUpdatedBy
+                
                 // run the unarchive record procedure, which unarchives this record
                 // and all child objects with record_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
