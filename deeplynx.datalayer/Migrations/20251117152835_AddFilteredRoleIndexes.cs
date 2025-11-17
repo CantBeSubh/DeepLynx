@@ -13,8 +13,14 @@ namespace deeplynx.datalayer.Migrations
             migrationBuilder.Sql("DROP INDEX IF EXISTS deeplynx.unique_organization_role_name;");
             migrationBuilder.Sql("DROP INDEX IF EXISTS deeplynx.unique_project_role_name;");
             
-            migrationBuilder.Sql("UPDATE deeplynx.roles SET organization_id = 1 WHERE organization_id IS NULL;");
-
+            migrationBuilder.Sql(@"
+                UPDATE deeplynx.roles 
+                SET organization_id = p.organization_id
+                FROM deeplynx.projects p
+                WHERE deeplynx.roles.project_id = p.id 
+                  AND deeplynx.roles.organization_id IS NULL;
+            ");
+            
             migrationBuilder.AlterColumn<long>(
                 name: "organization_id",
                 schema: "deeplynx",
