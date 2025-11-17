@@ -15,7 +15,7 @@ namespace deeplynx.api.Controllers
     [ApiController]
     [Route("events")]
     [Authorize]
-    public class EventController : ControllerBase // Inherit from ControllerBase
+    public class EventController : ControllerBase
     {
         private readonly IEventBusiness _eventBusiness;
         private readonly ILogger<EventController> _logger;
@@ -28,18 +28,18 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get All Events
         /// </summary>
-        /// <param name="projectId">Optional filter to only include events matching the projectId</param>
-        /// <param name="organizationId">Optional filter </param>
+        /// <param name="organizationId">Required organization ID to filter events</param>
+        /// <param name="projectId">Optional project ID to further filter events</param>
         /// <returns></returns>
         [HttpGet("GetAllEvents", Name = "api_get_all_events")]
-        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> GetAllEvents(
-            [FromQuery] long? projectId,
-            [FromQuery] long? organizationId
+        public async Task<ActionResult<List<EventResponseDto>>> GetAllEvents(
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId
         )
         {
             try
             {
-                var events = await _eventBusiness.GetAllEvents(projectId, organizationId);
+                var events = await _eventBusiness.GetAllEvents(organizationId, projectId);
                 return Ok(events);
             }
             catch (Exception e)
@@ -53,7 +53,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get All Events (Paginated)
         /// </summary>
-        /// <param name="queryDto">Filter criteria and pagination parameters</param>.
+        /// <param name="queryDto">Filter criteria and pagination parameters</param>
         /// <returns></returns>
         [HttpGet("QueryEvents", Name = "api_query_events_paginated")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
@@ -77,7 +77,7 @@ namespace deeplynx.api.Controllers
         /// Get all events by user project membership (Paginated).
         /// </summary>
         [HttpGet("QueryEventsByUser", Name = "api_query_events_by_user")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsByUser(
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUser(
             [FromQuery] EventsQueryRequestDTO? queryDto)
         {
             try
@@ -94,19 +94,22 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get project Events by user subscriptions 
+        /// Get events by user subscriptions at organization and/or project level.
+        /// Organization-level subscriptions return all events in the organization.
+        /// Project-level subscriptions return only events in that specific project.
         /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="userId">The ID of the user</param>
-        /// <param name="projectId">The ID of the project to which the events belong</param>
-        /// <returns></returns>
-        [HttpGet("{projectId}/GetAllEventsByUserProjectSubscriptions", Name = "api_get_all_events_by_user_project_subscriptions")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserProjectSubscriptions(
-            long projectId,
-            [FromQuery] long userId)
+        /// <param name="projectId">Optional project ID to filter events to a specific project</param>
+        [HttpGet("GetEventsByUserSubscriptions", Name = "api_get_events_by_user_subscriptions")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEventsByUserSubscriptions(
+            [FromQuery] long organizationId,
+            [FromQuery] long userId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsByUserProjectSubscriptions(projectId, userId);
+                var events = await _eventBusiness.GetAllEventsByUserSubscriptions(userId, organizationId, projectId);
                 return Ok(events);
             }
             catch (Exception e)

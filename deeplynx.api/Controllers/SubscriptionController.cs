@@ -43,7 +43,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(userId, projectId, hideArchived);
+                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(userId, organizationId, hideArchived, projectId);
                 return Ok(subscriptions);
             }
             catch (Exception exc)

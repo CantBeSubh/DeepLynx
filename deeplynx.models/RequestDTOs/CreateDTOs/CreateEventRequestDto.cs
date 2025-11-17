@@ -6,8 +6,7 @@ namespace deeplynx.models
         public string EntityType { get; set; }
         public long? EntityId { get; set; }
         public string? EntityName {get; set;}
-        public long? ProjectId { get; set; }
-        public long? OrganizationId { get; set; }
+        public long OrganizationId { get; set; }
         public long? DataSourceId { get; set; }
         public string Properties { get; set; }
         public string? LastUpdatedBy { get; set; }

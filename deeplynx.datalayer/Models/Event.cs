@@ -32,8 +32,9 @@ public partial class Event
     [Column("project_id")]
     public long? ProjectId { get; set; }
     
+    [Required]
     [Column("organization_id")]
-    public long? OrganizationId { get; set; }
+    public long OrganizationId { get; set; }
 
     [Column("data_source_id")]
     public long? DataSourceId { get; set; }
@@ -46,9 +47,20 @@ public partial class Event
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
-    public virtual Project? Project { get; set; }
-    public virtual DataSource? DataSource { get; set; }
     
+    [ForeignKey("ProjectId")]
+    [InverseProperty("Events")]
+    public virtual Project? Project { get; set; }
+
+    [Required]
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Events")]
+    public virtual Organization Organization { get; set; } = null!;
+
+    [ForeignKey("DataSourceId")]
+    [InverseProperty("Events")]
+    public virtual DataSource? DataSource { get; set; }
+
     [InverseProperty("LastUpdatedEvents")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

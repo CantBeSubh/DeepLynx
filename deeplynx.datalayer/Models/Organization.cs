@@ -34,6 +34,12 @@ public partial class Organization
     public bool DefaultOrg { get; set; } = false;
 
     [InverseProperty("Organization")]
+    public virtual ICollection<Action> Actions { get; set; } = new List<Action>();
+
+    [InverseProperty("Organization")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
+
+    [InverseProperty("Organization")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 
     [InverseProperty("Organization")]
@@ -50,6 +56,9 @@ public partial class Organization
 
     [InverseProperty("Organization")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
+
+    [InverseProperty("Organization")]
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
     [InverseProperty("LastUpdatedOrganizations")]
     public virtual User? LastUpdatedByUser { get; set; }

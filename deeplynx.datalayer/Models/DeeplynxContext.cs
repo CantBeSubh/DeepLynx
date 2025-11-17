@@ -72,7 +72,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("actions_pkey");
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_actions_last_updated_by");
@@ -82,8 +81,6 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-
-            entity.HasOne(d => d.Project).WithMany(p => p.Actions).HasConstraintName("actions_project_id_fkey");
         });
 
         modelBuilder.Entity<ApiKey>(entity =>
@@ -132,7 +129,8 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-            entity.HasOne(d => d.Project).WithMany(p => p.DataSources).HasConstraintName("data_sources_project_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.DataSources)
+                .HasConstraintName("data_sources_project_id_fkey");
         });
 
         modelBuilder.Entity<Edge>(entity =>
@@ -157,7 +155,8 @@ public partial class DeeplynxContext : DbContext
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Edges).HasConstraintName("edges_data_source_id_fkey");
 
-            entity.HasOne(d => d.Destination).WithMany(p => p.EdgeDestinations).HasConstraintName("edges_destination_id_fkey");
+            entity.HasOne(d => d.Destination).WithMany(p => p.EdgeDestinations)
+                .HasConstraintName("edges_destination_id_fkey");
 
             entity.HasOne(d => d.Origin).WithMany(p => p.EdgeOrigins).HasConstraintName("edges_origin_id_fkey");
 
@@ -181,7 +180,6 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-
         });
 
         modelBuilder.Entity<Group>(entity =>
@@ -240,7 +238,8 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName(null);
             entity.Property(e => e.ProjectName).HasDefaultValueSql("''::text");
 
-            entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges).HasConstraintName("historical_edges_edge_id_fkey");
+            entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges)
+                .HasConstraintName("historical_edges_edge_id_fkey");
         });
 
         modelBuilder.Entity<HistoricalRecord>(entity =>
@@ -254,7 +253,8 @@ public partial class DeeplynxContext : DbContext
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
-            entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords).HasConstraintName("historical_records_record_id_fkey");
+            entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords)
+                .HasConstraintName("historical_records_record_id_fkey");
         });
 
         modelBuilder.Entity<OauthApplication>(entity =>
@@ -294,13 +294,18 @@ public partial class DeeplynxContext : DbContext
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_object_storages_last_updated_by");
 
+            entity.ToTable(e => e.HasCheckConstraint(
+                "ck_object_storages_ProjectXorOrg",
+                "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"));
+
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedObjectStorages)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
 
-            entity.HasOne(d => d.Project).WithMany(p => p.ObjectStorages).HasConstraintName("object_storage_project_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.ObjectStorages)
+                .HasConstraintName("object_storage_project_id_fkey");
         });
 
         modelBuilder.Entity<Organization>(entity =>
@@ -325,10 +330,12 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => new { e.OrganizationId, e.UserId }).HasName("organization_user_pkey");
             entity.Property(e => e.IsOrgAdmin).HasDefaultValue(false);
 
-            entity.HasOne(d => d.Organization).WithMany(p => p.OrganizationUsers).HasConstraintName("organization_users_organization_id_fkey");
+            entity.HasOne(d => d.Organization).WithMany(p => p.OrganizationUsers)
+                .HasConstraintName("organization_users_organization_id_fkey");
 
 
-            entity.HasOne(d => d.User).WithMany(p => p.OrganizationUsers).HasConstraintName("organization_users_user_id_fkey");
+            entity.HasOne(d => d.User).WithMany(p => p.OrganizationUsers)
+                .HasConstraintName("organization_users_user_id_fkey");
         });
 
         modelBuilder.Entity<Permission>(entity =>
@@ -365,7 +372,9 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("projects_pkey");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
-            entity.Property(e => e.Config).HasDefaultValueSql("'{\"tagsMutable\": false, \"ontologyMutable\": false, \"edgeRecordsMutable\": false}'::jsonb");
+            entity.Property(e => e.Config)
+                .HasDefaultValueSql(
+                    "'{\"tagsMutable\": false, \"ontologyMutable\": false, \"edgeRecordsMutable\": false}'::jsonb");
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
@@ -393,9 +402,11 @@ public partial class DeeplynxContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("project_members_group_id_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.ProjectMembers).HasConstraintName("project_members_project_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.ProjectMembers)
+                .HasConstraintName("project_members_project_id_fkey");
 
-            entity.HasOne(d => d.Role).WithMany(p => p.ProjectMembers).HasConstraintName("project_members_role_id_fkey");
+            entity.HasOne(d => d.Role).WithMany(p => p.ProjectMembers)
+                .HasConstraintName("project_members_role_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.ProjectMembers)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -427,7 +438,8 @@ public partial class DeeplynxContext : DbContext
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Records).HasConstraintName("records_data_source_id_fkey");
 
-            entity.HasOne(d => d.ObjectStorage).WithMany(p => p.Records).HasConstraintName("records_object_storage_id_fkey");
+            entity.HasOne(d => d.ObjectStorage).WithMany(p => p.Records)
+                .HasConstraintName("records_object_storage_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Records).HasConstraintName("records_project_id_fkey");
 
@@ -495,7 +507,8 @@ public partial class DeeplynxContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("relationships_origin_id_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.Relationships).HasConstraintName("relationships_project_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.Relationships)
+                .HasConstraintName("relationships_project_id_fkey");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -572,26 +585,19 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_subscriptions_last_updated_by");
 
-            entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.LastUpdatedSubscriptions)
-                .HasForeignKey(d => d.LastUpdatedBy)
-                .OnDelete(DeleteBehavior.NoAction)
-                .HasConstraintName(null);
+            entity.HasIndex(e => new { e.UserId, e.ActionId, e.Operation, e.OrganizationId, e.ProjectId, e.DataSourceId, e.EntityType, e.EntityId })
+                .HasDatabaseName("idx_unique_subscription_with_project")
+                .IsUnique()
+                .HasFilter("project_id IS NOT NULL");
 
-            entity.HasOne(d => d.Action).WithMany(p => p.Subscriptions).HasConstraintName("subscriptions_action_id_fkey");
-
-            entity.HasOne(d => d.DataSource).WithMany(p => p.Subscriptions)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("subscriptions_dataSource_id_fkey");
-
-            entity.HasOne(d => d.Project).WithMany(p => p.Subscriptions).HasConstraintName("subscriptions_project_id_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.Subscriptions).HasConstraintName("subscriptions_user_id_fkey");
+            entity.HasIndex(e => new { e.UserId, e.ActionId, e.Operation, e.OrganizationId, e.DataSourceId, e.EntityType, e.EntityId })
+                .HasDatabaseName("idx_unique_subscription_without_project")
+                .IsUnique()
+                .HasFilter("project_id IS NULL");
         });
 
         modelBuilder.Entity<Tag>(entity =>
@@ -638,7 +644,6 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.User).WithMany(p => p.SavedSearches).HasConstraintName("saved_searches_user_id_fkey");
-
         });
 
         OnModelCreatingPartial(modelBuilder);
