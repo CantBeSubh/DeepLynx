@@ -1,5 +1,3 @@
-using System.Data;
-using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.interfaces;
@@ -189,11 +187,13 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Creates an object storage
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="dto">A data transfer object with details on the new object storage to be created.</param>
     /// <param name = "makeDefault"> A boolean that tells whether to make the object storage default or not</param>
     public async Task<ObjectStorageResponseDto> CreateObjectStorage(
+        long currentUserId,
         long? organizationId, 
         long? projectId,
         CreateObjectStorageRequestDto dto,
@@ -254,7 +254,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             OrganizationId = organizationId,
             Config = dto.Config.ToString(),
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId
         };
         
         _context.ObjectStorages.Add(newObjectStorage);
@@ -281,12 +281,13 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Updates an object storage
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <param name="dto">A data transfer object with details on object storage fields to be updated</param>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<ObjectStorageResponseDto> UpdateObjectStorage(long? organizationId, long? projectId, long objectStorageId,
+    public async Task<ObjectStorageResponseDto> UpdateObjectStorage(long currentUserId, long? organizationId, long? projectId, long objectStorageId,
         UpdateObjectStorageRequestDto dto)
     {
         if (!projectId.HasValue && !organizationId.HasValue)
@@ -322,7 +323,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         
         updatedObjectStorage.Name = dto.Name;
         updatedObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        updatedObjectStorage.LastUpdatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
+        updatedObjectStorage.LastUpdatedBy = currentUserId;
         
         await _context.SaveChangesAsync();
 
@@ -392,11 +393,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Soft deletes (archives) a data storage
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> ArchiveObjectStorage(long? organizationId, long? projectId, long objectStorageId)
+    public async Task<bool> ArchiveObjectStorage(long currentUserId, long? organizationId, long? projectId, long objectStorageId)
     {
         if (!projectId.HasValue && !organizationId.HasValue)
         {
@@ -439,6 +441,8 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         }
 
         objectStorage.IsArchived = true;
+        objectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        objectStorage.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         return true;
     }
@@ -446,11 +450,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Unarchives a data storage
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="objectStorageId">ID of object storage</param>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> UnarchiveObjectStorage(long? organizationId, long? projectId, long objectStorageId)
+    public async Task<bool> UnarchiveObjectStorage(long currentUserId, long? organizationId, long? projectId, long objectStorageId)
     {
         if (!projectId.HasValue && !organizationId.HasValue)
         {
@@ -487,6 +492,8 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         }
         
         objectStorage.IsArchived = false;
+        objectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        objectStorage.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         return true;
     }
@@ -494,13 +501,14 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <summary>
     /// Changes the default object storage
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="projectId">ID of the project in which the object storage belongs</param>
     /// <param name="objectStorageId">ID of the object storage to change to default</param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException"></exception>
     /// <exception cref="Exception"></exception>
-    public async Task<ObjectStorageResponseDto> SetDefaultObjectStorage(long? organizationId, long? projectId, long objectStorageId)
+    public async Task<ObjectStorageResponseDto> SetDefaultObjectStorage(long currentUserId, long? organizationId, long? projectId, long objectStorageId)
     {
         if (!projectId.HasValue && !organizationId.HasValue)
         {
@@ -540,7 +548,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         {
             defaultObjectStorage.Default = true;
             defaultObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            defaultObjectStorage.LastUpdatedBy = null; // TODO: handled in future by JWT.
+            defaultObjectStorage.LastUpdatedBy = currentUserId;
 
             await MakePreviousDefaultsFalse(organizationId, projectId, defaultObjectStorage.Id);
             await _context.SaveChangesAsync();

@@ -881,7 +881,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Instance Default",
             Config = config
         };
-        await _objectStorageBusiness.CreateObjectStorage(null, projectId, objectStorageRequestDto, true);
+        await _objectStorageBusiness.CreateObjectStorage(currentUserId, null, projectId, objectStorageRequestDto, true);
 
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT
@@ -896,7 +896,7 @@ public class ProjectBusiness : IProjectBusiness
             }
 
         };
-        var obj = await _objectStorageBusiness.CreateObjectStorage(null, projectId, timeseriesObjectStorageMethod);
+        var obj = await _objectStorageBusiness.CreateObjectStorage(currentUserId, null, projectId, timeseriesObjectStorageMethod);
 
         // ===============================
         // CREATE DEFAULT PROJECT ROLES
