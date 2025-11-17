@@ -504,7 +504,7 @@ const RolesAndPermissions = ({
                 </button>
               ))}
             </div>
-            <div className="p-3 border-t border-base-300">
+            {/* <div className="p-3 border-t border-base-300">
               <button
                 disabled={rolesLocked}
                 onClick={() => setIsCreateModalOpen(true)}
@@ -513,7 +513,7 @@ const RolesAndPermissions = ({
                 <PlusIcon className="w-4 h-4" />
                 New Role
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -700,7 +700,7 @@ const RolesAndPermissions = ({
         {/* Add Edit Controls Header */}
         <div className="px-6 py-3 border-b border-base-300 flex items-center justify-between">
           <h3 className="text-sm font-semibold">Permission Matrix</h3>
-          {!isEditingMatrix ? (
+          {/* {!isEditingMatrix ? (
             <button
               disabled={rolesLocked || isLoadingPermissions}
               onClick={handleStartEditingMatrix}
@@ -725,7 +725,7 @@ const RolesAndPermissions = ({
                 Save All Changes
               </button>
             </div>
-          )}
+          )} */}
         </div>
 
         {isLoadingPermissions && !initialLoadComplete ? (
@@ -893,7 +893,7 @@ const RolesAndPermissions = ({
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold">Roles & Permissions</h1>
-          <button
+          {/* <button
             onClick={() => setRolesLocked(!rolesLocked)}
             className={`btn gap-2 ${rolesLocked ? "btn-error" : "btn-primary"}`}
           >
@@ -903,7 +903,7 @@ const RolesAndPermissions = ({
               <LockOpenIcon className="size-6" />
             )}
             {rolesLocked ? "Roles Locked" : "Lock Roles"}
-          </button>
+          </button> */}
         </div>
         <p className="text-base-content/70">
           Define and manage organization-level roles and permissions. These
