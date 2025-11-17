@@ -29,44 +29,39 @@ public class RoleBusiness : IRoleBusiness
     }
 
     /// <summary>
-    /// Get all roles for a given project and/or organization
+    /// Get all roles for a given organization and optionally filter by project
     /// </summary>
-    /// <param name="projectId">(Optional) ID of the project across which to search</param>
-    /// <param name="organizationId">(Optional) ID of the organization across which to search</param>
-    /// <param name="hideArchived">Flag indicating whether to search on archived roles</param>
+    /// <param name="organizationId">(Required) ID of the organization</param>
+    /// <param name="projectId">(Optional) ID of the project to filter by</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived roles</param>
     /// <returns>A list of roles</returns>
     public async Task<IEnumerable<RoleResponseDto>> GetAllRoles(
-        long? organizationId, long? projectId,bool hideArchived = true)
+        long organizationId, long? projectId, bool hideArchived = true)
     {
-        // We need at least either organizationId or projectId - can have both in logic that follows
-        if (!projectId.HasValue && !organizationId.HasValue)
-        {
-            throw new ArgumentException("Either projectId or organizationId must be specified");
-        }
-        
-        var roleQuery = _context.Roles.AsQueryable();
+        // Ensure organization exists
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId, hideArchived);
 
+        var roleQuery = _context.Roles
+            .Where(r => r.OrganizationId == organizationId);
+        
+        // If projectId provided, filter to project-level roles
         if (projectId.HasValue)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
         
-            // If org is also provided, validate the relationship
-            if (organizationId.HasValue)
+            // Validate project belongs to organization
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project?.OrganizationId != organizationId)
             {
-                var project = await _context.Projects.FindAsync(projectId.Value);
-                if (project?.OrganizationId != organizationId.Value)
-                {
-                    throw new ArgumentException($"Project {projectId.Value} does not belong to organization {organizationId.Value}");
-                }
+                throw new ArgumentException($"Project {projectId.Value} does not belong to organization {organizationId}");
             }
         
             roleQuery = roleQuery.Where(r => r.ProjectId == projectId);
         }
-        else // Only organizationId
+        // Otherwise, filter to org-level roles only (no project)
+        else
         {
-            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId!.Value, hideArchived);
-            roleQuery = roleQuery.Where(r => r.OrganizationId == organizationId 
-                                             && r.ProjectId == null);
+            roleQuery = roleQuery.Where(r => r.ProjectId == null);
         }
 
         if (hideArchived)
@@ -148,23 +143,6 @@ public class RoleBusiness : IRoleBusiness
                 throw new ArgumentException($"Project {projectId.Value} does not belong to organization {organizationId}");
             }
         }
-        
-        // Check for existing role with same name - this is just 1 extra query to DB
-        // Alternative to this is just letting DB throw exception
-        var existingRole = projectId.HasValue
-            ? await _context.Roles
-                .FirstOrDefaultAsync(r => r.OrganizationId == organizationId 
-                                          && r.ProjectId == projectId 
-                                          && r.Name == dto.Name)
-            : await _context.Roles
-                .FirstOrDefaultAsync(r => r.OrganizationId == organizationId 
-                                          && r.ProjectId == null 
-                                          && r.Name == dto.Name);
-        
-        if (existingRole != null)
-        {
-            throw new InvalidOperationException ($"A role with the name '{dto.Name}' already exists in this {(projectId.HasValue ? "project" : "organization")}");
-        }
 
         var role = new Role
         {
@@ -176,8 +154,22 @@ public class RoleBusiness : IRoleBusiness
             OrganizationId = organizationId,
         };
 
-        _context.Roles.Add(role);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.Roles.Add(role);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            // Unique constraint violation - determine which scope based on projectId
+            var scope = projectId.HasValue ? "project" : "organization";
+            throw new InvalidOperationException($"A role with the name '{dto.Name}' already exists in this {scope}");
+        }
+        catch (Exception ex)
+        {
+            // Catch-all for any other errors during role creation
+            throw new InvalidOperationException($"An error occurred while creating the role: {ex.Message}", ex);
+        }
 
         // Log create Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
@@ -316,41 +308,34 @@ public class RoleBusiness : IRoleBusiness
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
     public async Task<RoleResponseDto> UpdateRole(long roleId, UpdateRoleRequestDto dto)
     {
+        ValidationHelper.ValidateModel(dto);
+        
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
-        // If name is being changed, check for conflicts; 1 extra query to DB
-        // Alternative is to let DB throw exception
-        if (dto.Name != null && dto.Name != role.Name)
-        {
-            var existingRole = role.ProjectId.HasValue
-                ? await _context.Roles
-                    .FirstOrDefaultAsync(r => r.OrganizationId == role.OrganizationId
-                                              && r.ProjectId == role.ProjectId
-                                              && r.Name == dto.Name)
 
-                : await _context.Roles
-                    .FirstOrDefaultAsync(r => r.OrganizationId == role.OrganizationId
-                                              && r.ProjectId == null
-                                              && r.Name == dto.Name);
-
-            if (existingRole != null)
-            {
-                var scope = role.ProjectId.HasValue ? "project" : "organization";
-                throw new InvalidOperationException(
-                    $"A role with the name '{dto.Name}' already exists in this {scope}");
-            }
-        }
-
-        // We have done our dup. checks on DTO and are now free to change role
+        // Update fields
         role.Name = dto.Name ?? role.Name;
         role.Description = dto.Description ?? role.Description;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         role.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
 
-        _context.Roles.Update(role);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.Roles.Update(role);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        {
+            // Unique constraint violation - name conflict
+            var scope = role.ProjectId.HasValue ? "project" : "organization";
+            throw new InvalidOperationException($"A role with the name '{dto.Name ?? role.Name}' already exists in this {scope}");
+        }
+        catch (Exception ex)
+        {
+            // Catch-all for any other errors during role update
+            throw new InvalidOperationException($"An error occurred while updating the role: {ex.Message}", ex);
+        }
 
         // Log update Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto

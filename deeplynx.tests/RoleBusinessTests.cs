@@ -561,7 +561,7 @@ namespace deeplynx.tests
         public async Task GetAllRoles_FiltersByProject()
         {
             // Act - Get project roles without specifying org
-            var result = (await _roleBusiness.GetAllRoles(null, pid)).ToList();
+            var result = (await _roleBusiness.GetAllRoles(oid, pid)).ToList();
     
             // Assert
             Assert.Single(result);
@@ -603,13 +603,13 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task GetAllRoles_MustProvideProjOrOrg()
+        public async Task GetAllRoles_MustProvideOrg()
         {
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _roleBusiness.GetAllRoles(null, null));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.GetAllRoles(999L, null));
             
-            Assert.Contains("Either projectId or organizationId must be specified", exception.Message);
+            Assert.Contains("Organization with id 999 does not exist", exception.Message);
         }
         
         #endregion

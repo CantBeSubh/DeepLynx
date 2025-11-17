@@ -31,7 +31,7 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpGet("GetAllRoles", Name = "api_get_all_roles")]
         public async Task<ActionResult<IEnumerable<RoleResponseDto>>> GetAllRoles(
-            [FromQuery] long? organizationId, 
+            [FromQuery] long organizationId, 
             [FromQuery] long? projectId = null,
             [FromQuery] bool hideArchived = true)
         {
