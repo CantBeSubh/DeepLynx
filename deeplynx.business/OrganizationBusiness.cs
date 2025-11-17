@@ -97,6 +97,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Creates a new organization and logs the creation event.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">A data transfer object with details on the organization to be created.</param>
     /// <returns>The created organization.</returns>
     public async Task<OrganizationResponseDto> CreateOrganization(long currentUserId, CreateOrganizationRequestDto dto, bool isDefault = false)
@@ -148,6 +149,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Update an organization by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to be updated</param>
     /// <param name="dto">A data transfer object with details on the organization to be updated</param>
     /// <returns>The updated organization</returns>
@@ -201,6 +203,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Archive a specific organization by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to archive</param>
     /// <returns>Boolean true on successful archive</returns>
     /// <exception cref="KeyNotFoundException">Returned if organization not found</exception>
@@ -235,6 +238,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Unarchive a specific organization by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to unarchive</param>
     /// <returns>Boolean true on successful unarchive</returns>
     /// <exception cref="KeyNotFoundException">Returned if organization not found</exception>

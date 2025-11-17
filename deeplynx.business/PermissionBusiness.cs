@@ -4,7 +4,6 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using System.Text.Json;
-using deeplynx.helpers.exceptions;
 
 namespace deeplynx.business;
 
@@ -113,10 +112,10 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Create a new user-defined permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">The permission to be created</param>
     /// <param name="projectId">ID of the project to which the permission belongs</param>
     /// <param name="organizationId">ID of the organization to which the permission belongs</param>
-    /// <param name="isDefault">Indicates whether to make a default permission or not</param>
     /// <returns>The newly created permission</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
     public async Task<PermissionResponseDto> CreatePermission(
@@ -188,6 +187,7 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Update an existing user-defined permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">ID of the permission to be updated</param>
     /// <param name="dto">New information on the permission</param>
     /// <returns>The newly updated permission</returns>
@@ -243,6 +243,7 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Archive a permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">The ID of the permission to be archived</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
@@ -279,6 +280,7 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Unarchive a permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">The ID of the permission to be unarchived</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
