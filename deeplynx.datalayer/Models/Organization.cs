@@ -57,4 +57,7 @@ public partial class Organization
 
     [InverseProperty("LastUpdatedOrganizations")]
     public virtual User? LastUpdatedByUser { get; set; }
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
 }

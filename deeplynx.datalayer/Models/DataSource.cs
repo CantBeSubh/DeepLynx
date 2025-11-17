@@ -63,4 +63,7 @@ public partial class DataSource
     
     [InverseProperty("LastUpdatedDataSources")]
     public virtual User? LastUpdatedByUser { get; set; }
+    
+    [InverseProperty("DataSource")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
 }
