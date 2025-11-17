@@ -32,9 +32,8 @@ public partial class Event
     [Column("project_id")]
     public long? ProjectId { get; set; }
     
-    [Required]
     [Column("organization_id")]
-    public long OrganizationId { get; set; }
+    public long? OrganizationId { get; set; }
 
     [Column("data_source_id")]
     public long? DataSourceId { get; set; }
@@ -52,10 +51,9 @@ public partial class Event
     [InverseProperty("Events")]
     public virtual Project? Project { get; set; }
 
-    [Required]
     [ForeignKey("OrganizationId")]
     [InverseProperty("Events")]
-    public virtual Organization Organization { get; set; } = null!;
+    public virtual Organization? Organization { get; set; } = null!;
 
     [ForeignKey("DataSourceId")]
     [InverseProperty("Events")]

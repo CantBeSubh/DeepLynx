@@ -142,7 +142,6 @@ public class ClassBusiness : IClassBusiness
         // log event with class create details
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "create",
             EntityType = "class",
             EntityId = newClass.Id,
@@ -230,7 +229,7 @@ public class ClassBusiness : IClassBusiness
                 Properties = JsonSerializer.Serialize(new {item.Name}),
             });
         }
-        await _eventBusiness.BulkCreateEvents(projectId, events);
+        await _eventBusiness.BulkCreateEvents(events);
         
         return result;
     }

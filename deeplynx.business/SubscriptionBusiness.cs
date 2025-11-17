@@ -19,16 +19,18 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     }
 
     /// <summary>
-    /// Retrieves all subscriptions with a particular userId and projectId
+    /// Retrieves all subscriptions with a particular currentUserId and organizationId
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscription belongs</param>
-    /// <param name="projectId">The ID of the project to which the subscription belongs</param>
+    /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the subscription belongs (required)</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
+    /// <param name="projectId">Optional ID of the project to which the subscription belongs</param>
     /// <returns>A list of subscriptions</returns>
     /// TODO: CACHE ALL SUBSCRIPTIONS TO MAKE THE NOTIFICATION SERVICE MORE EFFICIENT
-    public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long userId, long organizationId, bool hideArchived,
+    public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long currentUserId, long organizationId, bool hideArchived,
         long? projectId)
     {
+        // Validate organization exists
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
         if (projectId.HasValue)
@@ -37,7 +39,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         }
 
         var query = _context.Subscriptions
-            .Where(s => s.UserId == userId);
+            .Where(s => s.UserId == currentUserId && s.OrganizationId == organizationId);
 
         // Filter by scope
         if (projectId.HasValue)
@@ -46,10 +48,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         }
         else
         {
-            query = query.Where(s => s.OrganizationId == organizationId);
+            query = query.Where(s => s.ProjectId == null);
         }
 
-        // Filter archived in database
         if (hideArchived)
         {
             query = query.Where(s => !s.IsArchived);
@@ -75,16 +76,17 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     }
 
     /// <summary>
-    /// Retrieves a single subscription with a particular userId, projectId, and subscriptionId
+    /// Retrieves a single subscription with a particular currentUserId, subscriptionId, and organizationId
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscription belongs</param>
-    /// <param name="projectId">The ID of the project to which the subscription belongs</param>
+    /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
     /// <param name="subscriptionId">The ID of the subscription</param>
+    /// <param name="organizationId">The ID of the organization to which the subscription belongs (required)</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
-    /// <returns>A list of subscriptions</returns>
+    /// <param name="projectId">Optional ID of the project to which the subscription belongs</param>
+    /// <returns>A subscription</returns>
     /// <exception cref="KeyNotFoundException">Returned if subscription is not found or is archived</exception>
-    public async Task<SubscriptionResponseDto> GetSubscription(long userId, long subscriptionId, bool hideArchived,
-        long organizationId, long? projectId)
+    public async Task<SubscriptionResponseDto> GetSubscription(long currentUserId, long subscriptionId, long organizationId, bool hideArchived,
+       long? projectId)
     {
         // Validate existence of the scope
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
@@ -95,7 +97,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         }
 
         var query = _context.Subscriptions
-            .Where(s => s.Id == subscriptionId && s.UserId == userId);
+            .Where(s => s.Id == subscriptionId && s.UserId == currentUserId && s.OrganizationId == organizationId);
 
         if (hideArchived)
         {
@@ -116,10 +118,10 @@ public class SubscriptionBusiness : ISubscriptionBusiness
                 $"Subscription {subscriptionId} does not belong to project {projectId.Value}");
         }
 
-        if (subscription.OrganizationId != organizationId)
+        if (!projectId.HasValue && subscription.ProjectId != null)
         {
             throw new UnauthorizedAccessException(
-                $"Subscription {subscriptionId} does not belong to organization {organizationId}");
+                $"Subscription {subscriptionId} is a project-level subscription, not an organization-level subscription");
         }
 
         return new SubscriptionResponseDto
@@ -142,13 +144,14 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// <summary>
     /// Bulk creates subscriptions that are within the same scope (organization or project)
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (XOR with projectId)</param>
-    /// <param name="projectId">The ID of the project to which the subscriptions belong (XOR with organizationId)</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
+    /// <param name="dtos">List of subscription creation requests</param>
+    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long userId, long organizationId,
-        long? projectId,
-        List<CreateSubscriptionRequestDto> dtos)
+    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long organizationId,
+        List<CreateSubscriptionRequestDto> dtos,
+        long? projectId)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -157,20 +160,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
         }
 
-        foreach (var dto in dtos)
-        {
-            ValidationHelper.ValidateModel(dto);
-
-            // Validate the Operation property if it is not null
-            if (dto.Operation != null)
-            {
-                ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-            }
-        }
-
         // Determine which unique index applies
         var conflictColumns = projectId.HasValue
-            ? "user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id"
+            ? "user_id, action_id, operation, organization_id, project_id, data_source_id, entity_type, entity_id"
             : "user_id, action_id, operation, organization_id, data_source_id, entity_type, entity_id";
 
         var sql = $@"
@@ -187,10 +179,10 @@ public class SubscriptionBusiness : ISubscriptionBusiness
 
         parameters.AddRange(dtos.SelectMany((dto, i) => new[]
         {
-            new NpgsqlParameter($"@p{i}_userId", userId),
+            new NpgsqlParameter($"@p{i}_currentUserId", currentUserId),
             new NpgsqlParameter($"@p{i}_actionId", dto.ActionId),
             new NpgsqlParameter($"@p{i}_operation", (object?)dto.Operation ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_organizationId", (object?)organizationId ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_organizationId", organizationId),
             new NpgsqlParameter($"@p{i}_projectId", (object?)projectId ?? DBNull.Value),
             new NpgsqlParameter($"@p{i}_dataSourceId", (object?)dto.DataSourceId ?? DBNull.Value),
             new NpgsqlParameter($"@p{i}_entityType", (object?)dto.EntityType ?? DBNull.Value),
@@ -198,7 +190,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         }));
 
         var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_organizationId, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, false)"));
+            $"(@p{i}_currentUserId, @p{i}_actionId, @p{i}_operation, @p{i}_organizationId, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, false)"));
 
         sql = string.Format(sql, valueTuples);
 
@@ -226,15 +218,16 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// <summary>
     /// Bulk updates subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (XOR with projectId)</param>
-    /// <param name="projectId">The ID of the project to which the subscriptions belong (XOR with organizationId)</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
+    /// <param name="dtos">List of subscription update requests</param>
+    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
     /// <returns>A list of updated subscriptions</returns>
     public async Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
-        long userId,
+        long currentUserId,
         long organizationId,
-        long? projectId,
-        List<UpdateSubscriptionRequestDto> dtos)
+        List<UpdateSubscriptionRequestDto> dtos,
+        long? projectId)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -243,31 +236,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
         }
 
-        foreach (var dto in dtos)
-        {
-            ValidationHelper.ValidateModel(dto);
-
-            if (dto.Operation != null)
-            {
-                ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-            }
-
-            if ((dto.EntityType != null && dto.EntityId != null) || (dto.EntityType == null && dto.EntityId == null))
-            {
-                if (dto.EntityType != null)
-                {
-                    ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
-                }
-            }
-            else
-            {
-                throw new ArgumentException("EntityType and EntityId must either both be null or both have values.");
-            }
-        }
-
         string scopeCondition = projectId.HasValue
-            ? "AND subs.project_id = @scopeId"
-            : "AND subs.organization_id = @scopeId";
+            ? "AND subs.organization_id = @organizationId AND subs.project_id = @projectId"
+            : "AND subs.organization_id = @organizationId AND subs.project_id IS NULL";
 
         var sql = $@"
         UPDATE deeplynx.subscriptions AS subs
@@ -281,7 +252,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         FROM (VALUES {{0}}) AS data (id, action_id, operation, data_source_id, entity_type, entity_id)
         WHERE 
             subs.id = data.id 
-            AND subs.user_id = @userId 
+            AND subs.user_id = @currentUserId 
             {scopeCondition}
         RETURNING subs.id, subs.user_id, subs.organization_id, subs.project_id, subs.action_id, subs.operation, 
             subs.data_source_id, subs.entity_type, subs.entity_id, 
@@ -290,10 +261,15 @@ public class SubscriptionBusiness : ISubscriptionBusiness
 
         var parameters = new List<NpgsqlParameter>
         {
-            new("@userId", userId),
-            new("@scopeId", projectId ?? organizationId),
+            new("@currentUserId", currentUserId),
+            new("@organizationId", organizationId),
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
+
+        if (projectId.HasValue)
+        {
+            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
+        }
 
         parameters.AddRange(dtos.SelectMany((dto, i) => new[]
         {
@@ -334,7 +310,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         {
             throw new InvalidOperationException(
                 $"Some subscriptions were not updated. This may be because they do not exist, " +
-                $"do not belong to user {userId}, or do not belong to the specified " +
+                $"do not belong to user {currentUserId}, or do not belong to the specified " +
                 $"{(projectId.HasValue ? "project" : "organization")}.");
         }
         
@@ -344,15 +320,14 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// <summary>
     /// Bulk deletes subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (XOR with projectId)</param>
-    /// <param name="projectId">The ID of the project to which the subscriptions belong (XOR with organizationId)</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be deleted</param>
+    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
     /// <returns>True if successful</returns>
-    public async Task<bool> BulkDeleteSubscriptions(long userId, long organizationId, long? projectId,
-        List<long> subscriptionIds)
+    public async Task<bool> BulkDeleteSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds,
+        long? projectId)
     {
-        // Ensure exactly one scope is provided
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
         if (projectId.HasValue)
@@ -362,23 +337,28 @@ public class SubscriptionBusiness : ISubscriptionBusiness
 
         // Build the WHERE clause based on scope
         string scopeCondition = projectId.HasValue
-            ? "AND project_id = @scopeId"
-            : "AND organization_id = @scopeId";
+            ? "AND organization_id = @organizationId AND project_id = @projectId"
+            : "AND organization_id = @organizationId AND project_id IS NULL";
 
         var sql = $@"
         DELETE FROM deeplynx.subscriptions
         WHERE 
-            user_id = @userId 
+            user_id = @currentUserId 
             {scopeCondition}
             AND id = ANY(@subscriptionIds);
     ";
 
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@scopeId", projectId ?? organizationId),
+            new NpgsqlParameter("@currentUserId", currentUserId),
+            new NpgsqlParameter("@organizationId", organizationId),
             new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray())
         };
+
+        if (projectId.HasValue)
+        {
+            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
+        }
 
         var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
 
@@ -393,15 +373,14 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// <summary>
     /// Bulk archives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (XOR with projectId)</param>
-    /// <param name="projectId">The ID of the project to which the subscriptions belong (XOR with organizationId)</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be archived</param>
+    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
     /// <returns>True if successful</returns>
-    public async Task<bool> BulkArchiveSubscriptions(long userId, long organizationId, long? projectId,
-        List<long> subscriptionIds)
+    public async Task<bool> BulkArchiveSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds,
+        long? projectId)
     {
-        // Ensure exactly one scope is provided
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
         if (projectId.HasValue)
@@ -411,25 +390,30 @@ public class SubscriptionBusiness : ISubscriptionBusiness
 
         // Build the WHERE clause based on scope
         string scopeCondition = projectId.HasValue
-            ? "AND project_id = @scopeId"
-            : "AND organization_id = @scopeId";
+            ? "AND organization_id = @organizationId AND project_id = @projectId"
+            : "AND organization_id = @organizationId AND project_id IS NULL";
 
         var sql = $@"
         UPDATE deeplynx.subscriptions
         SET is_archived = true, last_updated_at = @now
         WHERE 
-            user_id = @userId 
+            user_id = @currentUserId 
             {scopeCondition}
             AND id = ANY(@subscriptionIds);
     ";
 
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@scopeId", projectId ?? organizationId),
+            new NpgsqlParameter("@currentUserId", currentUserId),
+            new NpgsqlParameter("@organizationId", organizationId),
             new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray()),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
+
+        if (projectId.HasValue)
+        {
+            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
+        }
 
         var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
 
@@ -444,13 +428,13 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// <summary>
     /// Bulk unarchives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (XOR with projectId)</param>
-    /// <param name="projectId">The ID of the project to which the subscriptions belong (XOR with organizationId)</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be unarchived</param>
+    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
     /// <returns>True if successful</returns>
-    public async Task<bool> BulkUnarchiveSubscriptions(long userId, long organizationId, long? projectId,
-        List<long> subscriptionIds)
+    public async Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds,
+        long? projectId)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -461,25 +445,30 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         
         // Build the WHERE clause based on scope
         string scopeCondition = projectId.HasValue
-            ? "AND project_id = @scopeId"
-            : "AND organization_id = @scopeId";
+            ? "AND organization_id = @organizationId AND project_id = @projectId"
+            : "AND organization_id = @organizationId AND project_id IS NULL";
 
         var sql = $@"
         UPDATE deeplynx.subscriptions
         SET is_archived = false, last_updated_at = @now
         WHERE 
-            user_id = @userId 
+            user_id = @currentUserId 
             {scopeCondition}
             AND id = ANY(@subscriptionIds);
     ";
 
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@scopeId", projectId ?? organizationId),
+            new NpgsqlParameter("@currentUserId", currentUserId),
+            new NpgsqlParameter("@organizationId", organizationId),
             new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray()),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
+
+        if (projectId.HasValue)
+        {
+            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
+        }
 
         var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
 

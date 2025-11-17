@@ -180,6 +180,12 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
+
+            // XOR constraint: exactly one of ProjectId or OrganizationId must be set
+            entity.ToTable(t => t.HasCheckConstraint(
+                "CK_Events_ProjectId_OrganizationId_XOR",
+                "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"
+            ));
         });
 
         modelBuilder.Entity<Group>(entity =>

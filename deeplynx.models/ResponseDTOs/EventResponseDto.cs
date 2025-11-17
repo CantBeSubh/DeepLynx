@@ -18,7 +18,7 @@ public class EventResponseDto
     public long? ProjectId { get; set; }
 
     [Column("organization_id")]
-    public long OrganizationId { get; set; }
+    public long? OrganizationId { get; set; }
     public string OrganizationName { get; set; }
 
     [Column("data_source_id")]

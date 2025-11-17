@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers.Context;
 
 namespace deeplynx.api.Controllers
 {
@@ -9,10 +10,11 @@ namespace deeplynx.api.Controllers
     /// Controller for managing subscriptions.
     /// </summary>
     /// <remarks>
-    /// This controller provides endpoints to create, update, delete, and retrieve subscription information.
+    /// This controller provides endpoints to create, update, delete, and retrieve subscription information
+    /// at both organization and project levels.
     /// </remarks>
     [ApiController]
-    [Route("projects/{projectId}/users/{userId}/subscriptions")] //TODO: remove userID from route when JWT are implemented
+    [Route("subscriptions")]
     [Authorize]
     public class SubscriptionController : ControllerBase
     {
@@ -30,167 +32,421 @@ namespace deeplynx.api.Controllers
             _logger = logger;
         }
 
+        // ==================== Organization-level endpoints ====================
+
         /// <summary>
-        /// Get all subscriptions
+        /// Get all organization-level subscriptions for the current user
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscription belongs</param>
-        /// <param name="projectId">The ID of the project to which the subscription belongs</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>List of subscription response DTOs</returns>
-        [HttpGet("GetAllSubscriptions", Name = "api_get_all_subscriptions")]
-        public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptions(
-            long userId, long projectId, [FromQuery] bool hideArchived = true)
+        [HttpGet("GetAllSubscriptionsByOrg", Name = "api_get_all_subscriptions_org")]
+        public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(userId, organizationId, hideArchived, projectId);
+                var currentUserId = UserContextStorage.UserId;
+                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(currentUserId, organizationId, hideArchived, null);
                 return Ok(subscriptions);
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while fetching all subscriptions: {exc}";
+                var message = $"An unexpected error occurred while fetching all organization subscriptions: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
         /// <summary>
-        /// Get a subscription
+        /// Get a specific organization-level subscription
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscription belongs</param>
-        /// <param name="projectId">The ID of the project to which the subscription belongs</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="subscriptionId">The ID of the subscription to retrieve</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>Subscription response DTO</returns>
-        [HttpGet("GetSubscription/{subscriptionId}", Name = "api_get_a_subscription")]
-        public async Task<ActionResult<SubscriptionResponseDto>> GetSubscription(
-            long userId, long projectId, long subscriptionId, [FromQuery] bool hideArchived = true)
+        [HttpGet("GetSubscriptionByOrg/{subscriptionId}", Name = "api_get_subscription_org")]
+        public async Task<ActionResult<SubscriptionResponseDto>> GetSubscriptionForOrganization(
+            [FromRoute] long organizationId,
+            [FromRoute] long subscriptionId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var subscription = await _subscriptionBusiness.GetSubscription(userId, projectId, subscriptionId, hideArchived);
+                var currentUserId = UserContextStorage.UserId;
+                var subscription = await _subscriptionBusiness.GetSubscription(currentUserId, subscriptionId, organizationId, hideArchived, null);
                 return Ok(subscription);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"Subscription with id {subscriptionId} not found");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while fetching this subscription {subscriptionId}: {exc}";
+                var message = $"An unexpected error occurred while fetching subscription {subscriptionId}: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
         /// <summary>
-        /// Create many subscriptions
+        /// Create many organization-level subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-        /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
-        /// <returns>Bulk subscription response DTOs</returns>
-        [HttpPost("BulkCreateSubscriptions", Name = "api_create_many_subscriptions")]
-        public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkCreateSubscriptions(
-            long userId, long projectId, [FromBody] List<CreateSubscriptionRequestDto> subscriptions)
+        /// <returns>List of created subscription response DTOs</returns>
+        [HttpPost("BulkCreateSubscriptionsByOrg", Name = "api_bulk_create_subscriptions_org")]
+        public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkCreateSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromBody] List<CreateSubscriptionRequestDto> subscriptions)
         {
             try
             {
-                var newSubscriptions = await _subscriptionBusiness.BulkCreateSubscriptions(userId, projectId, subscriptions);
+                var currentUserId = UserContextStorage.UserId;
+                var newSubscriptions = await _subscriptionBusiness.BulkCreateSubscriptions(currentUserId, organizationId, subscriptions, null);
                 return Ok(newSubscriptions);
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while creating these subscriptions: {exc}";
+                var message = $"An unexpected error occurred while creating organization subscriptions: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
         /// <summary>
-        /// Update many subscriptions
+        /// Update many organization-level subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-        /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
-        /// <returns>Bulk subscription response DTOs</returns>
-        [HttpPut("BulkUpdateSubscriptions", Name = "api_update_many_subscriptions")]
-        public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkUpdateSubscriptions(
-            long userId, long projectId, [FromBody] List<UpdateSubscriptionRequestDto> subscriptions)
+        /// <returns>List of updated subscription response DTOs</returns>
+        [HttpPut("BulkUpdateSubscriptionsByOrg", Name = "api_bulk_update_subscriptions_org")]
+        public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkUpdateSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromBody] List<UpdateSubscriptionRequestDto> subscriptions)
         {
             try
             {
-                var updatedSubscriptions = await _subscriptionBusiness.BulkUpdateSubscriptions(userId, projectId, subscriptions);
+                var currentUserId = UserContextStorage.UserId;
+                var updatedSubscriptions = await _subscriptionBusiness.BulkUpdateSubscriptions(currentUserId, organizationId, subscriptions, null);
                 return Ok(updatedSubscriptions);
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while updating these subscriptions: {exc}";
+                var message = $"An unexpected error occurred while updating organization subscriptions: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
         /// <summary>
-        /// Delete many subscriptions
+        /// Delete many organization-level subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-        /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="subscriptionIds">List of subscription IDs to delete</param>
-        /// <returns>A message stating the subscriptions were successfully deleted.</returns>
-        [HttpDelete("BulkDeleteSubscriptions", Name = "api_delete_many_subscriptions")]
-        public async Task<IActionResult> BulkDeleteSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
+        /// <returns>A message stating the subscriptions were successfully deleted</returns>
+        [HttpDelete("BulkDeleteSubscriptionsByOrg", Name = "api_bulk_delete_subscriptions_org")]
+        public async Task<IActionResult> BulkDeleteSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromBody] List<long> subscriptionIds)
         {
             try
             {
-                await _subscriptionBusiness.BulkDeleteSubscriptions(userId, projectId, subscriptionIds);
-                return Ok(new { message = $"Deleted subscriptions" });
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkDeleteSubscriptions(currentUserId, organizationId, subscriptionIds, null);
+                return Ok(new { message = "Deleted organization subscriptions" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting subscriptions: {exc}";
+                var message = $"An error occurred while deleting organization subscriptions: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
         /// <summary>
-        /// Archive many subscriptions
+        /// Archive many organization-level subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-        /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="subscriptionIds">List of subscription IDs to archive</param>
-        /// <returns>A message stating the subscriptions were successfully archived.</returns>
-        [HttpPut("BulkArchiveSubscriptions", Name = "api_archive_many_subscriptions")]
-        public async Task<IActionResult> BulkArchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
+        /// <returns>A message stating the subscriptions were successfully archived</returns>
+        [HttpPut("BulkArchiveSubscriptionsByOrg", Name = "api_bulk_archive_subscriptions_org")]
+        public async Task<IActionResult> BulkArchiveSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromBody] List<long> subscriptionIds)
         {
             try
             {
-                await _subscriptionBusiness.BulkArchiveSubscriptions(userId, projectId, subscriptionIds);
-                return Ok(new { message = $"Archived subscriptions" });
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkArchiveSubscriptions(currentUserId, organizationId, subscriptionIds, null);
+                return Ok(new { message = "Archived organization subscriptions" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while archiving subscriptions: {exc}";
+                var message = $"An error occurred while archiving organization subscriptions: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
         /// <summary>
-        /// Unarchive many subscriptions
+        /// Unarchive many organization-level subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
-        /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="subscriptionIds">List of subscription IDs to unarchive</param>
-        /// <returns>A message stating the subscriptions were successfully unarchived.</returns>
-        [HttpPut("BulkUnarchiveSubscriptions", Name = "api_unarchive_many_subscriptions")]
-        public async Task<IActionResult> BulkUnarchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
+        /// <returns>A message stating the subscriptions were successfully unarchived</returns>
+        [HttpPut("BulkUnarchiveSubscriptionsByOrg", Name = "api_bulk_unarchive_subscriptions_org")]
+        public async Task<IActionResult> BulkUnarchiveSubscriptionsForOrganization(
+            [FromRoute] long organizationId,
+            [FromBody] List<long> subscriptionIds)
         {
             try
             {
-                await _subscriptionBusiness.BulkUnarchiveSubscriptions(userId, projectId, subscriptionIds);
-                return Ok(new { message = $"Unarchived subscriptions" });
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkUnarchiveSubscriptions(currentUserId, organizationId, subscriptionIds, null);
+                return Ok(new { message = "Unarchived organization subscriptions" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while unarchiving subscriptions: {exc}";
+                var message = $"An error occurred while unarchiving organization subscriptions: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        // ==================== Project-level endpoints ====================
+
+        /// <summary>
+        /// Get all project-level subscriptions for the current user
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
+        /// <returns>List of subscription response DTOs</returns>
+        [HttpGet("GetAllSubscriptionsByProject/{projectId}", Name = "api_get_all_subscriptions_project")]
+        public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
+            [FromQuery] bool hideArchived = true)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(currentUserId, organizationId, hideArchived, projectId);
+                return Ok(subscriptions);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while fetching all project subscriptions: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Get a specific project-level subscription
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="subscriptionId">The ID of the subscription to retrieve</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
+        /// <returns>Subscription response DTO</returns>
+        [HttpGet("GetSubscriptionByProject/{projectId}/{subscriptionId}", Name = "api_get_subscription_project")]
+        public async Task<ActionResult<SubscriptionResponseDto>> GetSubscriptionForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
+            [FromRoute] long subscriptionId,
+            [FromQuery] bool hideArchived = true)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                var subscription = await _subscriptionBusiness.GetSubscription(currentUserId, subscriptionId, organizationId, hideArchived, projectId);
+                return Ok(subscription);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound($"Subscription with id {subscriptionId} not found");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while fetching subscription {subscriptionId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Create many project-level subscriptions
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="subscriptions">List of request DTOs for subscriptions</param>
+        /// <returns>List of created subscription response DTOs</returns>
+        [HttpPost("BulkCreateSubscriptionsByProject/{projectId}", Name = "api_bulk_create_subscriptions_project")]
+        public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkCreateSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
+            [FromBody] List<CreateSubscriptionRequestDto> subscriptions)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                var newSubscriptions = await _subscriptionBusiness.BulkCreateSubscriptions(currentUserId, organizationId, subscriptions, projectId);
+                return Ok(newSubscriptions);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while creating project subscriptions: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Update many project-level subscriptions
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="subscriptions">List of request DTOs for subscriptions</param>
+        /// <returns>List of updated subscription response DTOs</returns>
+        [HttpPut("BulkUpdateSubscriptionsByProject/{projectId}", Name = "api_bulk_update_subscriptions_project")]
+        public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkUpdateSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
+            [FromBody] List<UpdateSubscriptionRequestDto> subscriptions)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                var updatedSubscriptions = await _subscriptionBusiness.BulkUpdateSubscriptions(currentUserId, organizationId, subscriptions, projectId);
+                return Ok(updatedSubscriptions);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while updating project subscriptions: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Delete many project-level subscriptions
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="subscriptionIds">List of subscription IDs to delete</param>
+        /// <returns>A message stating the subscriptions were successfully deleted</returns>
+        [HttpDelete("BulkDeleteSubscriptionsByProject/{projectId}", Name = "api_bulk_delete_subscriptions_project")]
+        public async Task<IActionResult> BulkDeleteSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
+            [FromBody] List<long> subscriptionIds)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkDeleteSubscriptions(currentUserId, organizationId, subscriptionIds, projectId);
+                return Ok(new { message = "Deleted project subscriptions" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while deleting project subscriptions: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Archive many project-level subscriptions
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="subscriptionIds">List of subscription IDs to archive</param>
+        /// <returns>A message stating the subscriptions were successfully archived</returns>
+        [HttpPut("BulkArchiveSubscriptionsByProject/{projectId}", Name = "api_bulk_archive_subscriptions_project")]
+        public async Task<IActionResult> BulkArchiveSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
+            [FromBody] List<long> subscriptionIds)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkArchiveSubscriptions(currentUserId, organizationId, subscriptionIds, projectId);
+                return Ok(new { message = "Archived project subscriptions" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving project subscriptions: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Unarchive many project-level subscriptions
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="subscriptionIds">List of subscription IDs to unarchive</param>
+        /// <returns>A message stating the subscriptions were successfully unarchived</returns>
+        [HttpPut("BulkUnarchiveSubscriptionsByProject/{projectId}", Name = "api_bulk_unarchive_subscriptions_project")]
+        public async Task<IActionResult> BulkUnarchiveSubscriptionsForProject(
+            [FromRoute] long organizationId,
+            [FromRoute] long projectId,
+            [FromBody] List<long> subscriptionIds)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkUnarchiveSubscriptions(currentUserId, organizationId, subscriptionIds, projectId);
+                return Ok(new { message = "Unarchived project subscriptions" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving project subscriptions: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
