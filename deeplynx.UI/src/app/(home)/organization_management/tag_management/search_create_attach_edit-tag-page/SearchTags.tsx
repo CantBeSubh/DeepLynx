@@ -89,7 +89,7 @@ const SearchTags = ({
   return (
     <div
       className="w-[85%] mx-auto flex flex-col"
-      style={{ height: "calc(90vh - 200px)" }}
+      style={{ height: "calc(90vh - 325px)" }}
     >
       <h3 className="font-bold mb-4">Search Tags</h3>
 
@@ -322,7 +322,7 @@ export const SearchTagsRecordsList = ({
   return (
     <div
       className="w-[85%] mx-auto flex flex-col"
-      style={{ height: "calc(90vh - 200px)" }}
+      style={{ height: "calc(90vh - 325px)" }}
     >
       <div className="gap-2 mb-4">
         <h3 className="font-bold mb-4">Records with Selected Tags</h3>
