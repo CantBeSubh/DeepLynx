@@ -126,7 +126,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.CreateOrganization(dto);
+            var result = await _organizationBusiness.CreateOrganization(uid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -151,7 +151,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _organizationBusiness.CreateOrganization(dto);
+            var result = await _organizationBusiness.CreateOrganization(uid, dto);
             
             // Assert
             Assert.NotNull(result);
@@ -182,7 +182,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.CreateOrganization(dto);
+            var result = await _organizationBusiness.CreateOrganization(uid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -210,7 +210,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _organizationBusiness.CreateOrganization(dto));
+                () => _organizationBusiness.CreateOrganization(uid, dto));
 
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -229,7 +229,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _organizationBusiness.CreateOrganization(dto));
+                () => _organizationBusiness.CreateOrganization(uid, dto));
 
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -247,7 +247,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.CreateOrganization(dto, isDefault: true);
+            var result = await _organizationBusiness.CreateOrganization(uid, dto, isDefault: true);
 
             // Assert
             Assert.NotNull(result);
@@ -268,7 +268,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.CreateOrganization(dto, isDefault: false);
+            var result = await _organizationBusiness.CreateOrganization(uid, dto, isDefault: false);
 
             // Assert
             Assert.NotNull(result);
@@ -296,7 +296,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.CreateOrganization(dto, isDefault: true);
+            var result = await _organizationBusiness.CreateOrganization(uid, dto, isDefault: true);
 
             // Assert
             Assert.NotNull(result);
@@ -329,7 +329,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+            var result = await _organizationBusiness.UpdateOrganization(uid, oid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -364,7 +364,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+            var result = await _organizationBusiness.UpdateOrganization(uid, oid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -392,7 +392,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _organizationBusiness.UpdateOrganization(99999, dto));
+                () => _organizationBusiness.UpdateOrganization(uid, 99999, dto));
 
             Assert.Contains("Organization with id 99999 does not exist", exception.Message);
 
@@ -412,7 +412,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _organizationBusiness.UpdateOrganization(oid2, dto)); // archived organization
+                () => _organizationBusiness.UpdateOrganization(uid, oid2, dto)); // archived organization
 
             Assert.Contains($"Organization with id {oid2} does not exist", exception.Message);
 
@@ -439,7 +439,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+            var result = await _organizationBusiness.UpdateOrganization(uid, oid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -466,7 +466,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+            var result = await _organizationBusiness.UpdateOrganization(uid, oid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -505,7 +505,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+            var result = await _organizationBusiness.UpdateOrganization(uid, oid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -532,7 +532,7 @@ namespace deeplynx.tests
         public async Task ArchiveOrganization_Succeeds_IfNotArchived()
         {
             // Act
-            var result = await _organizationBusiness.ArchiveOrganization(oid);
+            var result = await _organizationBusiness.ArchiveOrganization(uid, oid);
 
             // Assert
             Assert.True(result);
@@ -558,7 +558,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _organizationBusiness.ArchiveOrganization(oid2)); // already archived
+                () => _organizationBusiness.ArchiveOrganization(uid, oid2)); // already archived
 
             Assert.Contains($"Organization with id {oid2} not found", exception.Message);
 
@@ -572,7 +572,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _organizationBusiness.ArchiveOrganization(99999));
+                () => _organizationBusiness.ArchiveOrganization(uid, 99999));
 
             Assert.Contains("Organization with id 99999 not found", exception.Message);
 
@@ -589,7 +589,7 @@ namespace deeplynx.tests
         public async Task UnarchiveOrganization_Succeeds_IfArchived()
         {
             // Act
-            var result = await _organizationBusiness.UnarchiveOrganization(oid2);
+            var result = await _organizationBusiness.UnarchiveOrganization(uid, oid2);
 
             // Assert
             Assert.True(result);
@@ -615,7 +615,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _organizationBusiness.UnarchiveOrganization(oid)); // not archived
+                () => _organizationBusiness.UnarchiveOrganization(uid, oid)); // not archived
 
             Assert.Contains($"Organization with id {oid} not found", exception.Message);
             
@@ -629,7 +629,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _organizationBusiness.UnarchiveOrganization(99999));
+                () => _organizationBusiness.UnarchiveOrganization(uid, 99999));
             
             Assert.Contains("Organization with id 99999 not found", exception.Message);
             

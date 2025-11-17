@@ -191,7 +191,7 @@ public class ProjectBusiness : IProjectBusiness
                     Description = "Default Organization",
                 };
                 
-                var newDefaultOrg = await _organizationBusiness.CreateOrganization(orgRequestDto, true);
+                var newDefaultOrg = await _organizationBusiness.CreateOrganization(currentUserId, orgRequestDto, true);
                 orgId = newDefaultOrg.Id;
             }
         }

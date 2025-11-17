@@ -324,7 +324,7 @@ namespace deeplynx.tests
             //Ensure
             _organizationBusiness.Verify(x => x.GetAllOrganizations(It.IsAny<bool>()), Times.Never);
             _organizationBusiness.Verify(
-                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
+                x => x.CreateOrganization(uid, It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
                 Times.Never);
             _organizationBusiness.Verify(
                 x => x.AddUserToOrganization(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()),
@@ -359,7 +359,7 @@ namespace deeplynx.tests
 
             // Ensure we did NOT create a new org since a default already existed
             _organizationBusiness.Verify(
-                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
+                x => x.CreateOrganization(uid, It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
                 Times.Never);
         }
 

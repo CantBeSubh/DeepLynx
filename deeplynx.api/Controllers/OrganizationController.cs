@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -80,7 +81,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var organization = await _organizationBusiness.CreateOrganization(dto);
+                var currentUserId = UserContextStorage.UserId;
+                var organization = await _organizationBusiness.CreateOrganization(currentUserId, dto);
                 return Ok(organization);
             }
             catch (Exception exc)
@@ -104,7 +106,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var organization = await _organizationBusiness.UpdateOrganization(organizationId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var organization = await _organizationBusiness.UpdateOrganization(currentUserId, organizationId, dto);
                 return Ok(organization);
             }
             catch (Exception exc)
@@ -146,7 +149,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _organizationBusiness.ArchiveOrganization(organizationId);
+                var currentUserId = UserContextStorage.UserId;
+                await _organizationBusiness.ArchiveOrganization(currentUserId, organizationId);
                 return Ok(new { message = $"Archived organization {organizationId}" });
             }
             catch (Exception exc)
@@ -167,7 +171,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _organizationBusiness.UnarchiveOrganization(organizationId);
+                var currentUserId = UserContextStorage.UserId;
+                await _organizationBusiness.UnarchiveOrganization(currentUserId, organizationId);
                 return Ok(new { message = $"Unarchived organization {organizationId}" });
             }
             catch (Exception exc)
