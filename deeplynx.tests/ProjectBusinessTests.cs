@@ -523,7 +523,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var updatedResult = await _projectBusiness.UpdateProject(pid, dto);
+            var updatedResult = await _projectBusiness.UpdateProject(uid, pid, dto);
 
             // Assert
             Assert.True(originalUpdatedAt <= updatedResult.LastUpdatedAt);
@@ -557,7 +557,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.UpdateProject(nonExistentId, dto));
+                () => _projectBusiness.UpdateProject(uid, nonExistentId, dto));
 
             Assert.Contains("Project not found.", exception.Message);
 
@@ -607,7 +607,7 @@ namespace deeplynx.tests
             var originalUpdatedAt = originalProject.LastUpdatedAt;
 
             // Act
-            var archivedResult = await _projectBusiness.ArchiveProject(pid);
+            var archivedResult = await _projectBusiness.ArchiveProject(uid, pid);
 
             // Assert
             Assert.True(archivedResult);
@@ -640,7 +640,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.ArchiveProject(nonExistentId));
+                () => _projectBusiness.ArchiveProject(uid, nonExistentId));
 
             Assert.Contains($"Project not found.", exception.Message);
 
@@ -657,7 +657,7 @@ namespace deeplynx.tests
         public async Task UnarchiveProject_Success_WhenArchived()
         {
             // Act
-            var unarchivedResult = await _projectBusiness.UnarchiveProject(pid4); //pid4 is archived
+            var unarchivedResult = await _projectBusiness.UnarchiveProject(uid, pid4); //pid4 is archived
 
             // Assert
             Assert.True(unarchivedResult);
@@ -678,7 +678,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.UnarchiveProject(nonExistentId));
+                () => _projectBusiness.UnarchiveProject(uid, nonExistentId));
 
             Assert.Contains($"Project not found or is not archived.", exception.Message);
         }
@@ -688,7 +688,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.UnarchiveProject(pid)); // pid is not archived
+                () => _projectBusiness.UnarchiveProject(uid, pid)); // pid is not archived
 
             Assert.Contains($"Project not found or is not archived.", exception.Message);
         }

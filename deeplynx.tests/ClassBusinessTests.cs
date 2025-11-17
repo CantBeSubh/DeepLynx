@@ -523,7 +523,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var deletedResult = await _projectBusiness.ArchiveProject(pid);
+            var deletedResult = await _projectBusiness.ArchiveProject(uid, pid);
             Assert.True(deletedResult);
 
             //Makes sure the db is refreshed 

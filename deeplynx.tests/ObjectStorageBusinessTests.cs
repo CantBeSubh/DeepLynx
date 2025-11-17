@@ -662,7 +662,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     public async Task ObjectStoragesArchived_WhenProjectArchived()
     {
         // Act
-        var result = await _projectBusiness.ArchiveProject(pid);
+        var result = await _projectBusiness.ArchiveProject(uid, pid);
         
         // Assert
         Assert.True(result);

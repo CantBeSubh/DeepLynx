@@ -646,7 +646,7 @@ namespace deeplynx.tests
         public async Task RelationshipArchived_WhenProjectArchived()
         {
             // Act
-            var archivedResult = await _projectBusiness.ArchiveProject(pid);
+            var archivedResult = await _projectBusiness.ArchiveProject(uid, pid);
             Assert.True(archivedResult);
 
             // procedure is not traced by entity framework

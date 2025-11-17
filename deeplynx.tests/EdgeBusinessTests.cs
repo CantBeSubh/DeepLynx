@@ -1362,7 +1362,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var deletedResult = await _projectBusiness.ArchiveProject(pid);
+            var deletedResult = await _projectBusiness.ArchiveProject(uid1, pid);
 
             // procedure is not traced by entity framework
             //this forces EF to sync to db on next query

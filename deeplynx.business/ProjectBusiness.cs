@@ -203,7 +203,7 @@ public class ProjectBusiness : IProjectBusiness
             Abbreviation = dto.Abbreviation,
             OrganizationId = orgId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId
         };
 
         _context.Projects.Add(project);
@@ -267,7 +267,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project was not found.</exception>
-    public async Task<ProjectResponseDto> UpdateProject(long projectId, UpdateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> UpdateProject(long currentUserId, long projectId, UpdateProjectRequestDto dto)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
@@ -279,7 +279,7 @@ public class ProjectBusiness : IProjectBusiness
         project.Name = dto.Name ?? project.Name;
         project.Description = dto.Description ?? project.Description;
         project.Abbreviation = dto.Abbreviation ?? project.Abbreviation;
-        project.LastUpdatedBy = null; // TODO: handled in future by JWT.
+        project.LastUpdatedBy = currentUserId;
         project.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Projects.Update(project);
@@ -376,7 +376,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
-    public async Task<bool> ArchiveProject(long projectId)
+    public async Task<bool> ArchiveProject(long currentUserId, long projectId)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
@@ -391,6 +391,8 @@ public class ProjectBusiness : IProjectBusiness
         {
             try
             {
+                //Todo: update archive procedure to include lastUpdatedBy
+                
                 // run the archive project procedure, which archives this project
                 // and all child objects with project_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
@@ -466,7 +468,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>Boolean true when successfully unarchived.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if unarchive action fails.</exception>
-    public async Task<bool> UnarchiveProject(long projectId)
+    public async Task<bool> UnarchiveProject(long currentUserId, long projectId)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
@@ -481,6 +483,8 @@ public class ProjectBusiness : IProjectBusiness
         {
             try
             {
+                //Todo: update archive procedure to include lastUpdatedBy
+                
                 // run the unarchive project procedure, which unarchives this project
                 // and all child objects with project_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
