@@ -87,10 +87,12 @@ public class RoleBusiness : IRoleBusiness
     /// Get a role by ID
     /// </summary>
     /// <param name="roleId">ID of the role to retrieve</param>
+    /// <param name="organizationId">(Required) ID of the organization</param>
+    /// <param name="projectId">(Optional) ID of the project to filter by</param>
     /// <param name="hideArchived">Flag indicating whether to search archived roles</param>
     /// <returns>The requested role</returns>
     /// <exception cref="KeyNotFoundException">Thrown if role not found</exception>
-    public async Task<RoleResponseDto> GetRole(long roleId, bool hideArchived = true)
+    public async Task<RoleResponseDto> GetRole(long roleId, long organizationId, long? projectId, bool hideArchived = true)
     {
         var role = await _context.Roles
             .Where(r => r.Id == roleId)
@@ -102,6 +104,21 @@ public class RoleBusiness : IRoleBusiness
         if (hideArchived && role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} is archived");
 
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
+        
         return new RoleResponseDto
         {
             Id = role.Id,
@@ -303,16 +320,33 @@ public class RoleBusiness : IRoleBusiness
     /// Update role information
     /// </summary>
     /// <param name="roleId">ID of the role to be updated</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <param name="dto">Data Transfer Object containing new role information</param>
     /// <returns>The newly updated role</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<RoleResponseDto> UpdateRole(long roleId, UpdateRoleRequestDto dto)
+    public async Task<RoleResponseDto> UpdateRole(long roleId, long organizationId, long? projectId, UpdateRoleRequestDto dto)
     {
         ValidationHelper.ValidateModel(dto);
         
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         // Update fields
         role.Name = dto.Name ?? role.Name;
@@ -366,14 +400,31 @@ public class RoleBusiness : IRoleBusiness
     /// Archive a role by ID. Remove role from downstream project members
     /// </summary>
     /// <param name="roleId">ID of role to archive</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is already archived</exception>
     /// <exception cref="DependencyDeletionException">Returned if role removal from project members fails</exception>
-    public async Task<bool> ArchiveRole(long roleId)
+    public async Task<bool> ArchiveRole(long roleId, long organizationId, long? projectId)
     {
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found or is archived");
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
@@ -423,13 +474,30 @@ public class RoleBusiness : IRoleBusiness
     /// Unarchive a role by ID
     /// </summary>
     /// <param name="roleId">ID of role to unarchive</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is not archived</exception>
-    public async Task<bool> UnarchiveRole(long roleId)
+    public async Task<bool> UnarchiveRole(long roleId, long organizationId, long? projectId)
     {
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || !role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found or is not archived");
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         role.IsArchived = false;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -456,13 +524,30 @@ public class RoleBusiness : IRoleBusiness
     /// Delete a role by ID
     /// </summary>
     /// <param name="roleId">ID of role to delete</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<bool> DeleteRole(long roleId)
+    public async Task<bool> DeleteRole(long roleId, long organizationId, long? projectId)
     {
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found or is archived");
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         _context.Roles.Remove(role);
         await _context.SaveChangesAsync();
@@ -486,10 +571,12 @@ public class RoleBusiness : IRoleBusiness
     /// List all permissions for a given role
     /// </summary>
     /// <param name="roleId">ID of the role across which to search permissions</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <param name="hideArchived">Flag indicating whether to search on archived permissions</param>
     /// <returns>A list of permissions</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<IEnumerable<PermissionResponseDto>> GetPermissionsByRole(long roleId)
+    public async Task<IEnumerable<PermissionResponseDto>> GetPermissionsByRole(long roleId, long organizationId, long? projectId)
     {
         // check if role exists
         var role = await _context.Roles
@@ -497,6 +584,21 @@ public class RoleBusiness : IRoleBusiness
             .FirstOrDefaultAsync(r => r.Id == roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         return role.Permissions.Select(p => new PermissionResponseDto()
         {
@@ -520,10 +622,12 @@ public class RoleBusiness : IRoleBusiness
     /// </summary>
     /// <param name="roleId">ID of the role to add permission to</param>
     /// <param name="permissionId">ID of the permission to add</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>True if successful</returns>
     /// <exception cref="KeyNotFoundException">Returned if role or permission not found</exception>
     /// <exception cref="InvalidOperationException">Returned if permission already exists for role</exception>
-    public async Task<bool> AddPermissionToRole(long roleId, long permissionId)
+    public async Task<bool> AddPermissionToRole(long roleId, long permissionId, long organizationId, long? projectId)
     {
         // check if role exists
         var role = await _context.Roles
@@ -540,6 +644,21 @@ public class RoleBusiness : IRoleBusiness
         // check if permission is already assigned to the role
         if (role.Permissions.Any(p => p.Id == permission.Id))
             throw new ArgumentException($"Permission with id {permissionId} already exists as part of role {roleId}");
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         role.Permissions.Add(permission);
         await _context.SaveChangesAsync();
@@ -551,9 +670,11 @@ public class RoleBusiness : IRoleBusiness
     /// </summary>
     /// <param name="roleId">ID of the role to remove permission from</param>
     /// <param name="permissionId">ID of the permission to remove</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>True if successful</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or permission not assigned to role</exception>
-    public async Task<bool> RemovePermissionFromRole(long roleId, long permissionId)
+    public async Task<bool> RemovePermissionFromRole(long roleId, long permissionId, long organizationId, long? projectId)
     {
         // check if role exists
         var role = await _context.Roles
@@ -566,6 +687,21 @@ public class RoleBusiness : IRoleBusiness
         var permission = role.Permissions.FirstOrDefault(p => p.Id == permissionId);
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} is not assigned to role {roleId}");
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         role.Permissions.Remove(permission);
         await _context.SaveChangesAsync();
@@ -577,9 +713,11 @@ public class RoleBusiness : IRoleBusiness
     /// </summary>
     /// <param name="roleId">ID of the role to update permissions for</param>
     /// <param name="permissionIds">Array of permission IDs to assign to the role</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>True if successful</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or any permission ID is invalid</exception>
-    public async Task<bool> SetPermissionsForRole(long roleId, long[] permissionIds)
+    public async Task<bool> SetPermissionsForRole(long roleId, long[] permissionIds, long organizationId, long? projectId)
     {
         // check if role exists
         var role = await _context.Roles
@@ -598,7 +736,22 @@ public class RoleBusiness : IRoleBusiness
             var missingIds = permissionIds.Except(permissions.Select(p => p.Id).ToList());
             throw new KeyNotFoundException($"Permissions not found: {string.Join(", ", missingIds)}");
         }
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
 
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
+        
         // clear existing permissions and add new ones
         role.Permissions.Clear();
         foreach (var permission in permissions)
@@ -613,9 +766,11 @@ public class RoleBusiness : IRoleBusiness
     /// </summary>
     /// <param name="roleId">ID of the role to update permissions for</param>
     /// <param name="permissionPatterns">Dictionary of resource: action[] permission patterns</param>
+    /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+    /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>True if successful</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<bool> SetPermissionsByPattern(long roleId, Dictionary<string, string[]> permissionPatterns)
+    public async Task<bool> SetPermissionsByPattern(long roleId, Dictionary<string, string[]> permissionPatterns, long organizationId, long? projectId)
     {
         var role = await _context.Roles
             .Include(r => r.Permissions)
@@ -636,6 +791,21 @@ public class RoleBusiness : IRoleBusiness
             .Where(p => permissionPatterns.ContainsKey(p.Resource) &&
                         permissionPatterns[p.Resource].Contains(p.Action))
             .ToList();
+        
+        // Validate role belongs to the specified organization
+        if (role.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {roleId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (role.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {roleId} does not belong to project {projectId.Value}");
+            }
+        }
 
         // clear existing permissions and add new ones
         role.Permissions.Clear();

@@ -25,8 +25,8 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// List Roles
         /// </summary>
-        /// <param name="projectId">(optional) ID of the project across which to search</param>
-        /// <param name="organizationId">(optional) ID of the organization across which to search</param>
+        /// <param name="projectId">(Optional) ID of the project across which to search</param>
+        /// <param name="organizationId">(Optional) ID of the organization across which to search</param>
         /// <param name="hideArchived">Flag indicating whether to hide or show archived roles</param>
         /// <returns></returns>
         [HttpGet("GetAllRoles", Name = "api_get_all_roles")]
@@ -51,16 +51,21 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Fetch Role by ID
         /// </summary>
-        /// <param name="roleId">ID of role</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
+        /// <param name="roleId">(Optional) ID of role</param>
         /// <param name="hideArchived">Flag indicating whether to hide or show archived roles</param>
         /// <returns></returns>
         [HttpGet("GetRole/{roleId}", Name = "api_get_role")]
         public async Task<ActionResult<RoleResponseDto>> GetRole(
-            long roleId, [FromQuery] bool hideArchived = true)
+            [FromQuery] long organizationId, 
+            [FromQuery] long? projectId,
+            long roleId, 
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var role = await _roleBusiness.GetRole(roleId, hideArchived);
+                var role = await _roleBusiness.GetRole(roleId, organizationId, projectId, hideArchived);
                 return Ok(role);
             }
             catch (Exception exc)
@@ -75,15 +80,14 @@ namespace deeplynx.api.Controllers
         /// Create a Role
         /// </summary>
         /// <param name="dto">Data structure of role to create</param>
-        /// <param name="projectId">(use this or org ID) ID of the project to which the role belongs</param>
-        /// <param name="organizationId">(use this or project ID) ID of the organization to which the role belongs</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpPost("CreateRole", Name = "api_create_role")]
         public async Task<ActionResult<RoleResponseDto>> CreateRole(
             [FromBody] CreateRoleRequestDto dto,
             [FromQuery] long organizationId,
-            [FromQuery] long? projectId
-            )
+            [FromQuery] long? projectId)
         {
             try
             {
@@ -103,15 +107,19 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="roleId">ID of the role</param>
         /// <param name="dto">Fields to update</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpPut("UpdateRole/{roleId}", Name = "api_update_role")]
         public async Task<ActionResult<RoleResponseDto>> UpdateRole(
             long roleId,
-            [FromBody] UpdateRoleRequestDto dto)
+            [FromBody] UpdateRoleRequestDto dto,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                var role = await _roleBusiness.UpdateRole(roleId, dto);
+                var role = await _roleBusiness.UpdateRole(roleId, organizationId, projectId, dto);
                 return Ok(role);
             }
             catch (Exception exc)
@@ -126,13 +134,18 @@ namespace deeplynx.api.Controllers
         /// Delete a role
         /// </summary>
         /// <param name="roleId">ID of the role to hard delete</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpDelete("DeleteRole/{roleId}", Name = "api_delete_role")]
-        public async Task<ActionResult> DeleteRole(long roleId)
+        public async Task<ActionResult> DeleteRole(
+            long roleId,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                await _roleBusiness.DeleteRole(roleId);
+                await _roleBusiness.DeleteRole(roleId, organizationId, projectId);
                 return Ok(new { message = $"Deleted role {roleId}" });
             }
             catch (Exception exc)
@@ -147,13 +160,18 @@ namespace deeplynx.api.Controllers
         /// Archive a role
         /// </summary>
         /// <param name="roleId">ID of the role</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpDelete("ArchiveRole/{roleId}", Name = "api_archive_role")]
-        public async Task<ActionResult> ArchiveRole(long roleId)
+        public async Task<ActionResult> ArchiveRole(
+            long roleId,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                await _roleBusiness.ArchiveRole(roleId);
+                await _roleBusiness.ArchiveRole(roleId, organizationId, projectId);
                 return Ok(new { message = $"Archived role {roleId}" });
             }
             catch (Exception exc)
@@ -168,13 +186,18 @@ namespace deeplynx.api.Controllers
         /// Unarchive a Role
         /// </summary>
         /// <param name="roleId">ID of the role</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpPut("UnarchiveRole/{roleId}", Name = "api_unarchive_role")]
-        public async Task<ActionResult> UnarchiveRole(long roleId)
+        public async Task<ActionResult> UnarchiveRole(
+            long roleId,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                await _roleBusiness.UnarchiveRole(roleId);
+                await _roleBusiness.UnarchiveRole(roleId, organizationId, projectId);
                 return Ok(new { message = $"Unarchived role {roleId}" });
             }
             catch (Exception exc)
@@ -189,13 +212,18 @@ namespace deeplynx.api.Controllers
         /// List Permissions by Role
         /// </summary>
         /// <param name="roleId">ID of the role</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpGet("GetPermissionsByRole/{roleId}", Name = "api_get_permissions_by_role")]
-        public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetPermissionsByRole(long roleId)
+        public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetPermissionsByRole(
+            long roleId,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                var permissions = await _roleBusiness.GetPermissionsByRole(roleId);
+                var permissions = await _roleBusiness.GetPermissionsByRole(roleId, organizationId, projectId);
                 return Ok(permissions);
             }
             catch (Exception exc)
@@ -211,15 +239,19 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="roleId">ID of the role</param>
         /// <param name="permissionId">ID of the permission to be added</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpPost("AddPermissionToRole", Name = "api_add_permission_to_role")]
         public async Task<ActionResult> AddPermissionToRole(
             [FromQuery] long roleId, 
-            [FromQuery] long permissionId)
+            [FromQuery] long permissionId,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                await _roleBusiness.AddPermissionToRole(roleId, permissionId);
+                await _roleBusiness.AddPermissionToRole(roleId, permissionId, organizationId, projectId);
                 return Ok(new { message = $"Added permission {permissionId} to role {roleId}" });
             }
             catch (Exception exc)
@@ -235,15 +267,19 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="roleId">ID of the role to remove from</param>
         /// <param name="permissionId">ID of permission to be removed</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpDelete("RemovePermissionFromRole", Name = "api_remove_permission_from_role")]
         public async Task<ActionResult> RemovePermissionFromRole(
             [FromQuery] long roleId, 
-            [FromQuery] long permissionId)
+            [FromQuery] long permissionId,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                await _roleBusiness.RemovePermissionFromRole(roleId, permissionId);
+                await _roleBusiness.RemovePermissionFromRole(roleId, permissionId, organizationId, projectId);
                 return Ok(new { message = $"Removed permission {permissionId} from role {roleId}" });
             }
             catch (Exception exc)
@@ -259,15 +295,19 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="roleId">ID of the role</param>
         /// <param name="permissionIds">Array of permission IDs to assign to the role</param>
+        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
+        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
         /// <returns></returns>
         [HttpPut("SetPermissionsForRole/{roleId}", Name = "api_set_permissions_for_role")]
         public async Task<ActionResult> SetPermissionsForRole(
             long roleId,
-            [FromBody] long[] permissionIds)
+            [FromBody] long[] permissionIds,
+            [FromQuery] long organizationId,
+            [FromQuery] long? projectId)
         {
             try
             {
-                await _roleBusiness.SetPermissionsForRole(roleId, permissionIds);
+                await _roleBusiness.SetPermissionsForRole(roleId, permissionIds, organizationId, projectId);
                 return Ok(new { message = $"Set permissions for role {roleId}" });
             }
             catch (Exception exc)

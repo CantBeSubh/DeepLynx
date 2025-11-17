@@ -912,8 +912,8 @@ public class ProjectBusiness : IProjectBusiness
         var userRoleId = roles.Single(r => r.Name == "User").Id;
 
         // set role permissions for admin and user
-        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions);
-        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions, organizationId, projectId);
+        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions, organizationId, projectId);
 
         await AddMemberToProject(projectId, adminRoleId, userId, null);
     }
