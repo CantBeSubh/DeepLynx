@@ -153,7 +153,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _labelBusiness.CreateSensitivityLabel(dto, pid, null);
+            var result = await _labelBusiness.CreateSensitivityLabel(uid, dto, pid, null);
             
             // Assert
             Assert.NotNull(result);
@@ -190,7 +190,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _labelBusiness.CreateSensitivityLabel(dto, null, oid);
+            var result = await _labelBusiness.CreateSensitivityLabel(uid, dto, null, oid);
             
             // Assert
             Assert.NotNull(result);
@@ -226,7 +226,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _labelBusiness.CreateSensitivityLabel(dto, pid, null);
+            var result = await _labelBusiness.CreateSensitivityLabel(uid, dto, pid, null);
             
             // Assert
             Assert.NotNull(result);
@@ -255,7 +255,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _labelBusiness.CreateSensitivityLabel(dto, pid, null));
+                () => _labelBusiness.CreateSensitivityLabel(uid, dto, pid, null));
             
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -274,7 +274,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _labelBusiness.CreateSensitivityLabel(dto, pid, null));
+                () => _labelBusiness.CreateSensitivityLabel(uid, dto, pid, null));
             
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -293,7 +293,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _labelBusiness.CreateSensitivityLabel(dto, pid, oid));
+                () => _labelBusiness.CreateSensitivityLabel(uid, dto, pid, oid));
             Assert.Contains("Please provide only one of Project ID or Organization ID, not both", exception.Message);
             
             // Ensure that no event was logged
@@ -313,7 +313,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _labelBusiness.CreateSensitivityLabel(dto, null, null));
+                () => _labelBusiness.CreateSensitivityLabel(uid, dto, null, null));
             Assert.Contains("One of Project ID or Organization ID must be provided", exception.Message);
             
             // Ensure that no event was logged
@@ -336,7 +336,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _labelBusiness.UpdateSensitivityLabel(lid, dto);
+            var result = await _labelBusiness.UpdateSensitivityLabel(uid, lid, dto);
             
             // Assert
             Assert.NotNull(result);
@@ -372,7 +372,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _labelBusiness.UpdateSensitivityLabel(lid, dto);
+            var result = await _labelBusiness.UpdateSensitivityLabel(uid, lid, dto);
             
             // Assert
             Assert.NotNull(result);
@@ -401,7 +401,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.UpdateSensitivityLabel(99999, dto));
+                () => _labelBusiness.UpdateSensitivityLabel(uid, 99999, dto));
             
             Assert.Contains("Sensitivity label with id 99999 not found", exception.Message);
             
@@ -421,7 +421,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.UpdateSensitivityLabel(lid2, dto)); // archived label
+                () => _labelBusiness.UpdateSensitivityLabel(uid, lid2, dto)); // archived label
             
             Assert.Contains($"Sensitivity label with id {lid2} not found", exception.Message);
             
@@ -438,7 +438,7 @@ namespace deeplynx.tests
         public async Task ArchiveSensitivityLabel_Succeeds_IfNotArchived()
         {
             // Act
-            var result = await _labelBusiness.ArchiveSensitivityLabel(lid);
+            var result = await _labelBusiness.ArchiveSensitivityLabel(uid, lid);
             
             // Assert
             Assert.True(result);
@@ -465,7 +465,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.ArchiveSensitivityLabel(lid2)); // already archived
+                () => _labelBusiness.ArchiveSensitivityLabel(uid, lid2)); // already archived
             
             Assert.Contains($"Sensitivity label with id {lid2} not found or is archived", exception.Message);
             
@@ -479,7 +479,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.ArchiveSensitivityLabel(99999));
+                () => _labelBusiness.ArchiveSensitivityLabel(uid, 99999));
             
             Assert.Contains("Sensitivity label with id 99999 not found or is archived", exception.Message);
             
@@ -496,7 +496,7 @@ namespace deeplynx.tests
         public async Task UnarchiveSensitivityLabel_Succeeds_IfArchived()
         {
             // Act
-            var result = await _labelBusiness.UnarchiveSensitivityLabel(lid2);
+            var result = await _labelBusiness.UnarchiveSensitivityLabel(uid, lid2);
             
             // Assert
             Assert.True(result);
@@ -523,7 +523,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.UnarchiveSensitivityLabel(lid)); // not archived
+                () => _labelBusiness.UnarchiveSensitivityLabel(uid, lid)); // not archived
             
             Assert.Contains($"Sensitivity label with id {lid} not found or is not archived", exception.Message);
             
@@ -537,7 +537,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.UnarchiveSensitivityLabel(99999));
+                () => _labelBusiness.UnarchiveSensitivityLabel(uid, 99999));
             
             Assert.Contains("Sensitivity label with id 99999 not found or is not archived", exception.Message);
             
