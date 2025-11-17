@@ -1,7 +1,7 @@
+import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
+import { TagResponseDto } from "@/app/(home)/types/responseDTOs";
 import React, { useState } from "react";
-import { TagResponseDto } from "../../types/responseDTOs";
 import toast from "react-hot-toast";
-import SimpleFilterInput from "../../components/SimpleFilterComponent";
 
 interface Props {
   loading: boolean;
@@ -37,7 +37,7 @@ const EditTags = ({
   return (
     <div
       className="w-[85%] mx-auto flex flex-col"
-      style={{ height: "calc(90vh - 200px)" }}
+      style={{ height: "calc(90vh - 325px)" }}
     >
       <h3 className="font-bold mb-4">Select Tags to Edit</h3>
 
@@ -228,7 +228,7 @@ export const EditTagsNameFields = ({
     return (
       <div
         className="w-[85%] mx-auto flex items-center justify-center"
-        style={{ height: "calc(90vh - 200px)" }}
+        style={{ height: "calc(90vh - 325px)" }}
       >
         <p className="text-base-content/70 text-sm">
           Select tags to edit their names

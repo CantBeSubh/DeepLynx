@@ -1,11 +1,14 @@
-import { createTag } from "@/app/lib/tag_services.client";
 import React, { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { fullTextSearch } from "@/app/lib/query_services.client";
-import { FileViewerTableRow } from "../../types/types";
 import { attachTagToRecord } from "@/app/lib/record_services.client";
+import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
+import toast from "react-hot-toast";
+import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
+import {
+  TagResponseDto,
+  RecordResponseDto,
+} from "@/app/(home)/types/responseDTOs";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -28,53 +31,34 @@ const parseTags = (
   return [];
 };
 
-interface CreateTagProps {
-  projectId: string;
-  onTagCreated: () => Promise<void>;
+type RecordWithParsedTags = Omit<
+  RecordResponseDto | FileViewerTableRow,
+  "tags"
+> & {
+  tags: TagResponseDto[];
+};
+
+interface Props {
+  loading: boolean;
+  error: string | null;
+  filteredTags: TagResponseDto[];
+  tags: TagResponseDto[];
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   selectedTagIds: Set<number>;
   setSelectedTagIds: React.Dispatch<React.SetStateAction<Set<number>>>;
 }
 
-const CreateTag = ({
-  projectId,
-  onTagCreated,
+const AttachTags = ({
+  loading,
+  error,
+  filteredTags,
+  tags,
+  searchQuery,
+  onSearchChange,
   selectedTagIds,
   setSelectedTagIds,
-}: CreateTagProps) => {
-  const [tagName, setTagName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [createdTags, setCreatedTags] = useState<TagResponseDto[]>([]);
-
-  const handleCreateTag = async () => {
-    if (!tagName.trim()) {
-      setError("Tag name cannot be empty");
-      return;
-    }
-
-    if (!projectId || projectId === "0") {
-      setError("Invalid project selected");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const newTag = await createTag(Number(projectId), { name: tagName });
-      setTagName("");
-      toast.success("Tag Created");
-      setCreatedTags((prev) => [...prev, newTag]);
-      await onTagCreated();
-    } catch (err) {
-      setError("Failed to create tag");
-      console.error("Error creating tag:", err);
-      toast.error("Failed to create tag.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+}: Props) => {
   const handleTagToggle = (tagId: number) => {
     const newSelected = new Set(selectedTagIds);
     if (newSelected.has(tagId)) {
@@ -85,71 +69,57 @@ const CreateTag = ({
     setSelectedTagIds(newSelected);
   };
 
-  const isProjectSelected = projectId && projectId !== "0";
-
   return (
-    <div className="w-[70%] mx-auto">
-      <div>
-        <h3 className="font-bold mb-4">Name</h3>
-        <input
-          type="text"
-          placeholder="Example: Reactor"
-          className="input input-bordered w-full mb-4"
-          value={tagName}
-          onChange={(e) => setTagName(e.target.value)}
-          disabled={loading || !isProjectSelected}
-          onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              !loading &&
-              tagName.trim() &&
-              isProjectSelected
-            ) {
-              handleCreateTag();
-            }
-          }}
-        />
-        {!isProjectSelected && (
-          <p className="text-primary text-sm mb-2">
-            Please select a project first
-          </p>
+    <div
+      className="w-[85%] mx-auto flex flex-col"
+      style={{ height: "calc(90vh - 325px)" }}
+    >
+      <h3 className="font-bold mb-4">Attach Tags</h3>
+      <SimpleFilterInput
+        placeholder="Filter tags..."
+        value={searchQuery}
+        onChange={onSearchChange}
+      />
+      <div className="mt-4 flex-1 flex flex-col overflow-hidden">
+        {loading && <p>Loading tags ...</p>}
+        {error && <p className="text-error flex justify-center">{error}</p>}
+        {!loading && filteredTags.length === 0 && tags.length === 0 && (
+          <p className="text-base-300">No Tags found</p>
         )}
-        <div className="flex justify-end mb-6">
-          <button
-            className="btn btn-primary"
-            onClick={handleCreateTag}
-            disabled={loading || !tagName.trim() || !isProjectSelected}
-          >
-            {loading ? "Creating..." : "Create Tag"}
-          </button>
-        </div>
-
-        {createdTags.length > 0 && (
-          <div className="mt-6 border-t pt-4">
-            <h4 className="font-semibold mb-3">Created Tags</h4>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              <p className="text-sm text-base-content/70 mb-2">
-                Select tags to attach to records ({selectedTagIds.size}{" "}
-                selected)
+        {!loading && filteredTags.length === 0 && tags.length > 0 && (
+          <p className="text-base-300">No tags match your search</p>
+        )}
+        {!loading && filteredTags.length > 0 && (
+          <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-semibold">
+                Tags ({filteredTags.length}):
               </p>
-              <ul className="space-y-1">
-                {createdTags.map((tag) => (
-                  <li
-                    key={tag.id}
-                    className="flex items-center px-3 py-2 hover:bg-base-200 rounded cursor-pointer"
-                    onClick={() => handleTagToggle(tag.id)}
-                  >
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary"
-                      checked={selectedTagIds.has(tag.id)}
-                      onChange={() => handleTagToggle(tag.id)}
-                    />
-                    <span className="badge ml-2">{tag.name}</span>
-                  </li>
-                ))}
-              </ul>
+              {selectedTagIds.size > 0 && (
+                <span className="text-xs text-base-content/70">
+                  {selectedTagIds.size} selected
+                </span>
+              )}
             </div>
+            <ul className="space-y-1 flex-1 overflow-y-auto">
+              {filteredTags.map((tag, index) => (
+                <li
+                  key={tag.id || index}
+                  className="px-3 py-1 hover:bg-base-200 rounded cursor-pointer"
+                  onClick={() => handleTagToggle(tag.id)}
+                >
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary"
+                    checked={selectedTagIds.has(tag.id)}
+                    onChange={() => handleTagToggle(tag.id)}
+                  />
+                  <span className="badge ml-2">
+                    {tag.name || JSON.stringify(tag)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
@@ -157,22 +127,17 @@ const CreateTag = ({
   );
 };
 
-interface CreateTagRecordsListProps {
+interface AttachTagsRecordsListProps {
   projectId: string;
   selectedTagIds: Set<number>;
+  onClearSelectedTags: () => void;
 }
 
-export const CreateTagRecordsList = ({
+export const AttachTagsRecordsList = ({
   projectId,
   selectedTagIds,
-}: CreateTagRecordsListProps) => {
-  type RecordWithParsedTags = Omit<
-    RecordResponseDto | FileViewerTableRow,
-    "tags"
-  > & {
-    tags: TagResponseDto[];
-  };
-
+  onClearSelectedTags,
+}: AttachTagsRecordsListProps) => {
   const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
   const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
     []
@@ -302,6 +267,7 @@ export const CreateTagRecordsList = ({
       );
 
       setSelectedRecordIds(new Set());
+      onClearSelectedTags();
 
       if (searchResults.length > 0) {
         await performFullTextSearch(searchTerm, projectId);
@@ -331,7 +297,7 @@ export const CreateTagRecordsList = ({
   return (
     <div
       className="w-[85%] mx-auto flex flex-col"
-      style={{ height: "calc(90vh - 200px)" }}
+      style={{ height: "calc(90vh - 325px)" }}
     >
       <div className="gap-2 mb-4">
         <h3 className="font-bold mb-4">Search Records</h3>
@@ -451,4 +417,4 @@ export const CreateTagRecordsList = ({
   );
 };
 
-export default CreateTag;
+export default AttachTags;

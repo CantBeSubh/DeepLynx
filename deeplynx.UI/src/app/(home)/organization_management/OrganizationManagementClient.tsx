@@ -5,38 +5,39 @@ import React, { useState } from "react";
 import Tabs from "../components/Tabs";
 import {
   GroupResponseDto,
-  OrganizationResponseDto,
   ProjectResponseDto,
   UserResponseDto,
+  RoleResponseDto,
+  PermissionResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "../components/SiteManagementPortal/UsersTable";
-import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
+import UsersTable from "./users/UsersTable";
 import { useLanguage } from "@/app/contexts/Language";
-import ObjectStorageTable from "../components/OrganizationManagementPortal/ObjectStorageTable";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import TagManagementClient from "../tag_management/TagManagementClient";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import InlineGroupsTable from "./groups/InlineGroupsTable";
+import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
+import OrganizationSettings from "./settings/OrganizationSettings";
+import TagManagementClient from "./tag_management/TagManagementClient";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
   initialProjects: ProjectResponseDto[];
   initialGroups: GroupResponseDto[];
+  initialRoles: RoleResponseDto[];
   initialSelectedProject?: ProjectResponseDto;
+  initialPermissions: PermissionResponseDto[];
 }
 
 const OrganizationManagementClient = ({
   members,
   initialProjects,
   initialGroups,
+  initialRoles,
   initialSelectedProject,
+  initialPermissions,
 }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
   const { t } = useLanguage();
-  const { organization, setOrganization } = useOrganizationSession();
-  const { project } = useProjectSession();
-  console.log("Groups", initialGroups);
-  console.log("Members", members);
+  const { organization } = useOrganizationSession();
 
   const tabData = [
     {
@@ -45,7 +46,12 @@ const OrganizationManagementClient = ({
     },
     {
       label: "Roles & Permissions",
-      content: "content here",
+      content: (
+        <RolesAndPermissions
+          initialRoles={initialRoles}
+          initialPermissions={initialPermissions}
+        />
+      ),
     },
     {
       label: "Groups",
@@ -66,10 +72,6 @@ const OrganizationManagementClient = ({
         />
       ),
     },
-    // {
-    //   label: "Object Storage",
-    //   content: <ObjectStorageTable organization={organization} />
-    // }, //TODO: Object storage org level management backend not finished yet
     {
       label: "Settings",
       content: organization ? (

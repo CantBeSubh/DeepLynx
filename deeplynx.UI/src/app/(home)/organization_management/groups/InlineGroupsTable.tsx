@@ -319,7 +319,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
 
   return (
     <div className="p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>

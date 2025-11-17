@@ -6,12 +6,6 @@ import {
   updateTag,
   deleteTag,
 } from "@/app/lib/tag_services.client";
-import {
-  ProjectResponseDto,
-  RecordResponseDto,
-  TagResponseDto,
-} from "../types/responseDTOs";
-import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
 import { getRecordsByTags } from "@/app/lib/record_services.client";
 import toast from "react-hot-toast";
 import SearchTags, {
@@ -26,6 +20,12 @@ import AttachTags, {
 import EditTags, {
   EditTagsNameFields,
 } from "./search_create_attach_edit-tag-page/EditTags";
+import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
+import {
+  TagResponseDto,
+  ProjectResponseDto,
+  RecordResponseDto,
+} from "../../types/responseDTOs";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -195,16 +195,32 @@ const TagManagementClient = ({
 
   return (
     <div>
-      <div className="items-center pl-12 py-2 pb-4">
-        <ProjectDropdownSingleSelect
-          projects={projects}
-          onSelectionChange={handleProjectChange}
-          defaultSelectedId={selectedProject}
-        />
+      {/* Header */}
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-base-content">
+          Tags & Security Labels
+        </h1>
+        <p className="text-base-content/70 mt-2">
+          Define organization-level tags and security labels for attribute-based
+          access controls. These settings will propagate to all projects within
+          the organization.
+        </p>
+        <div className="mt-4">
+          <ProjectDropdownSingleSelect
+            projects={projects}
+            onSelectionChange={handleProjectChange}
+            defaultSelectedId={selectedProject}
+          />
+        </div>
       </div>
 
-      <div className="grid grid-cols-[20%_40%_40%] p-6 transition-all">
-        <div className="card shadow-xl rounded-lg p-6 mr-6">
+      {/* Main Content Grid with Height Constraint */}
+      <div
+        className="grid grid-cols-[20%_40%_40%] p-6 gap-6 transition-all"
+        style={{ height: "calc(100vh - 23rem)" }}
+      >
+        {/* Left Menu */}
+        <div className="card shadow-xl rounded-lg p-6 overflow-y-auto">
           <ul>
             {menuItems.map((item) => (
               <li
@@ -222,7 +238,8 @@ const TagManagementClient = ({
           </ul>
         </div>
 
-        <div className="card shadow-xl rounded-lg p-6 mr-6">
+        {/* Middle Panel */}
+        <div className="card shadow-xl rounded-lg p-6 overflow-y-auto">
           {selectedMenuItem === "Search Tags" && (
             <SearchTags
               loading={loading}
@@ -271,7 +288,8 @@ const TagManagementClient = ({
           )}
         </div>
 
-        <div className="card shadow-xl rounded-lg p-6">
+        {/* Right Panel */}
+        <div className="card shadow-xl rounded-lg p-6 overflow-y-auto">
           {selectedMenuItem === "Search Tags" && (
             <SearchTagsRecordsList
               projectId={selectedProject}
