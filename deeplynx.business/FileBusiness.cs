@@ -130,7 +130,7 @@ public class FileBusiness
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="recordId">Id of record that contains the info of the file to replace</param>
     /// <param name="file">file to update to</param>
-    public async Task<RecordResponseDto> UpdateFile(long projectId, long recordId, IFormFile file)
+    public async Task<RecordResponseDto> UpdateFile(long currentUserId, long projectId, long recordId, IFormFile file)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);

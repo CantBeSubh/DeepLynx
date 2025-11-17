@@ -65,8 +65,9 @@ namespace deeplynx.api.Controllers
             {
                 try
                 {
+                    var  currentUserId = UserContextStorage.UserId;
                     var updatedFileInfo = await _fileBusiness
-                        .UpdateFile(projectId, recordId, file);
+                        .UpdateFile(currentUserId, projectId, recordId, file);
                     return Ok(updatedFileInfo);
                 }
                 catch (Exception e)
