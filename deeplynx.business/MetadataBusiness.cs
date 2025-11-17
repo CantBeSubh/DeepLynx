@@ -169,7 +169,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional relationships and then insert
             var relationshipsToInsert = BuildRelationships(relationships, edges);
             if (relationshipsToInsert.Any())
-                relMap = await BulkUpsertRelationships(projectId, relationshipsToInsert, metadataResponseDto);
+                relMap = await BulkUpsertRelationships(currentUserId, projectId, relationshipsToInsert, metadataResponseDto);
         }
         
         // Tags
@@ -385,11 +385,12 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of relationship name to relationship ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRelationships(
+        long currentUserId,
         long projectId,
         List<CreateRelationshipRequestDto> relationships,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
+        var inserted = await _relationshipBusiness.BulkCreateRelationships(currentUserId, projectId, relationships);
         metadataResponseDto.Relationships = inserted;
         return inserted.ToDictionary(r => r.Name, r => r.Id);
     }

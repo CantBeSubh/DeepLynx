@@ -86,7 +86,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _relationshipBusiness.CreateRelationship(pid, dto);
+            var result = await _relationshipBusiness.CreateRelationship(uid, pid, dto);
 
             // Assert
             Assert.True(result.Id > 0);
@@ -124,7 +124,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _relationshipBusiness.CreateRelationship(pid, dto);
+            var result = await _relationshipBusiness.CreateRelationship(uid, pid, dto);
             
             // Assert
             Assert.True(result.Id > 0);
@@ -156,7 +156,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _relationshipBusiness.CreateRelationship(pid, dto);
+            var result = await _relationshipBusiness.CreateRelationship(uid, pid, dto);
             
             // Assert
             Assert.True(result.Id > 0);
@@ -186,7 +186,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _relationshipBusiness.CreateRelationship(pid, dto));
+                () => _relationshipBusiness.CreateRelationship(uid, pid, dto));
             
             // Ensure that no relationship create event is logged
             var eventList = await Context.Events.ToListAsync();
@@ -205,7 +205,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _relationshipBusiness.CreateRelationship(pid, dto));
+                () => _relationshipBusiness.CreateRelationship(uid, pid, dto));
             
             // Ensure that no relationship create event is logged
             var eventList = await Context.Events.ToListAsync();
@@ -226,7 +226,7 @@ namespace deeplynx.tests
  
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.CreateRelationship(pid + 99, dto));
+                () => _relationshipBusiness.CreateRelationship(uid, pid + 99, dto));
 
             Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
             
@@ -253,7 +253,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.CreateRelationship(pid, dto));
+                () => _relationshipBusiness.CreateRelationship(uid, pid, dto));
 
             Assert.Contains($"Project with id {pid} not found.", exception.Message);
             
@@ -276,7 +276,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.CreateRelationship(pid, dto));
+                () => _relationshipBusiness.CreateRelationship(uid, pid, dto));
 
             Assert.Contains($"Origin class with ID {dto.OriginId} not found.", exception.Message);
             
@@ -299,7 +299,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.CreateRelationship(pid, dto));
+                () => _relationshipBusiness.CreateRelationship(uid, pid, dto));
 
             Assert.Contains($"Destination class with ID {dto.DestinationId} not found.", exception.Message);
             
@@ -336,7 +336,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _relationshipBusiness.BulkCreateRelationships(pid, relationshipDtos);
+            var result = await _relationshipBusiness.BulkCreateRelationships(uid, pid, relationshipDtos);
             
             // Assert
             Assert.Equal(2, result.Count);
@@ -369,7 +369,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _relationshipBusiness.BulkCreateRelationships(pid, null!));
+                () => _relationshipBusiness.BulkCreateRelationships(uid, pid, null!));
     
             // Ensure that no relationship create events were logged
             var eventList = await Context.Events.ToListAsync();
@@ -388,7 +388,7 @@ namespace deeplynx.tests
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
 
-            await _relationshipBusiness.CreateRelationship(pid, new CreateRelationshipRequestDto
+            await _relationshipBusiness.CreateRelationship(uid, pid, new CreateRelationshipRequestDto
             {
                 Name = $"Relationship1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test",
@@ -500,7 +500,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var updatedResult = await _relationshipBusiness.UpdateRelationship(pid, testRelationship.Id, dto);
+            var updatedResult = await _relationshipBusiness.UpdateRelationship(uid, pid, testRelationship.Id, dto);
 
             // Assert
             Assert.True((DateTime.UtcNow - updatedResult.LastUpdatedAt).TotalSeconds < 1);
@@ -533,7 +533,7 @@ namespace deeplynx.tests
             var originalRelationship = await Context.Relationships.FindAsync(rid);
 
             // Act
-            var result = await _relationshipBusiness.UpdateRelationship(pid, rid, updateDto);
+            var result = await _relationshipBusiness.UpdateRelationship(uid, pid, rid, updateDto);
 
             // Assert
             Assert.NotNull(result);
@@ -574,7 +574,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.UpdateRelationship(pid, 99, dto));
+                () => _relationshipBusiness.UpdateRelationship(uid, pid, 99, dto));
             
             Assert.Contains($"Relationship with ID 99 not found.", exception.Message);
     
@@ -617,7 +617,7 @@ namespace deeplynx.tests
         public async Task ArchiveRelationship_Success_WhenExists()
         {
             // Act
-            var archivedResult = await _relationshipBusiness.ArchiveRelationship(pid, rid);
+            var archivedResult = await _relationshipBusiness.ArchiveRelationship(uid, pid, rid);
 
             // Assert
             Assert.True(archivedResult);
@@ -669,7 +669,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.ArchiveRelationship(pid, 999));
+                () => _relationshipBusiness.ArchiveRelationship(uid, pid, 999));
             
             Assert.Contains($"Relationship with id 999 not found", exception.Message);
         }
@@ -682,7 +682,7 @@ namespace deeplynx.tests
         public async Task UnarchiveRelationship_Success_WhenArchived()
         {
             // Act
-            var unarchivedResult = await _relationshipBusiness.UnarchiveRelationship(pid, rid2);
+            var unarchivedResult = await _relationshipBusiness.UnarchiveRelationship(uid, pid, rid2);
             Assert.True(unarchivedResult);
 
             // procedure is not traced by entity framework
@@ -700,7 +700,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.UnarchiveRelationship(pid, 999));
+                () => _relationshipBusiness.UnarchiveRelationship(uid, pid, 999));
             
             Assert.Contains($"Relationship with id 999 not found", exception.Message);
         }
@@ -710,7 +710,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _relationshipBusiness.UnarchiveRelationship(pid, rid));
+                () => _relationshipBusiness.UnarchiveRelationship(uid, pid, rid));
             
             Assert.Contains($"Relationship with id {rid} not found or is not archived.", exception.Message);
         }
