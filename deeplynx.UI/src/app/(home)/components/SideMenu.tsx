@@ -63,6 +63,14 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     fetchProjects();
   }, [fetchProjects]);
 
+  // Clear project context and active project when organization changes
+  useEffect(() => {
+    if (organization) {
+      setProject(null);
+      setActiveProject(undefined);
+    }
+  }, [organization?.organizationId, setProject]);
+
   // Sync activeProject with the project context
   useEffect(() => {
     if (project?.projectId && projects.length > 0) {
@@ -71,9 +79,14 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       );
       if (foundProject) {
         setActiveProject(foundProject);
+      } else {
+        setActiveProject(undefined);
+        setProject(null);
       }
+    } else if (!project?.projectId) {
+      setActiveProject(undefined);
     }
-  }, [project, projects]);
+  }, [project, projects, setProject]);
 
   // Effect to set the selected item based on the current pathname
   useEffect(() => {
@@ -187,9 +200,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                       {t.translations.PROJECTS}
                     </span>
                     <h1 className="text-lg font-bold truncate">
-                      {activeProject?.name ||
-                        project?.projectName ||
-                        "No Project"}
+                      {activeProject?.name || "No Project"}
                     </h1>
                   </div>
                 )}
