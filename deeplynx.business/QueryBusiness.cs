@@ -123,7 +123,7 @@ public class QueryBusiness : IQueryBusiness
                         else
                         {
                             condition = $"hr.{query.Filter} = @{paramName}";
-        
+
                             if (int.TryParse(query.Value, out var intVal))
                             {
                                 parameters.Add(new NpgsqlParameter(paramName, intVal));
@@ -141,7 +141,7 @@ public class QueryBusiness : IQueryBusiness
                     else if (query.Operator == ">")
                     {
                         condition = $"hr.{query.Filter} > @{paramName}";
-                        
+
                         if (DateTime.TryParse(query.Value, out var dateVal))
                         {
                             parameters.Add(new NpgsqlParameter(paramName, dateVal));
@@ -154,7 +154,7 @@ public class QueryBusiness : IQueryBusiness
                     else if (query.Operator == "<")
                     {
                         condition = $"hr.{query.Filter} < @{paramName}";
-                        
+
                         if (DateTime.TryParse(query.Value, out var dateVal))
                         {
                             parameters.Add(new NpgsqlParameter(paramName, dateVal));
@@ -179,7 +179,7 @@ public class QueryBusiness : IQueryBusiness
             if (conditions.Any())
             {
                 sql += " AND (";
-                
+
                 for (int i = 0; i < conditions.Count; i++)
                 {
                     if (i > 0)
@@ -187,17 +187,17 @@ public class QueryBusiness : IQueryBusiness
                         var connector = request[i].Connector?.ToUpper() == "OR" ? " OR " : " AND ";
                         sql += connector;
                     }
-                    
+
                     sql += conditions[i];
                 }
-                
+
                 sql += ")";
             }
 
             if (!string.IsNullOrWhiteSpace(textSearch))
             {
                 // Split query into words and add :* to each for prefix matching
-                var processedQuery = string.Join(" & ", 
+                var processedQuery = string.Join(" & ",
                     textSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                         .Select(word => word.Trim() + ":*"));
                 var processedQueryParam = new NpgsqlParameter("processedQuery", processedQuery);
@@ -265,7 +265,7 @@ public class QueryBusiness : IQueryBusiness
         {
             throw new ArgumentException($"Invalid query syntax. Please check your operators and values.", ex);
         }
-        catch (PostgresException ex) when (ex.SqlState == "22P02") 
+        catch (PostgresException ex) when (ex.SqlState == "22P02")
         {
             throw new ArgumentException($"Invalid data type in query. Please check that your values match the expected column data types.", ex);
         }
@@ -278,7 +278,7 @@ public class QueryBusiness : IQueryBusiness
             throw new ArgumentException($"Error executing query: {ex.Message}", ex);
         }
     }
-    
+
     /// <summary>
     ///     Full text records search
     /// </summary>
@@ -289,12 +289,12 @@ public class QueryBusiness : IQueryBusiness
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
-        
+
         // Process query for full-text search (prefix matching)
-        var processedQuery = string.Join(" & ", 
+        var processedQuery = string.Join(" & ",
             userQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                      .Select(word => word.Trim() + ":*"));
-        
+
         var sql = @"
             SELECT DISTINCT ON (hr.record_id)
             hr.*,
@@ -341,9 +341,9 @@ public class QueryBusiness : IQueryBusiness
         {
             Value = projectIds
         };
-        
+
         var results = _context.HistoricalRecords.FromSqlRaw(sql, param1, param2, param3);
-        
+
         return await results
             .Select(r => new HistoricalRecordResponseDto
             {
@@ -366,7 +366,7 @@ public class QueryBusiness : IQueryBusiness
                 LastUpdatedAt = r.LastUpdatedAt
             }).ToListAsync();
     }
-    
+
     /// <summary>
     ///     Retrieves all classes for specific projects.
     /// </summary>
@@ -443,18 +443,18 @@ public class QueryBusiness : IQueryBusiness
         foreach (var projectId in projectIds)
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
         var tagQuery = _context.Tags
-            .Where(t => projectIds.Contains(t.ProjectId));
+            .Where(t => t.ProjectId.HasValue && projectIds.Contains(t.ProjectId.Value));
 
         if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
 
         return await tagQuery.Select(t => new TagResponseDto
-            {
-                Id = t.Id,
-                Name = t.Name,
-                ProjectId = t.ProjectId,
-                LastUpdatedBy = t.LastUpdatedBy,
-                LastUpdatedAt = t.LastUpdatedAt
-            })
+        {
+            Id = t.Id,
+            Name = t.Name,
+            ProjectId = t.ProjectId,
+            LastUpdatedBy = t.LastUpdatedBy,
+            LastUpdatedAt = t.LastUpdatedAt
+        })
             .ToListAsync();
     }
 
@@ -479,7 +479,7 @@ public class QueryBusiness : IQueryBusiness
             textSearch = textSearch,
             Filter = filters
         };
-    
+
         string queryBuilt = JsonSerializer.Serialize(searchData);
         var savedSearch = new SavedSearch
         {
@@ -492,7 +492,7 @@ public class QueryBusiness : IQueryBusiness
         await _context.SaveChangesAsync();
         return true;
     }
-    
+
     /// <summary>
     /// Get saved searches
     /// </summary>
@@ -508,12 +508,12 @@ public class QueryBusiness : IQueryBusiness
 
         foreach (var search in savedSearches)
         {
-            
+
             // Deserialize the JSON string back to the original structure
             var searchData = JsonSerializer.Deserialize<CustomQueryDtos.CustomQueryResponseDto>(search.Search);
-        
+
             Console.WriteLine($"Filters count: {searchData?.Filter?.Length ?? 0}");
-        
+
             result.Add(new CustomQueryDtos.CustomQueryResponseDto()
             {
                 textSearch = searchData?.textSearch,

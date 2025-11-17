@@ -47,27 +47,27 @@ public class EventBusiness : IEventBusiness
         if (organizationId.HasValue) eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
 
         var items = await (from e in eventQuery
-                join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
-                from user in userGroup.DefaultIfEmpty()
-                select new EventResponseDto
-                {
-                    Id = e.Id,
-                    Operation = e.Operation,
-                    EntityType = e.EntityType,
-                    EntityId = e.EntityId,
-                    EntityName = e.EntityName,
-                    ProjectId = e.ProjectId,
-                    OrganizationId = e.OrganizationId,
-                    DataSourceId = e.DataSourceId,
-                    Properties = e.Properties,
-                    LastUpdatedAt = e.LastUpdatedAt,
-                    LastUpdatedBy = e.LastUpdatedBy,
-                    LastUpdatedByUserName = user != null ? user.Name : null,
-                    ProjectName = e.Project != null ? e.Project.Name : null,
-                    DataSourceName = e.DataSource != null ? e.DataSource.Name : null
-                })
+                           join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
+                           from user in userGroup.DefaultIfEmpty()
+                           select new EventResponseDto
+                           {
+                               Id = e.Id,
+                               Operation = e.Operation,
+                               EntityType = e.EntityType,
+                               EntityId = e.EntityId,
+                               EntityName = e.EntityName,
+                               ProjectId = e.ProjectId,
+                               OrganizationId = e.OrganizationId,
+                               DataSourceId = e.DataSourceId,
+                               Properties = e.Properties,
+                               LastUpdatedAt = e.LastUpdatedAt,
+                               LastUpdatedBy = e.LastUpdatedBy,
+                               LastUpdatedByUserName = user != null ? user.Name : null,
+                               ProjectName = e.Project != null ? e.Project.Name : null,
+                               DataSourceName = e.DataSource != null ? e.DataSource.Name : null
+                           })
                 .ToListAsync();
-        
+
         return items;
     }
 
@@ -150,25 +150,25 @@ public class EventBusiness : IEventBusiness
 
         // Apply pagination and execute query
         var items = await (from e in eventQuery
-                join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
-                from user in userGroup.DefaultIfEmpty()
-                select new EventResponseDto
-                {
-                    Id = e.Id,
-                    Operation = e.Operation,
-                    EntityType = e.EntityType,
-                    EntityId = e.EntityId,
-                    EntityName = e.EntityName,
-                    ProjectId = e.ProjectId,
-                    OrganizationId = e.OrganizationId,
-                    DataSourceId = e.DataSourceId,
-                    Properties = e.Properties,
-                    LastUpdatedAt = e.LastUpdatedAt,
-                    LastUpdatedBy = e.LastUpdatedBy,
-                    LastUpdatedByUserName = user != null ? user.Name : null,
-                    ProjectName = e.Project != null ? e.Project.Name : null,
-                    DataSourceName = e.DataSource != null ? e.DataSource.Name : null
-                })
+                           join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
+                           from user in userGroup.DefaultIfEmpty()
+                           select new EventResponseDto
+                           {
+                               Id = e.Id,
+                               Operation = e.Operation,
+                               EntityType = e.EntityType,
+                               EntityId = e.EntityId,
+                               EntityName = e.EntityName,
+                               ProjectId = e.ProjectId,
+                               OrganizationId = e.OrganizationId,
+                               DataSourceId = e.DataSourceId,
+                               Properties = e.Properties,
+                               LastUpdatedAt = e.LastUpdatedAt,
+                               LastUpdatedBy = e.LastUpdatedBy,
+                               LastUpdatedByUserName = user != null ? user.Name : null,
+                               ProjectName = e.Project != null ? e.Project.Name : null,
+                               DataSourceName = e.DataSource != null ? e.DataSource.Name : null
+                           })
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -290,25 +290,25 @@ public class EventBusiness : IEventBusiness
 
         // Apply pagination and execute query
         var items = await (from e in eventQuery
-                join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
-                from user in userGroup.DefaultIfEmpty()
-                select new EventResponseDto
-                {
-                    Id = e.Id,
-                    Operation = e.Operation,
-                    EntityType = e.EntityType,
-                    EntityId = e.EntityId,
-                    EntityName = e.EntityName,
-                    ProjectId = e.ProjectId,
-                    OrganizationId = e.OrganizationId,
-                    DataSourceId = e.DataSourceId,
-                    Properties = e.Properties,
-                    LastUpdatedAt = e.LastUpdatedAt,
-                    LastUpdatedBy = e.LastUpdatedBy,
-                    LastUpdatedByUserName = user != null ? user.Name : null,
-                    ProjectName = e.Project != null ? e.Project.Name : null,
-                    DataSourceName = e.DataSource != null ? e.DataSource.Name : null
-                })
+                           join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
+                           from user in userGroup.DefaultIfEmpty()
+                           select new EventResponseDto
+                           {
+                               Id = e.Id,
+                               Operation = e.Operation,
+                               EntityType = e.EntityType,
+                               EntityId = e.EntityId,
+                               EntityName = e.EntityName,
+                               ProjectId = e.ProjectId,
+                               OrganizationId = e.OrganizationId,
+                               DataSourceId = e.DataSourceId,
+                               Properties = e.Properties,
+                               LastUpdatedAt = e.LastUpdatedAt,
+                               LastUpdatedBy = e.LastUpdatedBy,
+                               LastUpdatedByUserName = user != null ? user.Name : null,
+                               ProjectName = e.Project != null ? e.Project.Name : null,
+                               DataSourceName = e.DataSource != null ? e.DataSource.Name : null
+                           })
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -441,7 +441,7 @@ public class EventBusiness : IEventBusiness
     /// <param name="events">A List of data transfer objects with details on the new event to be created.</param>
     /// <returns>The list of new Events which were created.</returns>
     public async Task<List<EventResponseDto>> BulkCreateEvents(
-        long projectId,
+        long? projectId,
         List<CreateEventRequestDto> events
     )
     {

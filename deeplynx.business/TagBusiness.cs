@@ -33,9 +33,10 @@ public class TagBusiness : ITagBusiness
     /// Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="organizationId">The ID of the organization whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
+    public async Task<List<TagResponseDto>> GetAllTags(long organizationId, long? projectId, bool hideArchived)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
 
@@ -62,11 +63,12 @@ public class TagBusiness : ITagBusiness
     /// Retrieves a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>The tag with its details.</returns>
     /// <exception cref="KeyNotFoundException">Returned if tag not found or is archived</exception>
-    public async Task<TagResponseDto> GetTag(long projectId, long tagId, bool hideArchived)
+    public async Task<TagResponseDto> GetTag(long organizationId, long? projectId, long tagId, bool hideArchived)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var tag = await _context.Tags
@@ -99,9 +101,10 @@ public class TagBusiness : ITagBusiness
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="dto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<TagResponseDto> CreateTag(long projectId, CreateTagRequestDto dto)
+    public async Task<TagResponseDto> CreateTag(long organizationId, long? projectId, CreateTagRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (dto == null)
@@ -164,10 +167,12 @@ public class TagBusiness : ITagBusiness
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tags">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<List<TagResponseDto>> BulkCreateTags(
-        long projectId,
+        long organizationId,
+        long? projectId,
         List<CreateTagRequestDto> tags)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
@@ -230,11 +235,12 @@ public class TagBusiness : ITagBusiness
     /// Updates an existing tag for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag request data transfer object containing updated tag details.</param>
     /// <returns>The updated tag response DTO with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, UpdateTagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> UpdateTag(long organizationId, long? projectId, long tagId, UpdateTagRequestDto tagRequestDto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -283,9 +289,10 @@ public class TagBusiness : ITagBusiness
     /// Deletes a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<bool> DeleteTag(long projectId, long tagId)
+    public async Task<bool> DeleteTag(long organizationId, long? projectId, long tagId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -302,9 +309,10 @@ public class TagBusiness : ITagBusiness
     /// Archives a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<bool> ArchiveTag(long projectId, long tagId)
+    public async Task<bool> ArchiveTag(long organizationId, long? projectId, long tagId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -336,10 +344,13 @@ public class TagBusiness : ITagBusiness
     /// Unarchives a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to unarchive.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<bool> UnarchiveTag(long projectId
-        , long tagId)
+    public async Task<bool> UnarchiveTag(
+        long organizationId,
+        long? projectId,
+        long tagId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -371,11 +382,12 @@ public class TagBusiness : ITagBusiness
     /// Used by MetadataBusiness to enforce tagsMutable settings.
     /// </summary>
     /// <param name="projectId">The project ID to search within</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagNames">List of tag names to validate</param>
     /// <returns>List of tags that were found</returns>
     /// <exception cref="KeyNotFoundException">Thrown if one or more tag names not found</exception>
     /// <exception cref="ArgumentException">Thrown if tagNames list is null or empty</exception>
-    public async Task<List<TagResponseDto>> GetTagsByName(long projectId, List<string> tagNames)
+    public async Task<List<TagResponseDto>> GetTagsByName(long organizationId, long? projectId, List<string> tagNames)
     {
         if (tagNames == null || !tagNames.Any())
             throw new ArgumentException("Tag names list cannot be null or empty", nameof(tagNames));

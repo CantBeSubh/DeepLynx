@@ -67,7 +67,7 @@ namespace deeplynx.tests
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
-            _organizationBusiness =  new Mock<IOrganizationBusiness>();
+            _organizationBusiness = new Mock<IOrganizationBusiness>();
 
             _roleBusiness = new RoleBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(
@@ -96,10 +96,10 @@ namespace deeplynx.tests
                 Abbreviation = "TST",
                 OrganizationId = oid
             };
-            
+
             // Act
             var result = await _projectBusiness.CreateProject(uid, dto);
-           
+
             // Assert
             Assert.True(result.Id > 0);
             Assert.True(result.LastUpdatedAt >= now);
@@ -117,7 +117,7 @@ namespace deeplynx.tests
                 e.EntityId == result.Id
             );
         }
-        
+
         [Fact]
         public async Task CreateProject_Creates_DefaultPermissions()
         {
@@ -132,9 +132,9 @@ namespace deeplynx.tests
             };
             // Act
             var result = await _projectBusiness.CreateProject(uid, dto);
-           
+
             Assert.Equal("TST", result.Abbreviation);
-            
+
             var defaultProjectPermissions = await Context.Permissions.Where(p => p.ProjectId == result.Id).ToListAsync();
             Assert.True(defaultProjectPermissions.All(dp => dp.IsDefault));
             Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultProjectPermissions.Count);
