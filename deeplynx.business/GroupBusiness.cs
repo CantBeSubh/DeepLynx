@@ -89,10 +89,11 @@ public class GroupBusiness : IGroupBusiness
     /// <summary>
     /// Create a group
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The organization ID to which the group will belong</param>
     /// <param name="dto">The data from the user on how group should be configured</param>
     /// <returns>The newly created group</returns>
-    public async Task<GroupResponseDto> CreateGroup(long organizationId, CreateGroupRequestDto dto)
+    public async Task<GroupResponseDto> CreateGroup(long currentUserId, long organizationId, CreateGroupRequestDto dto)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         ValidationHelper.ValidateModel(dto);
@@ -101,7 +102,7 @@ public class GroupBusiness : IGroupBusiness
             Name = dto.Name,
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId,
             OrganizationId = organizationId,
         };
 
@@ -134,11 +135,12 @@ public class GroupBusiness : IGroupBusiness
     /// <summary>
     /// Update a group with new information
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="groupId">The ID of the group to be updated</param>
     /// <param name="dto">The data transfer object holding information </param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<GroupResponseDto> UpdateGroup(long groupId, UpdateGroupRequestDto dto)
+    public async Task<GroupResponseDto> UpdateGroup(long currentUserId, long groupId, UpdateGroupRequestDto dto)
     {
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
@@ -147,7 +149,7 @@ public class GroupBusiness : IGroupBusiness
         group.Name = dto.Name ?? group.Name;
         group.Description = dto.Description ?? group.Description;
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        group.LastUpdatedBy = null; // TODO: handled in the future by JWT
+        group.LastUpdatedBy = currentUserId; 
 
         _context.Groups.Update(group);
         await _context.SaveChangesAsync();
@@ -178,10 +180,11 @@ public class GroupBusiness : IGroupBusiness
     /// <summary>
     /// Archive a specific group by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="groupId">ID of the group to archive</param>
     /// <returns>Boolean true on successful archive</returns>
     /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
-    public async Task<bool> ArchiveGroup(long groupId)
+    public async Task<bool> ArchiveGroup(long currentUserId, long groupId)
     {
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
@@ -189,8 +192,7 @@ public class GroupBusiness : IGroupBusiness
 
         group.IsArchived = true;
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        group.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
-        _context.Groups.Update(group);
+        group.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
 
         // Log archive Group event
@@ -210,10 +212,11 @@ public class GroupBusiness : IGroupBusiness
     /// <summary>
     /// Unarchive a specific group by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="groupId">ID of the group to unarchive</param>
     /// <returns>Boolean true on successful unarchive</returns>
     /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
-    public async Task<bool> UnarchiveGroup(long groupId)
+    public async Task<bool> UnarchiveGroup(long currentUserId, long groupId)
     {
         var group = await _context.Groups.FindAsync(groupId);
         // note that we purposefully return an error here if a group is not archived.
@@ -223,8 +226,7 @@ public class GroupBusiness : IGroupBusiness
 
         group.IsArchived = false;
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        group.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
-        _context.Groups.Update(group);
+        group.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
 
         // Log unarchive Group event

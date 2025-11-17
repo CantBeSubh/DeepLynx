@@ -385,6 +385,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Asynchronously creates a new edge for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
     /// <param name="dto">The edge request data transfer object containing edge details</param>
@@ -465,6 +466,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Asynchronously creates new edges for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
     /// <param name="edges">The edge request data transfer object containing edge details</param>
@@ -565,6 +567,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Updates an existing edge by its ID or origin/destination.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
     /// <param name="dto">The edge request data transfer object containing updated edge details.</param>
     /// <param name="edgeId">The ID of the edge to update</param>
@@ -657,6 +660,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Archives a specific edge by its ID or origin/destination.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
     /// <param name="edgeId">The ID of the edge to archive</param>
     /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
@@ -698,6 +702,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Unarchives a specific edge by its ID or origin/destination.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
     /// <param name="edgeId">The ID of the edge to unarchive</param>
     /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>

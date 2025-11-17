@@ -163,6 +163,7 @@ namespace deeplynx.business
         /// <summary>
         /// Asynchronously creates a new data source for a specified project.
         /// </summary>
+        /// <param name="currentUserId">ID of the User executing this method.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source.</returns>
@@ -226,6 +227,7 @@ namespace deeplynx.business
         /// <summary>
         /// Asynchronously updates an existing data source based on its ID.
         /// </summary>
+        /// <param name="currentUserId">ID of the User executing this method.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dataSourceId">The ID of the existing data source to update.</param>
         /// <param name="dto">The data transfer object containing the updated data source details</param>
@@ -310,6 +312,7 @@ namespace deeplynx.business
         /// <summary>
         /// Archives a specific data source by its ID.
         /// </summary>
+        /// <param name="currentUserId">ID of the User executing this method.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <param name="dataSourceId">The ID of the data source to archive</param>
         /// <returns>Boolean true on successful archival.</returns>
@@ -346,6 +349,7 @@ namespace deeplynx.business
         /// <summary>
         /// Unarchives a specific data source by its ID.
         /// </summary>
+        /// <param name="currentUserId">ID of the User executing this method.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <param name="dataSourceId">The ID of the data source to unarchive</param>
         /// <returns>Boolean true on successful unarchive action.</returns>
@@ -382,6 +386,7 @@ namespace deeplynx.business
         /// <summary>
         /// Sets an existing data source as default for a project.
         /// </summary>
+        /// <param name="currentUserId">ID of the User executing this method.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dataSourceId">The ID of the existing data source to update.</param>
         /// <returns>The updated data source.</returns>

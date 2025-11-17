@@ -132,7 +132,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _groupBusiness.CreateGroup(oid, dto);
+            var result = await _groupBusiness.CreateGroup(uid, oid, dto);
             
             // Assert
             Assert.NotNull(result);
@@ -168,7 +168,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _groupBusiness.CreateGroup(oid, dto);
+            var result = await _groupBusiness.CreateGroup(uid, oid, dto);
             
             // Assert
             Assert.NotNull(result);
@@ -197,7 +197,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _groupBusiness.CreateGroup(oid, dto));
+                () => _groupBusiness.CreateGroup(uid, oid, dto));
             
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -216,7 +216,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _groupBusiness.CreateGroup(oid, dto));
+                () => _groupBusiness.CreateGroup(uid, oid, dto));
             
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -235,7 +235,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.CreateGroup(99999, dto));
+                () => _groupBusiness.CreateGroup(uid, 99999, dto));
             
             Assert.Contains("Organization with id 99999 does not exist", exception.Message);
             
@@ -259,7 +259,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _groupBusiness.UpdateGroup(gid, dto);
+            var result = await _groupBusiness.UpdateGroup(uid, gid, dto);
             
             // Assert
             Assert.NotNull(result);
@@ -294,7 +294,7 @@ namespace deeplynx.tests
             };
             
             // Act
-            var result = await _groupBusiness.UpdateGroup(gid, dto);
+            var result = await _groupBusiness.UpdateGroup(uid, gid, dto);
             
             // Assert
             Assert.NotNull(result);
@@ -322,7 +322,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.UpdateGroup(99999, dto));
+                () => _groupBusiness.UpdateGroup(uid, 99999, dto));
             
             Assert.Contains("Group with id 99999 not found", exception.Message);
             
@@ -342,7 +342,7 @@ namespace deeplynx.tests
             
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.UpdateGroup(gid2, dto)); // archived group
+                () => _groupBusiness.UpdateGroup(uid, gid2, dto)); // archived group
             
             Assert.Contains($"Group with id {gid2} not found", exception.Message);
             
@@ -359,7 +359,7 @@ namespace deeplynx.tests
         public async Task ArchiveGroup_Succeeds_IfNotArchived()
         {
             // Act
-            var result = await _groupBusiness.ArchiveGroup(gid);
+            var result = await _groupBusiness.ArchiveGroup(uid, gid);
             
             // Assert
             Assert.True(result);
@@ -385,7 +385,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.ArchiveGroup(gid2)); // already archived
+                () => _groupBusiness.ArchiveGroup(uid, gid2)); // already archived
             
             Assert.Contains($"Group with id {gid2} not found or is archived", exception.Message);
             
@@ -399,7 +399,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.ArchiveGroup(99999));
+                () => _groupBusiness.ArchiveGroup(uid, 99999));
             
             Assert.Contains("Group with id 99999 not found or is archived", exception.Message);
             
@@ -416,7 +416,7 @@ namespace deeplynx.tests
         public async Task UnarchiveGroup_Succeeds_IfArchived()
         {
             // Act
-            var result = await _groupBusiness.UnarchiveGroup(gid2);
+            var result = await _groupBusiness.UnarchiveGroup(uid, gid2);
             
             // Assert
             Assert.True(result);
@@ -442,7 +442,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.UnarchiveGroup(gid)); // not archived
+                () => _groupBusiness.UnarchiveGroup(uid, gid)); // not archived
             
             Assert.Contains($"Group with id {gid} not found or is not archived", exception.Message);
             
@@ -456,7 +456,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.UnarchiveGroup(99999));
+                () => _groupBusiness.UnarchiveGroup(uid, 99999));
             
             Assert.Contains("Group with id 99999 not found or is not archived", exception.Message);
             
