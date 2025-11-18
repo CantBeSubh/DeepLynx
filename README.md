@@ -45,21 +45,6 @@ Once you have a `.env` file, be sure to periodically check `.env_sample` for upd
     * Install the .NET Entity Framework CLI tool globally:
         * `dotnet tool install --global dotnet-ef`
 
-4. Setup Kuzu:
-    * After completing the above steps, run the `setup_kuzu.sh` script to set up the Kuzu environment and copy necessary files. To do this, follow these steps:
-        1. Open a terminal to the Nexus root directory.
-        2. Make the script executable by running:
-            ```bash
-            chmod +x setup_kuzu.sh
-            ```
-        3. Execute the script with the following command:
-            ```bash
-            ./setup_kuzu.sh
-            ```
-        4. This script will copy the necessary library files, update your environment variables, and clean up any temporary directories.
-        5. To run the KuzuDatabaseManagerTests, set the ENABLE_KUZU variable in `.env` to True.
-        6. Open a new terminal to test Kuzu.
-
 ## Development
 
 ### Load the Database
