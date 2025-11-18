@@ -56,7 +56,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
-    [HttpGet("GetTag/{tagId}", Name = "api_get_a_tag")]
+    [HttpGet("{tagId}/GetTag", Name = "api_get_a_tag")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
         long organizationId, long projectId, long tagId,
         [FromQuery] bool hideArchived = true)
@@ -133,7 +133,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
-    [HttpPut("UpdateTag/{tagId}", Name = "api_update_a_tag")]
+    [HttpPut("{tagId}/UpdateTag", Name = "api_update_a_tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(
         long organizationId, long projectId, long tagId,
         [FromBody] UpdateTagRequestDto tagRequestDto)
@@ -158,7 +158,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
-    [HttpDelete("DeleteTag/{tagId}", Name = "api_delete_a_tag")]
+    [HttpDelete("{tagId}/DeleteTag", Name = "api_delete_a_tag")]
     public async Task<IActionResult> DeleteTag(
         long organizationId, long projectId, long tagId)
     {
@@ -182,7 +182,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagId">The ID of the tag to archive.</param>
     /// <returns> A message stating the tag was successfully archived.</returns>
-    [HttpDelete("ArchiveTag/{tagId}", Name = "api_archive_a_tag")]
+    [HttpDelete("{tagId}/ArchiveTag", Name = "api_archive_a_tag")]
     public async Task<IActionResult> ArchiveTag(
         long organizationId, long projectId, long tagId)
     {
@@ -206,7 +206,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagId">The ID of the tag to unarchive.</param>
     /// <returns> A message stating the tag was successfully unarchived.</returns>
-    [HttpPut("UnarchiveTag/{tagId}", Name = "api_unarchive_a_tag")]
+    [HttpPut("{tagId}/UnarchiveTag", Name = "api_unarchive_a_tag")]
     public async Task<IActionResult> UnarchiveTag(
         long organizationId, long projectId, long tagId)
     {

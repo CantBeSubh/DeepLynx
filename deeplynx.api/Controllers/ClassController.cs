@@ -64,7 +64,7 @@ public class ClassController : ControllerBase
     /// <param name="classId">The ID of the class to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>Class response DTO</returns>
-    [HttpGet("GetClass/{classId}", Name = "api_get_a_class")]
+    [HttpGet("{classId}/GetClass", Name = "api_get_a_class")]
     public async Task<ActionResult<ClassResponseDto>> GetClass(
         long organizationId,
         long projectId,
@@ -146,7 +146,7 @@ public class ClassController : ControllerBase
     /// <param name="classId">The ID of the class to update</param>
     /// <param name="dto">The request DTO for the class</param>
     /// <returns>Class response DTO</returns>
-    [HttpPut("UpdateClass/{classId}", Name = "api_update_a_class")]
+    [HttpPut("{classId}/UpdateClass", Name = "api_update_a_class")]
     public async Task<ActionResult<ClassResponseDto>> UpdateClass(
         long organizationId,
         long projectId,
@@ -173,7 +173,7 @@ public class ClassController : ControllerBase
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="classId">The ID of the class to delete.</param>
     /// <returns>A message stating the class was successfully deleted.</returns>
-    [HttpDelete("DeleteClass/{classId}", Name = "api_delete_a_class")]
+    [HttpDelete("{classId}/DeleteClass", Name = "api_delete_a_class")]
     public async Task<IActionResult> DeleteClass(
         long organizationId,
         long projectId,
@@ -199,7 +199,7 @@ public class ClassController : ControllerBase
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="classId">The ID of the class to archive.</param>
     /// <returns>A message stating the class was successfully archived.</returns>
-    [HttpDelete("ArchiveClass/{classId}", Name = "api_archive_a_class")]
+    [HttpDelete("{classId}/ArchiveClass", Name = "api_archive_a_class")]
     public async Task<IActionResult> ArchiveClass(
         long organizationId,
         long projectId,
@@ -225,7 +225,7 @@ public class ClassController : ControllerBase
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="classId">The ID of the class to unarchive.</param>
     /// <returns>A message stating the class was successfully unarchived.</returns>
-    [HttpPut("UnarchiveClass/{classId}", Name = "api_unarchive_a_class")]
+    [HttpPut("{classId}/UnarchiveClass", Name = "api_unarchive_a_class")]
     public async Task<IActionResult> UnarchiveClass(
         long organizationId,
         long projectId,

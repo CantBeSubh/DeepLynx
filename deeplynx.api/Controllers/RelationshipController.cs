@@ -57,7 +57,7 @@ public class RelationshipController : ControllerBase
     /// <param name="relationshipId">ID of relationship</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
     /// <returns>Relationship response DTO</returns>
-    [HttpGet("GetRelationship/{relationshipId}", Name = "api_get_a_relationship")]
+    [HttpGet("{relationshipId}/GetRelationship", Name = "api_get_a_relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
         long organizationId,
         long projectId,
@@ -138,7 +138,7 @@ public class RelationshipController : ControllerBase
     /// <param name="relationshipId">Relationship ID</param>
     /// <param name="dto">Relationship request DTO</param>
     /// <returns>Relationship response DTO</returns>
-    [HttpPut("UpdateRelationship/{relationshipId}", Name = "api_update_a_relationship")]
+    [HttpPut("{relationshipId}/UpdateRelationship", Name = "api_update_a_relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(
         long organizationId, long projectId, long relationshipId,
         [FromBody] UpdateRelationshipRequestDto dto)
@@ -163,7 +163,7 @@ public class RelationshipController : ControllerBase
     /// <param name="projectId">ID for project which relationship is associated with</param>
     /// <param name="relationshipId">Relationship ID</param>
     /// <returns>Relationship was successfully deleted.</returns>
-    [HttpDelete("DeleteRelationship/{relationshipId}", Name = "api_delete_a_relationship")]
+    [HttpDelete("{relationshipId}/DeleteRelationship", Name = "api_delete_a_relationship")]
     public async Task<IActionResult> DeleteRelationship(
         long organizationId, long projectId, long relationshipId)
     {
@@ -187,7 +187,7 @@ public class RelationshipController : ControllerBase
     /// <param name="projectId">ID for project which relationship is associated with</param>
     /// <param name="relationshipId">Relationship ID</param>
     /// <returns>A message stating the relationship was successfully archived.</returns>
-    [HttpDelete("ArchiveRelationship/{relationshipId}", Name = "api_archive_a_relationship")]
+    [HttpDelete("{relationshipId}/ArchiveRelationship", Name = "api_archive_a_relationship")]
     public async Task<IActionResult> ArchiveRelationship(
         long organizationId, long projectId, long relationshipId)
     {
@@ -211,7 +211,7 @@ public class RelationshipController : ControllerBase
     /// <param name="projectId">ID for project which relationship is associated with</param>
     /// <param name="relationshipId">Relationship ID</param>
     /// <returns>A message stating the relationship was successfully unarchived.</returns>
-    [HttpPut("UnarchiveRelationship/{relationshipId}", Name = "api_unarchive_a_relationship")]
+    [HttpPut("{relationshipId}/UnarchiveRelationship", Name = "api_unarchive_a_relationship")]
     public async Task<IActionResult> UnarchiveRelationship(
         long organizationId, long projectId, long relationshipId)
     {

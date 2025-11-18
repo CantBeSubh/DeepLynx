@@ -52,7 +52,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of organization</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
-    [HttpGet("GetOrganization/{organizationId}", Name = "api_get_organization")]
+    [HttpGet("{organizationId}/GetOrganization", Name = "api_get_organization")]
     public async Task<ActionResult<OrganizationResponseDto>> GetOrganization(
         long organizationId, [FromQuery] bool hideArchived = true)
     {
@@ -97,7 +97,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of the organization</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("UpdateOrganization/{organizationId}", Name = "api_update_organization")]
+    [HttpPut("{organizationId}/UpdateOrganization", Name = "api_update_organization")]
     public async Task<ActionResult<OrganizationResponseDto>> UpdateOrganization(
         long organizationId,
         [FromBody] UpdateOrganizationRequestDto dto)
@@ -120,7 +120,7 @@ public class OrganizationController : ControllerBase
     /// </summary>
     /// <param name="organizationId">ID of the organization to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("DeleteOrganization/{organizationId}", Name = "api_delete_organization")]
+    [HttpDelete("{organizationId}/DeleteOrganization", Name = "api_delete_organization")]
     public async Task<ActionResult> DeleteOrganization(long organizationId)
     {
         try
@@ -141,7 +141,7 @@ public class OrganizationController : ControllerBase
     /// </summary>
     /// <param name="organizationId">ID of the organization</param>
     /// <returns></returns>
-    [HttpDelete("ArchiveOrganization/{organizationId}", Name = "api_archive_organization")]
+    [HttpDelete("{organizationId}/ArchiveOrganization", Name = "api_archive_organization")]
     public async Task<ActionResult> ArchiveOrganization(long organizationId)
     {
         try
@@ -162,7 +162,7 @@ public class OrganizationController : ControllerBase
     /// </summary>
     /// <param name="organizationId">ID of the organization</param>
     /// <returns></returns>
-    [HttpPut("UnarchiveOrganization/{organizationId}", Name = "api_unarchive_organization")]
+    [HttpPut("{organizationId}/UnarchiveOrganization", Name = "api_unarchive_organization")]
     public async Task<ActionResult> UnarchiveOrganization(long organizationId)
     {
         try

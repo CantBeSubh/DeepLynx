@@ -58,7 +58,7 @@ public class DataSourceController : ControllerBase
     /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
     /// <returns>The data source associated with the given ID</returns>
-    [HttpGet("GetDataSource/{dataSourceId}", Name = "api_get_a_data_source")]
+    [HttpGet("{dataSourceId}/GetDataSource", Name = "api_get_a_data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
         long organizationId,
         long projectId,
@@ -136,7 +136,7 @@ public class DataSourceController : ControllerBase
     /// <param name="dataSourceId">The ID of the data source to update</param>
     /// <param name="dto">The data transfer object containing updated data source details</param>
     /// <returns>The newly updated data source</returns>
-    [HttpPut("UpdateDataSource/{dataSourceId}", Name = "api_update_a_data_source")]
+    [HttpPut("{dataSourceId}/UpdateDataSource", Name = "api_update_a_data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
         long organizationId,
         long projectId,
@@ -163,7 +163,7 @@ public class DataSourceController : ControllerBase
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to delete</param>
     /// <returns>A message stating the data source was successfully deleted.</returns>
-    [HttpDelete("DeleteDataSource/{dataSourceId}", Name = "api_delete_a_data_source")]
+    [HttpDelete("{dataSourceId}/DeleteDataSource", Name = "api_delete_a_data_source")]
     public async Task<IActionResult> DeleteDataSource(
         long organizationId,
         long dataSourceId,
@@ -189,7 +189,7 @@ public class DataSourceController : ControllerBase
     /// <param name="projectId">The ID of the project to which the data source belongs.</param>
     /// <param name="dataSourceId">The ID of the data source to archive</param>
     /// <returns>A message stating the data source was successfully archived.</returns>
-    [HttpDelete("ArchiveDataSource/{dataSourceId}", Name = "api_archive_a_data_source")]
+    [HttpDelete("{dataSourceId}/ArchiveDataSource", Name = "api_archive_a_data_source")]
     public async Task<IActionResult> ArchiveDataSource(
         long organizationId,
         long dataSourceId,
@@ -215,7 +215,7 @@ public class DataSourceController : ControllerBase
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to unarchive</param>
     /// <returns>A message stating the data source was successfully unarchived.</returns>
-    [HttpPut("UnarchiveDataSource/{dataSourceId}", Name = "api_unarchive_a_data_source")]
+    [HttpPut("{dataSourceId}/UnarchiveDataSource", Name = "api_unarchive_a_data_source")]
     public async Task<IActionResult> UnarchiveDataSource(
         long organizationId,
         long dataSourceId,
@@ -241,7 +241,7 @@ public class DataSourceController : ControllerBase
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to update</param>
     /// <returns>The newly updated data source</returns>
-    [HttpPut("SetDefaultDataSource/{dataSourceId}", Name = "api_set_default_data_source")]
+    [HttpPut("{dataSourceId}/SetDefaultDataSource", Name = "api_set_default_data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
         long organizationId,
         long projectId,
