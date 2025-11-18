@@ -282,7 +282,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             });
         }
         
-        await _eventBusiness.BulkCreateEvents(events, null, projectId);
+        await _eventBusiness.BulkCreateEvents(currentUserId, events, null, projectId);
         
         return result;
     }

@@ -666,6 +666,7 @@ public class EventBusiness : IEventBusiness
     /// <param name="projectId">The ID of the project to which the event belongs</param>
     /// <returns>The single Event created for the bulk operation.</returns>
     public async Task<EventResponseDto> BulkCreateEvents(
+        long currentUserId,
         List<CreateEventRequestDto> events,
         long? organizationId,
         long? projectId = null
@@ -721,7 +722,7 @@ public class EventBusiness : IEventBusiness
             EntityName = firstEvent.EntityName,
             Properties = propertiesJson,
             DataSourceId = firstEvent.DataSourceId,
-            LastUpdatedBy = firstEvent.LastUpdatedBy,
+            LastUpdatedBy = currentUserId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 

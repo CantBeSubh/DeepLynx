@@ -241,15 +241,15 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
         
         // Log Record Create Event
-        // await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        // {
-        //     EntityType = "record",
-        //     EntityId = record.Id,
-        //     EntityName = record.Name,
-        //     Operation = "create",
-        //     Properties = "{}",
-        //     DataSourceId = record.DataSourceId,
-        // }, null, record.ProjectId);
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        {
+            EntityType = "record",
+            EntityId = record.Id,
+            EntityName = record.Name,
+            Operation = "create",
+            Properties = "{}",
+            DataSourceId = record.DataSourceId,
+        }, null, record.ProjectId);
 
         return new RecordResponseDto
         {
@@ -371,7 +371,7 @@ public class RecordBusiness : IRecordBusiness
                       DataSourceId = record.DataSourceId,
                   });
        }
-       await _eventBusiness.BulkCreateEvents(events, null, projectId);
+       await _eventBusiness.BulkCreateEvents(currentUserId, events, null, projectId);
        
        return result;
     }

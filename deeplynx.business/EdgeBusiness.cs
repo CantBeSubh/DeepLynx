@@ -557,7 +557,7 @@ public class EdgeBusiness : IEdgeBusiness
                 Properties = "{}", // TODO: Determine the extent of data edge properties need
             });
         }
-        await _eventBusiness.BulkCreateEvents(events, null, projectId);
+        await _eventBusiness.BulkCreateEvents(currentUserId, events, null, projectId);
 
         return result;
     }

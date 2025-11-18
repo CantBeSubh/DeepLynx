@@ -235,7 +235,7 @@ public class ClassBusiness : IClassBusiness
                 Properties = JsonSerializer.Serialize(new {item.Name}),
             });
         }
-        await _eventBusiness.BulkCreateEvents(events, null, projectId);
+        await _eventBusiness.BulkCreateEvents(currentUserId, events, null, projectId);
         
         return result;
     }

@@ -884,7 +884,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.BulkCreateEvents(events, mockOrganizationId, null);
+            var result = await _eventBusiness.BulkCreateEvents(mockUserId, events, mockOrganizationId, null);
 
             // Assert
             Assert.NotNull(result);
@@ -920,7 +920,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.BulkCreateEvents(events, null, pid);
+            var result = await _eventBusiness.BulkCreateEvents(mockUserId, events, null, pid);
 
             // Assert
             Assert.NotNull(result);
@@ -947,7 +947,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _eventBusiness.BulkCreateEvents(events, mockOrganizationId, pid));
+                _eventBusiness.BulkCreateEvents(mockUserId, events, mockOrganizationId, pid));
         }
 
         #endregion
