@@ -31,39 +31,39 @@ namespace deeplynx.tests
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<IEdgeBusiness> _mockEdgeBusiness = null!;
-        
+
         public long pid;
         public long did;
         public long cid; // origin class ID
         public long cid2; // destination class ID
-        private long organizationId;
+        private long oid;
 
         public MetadataBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            
+
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
-            
+
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
             _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
-            
+
             _classBusiness = new ClassBusiness(
-                Context, _cacheBusiness, _mockRecordBusiness.Object, 
+                Context, _cacheBusiness, _mockRecordBusiness.Object,
                 _mockRelationshipBusiness.Object, _eventBusiness);
-                
+
             _relationshipBusiness = new RelationshipBusiness(
                 Context, _cacheBusiness, _mockEdgeBusiness.Object, _eventBusiness);
-            
+
             _tagBusiness = new TagBusiness(Context, _cacheBusiness, _eventBusiness);
             _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
             _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
-            
+
             _metadataBusiness = new MetadataBusiness(
                 Context,
                 _cacheBusiness,
@@ -74,15 +74,15 @@ namespace deeplynx.tests
                 _edgeBusiness
             );
         }
-        
+
         #region CreateMetadata Tests
-        
+
         [Fact]
         public async Task CreateMetadata_Success_ReturnsIdAndCreatedAt()
         {
             // Arrange
             var now = DateTime.UtcNow;
-    
+
             var dto = new CreateMetadataRequestDto
             {
                 Classes = new List<CreateClassRequestDto>
@@ -95,8 +95,8 @@ namespace deeplynx.tests
                 }
             };
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-            
+            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+
             // Assert
             Assert.NotNull(result);
             Assert.Single(result.Classes);
@@ -109,9 +109,9 @@ namespace deeplynx.tests
             // Ensure create class event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
@@ -135,15 +135,15 @@ namespace deeplynx.tests
                     },
                     new CreateClassRequestDto
                     {
-                        Name = "Bulk Class 2", 
+                        Name = "Bulk Class 2",
                         Description = "Second class"
                     }
                 }
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-            
+            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+
             // Assert
             Assert.Equal(2, result.Classes.Count);
             Assert.Equal("Bulk Class 1", result.Classes.First().Name);
@@ -177,7 +177,7 @@ namespace deeplynx.tests
                     new CreateRecordRequestDto
                     {
                         Name = "Test Record",
-                        OriginalId = "rec-001", 
+                        OriginalId = "rec-001",
                         ClassName = "Auto Class",
                         Description = "Test Description",
                         Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
@@ -186,8 +186,8 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-            
+            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+
             // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Records);
@@ -199,7 +199,7 @@ namespace deeplynx.tests
             // Ensure both create class and create record events are logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(2, eventList.Count);
-            
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -233,17 +233,17 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-            
+            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+
             // Assert
             Assert.Single(result.Records);
             Assert.Equal(2, result.Tags.Count);
             Assert.Equal(2, result.Records.First().Tags.Count);
-            
+
             // Ensure both create record and tags are logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(3, eventList.Count);
-            
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -255,7 +255,7 @@ namespace deeplynx.tests
             Assert.Equal("create", actualEvent1.Operation);
             Assert.Equal("tag", actualEvent1.EntityType);
             Assert.Equal(result.Tags[1].Id, actualEvent1.EntityId);
-            
+
             var actualEvent2 = eventList[2];
             Assert.Equal(pid, actualEvent2.ProjectId);
             Assert.Equal("create", actualEvent2.Operation);
@@ -275,9 +275,9 @@ namespace deeplynx.tests
                 }
             };
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid + 99, did, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid + 99, did, dto));
             Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
-          
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -300,11 +300,11 @@ namespace deeplynx.tests
                     }
                 }
             };
-            
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did + 99, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid, did + 99, dto));
             Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
-            
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -318,8 +318,8 @@ namespace deeplynx.tests
             project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
-            
-            
+
+
             var classDtos = new List<CreateClassRequestDto>
             {
                 new CreateClassRequestDto { Name = "Test Class" }
@@ -329,11 +329,11 @@ namespace deeplynx.tests
             {
                 Classes = classDtos
             };
-            
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
             Assert.Contains($"Project with id {pid} not found.", exception.Message);
-            
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -361,11 +361,11 @@ namespace deeplynx.tests
                     }
                 }
             };
-            
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
             Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
-            
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -375,7 +375,7 @@ namespace deeplynx.tests
         public async Task CreateMetadata_Fails_IfNullDto()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(pid, did, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, null));
 
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -396,8 +396,8 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-            
+            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+
             // Assert
             Assert.NotNull(result);
             Assert.Null(result.Classes);
@@ -418,7 +418,7 @@ namespace deeplynx.tests
             var dto = new CreateMetadataRequestDto(); // All arrays are null by default
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -432,7 +432,7 @@ namespace deeplynx.tests
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateMetadata_Success_WithComplexMetadata()
         {
@@ -481,28 +481,28 @@ namespace deeplynx.tests
                     }
                 }
             };
-            
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-            
+
+            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+
             // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Relationships);
             Assert.Single(result.Tags);
             Assert.Equal(2, result.Records.Count);
             Assert.Single(result.Edges);
-            
+
             var createdClass = result.Classes[0];
             Assert.Equal("New Class", createdClass.Name);
             Assert.Equal(pid, createdClass.ProjectId);
-            
+
             var createdRelationship = result.Relationships[0];
             Assert.Equal("Test Relationship", createdRelationship.Name);
             Assert.Equal(pid, createdRelationship.ProjectId);
-            
+
             var createdTag = result.Tags[0];
             Assert.Equal("Test Tag", createdTag.Name);
             Assert.Equal(pid, createdTag.ProjectId);
-            
+
             var createdRecord1 = result.Records[0];
             Assert.Equal("Test Record", createdRecord1.Name);
             Assert.Equal("test-1", createdRecord1.OriginalId);
@@ -510,7 +510,7 @@ namespace deeplynx.tests
             Assert.NotNull(createdRecord1.Properties);
             Assert.Equal(pid, createdRecord1.ProjectId);
             Assert.Equal(did, createdRecord1.DataSourceId);
-            
+
             var createdRecord2 = result.Records[1];
             Assert.Equal("Test Record 2", createdRecord2.Name);
             Assert.Equal("test-2", createdRecord2.OriginalId);
@@ -518,18 +518,18 @@ namespace deeplynx.tests
             Assert.NotNull(createdRecord2.Properties);
             Assert.Equal(pid, createdRecord2.ProjectId);
             Assert.Equal(did, createdRecord2.DataSourceId);
-            
+
             var createdEdge = result.Edges[0];
             Assert.Equal(createdRelationship.Id, createdEdge.RelationshipId);
             Assert.Equal(createdRecord1.Id, createdEdge.OriginId);
             Assert.Equal(createdRecord2.Id, createdEdge.DestinationId);
             Assert.Equal(pid, createdEdge.ProjectId);
             Assert.Equal(did, createdEdge.DataSourceId);
-            
+
             // Ensure all complex data events are created and logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(6, eventList.Count);
-            
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -541,32 +541,32 @@ namespace deeplynx.tests
             Assert.Equal("create", actualEvent1.Operation);
             Assert.Equal("relationship", actualEvent1.EntityType);
             Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
-            
+
             var actualEvent2 = eventList[2];
             Assert.Equal(pid, actualEvent2.ProjectId);
             Assert.Equal("create", actualEvent2.Operation);
             Assert.Equal("tag", actualEvent2.EntityType);
             Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
-            
+
             var actualEvent3 = eventList[3];
             Assert.Equal(pid, actualEvent3.ProjectId);
             Assert.Equal("create", actualEvent3.Operation);
             Assert.Equal("record", actualEvent3.EntityType);
             Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
-            
+
             var actualEvent4 = eventList[4];
             Assert.Equal(pid, actualEvent4.ProjectId);
             Assert.Equal("create", actualEvent4.Operation);
             Assert.Equal("record", actualEvent4.EntityType);
             Assert.Equal(result.Records[1].Id, actualEvent4.EntityId);
-            
+
             var actualEvent5 = eventList[5];
             Assert.Equal(pid, actualEvent5.ProjectId);
             Assert.Equal("create", actualEvent5.Operation);
             Assert.Equal("edge", actualEvent5.EntityType);
             Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
         }
-        
+
         [Fact]
         public async Task CreateMetadata_Fails_WhenEdgeHasSameOriginAndDestination()
         {
@@ -611,7 +611,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            await Assert.ThrowsAsync<ValidationException> (() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
         }
 
         [Fact]
@@ -630,32 +630,32 @@ namespace deeplynx.tests
                     }
                 }
             };
-            
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
             Assert.Contains("Records not found matching Original IDs", exception.Message);
-            
+
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             // Ensure we at least create relationship
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("relationship", actualEvent.EntityType);
         }
-        
+
         #endregion
 
         #region CreateMetadataFromFile Tests
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Success_ReturnsIdAndCreatedAt()
         {
             // Arrange
             var now = DateTime.UtcNow;
-    
+
             var metadataContent = new
             {
                 classes = new[]
@@ -671,8 +671,8 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+
             // Assert
             Assert.NotNull(result);
             Assert.Single(result.Classes);
@@ -685,9 +685,9 @@ namespace deeplynx.tests
             // Ensure create class event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-    
+
             var actualEvent = eventList[0];
-    
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
@@ -710,8 +710,8 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+
             // Assert
             Assert.Equal(2, result.Classes.Count);
             Assert.Equal("Bulk Class 1", result.Classes.First().Name);
@@ -719,7 +719,7 @@ namespace deeplynx.tests
 
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(2, eventList.Count);
-    
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -732,7 +732,7 @@ namespace deeplynx.tests
             Assert.Equal("class", actualEvent1.EntityType);
             Assert.Equal(result.Classes[1].Id, actualEvent1.EntityId);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Success_WithRecordsAndAutoClasses()
         {
@@ -755,8 +755,8 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+
             // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Records);
@@ -767,7 +767,7 @@ namespace deeplynx.tests
 
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(2, eventList.Count);
-    
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -803,17 +803,17 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+
             // Assert
             Assert.Single(result.Records);
             Assert.Equal(2, result.Tags.Count);
             Assert.Equal(2, result.Records.First().Tags.Count);
-    
+
             // Ensure both create record and tags are logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(3, eventList.Count);
-    
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -825,14 +825,14 @@ namespace deeplynx.tests
             Assert.Equal("create", actualEvent1.Operation);
             Assert.Equal("tag", actualEvent1.EntityType);
             Assert.Equal(result.Tags[1].Id, actualEvent1.EntityId);
-    
+
             var actualEvent2 = eventList[2];
             Assert.Equal(pid, actualEvent2.ProjectId);
             Assert.Equal("create", actualEvent2.Operation);
             Assert.Equal("record", actualEvent2.EntityType);
             Assert.Equal(result.Records[0].Id, actualEvent2.EntityId);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_IfNoProjectId()
         {
@@ -846,11 +846,11 @@ namespace deeplynx.tests
             };
 
             var file = CreateJsonFile(metadataContent);
-    
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid + 99, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid + 99, did, file));
             Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
-  
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -875,11 +875,11 @@ namespace deeplynx.tests
             };
 
             var file = CreateJsonFile(metadataContent);
-    
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did + 99, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did + 99, file));
             Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
-    
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -893,7 +893,7 @@ namespace deeplynx.tests
             project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
-    
+
             var metadataContent = new
             {
                 classes = new[]
@@ -903,11 +903,11 @@ namespace deeplynx.tests
             };
 
             var file = CreateJsonFile(metadataContent);
-    
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
             Assert.Contains($"Project with id {pid} not found.", exception.Message);
-    
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -921,7 +921,7 @@ namespace deeplynx.tests
             dataSource.IsArchived = true;
             Context.DataSources.Update(dataSource);
             await Context.SaveChangesAsync();
-    
+
             var metadataContent = new
             {
                 records = new[]
@@ -937,11 +937,11 @@ namespace deeplynx.tests
             };
 
             var file = CreateJsonFile(metadataContent);
-    
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
             Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
-    
+
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -952,9 +952,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, null)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, null)
             );
-    
+
             Assert.Equal("file", exception.ParamName);
             Assert.Contains("File cannot be null.", exception.Message);
 
@@ -979,8 +979,8 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+
             // Assert
             Assert.NotNull(result);
             Assert.Null(result.Classes);
@@ -993,7 +993,7 @@ namespace deeplynx.tests
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_IfEmptyFile()
         {
@@ -1007,17 +1007,17 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
             );
-    
+
             Assert.Equal("file", exception.ParamName);
             Assert.Contains("File cannot be empty.", exception.Message);
-    
+
             // Ensure no events were logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_IfWrongFileExtension()
         {
@@ -1026,22 +1026,22 @@ namespace deeplynx.tests
             {
                 classes = new[] { new { name = "Test" } }
             };
-    
+
             var file = CreateJsonFile(metadataContent, "metadata.txt"); // Wrong extension
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
             );
-    
+
             Assert.Equal("file", exception.ParamName);
             Assert.Contains("File must be a .json file.", exception.Message);
-    
+
             // Ensure no events were logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_IfXmlExtension()
         {
@@ -1050,17 +1050,17 @@ namespace deeplynx.tests
             {
                 classes = new[] { new { name = "Test" } }
             };
-    
+
             var file = CreateJsonFile(metadataContent, "metadata.xml");
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
             );
-    
+
             Assert.Contains("File must be a .json file", exception.Message);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_IfNoExtension()
         {
@@ -1069,17 +1069,17 @@ namespace deeplynx.tests
             {
                 classes = new[] { new { name = "Test" } }
             };
-    
+
             var file = CreateJsonFile(metadataContent, "metadata");
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
             );
-    
+
             Assert.Contains("File must be a .json file", exception.Message);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_IfInvalidJson()
         {
@@ -1087,7 +1087,7 @@ namespace deeplynx.tests
             var invalidJson = "{ this is not valid json }";
             var bytes = Encoding.UTF8.GetBytes(invalidJson);
             var stream = new MemoryStream(bytes);
-    
+
             var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
             {
                 Headers = new HeaderDictionary(),
@@ -1096,14 +1096,14 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
             );
-    
+
             // Ensure no events were logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_IfMalformedJson()
         {
@@ -1111,7 +1111,7 @@ namespace deeplynx.tests
             var malformedJson = "{\"classes\": [}"; // Missing closing bracket
             var bytes = Encoding.UTF8.GetBytes(malformedJson);
             var stream = new MemoryStream(bytes);
-    
+
             var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
             {
                 Headers = new HeaderDictionary(),
@@ -1120,7 +1120,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
             );
         }
 
@@ -1131,7 +1131,7 @@ namespace deeplynx.tests
             var nullJson = "null";
             var bytes = Encoding.UTF8.GetBytes(nullJson);
             var stream = new MemoryStream(bytes);
-    
+
             var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
             {
                 Headers = new HeaderDictionary(),
@@ -1140,9 +1140,9 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
             );
-    
+
             Assert.Contains("Failed to deserialize metadata from file", exception.Message);
         }
 
@@ -1154,11 +1154,11 @@ namespace deeplynx.tests
             {
                 classes = new[] { new { name = "Test Class" } }
             };
-    
+
             var file = CreateJsonFile(metadataContent, "metadata.JSON");
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1174,11 +1174,11 @@ namespace deeplynx.tests
             {
                 classes = new[] { new { name = "Test Class" } }
             };
-    
+
             var file = CreateJsonFile(metadataContent, "metadata.Json");
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1194,7 +1194,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1208,7 +1208,7 @@ namespace deeplynx.tests
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Success_WithComplexMetadata()
         {
@@ -1263,19 +1263,19 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
-            
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+
             // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Relationships);
             Assert.Single(result.Tags);
             Assert.Equal(2, result.Records.Count);
             Assert.Single(result.Edges);
-            
+
             // Ensure all complex data events are created and logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(6, eventList.Count);
-            
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -1287,32 +1287,32 @@ namespace deeplynx.tests
             Assert.Equal("create", actualEvent1.Operation);
             Assert.Equal("relationship", actualEvent1.EntityType);
             Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
-            
+
             var actualEvent2 = eventList[2];
             Assert.Equal(pid, actualEvent2.ProjectId);
             Assert.Equal("create", actualEvent2.Operation);
             Assert.Equal("tag", actualEvent2.EntityType);
             Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
-            
+
             var actualEvent3 = eventList[3];
             Assert.Equal(pid, actualEvent3.ProjectId);
             Assert.Equal("create", actualEvent3.Operation);
             Assert.Equal("record", actualEvent3.EntityType);
             Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
-            
+
             var actualEvent4 = eventList[4];
             Assert.Equal(pid, actualEvent4.ProjectId);
             Assert.Equal("create", actualEvent4.Operation);
             Assert.Equal("record", actualEvent4.EntityType);
             Assert.Equal(result.Records[1].Id, actualEvent4.EntityId);
-            
+
             var actualEvent5 = eventList[5];
             Assert.Equal(pid, actualEvent5.ProjectId);
             Assert.Equal("create", actualEvent5.Operation);
             Assert.Equal("edge", actualEvent5.EntityType);
             Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Fails_WhenEdgeHasSameOriginAndDestination()
         {
@@ -1360,7 +1360,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
+            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
         }
 
         [Fact]
@@ -1381,22 +1381,22 @@ namespace deeplynx.tests
             };
 
             var file = CreateJsonFile(metadataContent);
-    
+
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
+            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
             Assert.Contains("Records not found matching Original IDs", exception.Message);
-    
+
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-    
+
             // Ensure we at least create relationship
             var actualEvent = eventList[0];
-    
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("relationship", actualEvent.EntityType);
         }
-        
+
         [Fact]
         public async Task CreateMetadataFromFile_Success_WithDeeplyNestedProperties()
         {
@@ -1439,7 +1439,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1447,9 +1447,9 @@ namespace deeplynx.tests
             Assert.Equal("Complex System", result.Records.First().Name);
             Assert.NotNull(result.Records.First().Properties);
         }
-        
+
         #endregion
-        
+
         /// <summary>
         /// This is our file factory in essence within this test suite. We can feed it a C# object,
         /// and it will serialize it into a JSON file. We can then use this file
@@ -1460,46 +1460,46 @@ namespace deeplynx.tests
         /// <returns>A file instance with contents in the form of JSON.</returns>
         private static FormFile CreateJsonFile(object content, string filename = "metadata.json")
         {
-            var json = JsonSerializer.Serialize(content, new JsonSerializerOptions 
-            { 
+            var json = JsonSerializer.Serialize(content, new JsonSerializerOptions
+            {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = true 
+                WriteIndented = true
             });
-    
+
             var bytes = Encoding.UTF8.GetBytes(json);
             var stream = new MemoryStream(bytes);
-    
+
             var file = new FormFile(stream, 0, bytes.Length, "file", filename)
             {
                 Headers = new HeaderDictionary(),
                 ContentType = "application/json"
             };
-    
+
             return file;
         }
 
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-            
+
             var organization = new Organization { Name = "Test Organization" };
             Context.Organizations.Add(organization);
             await Context.SaveChangesAsync();
-            organizationId = organization.Id;
-            
+            oid = organization.Id;
+
             // Create test project
-            var project = new Project 
-            { 
-                Name = "Project 1", 
+            var project = new Project
+            {
+                Name = "Project 1",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null,
                 IsArchived = false,
-                OrganizationId = organizationId,
+                OrganizationId = oid,
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
-            
+
             var dataSource = new DataSource
             {
                 Name = "Test Datasource",
@@ -1511,7 +1511,7 @@ namespace deeplynx.tests
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             did = dataSource.Id;
-            
+
             var originClass = new Class
             {
                 Name = "Origin Class",
