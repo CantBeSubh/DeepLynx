@@ -277,11 +277,10 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user if user is member</param>
         /// <param name="groupId">ID of group if group is member</param>
         /// <returns></returns>
-        [HttpPost("AddMemberToProject", Name = "api_add_member_to_project")]
+        [HttpPost("{projectId}/AddMemberToProject", Name = "api_add_member_to_project")]
         public async Task<ActionResult> AddMemberToProject(
-            long organizationId,
-            [FromQuery] long projectId, [FromQuery] long? roleId, 
-            [FromQuery] long? userId, [FromQuery] long? groupId)
+            long organizationId, long projectId, 
+            [FromQuery] long? roleId, [FromQuery] long? userId, [FromQuery] long? groupId)
         {
             try
             {
@@ -305,11 +304,10 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user if user is member</param>
         /// <param name="groupId">ID of group if group is member</param>
         /// <returns></returns>
-        [HttpPut("UpdateProjectMemberRole", Name = "api_update_project_member_role")]
+        [HttpPut("{projectId}/UpdateProjectMemberRole", Name = "api_update_project_member_role")]
         public async Task<ActionResult> UpdateProjectMemberRole(
-            long organizationId,
-            [FromQuery] long projectId, [FromQuery] long roleId, 
-            [FromQuery] long? userId, [FromQuery] long? groupId)
+            long organizationId, long projectId, 
+            [FromQuery] long roleId, [FromQuery] long? userId, [FromQuery] long? groupId)
         {
             try
             {
@@ -332,10 +330,10 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of the user if user is member</param>
         /// <param name="groupId">ID of the group if group is member</param>
         /// <returns></returns>
-        [HttpDelete("RemoveMemberFromProject", Name = "api_remove_member_from_project")]
+        [HttpDelete("{projectId}/RemoveMemberFromProject", Name = "api_remove_member_from_project")]
         public async Task<ActionResult> RemoveMemberFromProject(
             long organizationId,
-            [FromQuery] long projectId,
+            long projectId,
             [FromQuery] long? userId, 
             [FromQuery] long? groupId)
         {

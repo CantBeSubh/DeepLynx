@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("projects/{projectId}/relationships")]
+    [Route("organizations/{organizationId}/projects/{projectId}/relationships")]
     [Authorize]
     public class RelationshipController : ControllerBase
     {
@@ -27,6 +27,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all relationships
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
         /// <param name="projectId">ID for project which relationship is associated with</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
         /// <returns>List of relationship response DTOs</returns>
@@ -52,13 +53,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a relationship
         /// </summary>
-        /// <param name="projectId">ID for project relationship is associated with</param>
-        /// <param name="relationshipId">Id of relationship</param>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+        /// <param name="projectId">ID for project which relationship is associated with</param>
+        /// <param name="relationshipId">ID of relationship</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
         /// <returns>Relationship response DTO</returns>
         [HttpGet("GetRelationship/{relationshipId}", Name = "api_get_a_relationship")]
         public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
-            long projectId, 
+            long organizationId, 
+            long projectId,
             long relationshipId,
             [FromQuery] bool hideArchived = true)
         {
@@ -80,11 +83,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a relationship 
         /// </summary>
-        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+        /// <param name="projectId">ID for project which relationship is associated with</param>
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("CreateRelationship", Name = "api_create_a_relationship")]
-        public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(long projectId, [FromBody] CreateRelationshipRequestDto dto)
+        public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(
+            long organizationId, long projectId,
+            [FromBody] CreateRelationshipRequestDto dto)
         {
             try
             {
@@ -102,12 +108,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create many relationships 
         /// </summary>
-        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+        /// <param name="projectId">ID for project which relationship is associated with</param>
         /// <param name="relationships">Relationship request DTOs</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("BulkCreateRelationships", Name = "api_create_many_relationships")]
         public async Task<ActionResult<List<RelationshipResponseDto>>> BulkCreateRelationships(
-            long projectId, 
+            long organizationId, long projectId,
             [FromBody] List<CreateRelationshipRequestDto> relationships)
         {
             try
@@ -126,12 +133,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update a relationship 
         /// </summary>
-        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+        /// <param name="projectId">ID for project which relationship is associated with</param>
         /// <param name="relationshipId">Relationship ID</param>
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPut("UpdateRelationship/{relationshipId}", Name = "api_update_a_relationship")]
-        public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(long projectId, long relationshipId,
+        public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(
+            long organizationId, long projectId, long relationshipId,
             [FromBody] UpdateRelationshipRequestDto dto)
         {
             try
@@ -150,11 +159,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Delete a relationship
         /// </summary>
-        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+        /// <param name="projectId">ID for project which relationship is associated with</param>
         /// <param name="relationshipId">Relationship ID</param>
         /// <returns>Relationship was successfully deleted.</returns>
         [HttpDelete("DeleteRelationship/{relationshipId}", Name = "api_delete_a_relationship")]
-        public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
+        public async Task<IActionResult> DeleteRelationship(
+            long organizationId, long projectId, long relationshipId)
         {
             try
             {
@@ -172,11 +183,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive a relationship 
         /// </summary>
-        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+        /// <param name="projectId">ID for project which relationship is associated with</param>
         /// <param name="relationshipId">Relationship ID</param>
         /// <returns>A message stating the relationship was successfully archived.</returns>
         [HttpDelete("ArchiveRelationship/{relationshipId}", Name = "api_archive_a_relationship")]
-        public async Task<IActionResult> ArchiveRelationship(long projectId, long relationshipId)
+        public async Task<IActionResult> ArchiveRelationship(
+            long organizationId, long projectId, long relationshipId)
         {
             try
             {
@@ -194,11 +207,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Unarchive a relationship 
         /// </summary>
-        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+        /// <param name="projectId">ID for project which relationship is associated with</param>
         /// <param name="relationshipId">Relationship ID</param>
         /// <returns>A message stating the relationship was successfully unarchived.</returns>
         [HttpPut("UnarchiveRelationship/{relationshipId}", Name = "api_unarchive_a_relationship")]
-        public async Task<IActionResult> UnarchiveRelationship(long projectId, long relationshipId)
+        public async Task<IActionResult> UnarchiveRelationship(
+            long organizationId, long projectId, long relationshipId)
         {
             try
             {

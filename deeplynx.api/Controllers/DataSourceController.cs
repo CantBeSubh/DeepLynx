@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("projects/{projectId}/datasources")]
+    [Route("organizations/{organizationId}/projects/{projectId}/datasources")]
     [Authorize]
     public class DataSourceController : ControllerBase
     {
@@ -27,12 +27,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all data sources
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources", Name = "api_get_all_data_sources")]
-        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(long projectId, 
-           [FromQuery] bool hideArchived = true)
+        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
+            long organizationId,
+            long projectId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -50,12 +53,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a data source
         /// </summary>
-        /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDataSource/{dataSourceId}", Name = "api_get_a_data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
+            long organizationId,
             long projectId,
             long dataSourceId,
             [FromQuery] bool hideArchived = true)
@@ -76,10 +81,12 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get default data source
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDefaultDataSource", Name = "api_get_default_data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> GetDefaultDataSource(
+            long organizationId,
             long projectId)
         {
             try
@@ -98,11 +105,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a data source 
         /// </summary>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source</returns>
         [HttpPost("CreateDataSource", Name = "api_create_a_data_source")]
-        public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(long projectId, [FromBody] CreateDataSourceRequestDto dto)
+        public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(
+            long organizationId,
+            long projectId, 
+            [FromBody] CreateDataSourceRequestDto dto)
         {
             try
             {
@@ -120,12 +131,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update a data source
         /// </summary>
-        /// <param name="dataSourceId">The ID of the data source to update</param>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dataSourceId">The ID of the data source to update</param>
         /// <param name="dto">The data transfer object containing updated data source details</param>
         /// <returns>The newly updated data source</returns>
         [HttpPut("UpdateDataSource/{dataSourceId}", Name = "api_update_a_data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
+            long organizationId,
             long projectId,
             long dataSourceId,
             [FromBody] UpdateDataSourceRequestDto dto)
@@ -146,11 +159,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Deletes a data source
         /// </summary>
-        /// <param name="dataSourceId">The ID of the data source to delete.</param>
-        /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dataSourceId">The ID of the data source to delete</param>
         /// <returns>A message stating the data source was successfully deleted.</returns>
         [HttpDelete("DeleteDataSource/{dataSourceId}", Name = "api_delete_a_data_source")]
         public async Task<IActionResult> DeleteDataSource(
+            long organizationId,
             long dataSourceId,
             long projectId)
         {
@@ -170,11 +185,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive a data source 
         /// </summary>
-        /// <param name="dataSourceId">The ID of the data source to archive.</param>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <param name="dataSourceId">The ID of the data source to archive</param>
         /// <returns>A message stating the data source was successfully archived.</returns>
         [HttpDelete("ArchiveDataSource/{dataSourceId}", Name = "api_archive_a_data_source")]
         public async Task<IActionResult> ArchiveDataSource(
+            long organizationId,
             long dataSourceId, 
             long projectId)
         {
@@ -194,11 +211,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Unarchive a data source 
         /// </summary>
-        /// <param name="dataSourceId">The ID of the data source to unarchive.</param>
-        /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dataSourceId">The ID of the data source to unarchive</param>
         /// <returns>A message stating the data source was successfully unarchived.</returns>
         [HttpPut("UnarchiveDataSource/{dataSourceId}", Name = "api_unarchive_a_data_source")]
         public async Task<IActionResult> UnarchiveDataSource(
+            long organizationId,
             long dataSourceId, 
             long projectId)
         {
@@ -218,11 +237,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Set default data source
         /// </summary>
-        /// <param name="dataSourceId">The ID of the data source to update</param>
+        /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dataSourceId">The ID of the data source to update</param>
         /// <returns>The newly updated data source</returns>
         [HttpPut("SetDefaultDataSource/{dataSourceId}", Name = "api_set_default_data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
+            long organizationId,
             long projectId,
             long dataSourceId)
         {
