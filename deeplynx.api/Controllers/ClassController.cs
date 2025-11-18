@@ -1,5 +1,4 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -214,15 +213,14 @@ public class ClassController : ControllerBase
     {
         try
         {
+            var userId = UserContextStorage.UserId;
             if (archive)
             {
-                var currentUserId = UserContextStorage.UserId;
-                await _classBusiness.ArchiveClass(currentUserId, projectId, classId);
+                await _classBusiness.ArchiveClass(userId, projectId, classId);
                 return Ok(new { message = $"Archived class {classId}" });
             }
 
-            var currentUserId = UserContextStorage.UserId;
-            await _classBusiness.UnarchiveClass(currentUserId, projectId, classId);
+            await _classBusiness.UnarchiveClass(userId, projectId, classId);
             return Ok(new { message = $"Unarchived class {classId}" });
         }
         catch (Exception exc)

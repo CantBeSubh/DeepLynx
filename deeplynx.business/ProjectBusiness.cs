@@ -176,7 +176,7 @@ public class ProjectBusiness : IProjectBusiness
             Abbreviation = dto.Abbreviation,
             OrganizationId = organizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = currentUserId
+            LastUpdatedBy = userId
         };
 
         _context.Projects.Add(project);
@@ -216,7 +216,7 @@ public class ProjectBusiness : IProjectBusiness
         }
 
         // Log create Project event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
         {
             OrganizationId = project.OrganizationId,
             ProjectId = projectId,
@@ -228,7 +228,7 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name }),
         });
 
-        await SetProjectDefaults(currentUserId, project.OrganizationId, projectId);
+        await SetProjectDefaults(userId, project.OrganizationId, projectId);
 
         return projectResponseDto;
     }
