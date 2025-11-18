@@ -222,7 +222,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _roleBusiness.CreateRole(dto, oid));
+                () => _roleBusiness.CreateRole(uid, dto, oid));
     
             Assert.Contains("already exists", exception.Message);
         }
@@ -242,7 +242,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _roleBusiness.BulkCreateRoles(oid, pid, bulkDto);
+            var result = await _roleBusiness.BulkCreateRoles(uid, oid, pid, bulkDto);
 
             // Assert
             Assert.Equal(2, result.Count);
@@ -282,7 +282,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _roleBusiness.BulkCreateRoles(oid, null, bulkDto);
+            var result = await _roleBusiness.BulkCreateRoles(uid, oid, null, bulkDto);
 
             // Assert
             Assert.Equal(2, result.Count);
@@ -352,7 +352,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _roleBusiness.BulkCreateRoles(oid, null, bulkDto);
+            var result = await _roleBusiness.BulkCreateRoles(uid, oid, null, bulkDto);
 
             // Assert
             Assert.Single(result);
@@ -375,14 +375,14 @@ namespace deeplynx.tests
             {
                 new() { Name = "Admin", Description = "Org Admin" }
             };
-            var orgResult = await _roleBusiness.BulkCreateRoles(oid, null, orgRole);
+            var orgResult = await _roleBusiness.BulkCreateRoles(uid, oid, null, orgRole);
 
             // Act - Create project-level "Admin" role with same name
             var projectRole = new List<CreateRoleRequestDto>
             {
                 new() { Name = "Admin", Description = "Project Admin" }
             };
-            var projectResult = await _roleBusiness.BulkCreateRoles(oid, pid, projectRole);
+            var projectResult = await _roleBusiness.BulkCreateRoles(uid, oid, pid, projectRole);
 
             // Assert - Both should exist with same name but different scopes
             Assert.Single(orgResult);
@@ -414,7 +414,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.BulkCreateRoles(nonExistentOrgId, pid, bulkDto));
+                () => _roleBusiness.BulkCreateRoles(uid, nonExistentOrgId, pid, bulkDto));
         }
 
         [Fact]
@@ -429,7 +429,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.BulkCreateRoles(oid, nonExistentProjectId, bulkDto));
+                () => _roleBusiness.BulkCreateRoles(uid, oid, nonExistentProjectId, bulkDto));
         }
 
         [Fact]
@@ -462,7 +462,7 @@ namespace deeplynx.tests
 
             // Act & Assert - Try to create role with oid but otherProject.Id
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _roleBusiness.BulkCreateRoles(uid, oid, otherProject.Id, bulkDto));
+                () => _roleBusiness.BulkCreateRoles(uid,  oid, otherProject.Id, bulkDto));
             
             Assert.Contains("does not belong to organization", exception.Message);
         }
@@ -505,7 +505,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _roleBusiness.BulkCreateRoles(oid, null, bulkDto);
+            var result = await _roleBusiness.BulkCreateRoles(uid, oid, null, bulkDto);
 
             // Assert
             Assert.Equal(2, result.Count);
@@ -530,7 +530,7 @@ namespace deeplynx.tests
             var emptyList = new List<CreateRoleRequestDto>();
 
             // Act
-            var result = await _roleBusiness.BulkCreateRoles(oid, pid, emptyList);
+            var result = await _roleBusiness.BulkCreateRoles(uid, oid, pid, emptyList);
 
             // Assert
             Assert.Empty(result);
@@ -783,7 +783,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _roleBusiness.UpdateRole(rid1, oid, null, dto));
+                () => _roleBusiness.UpdateRole(uid, rid1, oid, null, dto));
     
             Assert.Contains("already exists", exception.Message);
         }
@@ -796,7 +796,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.UpdateRole(rid1, oid, pid2, dto));
+                () => _roleBusiness.UpdateRole(uid, rid1, oid, pid2, dto));
     
             Assert.Contains($"Role with id {rid1} not found or does not belong to the specified organization/project context", exception.Message);
         }
@@ -819,7 +819,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.UpdateRole(rid1, organization.Id, pid2, dto));
+                () => _roleBusiness.UpdateRole(uid, rid1, organization.Id, pid2, dto));
     
             Assert.Contains($"Role with id {rid1} not found or does not belong to the specified organization/project context", exception.Message);
         }
@@ -832,7 +832,7 @@ namespace deeplynx.tests
             var dto = new UpdateRoleRequestDto { Name = "Role 1" };
 
             // Act
-            var result = await _roleBusiness.UpdateRole(rid4, oid, pid, dto);
+            var result = await _roleBusiness.UpdateRole(uid, rid4, oid, pid, dto);
 
             // Assert
             Assert.Equal("Role 1", result.Name);
@@ -928,7 +928,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.ArchiveRole(rid1, oid, pid2));
+                () => _roleBusiness.ArchiveRole(uid, rid1, oid, pid2));
             
             Assert.Contains($"Role with id {rid1} not found or does not belong to the specified organization/project context", exception.Message);
             
@@ -985,7 +985,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.UnarchiveRole(rid2, oid, pid2));
+                () => _roleBusiness.UnarchiveRole(uid, rid2, oid, pid2));
             
             Assert.Contains($"Role with id {rid2} not found or does not belong to the specified organization/project context", exception.Message);
             
@@ -1041,7 +1041,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.DeleteRole(rid4, oid, pid2));
+                () => _roleBusiness.DeleteRole(uid, rid4, oid, pid2));
     
             Assert.Contains($"Role with id {rid4} not found or does not belong to the specified organization/project context", exception.Message);
     
