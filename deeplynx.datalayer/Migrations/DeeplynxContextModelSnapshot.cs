@@ -1913,21 +1913,33 @@ namespace deeplynx.datalayer.Migrations
             modelBuilder.Entity("deeplynx.datalayer.Models.Event", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
-                        .WithMany()
-                        .HasForeignKey("DataSourceId");
+                        .WithMany("Events")
+                        .HasForeignKey("DataSourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("events_data_source_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
                         .WithMany("LastUpdatedEvents")
                         .HasForeignKey("LastUpdatedBy")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
+                        .WithMany("Events")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("events_organization_id_fkey");
+
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId");
+                        .WithMany("Events")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("events_project_id_fkey");
 
                     b.Navigation("DataSource");
 
                     b.Navigation("LastUpdatedByUser");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("Project");
                 });
@@ -2020,11 +2032,14 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("ObjectStorages")
-                        .HasForeignKey("OrganizationId");
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("object_storage_organization_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("ObjectStorages")
                         .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("object_storage_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
@@ -2375,6 +2390,8 @@ namespace deeplynx.datalayer.Migrations
                 {
                     b.Navigation("Edges");
 
+                    b.Navigation("Events");
+
                     b.Navigation("Records");
 
                     b.Navigation("Subscriptions");
@@ -2404,6 +2421,8 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
                 {
+                    b.Navigation("Events");
+
                     b.Navigation("Groups");
 
                     b.Navigation("ObjectStorages");
@@ -2428,6 +2447,8 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("DataSources");
 
                     b.Navigation("Edges");
+
+                    b.Navigation("Events");
 
                     b.Navigation("ObjectStorages");
 

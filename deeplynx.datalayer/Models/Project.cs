@@ -84,4 +84,7 @@ public partial class Project
 
     [InverseProperty("LastUpdatedProjects")]
     public virtual User? LastUpdatedByUser { get; set; }
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
 }

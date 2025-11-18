@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
     if (!session || !session.tokens?.access_token) {
       // User not authenticated - redirect to login page
       const returnUrl = `/api/oauth/authorize${request.nextUrl.search}`;
-      const loginUrl = new URL('/login/signin', request.url);
+      
+      // Use NEXTAUTH_URL which is the standard for NextAuth applications
+      const frontendUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+      const loginUrl = new URL('/login/signin', frontendUrl);
       loginUrl.searchParams.set('returnUrl', returnUrl);
 
       console.log(`User not authenticated, redirecting to login: ${loginUrl.toString()}`);
@@ -18,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // User is authenticated - forward request to C# backend
-    const backendUrl = process.env.BACKEND_BASE_URL || "http://localhost:5095";
+    const backendUrl = process.env.BACKEND_BASE_URL || "http://localhost:5095/api/v1";
 
     // Build the target URL with properly formatted query parameters
     const targetUrl = new URL(`${backendUrl}/oauth/authorize`);
@@ -45,7 +48,9 @@ export async function GET(request: NextRequest) {
       const location = backendResponse.headers.get('Location');
       if (location) {
         console.log(`C# backend returned redirect to: ${location}`);
-        return NextResponse.redirect(location);
+        // IMPORTANT: Return the redirect directly to the browser
+        // NextResponse.redirect() will send a 307 redirect to the client
+        return NextResponse.redirect(location, { status: 302 });
       }
     }
 
