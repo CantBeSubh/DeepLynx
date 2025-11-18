@@ -255,7 +255,7 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name }),
         });
 
-        await SetProjectDefaults(currentUserId, projectId);
+        await SetProjectDefaults(currentUserId, project.OrganizationId, projectId);
 
         return projectResponseDto;
     }
@@ -820,7 +820,7 @@ public class ProjectBusiness : IProjectBusiness
         }).ToList();
     }
 
-    private async Task SetProjectDefaults(long currentUserId, long projectId)
+    private async Task SetProjectDefaults(long currentUserId, long organizationId, long projectId)
     {
         // ===============================
         // CREATE DEFAULT CLASSES
@@ -910,13 +910,13 @@ public class ProjectBusiness : IProjectBusiness
             new CreateRoleRequestDto { Name = "Admin" },
             new CreateRoleRequestDto { Name = "User" }
         };
-        var roles = await _roleBusiness.BulkCreateRoles(currentUserId, projectId, defaultRoles);
+        var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
         var userRoleId = roles.Single(r => r.Name == "User").Id;
 
         // set role permissions for admin and user
-        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions);
-        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions, organizationId, projectId);
+        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions, organizationId, projectId);
 
         await AddMemberToProject(projectId, adminRoleId, currentUserId, null);
     }

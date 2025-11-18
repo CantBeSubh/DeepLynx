@@ -1094,13 +1094,15 @@ namespace deeplynx.tests
             {
                 Name = "Original Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             var newRole = new Role
             {
                 Name = "New Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             Context.Roles.AddRange(originalRole, newRole);
             await Context.SaveChangesAsync();
@@ -1127,13 +1129,15 @@ namespace deeplynx.tests
             {
                 Name = "Original Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid,
             };
             var newRole = new Role
             {
                 Name = "New Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             Context.Roles.AddRange(originalRole, newRole);
             await Context.SaveChangesAsync();
@@ -1576,8 +1580,8 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Add test roles
-            var testRole = new Role { Name = "Test Role" };
-            var missingRole = new Role { Name = "Missing Role" };
+            var testRole = new Role { Name = "Test Role", OrganizationId = oid};
+            var missingRole = new Role { Name = "Missing Role", OrganizationId = oid};
             Context.Roles.AddRange(testRole, missingRole);
             await Context.SaveChangesAsync();
             rid = testRole.Id;

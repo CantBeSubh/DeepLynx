@@ -400,6 +400,7 @@ public class EventBusiness : IEventBusiness
         {
             Operation = dto.Operation,
             EntityType = dto.EntityType,
+            OrganizationId = dto.OrganizationId,
             ProjectId = dto.ProjectId,
             Properties = dto.Properties,
             LastUpdatedBy = currentUserId,
@@ -461,6 +462,7 @@ public class EventBusiness : IEventBusiness
 
         var eventEntities = events.Select(dto => new Event
         {
+            OrganizationId = dto.OrganizationId,
             ProjectId = projectId,
             Operation = dto.Operation,
             EntityType = dto.EntityType,
