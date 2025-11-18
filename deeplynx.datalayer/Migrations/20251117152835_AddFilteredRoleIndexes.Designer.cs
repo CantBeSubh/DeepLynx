@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251117152835_AddFilteredRoleIndexes")]
+    partial class AddFilteredRoleIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1917,33 +1920,21 @@ namespace deeplynx.datalayer.Migrations
             modelBuilder.Entity("deeplynx.datalayer.Models.Event", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
-                        .WithMany("Events")
-                        .HasForeignKey("DataSourceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("events_data_source_id_fkey");
+                        .WithMany()
+                        .HasForeignKey("DataSourceId");
 
                     b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
                         .WithMany("LastUpdatedEvents")
                         .HasForeignKey("LastUpdatedBy")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
-                        .WithMany("Events")
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("events_organization_id_fkey");
-
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany("Events")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("events_project_id_fkey");
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
 
                     b.Navigation("DataSource");
 
                     b.Navigation("LastUpdatedByUser");
-
-                    b.Navigation("Organization");
 
                     b.Navigation("Project");
                 });
@@ -2036,14 +2027,11 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("ObjectStorages")
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("object_storage_organization_id_fkey");
+                        .HasForeignKey("OrganizationId");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("ObjectStorages")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("object_storage_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
@@ -2395,8 +2383,6 @@ namespace deeplynx.datalayer.Migrations
                 {
                     b.Navigation("Edges");
 
-                    b.Navigation("Events");
-
                     b.Navigation("Records");
 
                     b.Navigation("Subscriptions");
@@ -2426,8 +2412,6 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
                 {
-                    b.Navigation("Events");
-
                     b.Navigation("Groups");
 
                     b.Navigation("ObjectStorages");
@@ -2452,8 +2436,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("DataSources");
 
                     b.Navigation("Edges");
-
-                    b.Navigation("Events");
 
                     b.Navigation("ObjectStorages");
 
