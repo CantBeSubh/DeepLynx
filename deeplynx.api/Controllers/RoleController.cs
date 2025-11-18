@@ -25,8 +25,8 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// List Roles
         /// </summary>
+        /// <param name="organizationId">(Required) ID of the organization across which to search</param>
         /// <param name="projectId">(Optional) ID of the project across which to search</param>
-        /// <param name="organizationId">(Optional) ID of the organization across which to search</param>
         /// <param name="hideArchived">Flag indicating whether to hide or show archived roles</param>
         /// <returns></returns>
         [HttpGet("GetAllRoles", Name = "api_get_all_roles")]
