@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
@@ -106,7 +107,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var dataSource = await _dataSourceBusiness.CreateDataSource(projectId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var dataSource = await _dataSourceBusiness.CreateDataSource(currentUserId, projectId, dto);
                 return Ok(dataSource);
             }
             catch (Exception exc)
@@ -132,7 +134,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var dataSource = await _dataSourceBusiness.UpdateDataSource(projectId, dataSourceId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var dataSource = await _dataSourceBusiness.UpdateDataSource(currentUserId, projectId, dataSourceId, dto);
                 return Ok(dataSource);
             }
             catch (Exception exc)
@@ -180,7 +183,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _dataSourceBusiness.ArchiveDataSource(projectId, dataSourceId);
+                var currentUserId = UserContextStorage.UserId;
+                await _dataSourceBusiness.ArchiveDataSource(currentUserId, projectId, dataSourceId);
                 return Ok(new { message = $"Archived data source {dataSourceId}" });
             }
             catch (Exception exc)
@@ -204,7 +208,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _dataSourceBusiness.UnarchiveDataSource(projectId, dataSourceId);
+                var currentUserId = UserContextStorage.UserId;
+                await _dataSourceBusiness.UnarchiveDataSource(currentUserId, projectId, dataSourceId);
                 return Ok(new { message = $"Unarchived data source {dataSourceId}" });
             }
             catch (Exception exc)
@@ -228,7 +233,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var dataSource = await _dataSourceBusiness.SetDefaultDataSource(projectId, dataSourceId);
+                var currentUserId = UserContextStorage.UserId;
+                var dataSource = await _dataSourceBusiness.SetDefaultDataSource(currentUserId, projectId, dataSourceId);
                 return Ok(dataSource);
             }
             catch (Exception exc)

@@ -385,11 +385,13 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Asynchronously creates a new edge for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
     /// <param name="dto">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<EdgeResponseDto> CreateEdge(
+        long currentUserId,
         long projectId,
         long dataSourceId,
         CreateEdgeRequestDto dto)
@@ -427,14 +429,14 @@ public class EdgeBusiness : IEdgeBusiness
             DataSourceId = dataSourceId,
             RelationshipId = dto.RelationshipId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId
         };
 
         _context.Edges.Add(edge);
         await _context.SaveChangesAsync();
 
         // log edge create event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "create",
@@ -464,11 +466,13 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Asynchronously creates new edges for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
     /// <param name="edges">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
+        long currentUserId,
         long projectId,
         long dataSourceId,
         List<CreateEdgeRequestDto> edges)
@@ -478,11 +482,12 @@ public class EdgeBusiness : IEdgeBusiness
 
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
         var sql = @"
-            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at,is_archived)
+            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, last_updated_by, is_archived)
             VALUES {0}
             ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE SET
                 relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),
-                last_updated_at = @now
+                last_updated_at = @now,
+                last_updated_by = @lastUpdatedBy
             RETURNING *;
         ";
 
@@ -491,7 +496,8 @@ public class EdgeBusiness : IEdgeBusiness
         {
             new NpgsqlParameter("@projectId", projectId),
             new NpgsqlParameter("@dataSourceId", dataSourceId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
         };
 
         // establish "dynamic" parameters (new for each dto in the list)
@@ -529,7 +535,7 @@ public class EdgeBusiness : IEdgeBusiness
 
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", edges.Select((dto, i) =>
-            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now, false)"));
+            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now, @lastUpdatedBy, false)"));
 
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -561,6 +567,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Updates an existing edge by its ID or origin/destination.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
     /// <param name="dto">The edge request data transfer object containing updated edge details.</param>
     /// <param name="edgeId">The ID of the edge to update</param>
@@ -569,6 +576,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>The updated edge response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<EdgeResponseDto> UpdateEdge(
+        long currentUserId,
         long projectId,
         UpdateEdgeRequestDto dto,
         long? edgeId,
@@ -587,7 +595,7 @@ public class EdgeBusiness : IEdgeBusiness
         edge.DestinationId = dto.DestinationId ?? edge.DestinationId;
         edge.RelationshipId = dto.RelationshipId ?? edge.RelationshipId;
         edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        edge.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
+        edge.LastUpdatedBy = currentUserId;
 
         if (edge.OriginId == edge.DestinationId)
         {
@@ -598,7 +606,7 @@ public class EdgeBusiness : IEdgeBusiness
         await _context.SaveChangesAsync();
 
         // log edge update event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "update",
@@ -652,6 +660,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Archives a specific edge by its ID or origin/destination.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
     /// <param name="edgeId">The ID of the edge to archive</param>
     /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
@@ -659,6 +668,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>The ID of the edge that was archived.</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<long> ArchiveEdge(
+        long currentUserId,
         long projectId,
         long? edgeId,
         long? originId,
@@ -672,10 +682,11 @@ public class EdgeBusiness : IEdgeBusiness
 
         edge.IsArchived = true;
         edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        edge.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
 
         // Log Edge soft Delete Event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "delete",
@@ -691,6 +702,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Unarchives a specific edge by its ID or origin/destination.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
     /// <param name="edgeId">The ID of the edge to unarchive</param>
     /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>
@@ -698,6 +710,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>The ID of the edge that was unarchived.</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<long> UnarchiveEdge(
+        long currentUserId,
         long projectId,
         long? edgeId,
         long? originId,
@@ -710,10 +723,11 @@ public class EdgeBusiness : IEdgeBusiness
             throw new KeyNotFoundException("Edge to unarchive not found or is not archived.");
 
         edge.IsArchived = false;
-        _context.Edges.Update(edge);
+        edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        edge.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "unarchive",

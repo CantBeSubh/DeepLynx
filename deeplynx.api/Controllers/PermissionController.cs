@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -88,7 +89,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var permission = await _permissionBusiness.CreatePermission(dto, projectId, organizationId);
+                var currentUserId = UserContextStorage.UserId;
+                var permission = await _permissionBusiness.CreatePermission(currentUserId, dto, projectId, organizationId);
                 return Ok(permission);
             }
             catch (Exception exc)
@@ -112,7 +114,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var permission = await _permissionBusiness.UpdatePermission(permissionId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var permission = await _permissionBusiness.UpdatePermission(currentUserId, permissionId, dto);
                 return Ok(permission);
             }
             catch (Exception exc)
@@ -133,7 +136,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _permissionBusiness.DeletePermission(permissionId);
+                var currentUserId = UserContextStorage.UserId;
+                await _permissionBusiness.DeletePermission(currentUserId, permissionId);
                 return Ok(new { message = $"Deleted permission {permissionId}" });
             }
             catch (Exception exc)
@@ -154,7 +158,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _permissionBusiness.ArchivePermission(permissionId);
+                var currentUserId = UserContextStorage.UserId;
+                await _permissionBusiness.ArchivePermission(currentUserId, permissionId);
                 return Ok(new { message = $"Archived permission {permissionId}" });
             }
             catch (Exception exc)
@@ -175,7 +180,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _permissionBusiness.UnarchivePermission(permissionId);
+                var currentUserId = UserContextStorage.UserId;
+                await _permissionBusiness.UnarchivePermission(currentUserId, permissionId);
                 return Ok(new { message = $"Unarchived permission {permissionId}" });
             }
             catch (Exception exc)

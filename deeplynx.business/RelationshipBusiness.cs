@@ -124,11 +124,12 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, CreateRelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> CreateRelationship(long currentUserId, long projectId, CreateRelationshipRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         ValidationHelper.ValidateModel(dto);
@@ -166,7 +167,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             DestinationId = dto.DestinationId,
             ProjectId = projectId,
             LastUpdatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null , // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId
         };
 
         _context.Relationships.Add(relationship);
@@ -187,7 +188,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         }
         
         // log relationship create event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "create",
             EntityType = "relationship",
@@ -215,11 +216,13 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="relationships">A list of relationship data transfer objects with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(
+        long currentUserId,
         long projectId, 
         List<CreateRelationshipRequestDto> relationships)
     {
@@ -232,7 +235,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, relationships.description),
                 uuid = COALESCE(EXCLUDED.uuid, relationships.uuid),
-                last_updated_at = @now
+                last_updated_at = @now,
+                last_updated_by = @lastUpdatedBy
             RETURNING *;
         ";
         
@@ -240,7 +244,8 @@ public class RelationshipBusiness: IRelationshipBusiness
         var parameters = new List<NpgsqlParameter>
         {
             new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
         };
         
         // establish "dynamic" parameters (new for each dto in the list)
@@ -253,7 +258,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", relationships.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, NULL)"));
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, @lastUpdatedBy)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -287,12 +292,13 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Updates an existing relationship by its ID.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="relationshipId">The ID of the relationship to update.</param>
     /// <param name="dto">The relationship request data transfer object containing updated relationship details.</param>
     /// <returns>The updated relationship response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, UpdateRelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> UpdateRelationship(long currentUserId, long projectId, long relationshipId, UpdateRelationshipRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
@@ -319,12 +325,12 @@ public class RelationshipBusiness: IRelationshipBusiness
         relationship.OriginId = dto.OriginId ?? relationship.OriginId;
         relationship.DestinationId = dto.DestinationId ?? relationship.DestinationId;
         relationship.LastUpdatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        relationship.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
+        relationship.LastUpdatedBy = currentUserId;
         _context.Relationships.Update(relationship);
         await _context.SaveChangesAsync();
         
         // log relationship update event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "update",
             EntityType = "relationship",
@@ -373,11 +379,12 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Archive a specific relationship by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="relationshipId">The ID of the relationship to archive</param>
     /// <returns>Boolean true on successful archive</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
-    public async Task<bool> ArchiveRelationship(long projectId, long relationshipId)
+    public async Task<bool> ArchiveRelationship(long currentUserId, long projectId, long relationshipId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
@@ -387,11 +394,11 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         relationship.IsArchived = true;
         relationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Relationships.Update(relationship);
+        relationship.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         
         // Log relationship archive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "archive",
@@ -408,11 +415,12 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Unarchive a specific relationship by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="relationshipId">The ID of the relationship to unarchive</param>
     /// <returns>Boolean true on successful unarchive action</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
-    public async Task<bool> UnarchiveRelationship(long projectId, long relationshipId)
+    public async Task<bool> UnarchiveRelationship(long currentUserId, long projectId, long relationshipId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
@@ -422,11 +430,11 @@ public class RelationshipBusiness: IRelationshipBusiness
         
         relationship.IsArchived = false;
         relationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Relationships.Update(relationship);
+        relationship.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         
         // Log relationship unarchive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "unarchive",

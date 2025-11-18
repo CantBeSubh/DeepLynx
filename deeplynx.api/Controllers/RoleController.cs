@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -91,7 +92,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var role = await _roleBusiness.CreateRole(dto, organizationId, projectId);
+                var currentUserId = UserContextStorage.UserId;
+                var role = await _roleBusiness.CreateRole(currentUserId, dto, organizationId, projectId);
                 return Ok(role);
             }
             catch (Exception exc)
@@ -119,7 +121,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var role = await _roleBusiness.UpdateRole(roleId, organizationId, projectId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var role = await _roleBusiness.UpdateRole(currentUserId, roleId, organizationId, projectId, dto);
                 return Ok(role);
             }
             catch (Exception exc)
@@ -145,7 +148,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _roleBusiness.DeleteRole(roleId, organizationId, projectId);
+                var currentUserId = UserContextStorage.UserId;
+                await _roleBusiness.DeleteRole(currentUserId, roleId, organizationId, projectId);
                 return Ok(new { message = $"Deleted role {roleId}" });
             }
             catch (Exception exc)
@@ -171,7 +175,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _roleBusiness.ArchiveRole(roleId, organizationId, projectId);
+                var currentUserId = UserContextStorage.UserId;
+                await _roleBusiness.ArchiveRole(currentUserId, roleId, organizationId, projectId);
                 return Ok(new { message = $"Archived role {roleId}" });
             }
             catch (Exception exc)
@@ -197,7 +202,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _roleBusiness.UnarchiveRole(roleId, organizationId, projectId);
+                var currentUserId = UserContextStorage.UserId;
+                await _roleBusiness.UnarchiveRole(currentUserId, roleId, organizationId, projectId);
                 return Ok(new { message = $"Unarchived role {roleId}" });
             }
             catch (Exception exc)

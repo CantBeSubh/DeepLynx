@@ -112,13 +112,14 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Create a new role
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">Data Transfer Object containing new role information</param>
     /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
     /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>The newly created role</returns>
     /// <exception cref="ArgumentException">Returned for invalid project/org pair</exception>
     public async Task<RoleResponseDto> CreateRole(
-        CreateRoleRequestDto dto, long organizationId, long? projectId = null)
+        long currentUserId, CreateRoleRequestDto dto, long organizationId, long? projectId = null)
     {
         ValidationHelper.ValidateModel(dto);
         
@@ -141,7 +142,7 @@ public class RoleBusiness : IRoleBusiness
             Name = dto.Name,
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
+            LastUpdatedBy = currentUserId,
             ProjectId = projectId,
             OrganizationId = organizationId,
         };
@@ -164,7 +165,7 @@ public class RoleBusiness : IRoleBusiness
         }
 
         // Log create Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organizationId,
             ProjectId = projectId,
@@ -191,11 +192,12 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Upsert multiple roles at a time
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">(Required) Role organization</param>
     /// <param name="projectId">(Optional) Role project</param>
     /// <param name="roles"></param>
     /// <returns>List of created roles</returns>
-    public async Task<List<RoleResponseDto>> BulkCreateRoles(long organizationId, long? projectId, List<CreateRoleRequestDto> roles)
+    public async Task<List<RoleResponseDto>> BulkCreateRoles(long currentUserId, long organizationId, long? projectId, List<CreateRoleRequestDto> roles)
     {
         // There may be a better way to handle this, but let's avoid touching DB unless we have roles supplied
         if (roles == null || roles.Count == 0)
@@ -235,7 +237,8 @@ public class RoleBusiness : IRoleBusiness
                 ON CONFLICT (organization_id, name) WHERE project_id IS NULL
                 DO UPDATE SET
                     description = COALESCE(EXCLUDED.description, roles.description),
-                    last_updated_at = @now
+                    last_updated_at = @now,
+                last_updated_by = @lastUpdatedBy
                 RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;";
         
         // establish "constant" parameters
@@ -243,7 +246,8 @@ public class RoleBusiness : IRoleBusiness
         {
             new NpgsqlParameter("@projectId", projectId.HasValue ? (object)projectId.Value : DBNull.Value),
             new NpgsqlParameter("@organizationId", organizationId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
         };
 
         // establish "dynamic" parameters (new for each dto in the list)
@@ -255,7 +259,7 @@ public class RoleBusiness : IRoleBusiness
 
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", roles.Select((dto, i) =>
-            $"(@projectId, @organizationId, @p{i}_name, @p{i}_desc, @now, NULL)"));
+            $"(@projectId, @organizationId, @p{i}_name, @p{i}_desc, @now, @lastUpdatedBy)"));
 
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -294,13 +298,14 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Update role information
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of the role to be updated</param>
     /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
     /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <param name="dto">Data Transfer Object containing new role information</param>
     /// <returns>The newly updated role</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<RoleResponseDto> UpdateRole(long roleId, long organizationId, long? projectId, UpdateRoleRequestDto dto)
+    public async Task<RoleResponseDto> UpdateRole(long currentUserId, long roleId, long organizationId, long? projectId, UpdateRoleRequestDto dto)
     {
         ValidationHelper.ValidateModel(dto);
         
@@ -326,7 +331,7 @@ public class RoleBusiness : IRoleBusiness
         role.Name = dto.Name ?? role.Name;
         role.Description = dto.Description ?? role.Description;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        role.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
+        role.LastUpdatedBy = currentUserId;
 
         try
         {
@@ -346,7 +351,7 @@ public class RoleBusiness : IRoleBusiness
         }
 
         // Log update Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,
@@ -373,13 +378,14 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Archive a role by ID. Remove role from downstream project members
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to archive</param>
     /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
     /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is already archived</exception>
     /// <exception cref="DependencyDeletionException">Returned if role removal from project members fails</exception>
-    public async Task<bool> ArchiveRole(long roleId, long organizationId, long? projectId)
+    public async Task<bool> ArchiveRole(long currentUserId, long roleId, long organizationId, long? projectId)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -405,6 +411,8 @@ public class RoleBusiness : IRoleBusiness
         {
             try
             {
+                //Todo: update archive procedure to include lastUpdatedBy
+                
                 // run the archive role procedure, which archives this role and
                 // removes this role from anyone holding it in any projects
                 var archived = await _context.Database.ExecuteSqlRawAsync(
@@ -427,7 +435,7 @@ public class RoleBusiness : IRoleBusiness
         }
 
         // Log archive Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,
@@ -444,12 +452,13 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Unarchive a role by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to unarchive</param>
     /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
     /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is not archived</exception>
-    public async Task<bool> UnarchiveRole(long roleId, long organizationId, long? projectId)
+    public async Task<bool> UnarchiveRole(long currentUserId, long roleId, long organizationId, long? projectId)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -469,12 +478,12 @@ public class RoleBusiness : IRoleBusiness
 
         role.IsArchived = false;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        role.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
+        role.LastUpdatedBy = currentUserId;
         _context.Roles.Update(role);
         await _context.SaveChangesAsync();
 
         // Log unarchive Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,
@@ -491,12 +500,13 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Delete a role by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to delete</param>
     /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
     /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<bool> DeleteRole(long roleId, long organizationId, long? projectId)
+    public async Task<bool> DeleteRole(long currentUserId, long roleId, long organizationId, long? projectId)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -518,7 +528,7 @@ public class RoleBusiness : IRoleBusiness
         await _context.SaveChangesAsync();
 
         // Log archive Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,
