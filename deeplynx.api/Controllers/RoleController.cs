@@ -134,7 +134,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _roleBusiness.DeleteRole(roleId);
+                var currentUserId = UserContextStorage.UserId;
+                await _roleBusiness.DeleteRole(currentUserId, roleId);
                 return Ok(new { message = $"Deleted role {roleId}" });
             }
             catch (Exception exc)

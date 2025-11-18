@@ -11,7 +11,7 @@ public interface IRoleBusiness
     Task<RoleResponseDto> UpdateRole(long currentUserId, long roleId, UpdateRoleRequestDto role);
     Task<bool> ArchiveRole(long currentUserId, long roleId);
     Task<bool> UnarchiveRole(long currentUserId, long roleId);
-    Task<bool> DeleteRole(long roleId);
+    Task<bool> DeleteRole(long currentUserId, long roleId);
     Task<IEnumerable<PermissionResponseDto>> GetPermissionsByRole(long roleId);
     Task<bool> AddPermissionToRole(long roleId, long permissionId);
     Task<bool> RemovePermissionFromRole(long roleId, long permissionId);

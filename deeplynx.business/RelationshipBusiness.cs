@@ -188,7 +188,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         }
         
         // log relationship create event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "create",
             EntityType = "relationship",
@@ -330,7 +330,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         await _context.SaveChangesAsync();
         
         // log relationship update event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "update",
             EntityType = "relationship",
@@ -398,7 +398,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         await _context.SaveChangesAsync();
         
         // Log relationship archive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "archive",
@@ -434,7 +434,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         await _context.SaveChangesAsync();
         
         // Log relationship unarchive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "unarchive",

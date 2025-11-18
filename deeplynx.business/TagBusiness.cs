@@ -133,7 +133,7 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
         
         // Log Tag Create Event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = tag.ProjectId,
             Operation = "create",
@@ -257,7 +257,7 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
         
         // Log tag update event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "update",
             EntityType = "tag",
@@ -319,7 +319,7 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
         
         // Log tag soft delete event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "delete",
             EntityType = "tag",
@@ -354,7 +354,7 @@ public class TagBusiness : ITagBusiness
         tag.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "unarchive",
             EntityType = "tag",

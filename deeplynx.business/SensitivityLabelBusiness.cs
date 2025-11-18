@@ -135,7 +135,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         await _context.SaveChangesAsync();
         
         // Log create SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organizationId,
             ProjectId = projectId,
@@ -183,7 +183,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         await _context.SaveChangesAsync();
         
         // Log update SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = label.OrganizationId,
             ProjectId = label.ProjectId,
@@ -226,7 +226,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         await _context.SaveChangesAsync();
         
         // Log archive SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = label.OrganizationId,
             ProjectId = label.ProjectId,
@@ -259,7 +259,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         await _context.SaveChangesAsync();
         
         // Log unarchive SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = label.OrganizationId,
             ProjectId = label.ProjectId,
@@ -276,10 +276,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Delete a sensitivity label by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to delete</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found</exception>
-    public async Task<bool> DeleteSensitivityLabel(long labelId)
+    public async Task<bool> DeleteSensitivityLabel(long currentUserId, long labelId)
     {
         var label = await _context.SensitivityLabels.FindAsync(labelId);
         if (label == null || label.IsArchived)
@@ -289,7 +290,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         await _context.SaveChangesAsync();
         
         // Log delete SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = label.OrganizationId,
             ProjectId = label.ProjectId,

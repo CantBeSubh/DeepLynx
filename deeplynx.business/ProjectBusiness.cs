@@ -243,7 +243,7 @@ public class ProjectBusiness : IProjectBusiness
         }
 
         // Log create Project event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = project.OrganizationId,
             ProjectId = projectId,
@@ -287,7 +287,7 @@ public class ProjectBusiness : IProjectBusiness
         await _context.SaveChangesAsync();
 
         // Log update Project event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = project.Id,
             Operation = "update",
@@ -418,7 +418,7 @@ public class ProjectBusiness : IProjectBusiness
             }
         }
 
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "archive",
@@ -535,7 +535,7 @@ public class ProjectBusiness : IProjectBusiness
                 await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
 
                 // Log the event
-                await _eventBusiness.CreateEvent(new CreateEventRequestDto
+                await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
                 {
                     ProjectId = projectId,
                     Operation = "unarchive",

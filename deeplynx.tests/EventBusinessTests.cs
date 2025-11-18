@@ -960,7 +960,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.CreateEvent(dto);
+            var result = await _eventBusiness.CreateEvent(mockUserId, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -989,7 +989,7 @@ namespace deeplynx.tests
             };
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => _eventBusiness.CreateEvent(dto));
+            await Assert.ThrowsAsync<ArgumentException>(() => _eventBusiness.CreateEvent(mockUserId, dto));
         }
 
         [Fact]
@@ -1008,7 +1008,7 @@ namespace deeplynx.tests
             };
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => _eventBusiness.CreateEvent(dto));
+            await Assert.ThrowsAsync<ArgumentException>(() => _eventBusiness.CreateEvent(mockUserId, dto));
         }
 
         #endregion

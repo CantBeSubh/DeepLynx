@@ -135,7 +135,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _sensitivityLabelBusiness.DeleteSensitivityLabel(labelId);
+                var  currentUserId = UserContextStorage.UserId;
+                await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId);
                 return Ok(new { message = $"Deleted sensitivity label {labelId}" });
             }
             catch (Exception exc)

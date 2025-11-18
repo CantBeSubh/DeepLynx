@@ -110,7 +110,7 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log create Group event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organizationId,
             Operation = "create",
@@ -155,7 +155,7 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log update Group event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = group.OrganizationId,
             Operation = "update",
@@ -196,7 +196,7 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log archive Group event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = group.OrganizationId,
             Operation = "archive",
@@ -230,7 +230,7 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log unarchive Group event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = group.OrganizationId,
             Operation = "unarchive",
@@ -249,7 +249,7 @@ public class GroupBusiness : IGroupBusiness
     /// <param name="groupId">ID of the group to delete</param>
     /// <returns>Boolean true on successful delete</returns>
     /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
-    public async Task<bool> DeleteGroup(long groupId)
+    public async Task<bool> DeleteGroup(long currentUserId, long groupId)
     {
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
@@ -259,7 +259,7 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log delete Group event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = group.OrganizationId,
             Operation = "delete",

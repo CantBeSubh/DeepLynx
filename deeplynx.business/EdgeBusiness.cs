@@ -436,7 +436,7 @@ public class EdgeBusiness : IEdgeBusiness
         await _context.SaveChangesAsync();
 
         // log edge create event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "create",
@@ -606,7 +606,7 @@ public class EdgeBusiness : IEdgeBusiness
         await _context.SaveChangesAsync();
 
         // log edge update event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "update",
@@ -686,7 +686,7 @@ public class EdgeBusiness : IEdgeBusiness
         await _context.SaveChangesAsync();
 
         // Log Edge soft Delete Event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "delete",
@@ -727,7 +727,7 @@ public class EdgeBusiness : IEdgeBusiness
         edge.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "unarchive",

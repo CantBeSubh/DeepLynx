@@ -156,7 +156,7 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log create Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = permission.OrganizationId,
             ProjectId = permission.ProjectId,
@@ -212,7 +212,7 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log update Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = permission.OrganizationId,
             ProjectId = permission.ProjectId,
@@ -263,7 +263,7 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log archive Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = permission.OrganizationId,
             ProjectId = permission.ProjectId,
@@ -300,7 +300,7 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log unarchive Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = permission.OrganizationId,
             ProjectId = permission.ProjectId,
@@ -320,7 +320,7 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="permissionId">The ID of the permission to be deleted</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<bool> DeletePermission(long permissionId)
+    public async Task<bool> DeletePermission( long currentUserId, long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
         // ensure that default permissions cannot be edited
@@ -333,7 +333,7 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log delete Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = permission.OrganizationId,
             ProjectId = permission.ProjectId,

@@ -141,7 +141,7 @@ public class RoleBusiness : IRoleBusiness
         await _context.SaveChangesAsync();
 
         // Log create Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organizationId,
             ProjectId = projectId,
@@ -258,7 +258,7 @@ public class RoleBusiness : IRoleBusiness
         await _context.SaveChangesAsync();
 
         // Log update Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,
@@ -328,7 +328,7 @@ public class RoleBusiness : IRoleBusiness
         }
 
         // Log archive Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,
@@ -362,7 +362,7 @@ public class RoleBusiness : IRoleBusiness
         await _context.SaveChangesAsync();
 
         // Log unarchive Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,
@@ -379,10 +379,11 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Delete a role by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to delete</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
-    public async Task<bool> DeleteRole(long roleId)
+    public async Task<bool> DeleteRole(long currentUserId, long roleId)
     {
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
@@ -392,7 +393,7 @@ public class RoleBusiness : IRoleBusiness
         await _context.SaveChangesAsync();
 
         // Log archive Role event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = role.OrganizationId,
             ProjectId = role.ProjectId,

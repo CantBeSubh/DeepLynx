@@ -473,7 +473,7 @@ namespace deeplynx.tests
         public async Task DeleteGroup_Succeeds_WhenExists()
         {
             // Act
-            var result = await _groupBusiness.DeleteGroup(gid);
+            var result = await _groupBusiness.DeleteGroup(uid, gid);
             
             // Assert
             Assert.True(result);
@@ -498,7 +498,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.DeleteGroup(99999));
+                () => _groupBusiness.DeleteGroup(uid, 99999));
             
             Assert.Contains("Group with id 99999 not found", exception.Message);
             
@@ -512,7 +512,7 @@ namespace deeplynx.tests
         {
             // Act & Assert - trying to delete archived group
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.DeleteGroup(gid2)); // archived
+                () => _groupBusiness.DeleteGroup(uid, gid2)); // archived
             
             Assert.Contains($"Group with id {gid2} not found", exception.Message);
             

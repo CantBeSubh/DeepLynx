@@ -136,7 +136,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _permissionBusiness.DeletePermission(permissionId);
+                var currentUserId = UserContextStorage.UserId;
+                await _permissionBusiness.DeletePermission(currentUserId, permissionId);
                 return Ok(new { message = $"Deleted permission {permissionId}" });
             }
             catch (Exception exc)

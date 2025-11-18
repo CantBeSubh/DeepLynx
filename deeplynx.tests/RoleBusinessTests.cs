@@ -643,7 +643,7 @@ namespace deeplynx.tests
         public async Task DeleteRole_Succeeds_WhenExists()
         {
             // Act
-            var result = await _roleBusiness.DeleteRole(rid1);
+            var result = await _roleBusiness.DeleteRole(uid, rid1);
     
             // Assert
             Assert.True(result);
@@ -668,7 +668,7 @@ namespace deeplynx.tests
         {
             // Act
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _roleBusiness.DeleteRole(rid3));
+                () => _roleBusiness.DeleteRole(uid, rid3));
     
             // Assert
             Assert.Contains($"Role with id {rid3} not found or is archived", exception.Message);

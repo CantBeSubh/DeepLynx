@@ -379,9 +379,10 @@ public class EventBusiness : IEventBusiness
     /// <summary>
     /// Creates a new Event based on the event data provided.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
-    public async Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto)
+    public async Task<EventResponseDto> CreateEvent(long currentUserId, CreateEventRequestDto dto)
     {
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
@@ -401,11 +402,11 @@ public class EventBusiness : IEventBusiness
             EntityType = dto.EntityType,
             ProjectId = dto.ProjectId,
             Properties = dto.Properties,
-            LastUpdatedBy = UserContextStorage.UserId,
+            LastUpdatedBy = currentUserId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             DataSourceId = dto.DataSourceId,
             EntityId = dto.EntityId,
-            EntityName = dto.EntityName
+            EntityName = dto.EntityName,
         };
 
         _context.Events.Add(newEvent);

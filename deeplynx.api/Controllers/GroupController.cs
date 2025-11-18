@@ -151,7 +151,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _groupBusiness.DeleteGroup(groupId);
+                var currentUserId = UserContextStorage.UserId;
+                await _groupBusiness.DeleteGroup(currentUserId, groupId);
                 return Ok(new { message = $"Deleted group {groupId}" });
             }
             catch (Exception exc)

@@ -554,7 +554,7 @@ namespace deeplynx.tests
         public async Task DeleteSensitivityLabel_Succeeds_WhenExists()
         {
             // Act
-            var result = await _labelBusiness.DeleteSensitivityLabel(lid);
+            var result = await _labelBusiness.DeleteSensitivityLabel(uid, lid);
             
             // Assert
             Assert.True(result);
@@ -580,7 +580,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.DeleteSensitivityLabel(99999));
+                () => _labelBusiness.DeleteSensitivityLabel(uid, 99999));
             
             Assert.Contains("Sensitivity label with id 99999 not found or is archived", exception.Message);
             
@@ -594,7 +594,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _labelBusiness.DeleteSensitivityLabel(lid2)); // archived label
+                () => _labelBusiness.DeleteSensitivityLabel(uid, lid2)); // archived label
             
             Assert.Contains($"Sensitivity label with id {lid2} not found or is archived", exception.Message);
             

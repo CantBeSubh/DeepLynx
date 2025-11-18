@@ -711,7 +711,7 @@ namespace deeplynx.tests
         public async Task DeletePermission_Succeeds_WhenExists()
         {
             // Act
-            var result = await _permissionBusiness.DeletePermission(permid1);
+            var result = await _permissionBusiness.DeletePermission(uid, permid1);
 
             // Assert
             Assert.True(result);
@@ -736,7 +736,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.DeletePermission(permid4)); // deleted permission
+                () => _permissionBusiness.DeletePermission(uid, permid4)); // deleted permission
 
             Assert.Contains($"Permission with id {permid4} not found", exception.Message);
 
@@ -756,7 +756,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.DeletePermission(isDefault.Id)); // default permission
+                () => _permissionBusiness.DeletePermission(uid, isDefault.Id)); // default permission
 
             Assert.Contains($"Permission with id {isDefault.Id} cannot be deleted", exception.Message);
 

@@ -196,7 +196,7 @@ namespace deeplynx.business
             await _context.SaveChangesAsync();
             
             // Log DataSource Create Event
-            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
             {
                 ProjectId = projectId,
                 Operation = "create",
@@ -259,7 +259,7 @@ namespace deeplynx.business
             //_context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
             
-            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
             {
                 ProjectId = projectId,
                 Operation = "update",
@@ -332,7 +332,7 @@ namespace deeplynx.business
             await _context.SaveChangesAsync();
             
             // Log dataSource archive event
-            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
             {
                 ProjectId = projectId,
                 Operation = "archive",
@@ -369,7 +369,7 @@ namespace deeplynx.business
             await _context.SaveChangesAsync();
             
             // Log dataSource unarchive event
-            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
             {
                 ProjectId = projectId,
                 Operation = "unarchive",
@@ -413,7 +413,7 @@ namespace deeplynx.business
                 await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
                 await _context.SaveChangesAsync();
 
-                await _eventBusiness.CreateEvent(new CreateEventRequestDto
+                await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
                 {
                     ProjectId = projectId,
                     Operation = "update",

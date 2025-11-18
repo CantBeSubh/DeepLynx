@@ -126,7 +126,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // Log create Organization event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organization.Id,
             Operation = "create",
@@ -180,7 +180,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // log update Organization event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organization.Id,
             Operation = "update",
@@ -223,7 +223,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // Log organization archive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organization.Id,
             Operation = "archive",
@@ -257,7 +257,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // Log organization archive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = organization.Id,
             Operation = "unarchive",

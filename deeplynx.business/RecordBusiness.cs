@@ -241,7 +241,7 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
         
         // Log Record Create Event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = record.ProjectId,
             EntityType = "record",
@@ -422,7 +422,7 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
         
         // Log Record Update Event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = record.ProjectId,
             EntityType = "record",
@@ -525,7 +525,7 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record soft delete event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "archive",
@@ -589,7 +589,7 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record soft delete event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "unarchive",

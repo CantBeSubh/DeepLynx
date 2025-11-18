@@ -13,5 +13,5 @@ public interface IPermissionBusiness
     Task<PermissionResponseDto> UpdatePermission(long currentUserId, long permissionId, UpdatePermissionRequestDto role);
     Task<bool> ArchivePermission(long currentUserId, long permissionId);
     Task<bool> UnarchivePermission(long currentUserId, long permissionId);
-    Task<bool> DeletePermission(long permissionId);
+    Task<bool> DeletePermission(long currentUserId, long permissionId);
 }

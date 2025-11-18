@@ -12,5 +12,5 @@ public interface ISensitivityLabelBusiness
     Task<SensitivityLabelResponseDto> UpdateSensitivityLabel(long currentUserId, long labelId, UpdateSensitivityLabelRequestDto dto);
     Task<bool> ArchiveSensitivityLabel(long currentUserId, long labelId);
     Task<bool> UnarchiveSensitivityLabel(long currentUserId, long labelId);
-    Task<bool> DeleteSensitivityLabel(long labelId);
+    Task<bool> DeleteSensitivityLabel(long currentUserId, long labelId);
 }

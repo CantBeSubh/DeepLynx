@@ -10,7 +10,7 @@ public interface IGroupBusiness
     Task<GroupResponseDto> UpdateGroup(long currentUserId, long groupId, UpdateGroupRequestDto dto);
     Task<bool> ArchiveGroup(long currentUserId, long groupId);
     Task<bool> UnarchiveGroup(long currentUserId, long groupId);
-    Task<bool> DeleteGroup(long groupId);
+    Task<bool> DeleteGroup(long currentUserId, long groupId);
     Task<bool> AddUserToGroup(long userId, long groupId);
     Task<bool> RemoveUserFromGroup(long userId, long groupId);
     Task<IEnumerable<UserResponseDto>> GetGroupMembers(long groupId);

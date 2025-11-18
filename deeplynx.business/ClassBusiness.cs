@@ -141,7 +141,7 @@ public class ClassBusiness : IClassBusiness
         await _context.SaveChangesAsync();
         
         // log event with class create details
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "create",
@@ -267,7 +267,7 @@ public class ClassBusiness : IClassBusiness
         await _context.SaveChangesAsync();
         
         // log event with class update details
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "update",
@@ -364,7 +364,7 @@ public class ClassBusiness : IClassBusiness
             }
         }
 
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "archive",
@@ -429,7 +429,7 @@ public class ClassBusiness : IClassBusiness
             }
         }
 
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "unarchive",
