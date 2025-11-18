@@ -44,7 +44,6 @@ public class EventBusiness : IEventBusiness
             .Include(e => e.DataSource)
             .AsQueryable();
 
-        // Apply XOR filter: filter by either organizationId or projectId
         if (organizationId.HasValue)
         {
             eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
@@ -86,6 +85,8 @@ public class EventBusiness : IEventBusiness
     /// Retrieves all project events with pagination.
     /// </summary>
     /// <param name="queryDto">Filter criteria and pagination parameters</param>
+    /// <param name="organizationId">The id of the organization the events are a part of</param>
+    /// <param name="projectId">The id of the project the events are a part of</param>
     /// <returns>Paginated response containing events and pagination metadata</returns>
     public async Task<PaginatedResponse<EventResponseDto>> QueryAllEvents(EventsQueryRequestDTO? queryDto,
         long? organizationId, long? projectId)
@@ -96,7 +97,6 @@ public class EventBusiness : IEventBusiness
             .Include(e => e.DataSource)
             .AsQueryable();
 
-        // Apply XOR filter: filter by either organizationId or projectId
         if (organizationId.HasValue)
         {
             eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
@@ -151,14 +151,11 @@ public class EventBusiness : IEventBusiness
                 eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= queryDto.endDate.Value);
         }
 
-        // Get total count before pagination
         var totalCount = await eventQuery.CountAsync();
 
-        // Get pagination values
         var pageNumber = queryDto?.PageNumber ?? 1;
         var pageSize = queryDto?.GetValidatedPageSize() ?? 500;
 
-        // Apply pagination and execute query
         var items = await (from e in eventQuery
                 join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
                 from user in userGroup.DefaultIfEmpty()
@@ -220,13 +217,11 @@ public class EventBusiness : IEventBusiness
                 .Select(p => p.Id)
                 .ToListAsync();
 
-            // Show organization-level events OR project events the user has access to
             eventQuery = eventQuery.Where(e =>
                 (e.OrganizationId == organizationId.Value) ||
                 (e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
             );
 
-            // If specific projectId provided, further filter to only that project
             if (projectId.HasValue)
             {
                 eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
@@ -239,7 +234,6 @@ public class EventBusiness : IEventBusiness
 
         eventQuery = eventQuery.OrderByDescending(e => e.LastUpdatedAt);
 
-        // Apply additional filters from queryDto
         if (queryDto != null)
         {
             if (!string.IsNullOrWhiteSpace(queryDto.projectName))
@@ -291,14 +285,11 @@ public class EventBusiness : IEventBusiness
                 eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= queryDto.endDate.Value);
         }
 
-        // Get total count before pagination
         var totalCount = await eventQuery.CountAsync();
 
-        // Get pagination values
         var pageNumber = queryDto?.PageNumber ?? 1;
         var pageSize = queryDto?.GetValidatedPageSize() ?? 25;
 
-        // Apply pagination and execute query
         var items = await (from e in eventQuery
                 join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
                 from user in userGroup.DefaultIfEmpty()
@@ -344,19 +335,16 @@ public class EventBusiness : IEventBusiness
     public async Task<List<EventResponseDto>> GetAllEventsBySubscriptions(long currentUserId, long? organizationId,
         long? projectId)
     {
-        // Get subscriptions based on organizationId and projectId
         var subscriptionsQuery = _context.Set<Subscription>()
             .Where(s => s.UserId == currentUserId && s.OrganizationId == organizationId);
 
         if (projectId.HasValue)
         {
-            // Get subscriptions that match the specific project
             subscriptionsQuery = subscriptionsQuery.Where(s =>
                 s.ProjectId == projectId.Value);
         }
         else
         {
-            // Only get organization-level subscriptions (no project)
             subscriptionsQuery = subscriptionsQuery.Where(s => s.ProjectId == null);
         }
 
@@ -365,7 +353,6 @@ public class EventBusiness : IEventBusiness
         if (!subscriptions.Any())
             return new List<EventResponseDto>();
 
-        // Build SQL based on whether we're filtering by project or not
         string sql;
 
         if (projectId.HasValue)
@@ -437,19 +424,16 @@ public class EventBusiness : IEventBusiness
     public async Task<PaginatedResponse<EventResponseDto>> QueryEventsBySubscriptions(long currentUserId,
         EventsQueryRequestDTO? queryDto, long? organizationId, long? projectId)
     {
-        // Get subscriptions based on organizationId and projectId
         var subscriptionsQuery = _context.Set<Subscription>()
             .Where(s => s.UserId == currentUserId && s.OrganizationId == organizationId);
 
         if (projectId.HasValue)
         {
-            // Get subscriptions that match the specific project
             subscriptionsQuery = subscriptionsQuery.Where(s =>
                 s.ProjectId == projectId.Value);
         }
         else
         {
-            // Only get organization-level subscriptions (no project)
             subscriptionsQuery = subscriptionsQuery.Where(s => s.ProjectId == null);
         }
 
@@ -464,7 +448,6 @@ public class EventBusiness : IEventBusiness
                 TotalCount = 0
             };
 
-        // Build SQL based on whether we're filtering by project or not
         string sql;
 
         if (projectId.HasValue)
@@ -497,7 +480,7 @@ public class EventBusiness : IEventBusiness
                     AND ((s.operation = e.operation) OR s.operation IS NULL)";
         }
 
-        var currentUserIdParam = new NpgsqlParameter("currentUserId", currentUserId); // Changed from "userId"
+        var currentUserIdParam = new NpgsqlParameter("currentUserId", currentUserId);
         var organizationIdParam = new NpgsqlParameter("organizationId", organizationId);
         var projectIdParam = new NpgsqlParameter("projectId", (object?)projectId ?? DBNull.Value);
 
@@ -508,7 +491,6 @@ public class EventBusiness : IEventBusiness
             .Include(e => e.DataSource)
             .AsQueryable();
 
-        // Apply additional filters from queryDto
         if (queryDto != null)
         {
             if (queryDto.lastUpdatedBy.HasValue)
@@ -560,17 +542,13 @@ public class EventBusiness : IEventBusiness
                 eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= queryDto.endDate.Value);
         }
 
-        // Order by newest first
         eventQuery = eventQuery.OrderByDescending(e => e.LastUpdatedAt);
 
-        // Get total count before pagination
         var totalCount = await eventQuery.CountAsync();
 
-        // Get pagination values
         var pageNumber = queryDto?.PageNumber ?? 1;
         var pageSize = queryDto?.GetValidatedPageSize() ?? 25;
 
-        // Apply pagination and execute query
         var items = await (from e in eventQuery
                 join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
                 from user in userGroup.DefaultIfEmpty()
@@ -616,7 +594,6 @@ public class EventBusiness : IEventBusiness
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
 
-        // Validate XOR constraint
         if ((organizationId.HasValue && projectId.HasValue) || (!organizationId.HasValue && !projectId.HasValue))
         {
             throw new ArgumentException("Exactly one of OrganizationId or ProjectId must be provided.");

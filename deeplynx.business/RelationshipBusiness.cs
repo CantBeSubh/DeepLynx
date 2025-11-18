@@ -193,9 +193,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityType = "relationship",
             EntityId = relationship.Id,
             EntityName = relationship.Name,
-            ProjectId = relationship.ProjectId,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        });
+        }, null, projectId);
         
         return new RelationshipResponseDto
         {
@@ -274,12 +273,11 @@ public class RelationshipBusiness: IRelationshipBusiness
                 EntityType = "relationship",
                 EntityId = relationship.Id,
                 EntityName = relationship.Name,
-                ProjectId = relationship.ProjectId,
                 Properties = "{}",
             });
         }
         
-        await _eventBusiness.BulkCreateEvents(projectId, events);
+        await _eventBusiness.BulkCreateEvents(events, null, projectId);
         
         return result;
     }
@@ -330,9 +328,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityType = "relationship",
             EntityId = relationship.Id,
             EntityName = relationship.Name,
-            ProjectId = relationship.ProjectId,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        });
+        }, null, projectId);
         
         return new RelationshipResponseDto
         {
@@ -393,14 +390,13 @@ public class RelationshipBusiness: IRelationshipBusiness
         // Log relationship archive event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "archive",
             EntityType = "relationship",
             EntityId = relationship.Id,
             EntityName = relationship.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        });
+        },  null, projectId);
         
         return true;
     }
@@ -428,14 +424,13 @@ public class RelationshipBusiness: IRelationshipBusiness
         // Log relationship unarchive event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "unarchive",
             EntityType = "relationship",
             EntityId = relationship.Id,
             EntityName = relationship.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        });
+        }, null, projectId);
         
         return true;
     }

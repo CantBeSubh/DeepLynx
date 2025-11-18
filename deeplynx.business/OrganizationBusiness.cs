@@ -126,13 +126,12 @@ public class OrganizationBusiness : IOrganizationBusiness
         // Log create Organization event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = organization.Id,
             Operation = "create",
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-        });
+        }, organization.Id, null);
 
         return new OrganizationResponseDto
         {
@@ -179,13 +178,12 @@ public class OrganizationBusiness : IOrganizationBusiness
         // log update Organization event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = organization.Id,
             Operation = "update",
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-        });
+        }, organization.Id, null);
 
         return new OrganizationResponseDto
         {
@@ -221,13 +219,12 @@ public class OrganizationBusiness : IOrganizationBusiness
         // Log organization archive event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = organization.Id,
             Operation = "archive",
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-        });
+        }, organization.Id, null);
 
         return true;
     }
@@ -254,13 +251,12 @@ public class OrganizationBusiness : IOrganizationBusiness
         // Log organization archive event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = organization.Id,
             Operation = "unarchive",
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-        });
+        }, organization.Id, null);
 
         return true;
     }

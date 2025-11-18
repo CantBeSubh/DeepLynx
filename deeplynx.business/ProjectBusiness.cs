@@ -243,17 +243,17 @@ public class ProjectBusiness : IProjectBusiness
         }
 
         // Log create Project event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = project.OrganizationId,
-            ProjectId = projectId,
             Operation = "create",
             EntityType = "project",
             EntityId = projectId,
             EntityName = project.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-        });
+        };
+        
+        await _eventBusiness.CreateEvent(eventLog, project.OrganizationId, null);
 
         await SetProjectDefaults(projectId, userId);
 
@@ -288,14 +288,13 @@ public class ProjectBusiness : IProjectBusiness
         // Log update Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = project.Id,
             Operation = "update",
             EntityType = "project",
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-        });
+        }, project.OrganizationId, null);
 
         var updatedProject = new ProjectResponseDto
         {
@@ -416,14 +415,13 @@ public class ProjectBusiness : IProjectBusiness
 
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "archive",
             EntityType = "project",
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-        });
+        }, project.OrganizationId, null);
 
         var projectResponse = new ProjectResponseDto
         {
@@ -530,14 +528,13 @@ public class ProjectBusiness : IProjectBusiness
                 // Log the event
                 await _eventBusiness.CreateEvent(new CreateEventRequestDto
                 {
-                    ProjectId = projectId,
                     Operation = "unarchive",
                     EntityType = "project",
                     EntityId = project.Id,
                     EntityName = project.Name,
                     DataSourceId = null,
                     Properties = JsonSerializer.Serialize(new { project.Name }),
-                });
+                }, project.OrganizationId, null);
 
                 return true;
             }

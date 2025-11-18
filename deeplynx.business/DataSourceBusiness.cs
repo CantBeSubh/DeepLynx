@@ -197,14 +197,13 @@ namespace deeplynx.business
             // Log DataSource Create Event
             await _eventBusiness.CreateEvent(new CreateEventRequestDto
             {
-                ProjectId = projectId,
                 Operation = "create",
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
                 EntityName = dataSource.Name,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-            });
+            }, null, projectId);
 
             return new DataSourceResponseDto
             {
@@ -258,14 +257,13 @@ namespace deeplynx.business
             
             await _eventBusiness.CreateEvent(new CreateEventRequestDto
             {
-                ProjectId = projectId,
                 Operation = "update",
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
                 DataSourceId = null,
                 EntityName = dataSource.Name,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-            });
+            }, null, projectId);
 
             return new DataSourceResponseDto
             {
@@ -329,14 +327,13 @@ namespace deeplynx.business
             // Log dataSource archive event
             await _eventBusiness.CreateEvent(new CreateEventRequestDto
             {
-                ProjectId = projectId,
                 Operation = "archive",
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
                 DataSourceId = null,
                 EntityName = dataSource.Name,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-            });
+            }, null, projectId);
             
             return true;
         }
@@ -364,14 +361,13 @@ namespace deeplynx.business
             // Log dataSource unarchive event
             await _eventBusiness.CreateEvent(new CreateEventRequestDto
             {
-                ProjectId = projectId,
                 Operation = "unarchive",
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
                 EntityName = dataSource.Name,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-            });
+            }, null, projectId);
             
             return true;
         }
@@ -406,14 +402,13 @@ namespace deeplynx.business
 
                 await _eventBusiness.CreateEvent(new CreateEventRequestDto
                 {
-                    ProjectId = projectId,
                     Operation = "update",
                     EntityType = "data_source",
                     EntityId = dataSource.Id,
                     EntityName = dataSource.Name,
                     DataSourceId = null,
                     Properties = JsonSerializer.Serialize(new { dataSource.Name }),
-                });
+                }, null, projectId);
             }
 
             return new DataSourceResponseDto

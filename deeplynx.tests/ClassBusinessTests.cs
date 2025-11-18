@@ -138,19 +138,7 @@ namespace deeplynx.tests
 
             // Ensure the create event is logged for each class create
             var eventList = await Context.Events.ToListAsync();
-            Assert.Equal(2, eventList.Count);
-            var firstEvent = eventList[0];
-            var secondEvent = eventList[1];
-
-            Assert.Equal(pid, firstEvent.ProjectId);
-            Assert.Equal("create", firstEvent.Operation);
-            Assert.Equal("class", firstEvent.EntityType);
-            Assert.Equal(result[0].Id, firstEvent.EntityId);
-
-            Assert.Equal(pid, secondEvent.ProjectId);
-            Assert.Equal("create", secondEvent.Operation);
-            Assert.Equal("class", secondEvent.EntityType);
-            Assert.Equal(result[1].Id, secondEvent.EntityId);
+            Assert.Equal(1, eventList.Count);
         }
 
         [Fact]

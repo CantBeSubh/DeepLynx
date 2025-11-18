@@ -64,6 +64,7 @@ public partial class Organization
     [InverseProperty("Organization")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
+    [ForeignKey("LastUpdatedBy")]
     [InverseProperty("LastUpdatedOrganizations")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

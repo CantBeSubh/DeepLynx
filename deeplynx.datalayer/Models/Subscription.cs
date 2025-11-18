@@ -77,6 +77,7 @@ public partial class Subscription
     [InverseProperty("Subscriptions")]
     public virtual User User { get; set; } = null!;
     
+    [ForeignKey("LastUpdatedBy")]
     [InverseProperty("LastUpdatedSubscriptions")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

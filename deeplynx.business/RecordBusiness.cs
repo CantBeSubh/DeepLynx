@@ -242,14 +242,13 @@ public class RecordBusiness : IRecordBusiness
         // Log Record Create Event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = record.ProjectId,
             EntityType = "record",
             EntityId = record.Id,
             EntityName = record.Name,
             Operation = "create",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-        });
+        }, null, record.ProjectId);
 
         return new RecordResponseDto
         {
@@ -363,12 +362,11 @@ public class RecordBusiness : IRecordBusiness
                       EntityType = "record",
                       EntityId = record.Id,
                       EntityName = record.Name,
-                      ProjectId = record.ProjectId,
                       Properties = "{}",
                       DataSourceId = record.DataSourceId,
                   });
        }
-       await _eventBusiness.BulkCreateEvents(projectId, events);
+       await _eventBusiness.BulkCreateEvents(events, null, projectId);
        
        return result;
     }
@@ -418,14 +416,13 @@ public class RecordBusiness : IRecordBusiness
         // Log Record Update Event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = record.ProjectId,
             EntityType = "record",
             EntityId = record.Id,
             EntityName = record.Name,
             Operation = "update",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-        });
+        }, null, projectId);
         
         return new RecordResponseDto
         {
@@ -518,14 +515,13 @@ public class RecordBusiness : IRecordBusiness
         // Log record soft delete event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "archive",
             EntityType = "record",
             EntityId = record.Id,
             EntityName = record.Name,
             DataSourceId = record.DataSourceId,
-            Properties = JsonSerializer.Serialize(new {record.Name}),
-        });
+            Properties = JsonSerializer.Serialize(new { record.Name }),
+        }, null, projectId);
         
         return true;
     }
@@ -579,14 +575,13 @@ public class RecordBusiness : IRecordBusiness
         // Log record soft delete event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "unarchive",
             EntityType = "record",
             EntityId = record.Id,
             EntityName = record.Name,
             DataSourceId = record.DataSourceId,
             Properties = JsonSerializer.Serialize(new {record.Name}),
-        });
+        }, null, projectId);
         
         return true;
     }

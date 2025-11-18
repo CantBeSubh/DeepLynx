@@ -111,13 +111,12 @@ public class GroupBusiness : IGroupBusiness
         // Log create Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = organizationId,
             Operation = "create",
             EntityType = "group",
             EntityId = group.Id,
             EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-        });
+        }, group.OrganizationId, null);
 
         return new GroupResponseDto
         {
@@ -155,13 +154,12 @@ public class GroupBusiness : IGroupBusiness
         // Log update Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = group.OrganizationId,
             Operation = "update",
             EntityType = "group",
             EntityId = group.Id,
             EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-        });
+        }, group.OrganizationId, null);
 
         return new GroupResponseDto
         {
@@ -196,13 +194,12 @@ public class GroupBusiness : IGroupBusiness
         // Log archive Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = group.OrganizationId,
             Operation = "archive",
             EntityType = "group",
             EntityId = group.Id,
             EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-        });
+        }, group.OrganizationId, null);
 
         return true;
     }
@@ -226,17 +223,16 @@ public class GroupBusiness : IGroupBusiness
         group.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
         _context.Groups.Update(group);
         await _context.SaveChangesAsync();
-
+        
         // Log unarchive Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = group.OrganizationId,
             Operation = "unarchive",
             EntityType = "group",
             EntityId = group.Id,
             EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-        });
+        }, group.OrganizationId, null);
 
         return true;
     }
@@ -259,13 +255,12 @@ public class GroupBusiness : IGroupBusiness
         // Log delete Group event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = group.OrganizationId,
             Operation = "delete",
             EntityType = "group",
             EntityId = group.Id,
             EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-        });
+        }, group.OrganizationId, null);
 
         return true;
     }

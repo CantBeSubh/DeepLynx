@@ -11,5 +11,7 @@ public interface ISubscriptionBusiness
     Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(long currentUserId, long organizationId, List<UpdateSubscriptionRequestDto> dtos, long? projectId);
     Task<bool> BulkDeleteSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds, long? projectId);
     Task<bool> BulkArchiveSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds, long? projectId);
-    Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds, long? projectId);
+
+    Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds,
+        long? projectId);
 }

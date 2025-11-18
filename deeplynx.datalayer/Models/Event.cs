@@ -53,12 +53,13 @@ public partial class Event
 
     [ForeignKey("OrganizationId")]
     [InverseProperty("Events")]
-    public virtual Organization? Organization { get; set; } = null!;
+    public virtual Organization? Organization { get; set; }
 
     [ForeignKey("DataSourceId")]
     [InverseProperty("Events")]
     public virtual DataSource? DataSource { get; set; }
 
+    [ForeignKey("LastUpdatedBy")] 
     [InverseProperty("LastUpdatedEvents")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

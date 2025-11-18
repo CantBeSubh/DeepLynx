@@ -67,7 +67,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var events = await _eventBusiness.QueryAllEvents(organizationId, queryDto, projectId);
+                var events = await _eventBusiness.QueryAllEvents(queryDto, organizationId, projectId);
                 return Ok(events);
             }
             catch (Exception e)
@@ -93,7 +93,7 @@ namespace deeplynx.api.Controllers
             try
             {
                 var currentUserId = UserContextStorage.UserId;
-                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, organizationId, queryDto, null);
+                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, queryDto, organizationId,null);
                 return Ok(events);
             }
             catch (Exception e)
@@ -141,7 +141,7 @@ namespace deeplynx.api.Controllers
             try
             {
                 var currentUserId = UserContextStorage.UserId;
-                var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, organizationId, queryDto, null);
+                var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, queryDto, organizationId, null);
                 return Ok(events);
             }
             catch (Exception e)
@@ -160,7 +160,7 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">Required organization ID</param>
         /// <param name="projectId">Required project ID</param>
         /// <param name="queryDto">Filter criteria and pagination parameters</param>
-        [HttpGet("QueryAllEventsByProject/{projectId}", Name = "api_query_events_project")]
+        [HttpGet("{projectId}/QueryAllEventsByProject", Name = "api_query_events_project")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsForProject(
             [FromRoute] long organizationId,
             [FromRoute] long projectId,
@@ -170,7 +170,7 @@ namespace deeplynx.api.Controllers
             try
             {
                 var currentUserId = UserContextStorage.UserId;
-                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, organizationId, queryDto, projectId);
+                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, queryDto, organizationId, projectId);
                 return Ok(events);
             }
             catch (Exception e)
@@ -188,7 +188,7 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">Required organization ID</param>
         /// <param name="projectId">Required project ID</param>
         /// <param name="queryDto">Filter criteria and pagination parameters</param>
-        [HttpGet("QueryAuthorizedEventsByProject/{projectId}", Name = "api_query_authorized_events_project")]
+        [HttpGet("{projectId}/QueryAuthorizedEventsByProject", Name = "api_query_authorized_events_project")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUserForProject(
             [FromRoute] long organizationId,
             [FromRoute] long projectId,
@@ -197,7 +197,7 @@ namespace deeplynx.api.Controllers
             try
             {
                 var currentUserId = UserContextStorage.UserId;
-                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, organizationId, queryDto, projectId);
+                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, queryDto, organizationId, projectId);
                 return Ok(events);
             }
             catch (Exception e)
@@ -214,7 +214,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="organizationId">The ID of the organization</param>
         /// <param name="projectId">The ID of the project</param>
-        [HttpGet("GetEventsByUserSubscriptionsByProject/{projectId}", Name = "api_get_events_by_subscriptions_project")]
+        [HttpGet("{projectId}/GetEventsByUserSubscriptionsByProject", Name = "api_get_events_by_subscriptions_project")]
         public async Task<ActionResult<List<EventResponseDto>>> GetEventsByUserSubscriptionsForProject(
             [FromRoute] long organizationId,
             [FromRoute] long projectId)
@@ -240,7 +240,7 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">The ID of the organization</param>
         /// <param name="projectId">The ID of the project</param>
         /// <param name="queryDto">Filter criteria and pagination parameters</param>
-        [HttpGet("QueryEventsBySubscriptionsByProject/{projectId}", Name = "api_query_events_by_user_subscriptions_project")]
+        [HttpGet("{projectId}/QueryEventsBySubscriptionsByProject", Name = "api_query_events_by_user_subscriptions_project")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUserSubscriptionsForProject(
             [FromRoute] long organizationId,
             [FromRoute] long projectId,
@@ -249,7 +249,7 @@ namespace deeplynx.api.Controllers
             try
             {
                 var currentUserId = UserContextStorage.UserId;
-                var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, organizationId, queryDto, projectId);
+                var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, queryDto, organizationId, projectId);
                 return Ok(events);
             }
             catch (Exception e)

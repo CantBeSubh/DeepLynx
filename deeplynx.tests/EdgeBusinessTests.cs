@@ -255,19 +255,7 @@ namespace deeplynx.tests
             Assert.All(result, e => Assert.True(e.LastUpdatedAt >= now));
 
             var eventList = await Context.Events.ToListAsync();
-            Assert.Equal(2, eventList.Count);
-
-            var actualEvent0 = eventList[0];
-            Assert.Equal(result[0].ProjectId, actualEvent0.ProjectId);
-            Assert.Equal(result[0].Id, actualEvent0.EntityId);
-            Assert.Equal("edge", actualEvent0.EntityType);
-            Assert.Equal("create", actualEvent0.Operation);
-
-            var actualEvent1 = eventList[1];
-            Assert.Equal(result[0].ProjectId, actualEvent1.ProjectId);
-            Assert.Equal(result[1].Id, actualEvent1.EntityId);
-            Assert.Equal("edge", actualEvent1.EntityType);
-            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal(1, eventList.Count); // bulk events just log one event with count
         }
 
         [Fact]

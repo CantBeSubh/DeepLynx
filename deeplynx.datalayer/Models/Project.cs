@@ -75,13 +75,17 @@ public partial class Project
 
     [InverseProperty("Project")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
 
     [InverseProperty("Project")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
 
     [InverseProperty("Project")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
-
+    
+    [ForeignKey("LastUpdatedBy")]
     [InverseProperty("LastUpdatedProjects")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

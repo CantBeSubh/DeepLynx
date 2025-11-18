@@ -134,16 +134,23 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         await _context.SaveChangesAsync();
         
         // Log create SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
             Operation = "create",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-        });
+        };
+
+        if (projectId.HasValue)
+        {        
+            await _eventBusiness.CreateEvent(eventLog, null, projectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, organizationId, null);
+        }
 
         return new SensitivityLabelResponseDto
         {
@@ -178,19 +185,27 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         label.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
         
         _context.SensitivityLabels.Update(label);
-        await _context.SaveChangesAsync();
         
         // Log update SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = label.OrganizationId,
-            ProjectId = label.ProjectId,
             Operation = "update",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-        });
+        };
+        
+        if (label.ProjectId != null)
+        {        
+            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
 
         return new SensitivityLabelResponseDto
         {
@@ -221,19 +236,27 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         label.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
         _context.SensitivityLabels.Update(label);
-        await _context.SaveChangesAsync();
         
         // Log archive SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = label.OrganizationId,
-            ProjectId = label.ProjectId,
             Operation = "archive",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-        });
+        };
+        
+        if (label.ProjectId != null)
+        {        
+            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
         
         return true;
     }
@@ -254,19 +277,27 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         label.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
         _context.SensitivityLabels.Update(label);
-        await _context.SaveChangesAsync();
         
         // Log unarchive SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = label.OrganizationId,
-            ProjectId = label.ProjectId,
             Operation = "unarchive",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-        });
+        };
+        
+        if (label.ProjectId != null)
+        {        
+            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
         
         return true;
     }
@@ -284,19 +315,27 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found or is archived");
 
         _context.SensitivityLabels.Remove(label);
-        await _context.SaveChangesAsync();
         
         // Log delete SensitivityLabel event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = label.OrganizationId,
-            ProjectId = label.ProjectId,
             Operation = "delete",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-        });
+        };
+        
+        if (label.ProjectId != null)
+        {        
+            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
         
         return true;
     }

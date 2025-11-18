@@ -140,15 +140,18 @@ public class ClassBusiness : IClassBusiness
         await _context.SaveChangesAsync();
         
         // log event with class create details
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            Operation = "create",
-            EntityType = "class",
-            EntityId = newClass.Id,
-            EntityName = newClass.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {newClass.Name}),
-        });
+        await _eventBusiness.CreateEvent(
+            new CreateEventRequestDto
+                {
+                    Operation = "create",
+                    EntityType = "class",
+                    EntityId = newClass.Id,
+                    EntityName = newClass.Name,
+                    DataSourceId = null,
+                    Properties = JsonSerializer.Serialize(new {newClass.Name}),
+                }, 
+            null, 
+            projectId);
 
         return new ClassResponseDto
         {
@@ -220,7 +223,6 @@ public class ClassBusiness : IClassBusiness
         {
             events.Add(new CreateEventRequestDto
             {
-                ProjectId = projectId,
                 Operation = "create",
                 EntityType = "class",
                 EntityId = item.Id,
@@ -229,7 +231,7 @@ public class ClassBusiness : IClassBusiness
                 Properties = JsonSerializer.Serialize(new {item.Name}),
             });
         }
-        await _eventBusiness.BulkCreateEvents(events);
+        await _eventBusiness.BulkCreateEvents(events, null, projectId);
         
         return result;
     }
@@ -264,14 +266,14 @@ public class ClassBusiness : IClassBusiness
         // log event with class update details
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "update",
             EntityType = "class",
             EntityId = updatedClass.Id,
             EntityName = updatedClass.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
-        });
+        },
+        null, projectId);
 
         return new ClassResponseDto
         {
@@ -359,14 +361,13 @@ public class ClassBusiness : IClassBusiness
 
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "archive",
             EntityType = "class",
             EntityId = dbClass.Id,
             EntityName = dbClass.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-        });
+        }, null, projectId);
         
         return true;
     }
@@ -422,14 +423,13 @@ public class ClassBusiness : IClassBusiness
 
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "unarchive",
             EntityType = "class",
             EntityId = dbClass.Id,
             EntityName = dbClass.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-        });
+        },  null, projectId);
         
         return true;
     }

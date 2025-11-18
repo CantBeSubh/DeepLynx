@@ -153,20 +153,29 @@ public class PermissionBusiness : IPermissionBusiness
         };
 
         _context.Permissions.Add(permission);
-        await _context.SaveChangesAsync();
-
+        
         // Log create Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = permission.OrganizationId,
-            ProjectId = permission.ProjectId,
             Operation = "create",
             EntityType = "permission",
             EntityId = permission.Id,
             EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-        });
-
+        };
+        
+        // determine if this is project level or organization level
+        if (permission.ProjectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
+        
         return new PermissionResponseDto
         {
             Id = permission.Id,
@@ -208,20 +217,29 @@ public class PermissionBusiness : IPermissionBusiness
         permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
 
         _context.Permissions.Update(permission);
-        await _context.SaveChangesAsync();
 
         // Log update Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = permission.OrganizationId,
-            ProjectId = permission.ProjectId,
             Operation = "update",
             EntityType = "permission",
             EntityId = permission.Id,
             EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-        });
-
+        };
+        
+        // determine if this is project level or organization level
+        if (permission.ProjectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
+        
         return new PermissionResponseDto
         {
             Id = permission.Id,
@@ -258,20 +276,29 @@ public class PermissionBusiness : IPermissionBusiness
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
         _context.Permissions.Update(permission);
-        await _context.SaveChangesAsync();
 
         // Log archive Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = permission.OrganizationId,
-            ProjectId = permission.ProjectId,
             Operation = "archive",
             EntityType = "permission",
             EntityId = permission.Id,
             EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-        });
-
+        };
+        
+        // determine if this is project level or organization level
+        if (permission.ProjectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
+        
         return true;
     }
 
@@ -294,19 +321,28 @@ public class PermissionBusiness : IPermissionBusiness
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
         _context.Permissions.Update(permission);
-        await _context.SaveChangesAsync();
 
         // Log unarchive Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = permission.OrganizationId,
-            ProjectId = permission.ProjectId,
             Operation = "unarchive",
             EntityType = "permission",
             EntityId = permission.Id,
             EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-        });
+        };
+        
+        // determine if this is project level or organization level
+        if (permission.ProjectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
 
         return true;
     }
@@ -327,19 +363,28 @@ public class PermissionBusiness : IPermissionBusiness
             throw new KeyNotFoundException($"Permission with id {permissionId} cannot be deleted");
 
         _context.Permissions.Remove(permission);
-        await _context.SaveChangesAsync();
 
         // Log delete Permission event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = permission.OrganizationId,
-            ProjectId = permission.ProjectId,
             Operation = "delete",
             EntityType = "permission",
             EntityId = permission.Id,
             EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-        });
+        };
+        
+        // determine if this is project level or organization level
+        if (permission.ProjectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+        }
+        
+        await _context.SaveChangesAsync();
 
         return true;
     }

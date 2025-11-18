@@ -436,7 +436,6 @@ public class EdgeBusiness : IEdgeBusiness
         // log edge create event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "create",
             EntityType = "edge",
             EntityId = edge.Id,
@@ -446,7 +445,7 @@ public class EdgeBusiness : IEdgeBusiness
                 origin = edge.OriginId,
                 destination = edge.DestinationId
             }), // TODO: Determine the extent of data edge properties need
-        });
+        }, null, projectId);
 
         return new EdgeResponseDto
         {
@@ -545,7 +544,6 @@ public class EdgeBusiness : IEdgeBusiness
         {
             events.Add(new CreateEventRequestDto
             {
-                ProjectId = projectId,
                 Operation = "create",
                 EntityType = "edge",
                 EntityId = newEdge.Id,
@@ -553,7 +551,7 @@ public class EdgeBusiness : IEdgeBusiness
                 Properties = "{}", // TODO: Determine the extent of data edge properties need
             });
         }
-        await _eventBusiness.BulkCreateEvents(projectId, events);
+        await _eventBusiness.BulkCreateEvents(events, null, projectId);
 
         return result;
     }
@@ -600,13 +598,12 @@ public class EdgeBusiness : IEdgeBusiness
         // log edge update event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "update",
             EntityType = "edge",
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-        });
+        }, null, projectId);
 
         return new EdgeResponseDto
         {
@@ -677,13 +674,12 @@ public class EdgeBusiness : IEdgeBusiness
         // Log Edge soft Delete Event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "delete",
             EntityType = "edge",
             EntityId = edgeId,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-        });
+        }, null, projectId);
 
         return edge.Id;
     }
@@ -715,13 +711,12 @@ public class EdgeBusiness : IEdgeBusiness
         
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "unarchive",
             EntityType = "edge",
             EntityId = edgeId,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-        });
+        }, null, projectId);
 
         return edge.Id;
     }
