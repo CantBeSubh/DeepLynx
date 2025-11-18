@@ -97,9 +97,11 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Creates a new organization and logs the creation event.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="isDefault">Indicates whether the organization will be made the default</param>
     /// <param name="dto">A data transfer object with details on the organization to be created.</param>
     /// <returns>The created organization.</returns>
-    public async Task<OrganizationResponseDto> CreateOrganization(CreateOrganizationRequestDto dto, bool isDefault = false)
+    public async Task<OrganizationResponseDto> CreateOrganization(long currentUserId, CreateOrganizationRequestDto dto, bool isDefault = false)
     {
         ValidationHelper.ValidateModel(dto);
         var organization = new Organization
@@ -108,7 +110,7 @@ public class OrganizationBusiness : IOrganizationBusiness
             Description = dto.Description,
             DefaultOrg = isDefault,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId
         };
 
         _context.Organizations.Add(organization);
@@ -124,7 +126,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // Log create Organization event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "create",
             EntityType = "organization",
@@ -147,11 +149,12 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Update an organization by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to be updated</param>
     /// <param name="dto">A data transfer object with details on the organization to be updated</param>
     /// <returns>The updated organization</returns>
     /// <exception cref="KeyNotFoundException">Returned if organization to update was not found</exception>
-    public async Task<OrganizationResponseDto> UpdateOrganization(long organizationId, UpdateOrganizationRequestDto dto)
+    public async Task<OrganizationResponseDto> UpdateOrganization(long currentUserId, long organizationId, UpdateOrganizationRequestDto dto)
     {
         var organization = await _context.Organizations.FindAsync(organizationId);
 
@@ -164,7 +167,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         organization.Description = dto.Description ?? organization.Description;
         organization.DefaultOrg = dto.DefaultOrg ?? organization.DefaultOrg;
         organization.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        organization.LastUpdatedBy = null; // TODO: handled in the future by JWT
+        organization.LastUpdatedBy = currentUserId;
 
         _context.Organizations.Update(organization);
 
@@ -176,7 +179,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // log update Organization event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "update",
             EntityType = "organization",
@@ -199,10 +202,11 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Archive a specific organization by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to archive</param>
     /// <returns>Boolean true on successful archive</returns>
     /// <exception cref="KeyNotFoundException">Returned if organization not found</exception>
-    public async Task<bool> ArchiveOrganization(long organizationId)
+    public async Task<bool> ArchiveOrganization(long currentUserId, long organizationId)
     {
         var organization = await _context.Organizations.FindAsync(organizationId);
 
@@ -212,12 +216,12 @@ public class OrganizationBusiness : IOrganizationBusiness
         // TODO: determine if this needs to be a cascade archive instead
         organization.IsArchived = true;
         organization.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        organization.LastUpdatedBy = null; // TODO: add user when JWTs are implemented
+        organization.LastUpdatedBy = currentUserId;
         _context.Organizations.Update(organization);
         await _context.SaveChangesAsync();
 
         // Log organization archive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "archive",
             EntityType = "organization",
@@ -232,10 +236,11 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <summary>
     /// Unarchive a specific organization by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to unarchive</param>
     /// <returns>Boolean true on successful unarchive</returns>
     /// <exception cref="KeyNotFoundException">Returned if organization not found</exception>
-    public async Task<bool> UnarchiveOrganization(long organizationId)
+    public async Task<bool> UnarchiveOrganization(long currentUserId, long organizationId)
     {
         var organization = await _context.Organizations.FindAsync(organizationId);
 
@@ -245,11 +250,11 @@ public class OrganizationBusiness : IOrganizationBusiness
         // TODO: determine if this needs to be a cascade unarchive instead
         organization.IsArchived = false;
         organization.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Organizations.Update(organization);
+        organization.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
 
         // Log organization archive event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "unarchive",
             EntityType = "organization",

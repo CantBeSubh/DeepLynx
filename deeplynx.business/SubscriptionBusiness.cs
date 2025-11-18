@@ -175,6 +175,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness
         var parameters = new List<NpgsqlParameter>
         {
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new ("@lastUpdatedBy", currentUserId)
         };
 
         parameters.AddRange(dtos.SelectMany((dto, i) => new[]
@@ -395,7 +396,11 @@ public class SubscriptionBusiness : ISubscriptionBusiness
 
         var sql = $@"
         UPDATE deeplynx.subscriptions
-        SET is_archived = true, last_updated_at = @now
+        SET 
+            is_archived = true, 
+            last_updated_at = @now,
+            last_updated_by = @currentUserId 
+            
         WHERE 
             user_id = @currentUserId 
             {scopeCondition}
@@ -449,8 +454,11 @@ public class SubscriptionBusiness : ISubscriptionBusiness
             : "AND organization_id = @organizationId AND project_id IS NULL";
 
         var sql = $@"
-        UPDATE deeplynx.subscriptions
-        SET is_archived = false, last_updated_at = @now
+    UPDATE deeplynx.subscriptions
+    SET 
+        is_archived = false, 
+        last_updated_at = @now,
+        last_updated_by = @userId
         WHERE 
             user_id = @currentUserId 
             {scopeCondition}

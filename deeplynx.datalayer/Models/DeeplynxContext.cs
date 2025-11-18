@@ -72,6 +72,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("actions_pkey");
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_actions_last_updated_by");
@@ -180,7 +181,28 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
+            
+            // Add cascade delete for Project
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_project_id_fkey");
 
+            // Add cascade delete for DataSource
+            entity.HasOne(d => d.DataSource)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.DataSourceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_data_source_id_fkey");
+            
+            // Add cascade delete for Organization
+            entity.HasOne(d => d.Organization)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_organization_id_fkey");
+            
             // XOR constraint: exactly one of ProjectId or OrganizationId must be set
             entity.ToTable(t => t.HasCheckConstraint(
                 "CK_Events_ProjectId_OrganizationId_XOR",
@@ -304,16 +326,26 @@ public partial class DeeplynxContext : DbContext
                 "ck_object_storages_ProjectXorOrg", 
                 "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"));
 
-            entity.ToTable(e => e.HasCheckConstraint(
-                "ck_object_storages_ProjectXorOrg",
-                "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"));
-
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedObjectStorages)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-
+            
+            // Add cascade delete for Project
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.ObjectStorages)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("object_storage_project_id_fkey");
+            
+            // Add cascade delete for Organization
+            entity.HasOne(d => d.Organization)
+                .WithMany(p => p.ObjectStorages)
+                .HasForeignKey(d => d.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("object_storage_organization_id_fkey");
+            
             entity.HasOne(d => d.Project).WithMany(p => p.ObjectStorages)
                 .HasConstraintName("object_storage_project_id_fkey");
         });
@@ -530,6 +562,17 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_roles_last_updated_by");
+            
+            // Add filtered unique indexes
+            entity.HasIndex(e => new { e.OrganizationId, e.Name })
+                .HasDatabaseName("unique_organization_role_name")
+                .IsUnique()
+                .HasFilter("project_id IS NULL");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ProjectId, e.Name })
+                .HasDatabaseName("unique_project_role_name")
+                .IsUnique()
+                .HasFilter("project_id IS NOT NULL");
 
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedRoles)
@@ -595,6 +638,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_subscriptions_last_updated_by");
@@ -654,6 +698,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.User).WithMany(p => p.SavedSearches).HasConstraintName("saved_searches_user_id_fkey");
+
         });
 
         OnModelCreatingPartial(modelBuilder);

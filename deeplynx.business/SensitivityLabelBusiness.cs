@@ -100,13 +100,14 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Create a new sensitivity label
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">Data Transfer Object containing new label information</param>
     /// <param name="projectId">ID of the project to which the label belongs</param>
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <returns>The newly created label</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
     public async Task<SensitivityLabelResponseDto> CreateSensitivityLabel(
-        CreateSensitivityLabelRequestDto dto, long? projectId, long? organizationId)
+       long currentUserId, CreateSensitivityLabelRequestDto dto, long? projectId, long? organizationId)
     {
         // ensure one and only one of projectID or organizationID is supplied
         if (!projectId.HasValue && !organizationId.HasValue)
@@ -125,7 +126,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             Name = dto.Name,
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
+            LastUpdatedBy = currentUserId,
             ProjectId = projectId,
             OrganizationId = organizationId,
         };
@@ -145,11 +146,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
 
         if (projectId.HasValue)
         {        
-            await _eventBusiness.CreateEvent(eventLog, null, projectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, projectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, organizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, organizationId, null);
         }
 
         return new SensitivityLabelResponseDto
@@ -168,12 +169,13 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Update sensitivity label information
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of the label to be updated</param>
     /// <param name="dto">Data Transfer Object containing new label information</param>
     /// <returns>The newly updated label</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found</exception>
     public async Task<SensitivityLabelResponseDto> UpdateSensitivityLabel(
-        long labelId, UpdateSensitivityLabelRequestDto dto)
+        long currentUserId, long labelId, UpdateSensitivityLabelRequestDto dto)
     {
         var label = await _context.SensitivityLabels.FindAsync(labelId);
         if (label == null || label.IsArchived)
@@ -182,7 +184,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         label.Name = dto.Name ?? label.Name;
         label.Description = dto.Description ?? label.Description;
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        label.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
+        label.LastUpdatedBy = currentUserId;
         
         _context.SensitivityLabels.Update(label);
         
@@ -198,11 +200,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         
         if (label.ProjectId != null)
         {        
-            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, label.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, label.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();
@@ -223,10 +225,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Archive a sensitivity label by ID.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to archive</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found or is already archived</exception>
-    public async Task<bool> ArchiveSensitivityLabel(long labelId)
+    public async Task<bool> ArchiveSensitivityLabel(long currentUserId, long labelId)
     {
         var label = await _context.SensitivityLabels.FindAsync(labelId);
         if (label == null || label.IsArchived)
@@ -234,8 +237,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
 
         label.IsArchived = true;
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        label.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
-        _context.SensitivityLabels.Update(label);
+        label.LastUpdatedBy = currentUserId;
         
         // Log archive SensitivityLabel event
         var eventLog = new CreateEventRequestDto
@@ -249,11 +251,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         
         if (label.ProjectId != null)
         {        
-            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, label.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, label.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();
@@ -264,10 +266,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Unarchive a sensitivity label by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to unarchive</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found or is not archived</exception>
-    public async Task<bool> UnarchiveSensitivityLabel(long labelId)
+    public async Task<bool> UnarchiveSensitivityLabel(long currentUserId, long labelId)
     {
         var label = await _context.SensitivityLabels.FindAsync(labelId);
         if (label == null || !label.IsArchived)
@@ -275,8 +278,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
 
         label.IsArchived = false;
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        label.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
-        _context.SensitivityLabels.Update(label);
+        label.LastUpdatedBy = currentUserId;
         
         // Log unarchive SensitivityLabel event
         var eventLog = new CreateEventRequestDto
@@ -290,11 +292,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         
         if (label.ProjectId != null)
         {        
-            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, label.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, label.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();
@@ -305,10 +307,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Delete a sensitivity label by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to delete</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found</exception>
-    public async Task<bool> DeleteSensitivityLabel(long labelId)
+    public async Task<bool> DeleteSensitivityLabel(long currentUserId, long labelId)
     {
         var label = await _context.SensitivityLabels.FindAsync(labelId);
         if (label == null || label.IsArchived)
@@ -328,11 +331,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         
         if (label.ProjectId != null)
         {        
-            await _eventBusiness.CreateEvent(eventLog, null, label.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, label.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, label.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, label.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();

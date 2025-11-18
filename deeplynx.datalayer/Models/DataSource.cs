@@ -66,4 +66,5 @@ public partial class DataSource
     
     [InverseProperty("LastUpdatedDataSources")]
     public virtual User? LastUpdatedByUser { get; set; }
+    
 }

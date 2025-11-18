@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -87,7 +88,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(dto, projectId, organizationId);
+                var currentUserId = UserContextStorage.UserId;
+                var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, projectId, organizationId);
                 return Ok(label);
             }
             catch (Exception exc)
@@ -111,7 +113,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(labelId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, dto);
                 return Ok(label);
             }
             catch (Exception exc)
@@ -132,7 +135,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _sensitivityLabelBusiness.DeleteSensitivityLabel(labelId);
+                var  currentUserId = UserContextStorage.UserId;
+                await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId);
                 return Ok(new { message = $"Deleted sensitivity label {labelId}" });
             }
             catch (Exception exc)
@@ -153,7 +157,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _sensitivityLabelBusiness.ArchiveSensitivityLabel(labelId);
+                var currentUserId = UserContextStorage.UserId;
+                await _sensitivityLabelBusiness.ArchiveSensitivityLabel(currentUserId, labelId);
                 return Ok(new { message = $"Archived sensitivity label {labelId}" });
             }
             catch (Exception exc)
@@ -174,7 +179,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(labelId);
+                var currentUserId = UserContextStorage.UserId;
+                await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(currentUserId, labelId);
                 return Ok(new { message = $"Unarchived sensitivity label {labelId}" });
             }
             catch (Exception exc)

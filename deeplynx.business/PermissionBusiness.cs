@@ -4,7 +4,6 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using System.Text.Json;
-using deeplynx.helpers.exceptions;
 
 namespace deeplynx.business;
 
@@ -113,13 +112,14 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Create a new user-defined permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">The permission to be created</param>
     /// <param name="projectId">ID of the project to which the permission belongs</param>
     /// <param name="organizationId">ID of the organization to which the permission belongs</param>
-    /// <param name="isDefault">Indicates whether to make a default permission or not</param>
     /// <returns>The newly created permission</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
     public async Task<PermissionResponseDto> CreatePermission(
+        long currentUserId,
         CreatePermissionRequestDto dto,
         long? projectId, long? organizationId)
     {
@@ -147,7 +147,7 @@ public class PermissionBusiness : IPermissionBusiness
             LabelId = dto.LabelId,
             IsDefault = false,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
+            LastUpdatedBy = currentUserId,
             ProjectId = projectId,
             OrganizationId = organizationId,
         };
@@ -167,11 +167,11 @@ public class PermissionBusiness : IPermissionBusiness
         // determine if this is project level or organization level
         if (permission.ProjectId.HasValue)
         {
-            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, permission.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, permission.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();
@@ -196,11 +196,12 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Update an existing user-defined permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">ID of the permission to be updated</param>
     /// <param name="dto">New information on the permission</param>
     /// <returns>The newly updated permission</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<PermissionResponseDto> UpdatePermission(long permissionId, UpdatePermissionRequestDto dto)
+    public async Task<PermissionResponseDto> UpdatePermission(long currentUserId, long permissionId, UpdatePermissionRequestDto dto)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
         // ensure that default permissions cannot be edited
@@ -214,7 +215,7 @@ public class PermissionBusiness : IPermissionBusiness
         permission.LabelId = dto.LabelId ?? permission.LabelId;
         permission.Action = dto.Action ?? permission.Action;
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
+        permission.LastUpdatedBy = currentUserId;
 
         _context.Permissions.Update(permission);
 
@@ -231,11 +232,11 @@ public class PermissionBusiness : IPermissionBusiness
         // determine if this is project level or organization level
         if (permission.ProjectId.HasValue)
         {
-            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, permission.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, permission.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();
@@ -260,10 +261,11 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Archive a permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">The ID of the permission to be archived</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<bool> ArchivePermission(long permissionId)
+    public async Task<bool> ArchivePermission(long currentUserId, long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
         // ensure that default permissions cannot be edited
@@ -274,7 +276,7 @@ public class PermissionBusiness : IPermissionBusiness
 
         permission.IsArchived = true;
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
+        permission.LastUpdatedBy = currentUserId;
         _context.Permissions.Update(permission);
 
         // Log archive Permission event
@@ -290,11 +292,11 @@ public class PermissionBusiness : IPermissionBusiness
         // determine if this is project level or organization level
         if (permission.ProjectId.HasValue)
         {
-            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, permission.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, permission.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();
@@ -305,10 +307,11 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     /// Unarchive a permission
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">The ID of the permission to be unarchived</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<bool> UnarchivePermission(long permissionId)
+    public async Task<bool> UnarchivePermission(long currentUserId, long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
         // ensure that default permissions cannot be edited
@@ -319,7 +322,7 @@ public class PermissionBusiness : IPermissionBusiness
 
         permission.IsArchived = false;
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
+        permission.LastUpdatedBy = currentUserId;
         _context.Permissions.Update(permission);
 
         // Log unarchive Permission event
@@ -335,11 +338,11 @@ public class PermissionBusiness : IPermissionBusiness
         // determine if this is project level or organization level
         if (permission.ProjectId.HasValue)
         {
-            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, permission.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, permission.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();
@@ -353,7 +356,7 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="permissionId">The ID of the permission to be deleted</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<bool> DeletePermission(long permissionId)
+    public async Task<bool> DeletePermission( long currentUserId, long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
         // ensure that default permissions cannot be edited
@@ -377,11 +380,11 @@ public class PermissionBusiness : IPermissionBusiness
         // determine if this is project level or organization level
         if (permission.ProjectId.HasValue)
         {
-            await _eventBusiness.CreateEvent(eventLog, null, permission.ProjectId);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, null, permission.ProjectId);
         }
         else
         {
-            await _eventBusiness.CreateEvent(eventLog, permission.OrganizationId, null);
+            await _eventBusiness.CreateEvent(currentUserId, eventLog, permission.OrganizationId, null);
         }
         
         await _context.SaveChangesAsync();

@@ -42,6 +42,7 @@ public class EventBusiness : IEventBusiness
             .Include(e => e.Organization)
             .Include(e => e.Project)
             .Include(e => e.DataSource)
+            .OrderByDescending(e => e.LastUpdatedAt)
             .AsQueryable();
 
         if (organizationId.HasValue)
@@ -151,11 +152,14 @@ public class EventBusiness : IEventBusiness
                 eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= queryDto.endDate.Value);
         }
 
+        // Get total count before pagination
         var totalCount = await eventQuery.CountAsync();
 
+        // Get pagination values
         var pageNumber = queryDto?.PageNumber ?? 1;
         var pageSize = queryDto?.GetValidatedPageSize() ?? 500;
 
+        // Apply pagination and execute query
         var items = await (from e in eventQuery
                 join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
                 from user in userGroup.DefaultIfEmpty()
@@ -285,11 +289,14 @@ public class EventBusiness : IEventBusiness
                 eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= queryDto.endDate.Value);
         }
 
+        // Get total count before pagination
         var totalCount = await eventQuery.CountAsync();
 
+        // Get pagination values
         var pageNumber = queryDto?.PageNumber ?? 1;
         var pageSize = queryDto?.GetValidatedPageSize() ?? 25;
 
+        // Apply pagination and execute query
         var items = await (from e in eventQuery
                 join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
                 from user in userGroup.DefaultIfEmpty()
@@ -307,9 +314,8 @@ public class EventBusiness : IEventBusiness
                     LastUpdatedAt = e.LastUpdatedAt,
                     LastUpdatedBy = e.LastUpdatedBy,
                     LastUpdatedByUserName = user != null ? user.Name : null,
-                    ProjectName = e.ProjectId != null ? e.Project.Name : null,
-                    DataSourceName = e.DataSourceId != null ? e.DataSource.Name : null,
-                    OrganizationName = e.OrganizationId != null ? e.Organization.Name : null
+                    ProjectName = e.Project != null ? e.Project.Name : null,
+                    DataSourceName = e.DataSource != null ? e.DataSource.Name : null
                 })
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -586,9 +592,10 @@ public class EventBusiness : IEventBusiness
     /// <summary>
     /// Creates a new Event based on the event data provided.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
-    public async Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto, long? organizationId, long? projectId)
+    public async Task<EventResponseDto> CreateEvent(long currentUserId, CreateEventRequestDto dto, long? organizationId, long? projectId)
     {
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
@@ -616,11 +623,11 @@ public class EventBusiness : IEventBusiness
             OrganizationId = organizationId,
             ProjectId = projectId,
             Properties = dto.Properties,
-            LastUpdatedBy = dto.LastUpdatedBy,
+            LastUpdatedBy = currentUserId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             DataSourceId = dto.DataSourceId,
             EntityId = dto.EntityId,
-            EntityName = dto.EntityName
+            EntityName = dto.EntityName,
         };
 
         _context.Events.Add(newEvent);

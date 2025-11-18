@@ -1,14 +1,10 @@
 // src/app/(home)/components/SideMenu.tsx
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { getAllProjects } from "@/app/lib/projects_services.client";
-import { ProjectResponseDto } from "../types/responseDTOs";
 import {
   AdjustmentsHorizontalIcon,
   ArrowUpTrayIcon,
@@ -18,11 +14,12 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   FolderIcon,
-  HomeIcon,
-  QuestionMarkCircleIcon,
   RectangleGroupIcon,
-  TagIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 interface SideMenuProps {
   onToggle: (isCollapsed: boolean) => void;
@@ -41,11 +38,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(false);
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [activeProject, setActivepProject] = useState<ProjectResponseDto>();
+  const [activeProject, setActiveProject] = useState<ProjectResponseDto>();
 
   // Determine if we should hide the projects section
   const shouldHideProjects = pathname === "/organization_management";
-  // const shouldHideProjects = ["/organization_management", "/other_page"].includes(pathname);
 
   // Memoize fetchProjects to prevent it from changing on every render
   const fetchProjects = useCallback(async () => {
@@ -66,6 +62,31 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  // Clear project context and active project when organization changes
+  useEffect(() => {
+    if (organization) {
+      setProject(null);
+      setActiveProject(undefined);
+    }
+  }, [organization?.organizationId, setProject]);
+
+  // Sync activeProject with the project context
+  useEffect(() => {
+    if (project?.projectId && projects.length > 0) {
+      const foundProject = projects.find(
+        (p) => p.id.toString() === project.projectId
+      );
+      if (foundProject) {
+        setActiveProject(foundProject);
+      } else {
+        setActiveProject(undefined);
+        setProject(null);
+      }
+    } else if (!project?.projectId) {
+      setActiveProject(undefined);
+    }
+  }, [project, projects, setProject]);
 
   // Effect to set the selected item based on the current pathname
   useEffect(() => {
@@ -100,7 +121,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       projectId: selectedProject.id.toString(),
       projectName: selectedProject.name,
     });
-    setActivepProject(selectedProject);
+    setActiveProject(selectedProject);
     router.push(`/project/${selectedProject.id}`);
   };
 
@@ -195,7 +216,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </div>
 
-            {/* Projects List shadow-[0_0_20px_rgba(0,0,0,0.3)]*/}
+            {/* Projects List */}
             {!isCollapsed && isProjectsExpanded && (
               <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto bg-[var(--base-400)] border border-white/10 rounded-lg ">
                 {loadingProjects ? (
@@ -259,16 +280,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
-          {/* <li className="mt-2">
-            <Link
-              href="/tag_management"
-              prefetch={false}
-              className={getItemClass("/tag_management")}
-            >
-              <TagIcon className="size-6" />
-              {!isCollapsed && <p className="ml-2">Tag Management</p>}
-            </Link>
-          </li> */}
 
           <li className="mt-2">
             <Link

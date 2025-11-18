@@ -35,25 +35,28 @@ namespace deeplynx.api.Controllers
         // ==================== Organization-level endpoints ====================
 
         /// <summary>
-        /// Get all organization-level subscriptions for the current user
+        /// Get all subscriptions for the current user at organization or project level
         /// </summary>
         /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">Optional project ID to scope subscriptions to a specific project</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>List of subscription response DTOs</returns>
-        [HttpGet("GetAllSubscriptionsByOrg", Name = "api_get_all_subscriptions_org")]
-        public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptionsForOrganization(
+        [HttpGet("GetAllSubscriptions", Name = "api_get_all_subscriptions")]
+        public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptions(
             [FromRoute] long organizationId,
+            [FromQuery] long? projectId = null,
             [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var currentUserId = UserContextStorage.UserId;
-                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(currentUserId, organizationId, hideArchived, null);
+                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(currentUserId, organizationId, hideArchived, projectId);
                 return Ok(subscriptions);
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while fetching all organization subscriptions: {exc}";
+                var scope = projectId.HasValue ? "project" : "organization";
+                var message = $"An unexpected error occurred while fetching all {scope} subscriptions: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -223,10 +226,6 @@ namespace deeplynx.api.Controllers
                 await _subscriptionBusiness.BulkUnarchiveSubscriptions(currentUserId, organizationId, subscriptionIds, null);
                 return Ok(new { message = "Unarchived organization subscriptions" });
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving organization subscriptions: {exc}";
@@ -236,33 +235,6 @@ namespace deeplynx.api.Controllers
         }
 
         // ==================== Project-level endpoints ====================
-
-        /// <summary>
-        /// Get all project-level subscriptions for the current user
-        /// </summary>
-        /// <param name="organizationId">The ID of the organization</param>
-        /// <param name="projectId">The ID of the project</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
-        /// <returns>List of subscription response DTOs</returns>
-        [HttpGet("GetAllSubscriptionsByProject/{projectId}", Name = "api_get_all_subscriptions_project")]
-        public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptionsForProject(
-            [FromRoute] long organizationId,
-            [FromRoute] long projectId,
-            [FromQuery] bool hideArchived = true)
-        {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(currentUserId, organizationId, hideArchived, projectId);
-                return Ok(subscriptions);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while fetching all project subscriptions: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
 
         /// <summary>
         /// Get a specific project-level subscription

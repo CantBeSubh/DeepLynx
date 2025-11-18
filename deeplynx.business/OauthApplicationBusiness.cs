@@ -105,6 +105,7 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
     /// <summary>
     /// Create a new oauth application to represent an ecosystem app that uses Nexus as a provider
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">The data transfer object with details on the application to be created</param>
     /// <param name="userId">The ID of the requesting user</param>
     /// <returns>The client ID and secret of the newly created application</returns>

@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -103,7 +104,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var group = await _groupBusiness.CreateGroup(organizationId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var group = await _groupBusiness.CreateGroup(currentUserId, organizationId, dto);
                 return Ok(group);
             }
             catch (Exception exc)
@@ -127,7 +129,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var group = await _groupBusiness.UpdateGroup(groupId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var group = await _groupBusiness.UpdateGroup(currentUserId, groupId, dto);
                 return Ok(group);
             }
             catch (Exception exc)
@@ -148,7 +151,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _groupBusiness.DeleteGroup(groupId);
+                var currentUserId = UserContextStorage.UserId;
+                await _groupBusiness.DeleteGroup(currentUserId, groupId);
                 return Ok(new { message = $"Deleted group {groupId}" });
             }
             catch (Exception exc)
@@ -169,7 +173,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _groupBusiness.ArchiveGroup(groupId);
+                var currentUserId = UserContextStorage.UserId;
+                await _groupBusiness.ArchiveGroup(currentUserId, groupId);
                 return Ok(new { message = $"Archived group {groupId}" });
             }
             catch (Exception exc)
@@ -190,7 +195,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _groupBusiness.UnarchiveGroup(groupId);
+                var currentUserId = UserContextStorage.UserId;
+                await _groupBusiness.UnarchiveGroup(currentUserId, groupId);
                 return Ok(new { message = $"Unarchived group {groupId}" });
             }
             catch (Exception exc)

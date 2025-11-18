@@ -1,109 +1,137 @@
+// src/app/lib/permission_services.ts
 import api from './api';
+import { PermissionResponseDto } from '../(home)/types/responseDTOs';
 
-//List Permissions
-export const getAllPermissions = async (
-    labelId?: number,
-    projectId?: number,
-    organizationId?: number,
-    hideArchived: boolean = true,
-) => {
-    try {
-        const res = await api.get(`/permissions/GetAllPermissions`, {
-            params: {
-                labelId,
-                projectId,
-                organizationId,
-                hideArchived
-            }
-        });
-        return res.data;
-    } catch (error) {
-        console.error("Error getting all permissions:", error);
-        throw error;
+// ===== Permission CRUD Operations =====
+
+export async function getAllPermissions(params?: {
+  labelId?: number;
+  projectId?: number;
+  organizationId?: number;
+  hideArchived?: boolean;
+}): Promise<PermissionResponseDto[]> {
+  try {
+    const searchParams = new URLSearchParams();
+    
+    if (params?.labelId !== undefined) {
+      searchParams.append("labelId", params.labelId.toString());
     }
+    if (params?.projectId !== undefined) {
+      searchParams.append("projectId", params.projectId.toString());
+    }
+    if (params?.organizationId !== undefined) {
+      searchParams.append("organizationId", params.organizationId.toString());
+    }
+    if (params?.hideArchived !== undefined) {
+      searchParams.append("hideArchived", params.hideArchived.toString());
+    }
+
+    const queryString = searchParams.toString();
+    const url = `/permissions/GetAllPermissions${queryString ? `?${queryString}` : ""}`;
+    
+    const res = await api.get(url, {
+      headers: { "Content-Type": "application/json" }
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error("Error getting all permissions:", error);
+    throw error;
+  }
 }
 
-//Fetch Permission by ID
-export const fetchPermissionId = async (
-    permissionId: number,
-    hideArchived: boolean = true,
-) => {
-    try {
-        const res = await api.get(`/permissions/GetAllPermission/${permissionId}`, {
-            params: {
-                permissionId,
-                hideArchived
-            }
-        });
-        return res.data;
-    } catch (error) {
-        console.error("Error fetching permission by Id:", error);
-        throw error;
-    }
-}
-
-
-//Create a Permission
-export const createPermission = async (
-    name: string,
-    action: string,
-    labelId?: number,
-    description?: string | null,
-    projectId?: number,
-    organizationId?: number,
-) => {
-    try {
-        const res = await api.post(`/permissions/CreatePermission`, {
-            params: {
-                name,
-                action,
-                labelId,
-                description,
-                projectId,
-                organizationId,
-            }
-        });
-        return res.data;
-    } catch (error) {
-        console.error("Error fetching role by Id:", error);
-        throw error;
-    }
-}
-
-//Update a Permission
-export async function updatePermission(
+export async function getPermissionById(
   permissionId: number,
-  updateData: {
-    name?: string | null;
+  params?: { hideArchived?: boolean }
+): Promise<PermissionResponseDto> {
+  try {
+    const searchParams = new URLSearchParams();
+    
+    if (params?.hideArchived !== undefined) {
+      searchParams.append("hideArchived", params.hideArchived.toString());
+    }
+
+    const queryString = searchParams.toString();
+    const url = `/permissions/GetPermission/${permissionId}${queryString ? `?${queryString}` : ""}`;
+    
+    const res = await api.get(url, {
+      headers: { "Content-Type": "application/json" }
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error("Error getting permission by ID:", error);
+    throw error;
+  }
+}
+
+export async function createPermission(
+  body: {
+    name: string;
     description?: string | null;
-    action?: string | null,
-    labelId?: number,
+    action: string;
+    labelId: number;
+    projectId?: number | null;
+    organizationId?: number | null;
+  },
+  params?: {
+    projectId?: number;
+    organizationId?: number;
   }
-) {
+): Promise<PermissionResponseDto> {
   try {
-    const res = await api.put(
-      `/permissions/UpdatePermission/${permissionId}`,
-      updateData,
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const searchParams = new URLSearchParams();
+    
+    if (params?.projectId !== undefined) {
+      searchParams.append("projectId", params.projectId.toString());
+    }
+    if (params?.organizationId !== undefined) {
+      searchParams.append("organizationId", params.organizationId.toString());
+    }
+
+    const queryString = searchParams.toString();
+    const url = `/permissions/CreatePermission${queryString ? `?${queryString}` : ""}`;
+    
+    const res = await api.post(url, body, {
+      headers: { "Content-Type": "application/json" }
+    });
+
     return res.data;
   } catch (error) {
-    console.error("Error updating record:", error);
+    console.error("Error creating permission:", error);
     throw error;
   }
 }
 
-//Delete a Permission
-export async function deletePermission(permissionId: number) {
+export async function deletePermission(permissionId: number): Promise<void> {
   try {
-    const res = await api.delete(`/permissions/DeletePermission/${permissionId}`);
-    return res.data;
+    await api.delete(`/permissions/DeletePermission/${permissionId}`, {
+      headers: { "Content-Type": "application/json" }
+    });
   } catch (error) {
-    console.error("API call failed to delete permission:", error);
+    console.error("Error deleting permission:", error);
     throw error;
   }
 }
 
-//Archive a Permission
+export async function archivePermission(permissionId: number): Promise<void> {
+  try {
+    await api.delete(`/permissions/ArchivePermission/${permissionId}`, {
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (error) {
+    console.error("Error archiving permission:", error);
+    throw error;
+  }
+}
 
-//Unarchive a Permission
+export async function unarchivePermission(permissionId: number): Promise<void> {
+  try {
+    await api.put(`/permissions/UnarchivePermission/${permissionId}`, {}, {
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (error) {
+    console.error("Error unarchiving permission:", error);
+    throw error;
+  }
+}

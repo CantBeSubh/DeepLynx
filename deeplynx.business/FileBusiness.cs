@@ -41,11 +41,13 @@ public class FileBusiness
     /// <summary>
     /// Uploads file using specified object storage method
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="dataSourceId">Id of the data source to which the file belongs</param>
     /// <param name="objectStorageId">Id of the object storage method to use</param>
     /// <param name="file">file to upload</param>
     public async Task<RecordResponseDto> UploadFile( 
+        long currentUserId,
         long projectId,
         long? dataSourceId,
         long? objectStorageId,
@@ -102,7 +104,7 @@ public class FileBusiness
         
         var uri = await fileBusiness.UploadFile(projectId, realDataSourceId, configData, file, guid);
         
-        var fileClass = await _classBusiness.GetClassInfo(projectId, "File");
+        var fileClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "File");
         var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject()
@@ -120,16 +122,17 @@ public class FileBusiness
         };
         
         // return the newly created metadata record for the file
-        return await _recordBusiness.CreateRecord(projectId, realDataSourceId, recordRequest);
+        return await _recordBusiness.CreateRecord(currentUserId, projectId, realDataSourceId, recordRequest);
     }
 
     /// <summary>
     /// Relaces a file but uses the same guid for the file name
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="recordId">Id of record that contains the info of the file to replace</param>
     /// <param name="file">file to update to</param>
-    public async Task<RecordResponseDto> UpdateFile(long projectId, long recordId, IFormFile file)
+    public async Task<RecordResponseDto> UpdateFile(long currentUserId, long projectId, long recordId, IFormFile file)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);
@@ -160,7 +163,7 @@ public class FileBusiness
             FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             
         };
-        return await _recordBusiness.UpdateRecord(projectId, recordId, updateRecordRequest);
+        return await _recordBusiness.UpdateRecord(currentUserId, projectId, recordId, updateRecordRequest);
     }
     
     /// <summary>
