@@ -132,6 +132,7 @@ namespace deeplynx.tests
     
             var firstSubscription = result.First();
             Assert.Equal(uid, firstSubscription.UserId);
+            Assert.Equal(uid, firstSubscription.LastUpdatedBy);
             Assert.Equal(pid, firstSubscription.ProjectId);
             Assert.Equal(aid, firstSubscription.ActionId);
             Assert.Equal("delete", firstSubscription.Operation);
@@ -294,10 +295,10 @@ namespace deeplynx.tests
     
             // Assert
             var subscriptionList = await Context.Subscriptions
-                .Where(s => s.Operation == "delete")
+                .Where(s => s.Operation == "delete" && s.LastUpdatedBy == uid)
                 .ToListAsync();
     
-            Assert.Equal(3, subscriptionList.Count);
+            Assert.Equal(2, subscriptionList.Count);
         }
         
         #endregion

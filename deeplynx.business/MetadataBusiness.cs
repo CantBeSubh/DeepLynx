@@ -179,7 +179,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional tags and then insert
             var tagsToInsert = BuildTags(tags, records);
             if (tagsToInsert.Any())
-                tagMap = await BulkUpsertTags(projectId, tagsToInsert, metadataResponseDto);
+                tagMap = await BulkUpsertTags(currentUserId, projectId, tagsToInsert, metadataResponseDto);
         }
         
         // Records
@@ -403,11 +403,12 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
+        long currentUserId,
         long projectId,
         List<CreateTagRequestDto> tags,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _tagBusiness.BulkCreateTags(projectId, tags);
+        var inserted = await _tagBusiness.BulkCreateTags(currentUserId, projectId, tags);
         metadataResponseDto.Tags = inserted;
         return inserted.ToDictionary(t => t.Name, t => t);
     }
