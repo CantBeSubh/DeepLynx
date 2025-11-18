@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,11 +10,11 @@ namespace deeplynx.api.Controllers;
 [Authorize]
 public class TagController : ControllerBase
 {
-    private readonly ITagBusiness _tagBusiness;
     private readonly ILogger<TagController> _logger;
+    private readonly ITagBusiness _tagBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TagController"/> class.
+    ///     Initializes a new instance of the <see cref="TagController" /> class.
     /// </summary>
     /// <param name="tagBusiness">The business logic interface for handling tag operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
@@ -26,7 +25,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Get all tags
+    ///     Get all tags
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved</param>
@@ -38,7 +37,7 @@ public class TagController : ControllerBase
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(projectId,  hideArchived);
+            var tags = await _tagBusiness.GetAllTags(projectId, hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -50,7 +49,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Get a tag
+    ///     Get a tag
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
@@ -64,7 +63,7 @@ public class TagController : ControllerBase
     {
         try
         {
-            var tag = await _tagBusiness.GetTag(projectId, tagId,  hideArchived);
+            var tag = await _tagBusiness.GetTag(projectId, tagId, hideArchived);
             return Ok(tag);
         }
         catch (Exception exception)
@@ -77,7 +76,7 @@ public class TagController : ControllerBase
 
 
     /// <summary>
-    /// Creates a tag
+    ///     Creates a tag
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
@@ -100,9 +99,9 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
-    /// Creates many tags
+    ///     Creates many tags
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
@@ -127,7 +126,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Update a tag
+    ///     Update a tag
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
@@ -153,7 +152,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Delete a tag
+    ///     Delete a tag
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
@@ -166,7 +165,7 @@ public class TagController : ControllerBase
         try
         {
             await _tagBusiness.DeleteTag(projectId, tagId);
-            return Ok(new { message = $"Tag deleted successfully" });
+            return Ok(new { message = "Tag deleted successfully" });
         }
         catch (Exception exception)
         {
@@ -175,9 +174,9 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
-    /// Archive a tag 
+    ///     Archive a tag
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
@@ -190,7 +189,7 @@ public class TagController : ControllerBase
         try
         {
             await _tagBusiness.ArchiveTag(projectId, tagId);
-            return Ok(new { message = $"Tag archived successfully" });
+            return Ok(new { message = "Tag archived successfully" });
         }
         catch (Exception exception)
         {
@@ -199,9 +198,9 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
-    /// Unarchive a tag 
+    ///     Unarchive a tag
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
@@ -214,7 +213,7 @@ public class TagController : ControllerBase
         try
         {
             await _tagBusiness.UnarchiveTag(projectId, tagId);
-            return Ok(new { message = $"Tag unarchived successfully" });
+            return Ok(new { message = "Tag unarchived successfully" });
         }
         catch (Exception exception)
         {
