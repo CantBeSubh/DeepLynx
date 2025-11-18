@@ -1,17 +1,12 @@
-using System.Data;
-using System.Text;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

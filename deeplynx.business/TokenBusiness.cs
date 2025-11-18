@@ -162,7 +162,7 @@ public class TokenBusiness : ITokenBusiness
     /// <summary>
     /// Revoke all tokens for a given user
     /// </summary>
-    /// <param name="userId">ID of the user for which to revoke tokens</param>
+    /// <param name="currentUserId">ID of the user for which to revoke tokens</param>
     /// <returns></returns>
     public async Task<int> RevokeAllUserTokens(long currentUserId)
     {
@@ -256,7 +256,7 @@ public class TokenBusiness : ITokenBusiness
     /// <summary>
     /// Delete the given API key
     /// </summary>
-    /// <param name="userId">Authorizing user</param>
+    /// <param name="currentUserId">Authorizing user</param>
     /// <param name="key">api key</param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException">Returned if key not found</exception>
@@ -309,7 +309,7 @@ public class TokenBusiness : ITokenBusiness
     /// <summary>
     /// List all API keys for a user
     /// </summary>
-    /// <param name="userId">The ID of the user for which to list API keys</param>
+    /// <param name="currentUserId">The ID of the user for which to list API keys</param>
     /// <returns></returns>
     async Task<List<string>> ITokenBusiness.GetAllUserKeys(long currentUserId)
     {

@@ -194,6 +194,7 @@ public class RecordBusiness : IRecordBusiness
     /// <summary>
     /// Create a new record
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project under which to create the record</param>
     /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
     /// <param name="dto">The data transfer object containing details on the record to be created</param>
@@ -273,6 +274,7 @@ public class RecordBusiness : IRecordBusiness
     /// <summary>
     /// Create new records
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project under which to create the record</param>
     /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
     /// <param name="records">The data transfer object containing details on the records to be created</param>
@@ -379,6 +381,7 @@ public class RecordBusiness : IRecordBusiness
     /// <summary>
     /// Updates a record with new information
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
     /// <param name="recordId">The ID of the record to be updated</param>
     /// <param name="dto">The data transfer object containing details on the record to be updated</param>
@@ -475,6 +478,7 @@ public class RecordBusiness : IRecordBusiness
     /// <summary>
     /// Archive a metadata record.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project to which the record belongs</param>
     /// <param name="recordId">The record to be archived</param>
     /// <returns>Boolean indicating record was archived</returns>
@@ -538,6 +542,7 @@ public class RecordBusiness : IRecordBusiness
     /// <summary>
     /// Unarchive a metadata record.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project to which the record belongs</param>
     /// <param name="recordId">The record to be unarchived</param>
     /// <returns>Boolean indicating record was unarchived</returns>

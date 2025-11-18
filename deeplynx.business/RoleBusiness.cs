@@ -106,6 +106,7 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Create a new role
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">Data Transfer Object containing new role information</param>
     /// <param name="projectId">ID of the project to which the role belongs</param>
     /// <param name="organizationId">ID of the organization to which the role belongs</param>
@@ -167,6 +168,7 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Upsert multiple roles at a time
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="roles"></param>
     /// <returns></returns>
@@ -236,6 +238,7 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Update role information
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of the role to be updated</param>
     /// <param name="dto">Data Transfer Object containing new role information</param>
     /// <returns>The newly updated role</returns>
@@ -282,6 +285,7 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Archive a role by ID. Remove role from downstream project members
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to archive</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is already archived</exception>
@@ -341,6 +345,7 @@ public class RoleBusiness : IRoleBusiness
     /// <summary>
     /// Unarchive a role by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to unarchive</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found or is not archived</exception>
@@ -405,7 +410,6 @@ public class RoleBusiness : IRoleBusiness
     /// List all permissions for a given role
     /// </summary>
     /// <param name="roleId">ID of the role across which to search permissions</param>
-    /// <param name="hideArchived">Flag indicating whether to search on archived permissions</param>
     /// <returns>A list of permissions</returns>
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
     public async Task<IEnumerable<PermissionResponseDto>> GetPermissionsByRole(long roleId)

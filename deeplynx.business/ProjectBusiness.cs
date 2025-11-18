@@ -263,6 +263,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Updates an existing project by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to update</param>
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
@@ -372,6 +373,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Archive (soft delete) a project by id. This also archives downstream dependents.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to archive.</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
@@ -464,6 +466,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Unarchive a project by id. This also unarchives downstream dependents.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to unarchive.</param>
     /// <returns>Boolean true when successfully unarchived.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>

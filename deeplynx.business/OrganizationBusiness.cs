@@ -98,6 +98,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// Creates a new organization and logs the creation event.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="isDefault">Indicates whether the organization will be made the default</param>
     /// <param name="dto">A data transfer object with details on the organization to be created.</param>
     /// <returns>The created organization.</returns>
     public async Task<OrganizationResponseDto> CreateOrganization(long currentUserId, CreateOrganizationRequestDto dto, bool isDefault = false)

@@ -124,6 +124,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
@@ -215,6 +216,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="relationships">A list of relationship data transfer objects with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
@@ -290,6 +292,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Updates an existing relationship by its ID.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="relationshipId">The ID of the relationship to update.</param>
     /// <param name="dto">The relationship request data transfer object containing updated relationship details.</param>
@@ -376,6 +379,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Archive a specific relationship by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="relationshipId">The ID of the relationship to archive</param>
     /// <returns>Boolean true on successful archive</returns>
@@ -411,6 +415,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <summary>
     /// Unarchive a specific relationship by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="relationshipId">The ID of the relationship to unarchive</param>
     /// <returns>Boolean true on successful unarchive action</returns>

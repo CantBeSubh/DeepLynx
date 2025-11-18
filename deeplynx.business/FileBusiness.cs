@@ -41,6 +41,7 @@ public class FileBusiness
     /// <summary>
     /// Uploads file using specified object storage method
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="dataSourceId">Id of the data source to which the file belongs</param>
     /// <param name="objectStorageId">Id of the object storage method to use</param>
@@ -127,6 +128,7 @@ public class FileBusiness
     /// <summary>
     /// Relaces a file but uses the same guid for the file name
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="recordId">Id of record that contains the info of the file to replace</param>
     /// <param name="file">file to update to</param>

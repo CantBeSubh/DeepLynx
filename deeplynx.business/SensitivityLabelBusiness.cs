@@ -100,6 +100,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Create a new sensitivity label
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">Data Transfer Object containing new label information</param>
     /// <param name="projectId">ID of the project to which the label belongs</param>
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
@@ -161,6 +162,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Update sensitivity label information
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of the label to be updated</param>
     /// <param name="dto">Data Transfer Object containing new label information</param>
     /// <returns>The newly updated label</returns>
@@ -208,6 +210,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Archive a sensitivity label by ID.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to archive</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found or is already archived</exception>
@@ -240,6 +243,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <summary>
     /// Unarchive a sensitivity label by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to unarchive</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found or is not archived</exception>

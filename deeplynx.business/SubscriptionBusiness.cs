@@ -98,7 +98,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk creates subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <returns>A list of created subscriptions</returns>
     public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long projectId,
@@ -188,7 +188,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk updates subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <returns>A list of updated subscriptions</returns>
    public async Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
@@ -333,7 +333,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk archives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be archived</param>
     /// <returns>A list of created subscriptions</returns>
@@ -378,7 +378,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk unarchives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be unarchived</param>
     /// <returns>A list of created subscriptions</returns>

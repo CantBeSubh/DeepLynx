@@ -380,6 +380,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts relationships and returns a mapping of relationship name to ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="relationships"></param>
     /// <param name="metadataResponseDto"></param>
@@ -398,6 +399,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts tags and returns a mapping of tag name to ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="tags"></param>
     /// <param name="metadataResponseDto"></param>
@@ -416,6 +418,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts records and returns a mapping of record original ID to database ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <param name="records"></param>

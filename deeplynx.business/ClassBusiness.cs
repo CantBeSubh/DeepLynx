@@ -335,7 +335,6 @@ public class ClassBusiness : IClassBusiness
         var lastUpdatedAt = DateTime.UtcNow;
         
         //Todo: Add lastUpdatedBy to the sql procedure
-        var lastUpdatedBy = currentUserId;
 
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -401,7 +400,6 @@ public class ClassBusiness : IClassBusiness
         var lastUpdatedAt = DateTime.UtcNow;
         
         //Todo: Add lastUpdatedBy to the sql procedure
-        var lastUpdatedBy = currentUserId;
 
         // run unarchive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())

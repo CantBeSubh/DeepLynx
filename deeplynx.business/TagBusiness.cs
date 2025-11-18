@@ -98,6 +98,7 @@ public class TagBusiness : ITagBusiness
     /// Asynchronously creates a new tag for a specified project.
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="dto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
@@ -157,6 +158,7 @@ public class TagBusiness : ITagBusiness
     /// Asynchronously creates new tags for a specified project.
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tags">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
@@ -226,6 +228,7 @@ public class TagBusiness : ITagBusiness
     /// <summary>
     /// Updates an existing tag for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag request data transfer object containing updated tag details.</param>
@@ -298,6 +301,7 @@ public class TagBusiness : ITagBusiness
     /// <summary>
     /// Archives a specific tag by its ID for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
@@ -332,6 +336,7 @@ public class TagBusiness : ITagBusiness
     /// <summary>
     /// Unarchives a specific tag by its ID for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to unarchive.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
