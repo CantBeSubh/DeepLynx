@@ -1,3 +1,5 @@
+using deeplynx.helpers.Context;
+using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -127,7 +129,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var record = await _recordBusiness.CreateRecord(projectId, dataSourceId, dto);
+                var currentUserId = UserContextStorage.UserId;
+            var record = await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, dto);
             return Ok(record);
         }
         catch (Exception exc)
@@ -155,7 +158,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var newRecords = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
+                var currentUserId = UserContextStorage.UserId;
+            var newRecords = await _recordBusiness.BulkCreateRecords(currentUserId, projectId, dataSourceId, records);
             return Ok(newRecords);
         }
         catch (Exception exc)
@@ -183,7 +187,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var updated = await _recordBusiness.UpdateRecord(projectId, recordId, dto);
+                var currentUserId = UserContextStorage.UserId;
+            var updated = await _recordBusiness.UpdateRecord(currentUserId, projectId, recordId, dto);
             return Ok(updated);
         }
         catch (Exception exc)
@@ -235,7 +240,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            await _recordBusiness.ArchiveRecord(projectId, recordId);
+                var currentUserId = UserContextStorage.UserId;
+            await _recordBusiness.ArchiveRecord(currentUserId, projectId, recordId);
             return Ok(new { message = $"Archived record {recordId}" });
         }
         catch (Exception exc)
@@ -261,7 +267,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            await _recordBusiness.UnarchiveRecord(projectId, recordId);
+                var currentUserId = UserContextStorage.UserId;
+            await _recordBusiness.UnarchiveRecord(currentUserId, projectId, recordId);
             return Ok(new { message = $"Unarchived record {recordId}" });
         }
         catch (Exception exc)

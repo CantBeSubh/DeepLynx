@@ -11,14 +11,14 @@ public interface IRecordBusiness
     Task<RecordResponseDto> GetRecord(
         long projectId, long recordId, bool hideArchived);
     Task<RecordResponseDto> CreateRecord(
-        long projectId, long dataSourceId, CreateRecordRequestDto dto);
+        long currentUserId, long projectId, long dataSourceId, CreateRecordRequestDto dto);
     Task<List<RecordResponseDto>> BulkCreateRecords(
-        long projectId, long dataSourceId, List<CreateRecordRequestDto> dtos);
+        long currentUserId, long projectId, long dataSourceId, List<CreateRecordRequestDto> dtos);
     Task<RecordResponseDto> UpdateRecord(
-        long projectId, long recordId, UpdateRecordRequestDto dto);
+        long currentUserId, long projectId, long recordId, UpdateRecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long recordId);
-    Task<bool> ArchiveRecord(long projectId, long recordId);
-    Task<bool> UnarchiveRecord(long projectId, long recordId);
+    Task<bool> ArchiveRecord(long currentUserId, long projectId, long recordId);
+    Task<bool> UnarchiveRecord(long currentUserId, long projectId, long recordId);
     Task<bool> AttachTag(long projectId, long recordId, long tagId);
     Task<bool> UnattachTag(long projectId, long recordId, long tagId);
     Task<bool> BulkAttachTags(List<RecordTagLinkDto> dtos);

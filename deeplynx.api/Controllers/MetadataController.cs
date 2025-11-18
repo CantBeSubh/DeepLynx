@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +41,8 @@ public class MetadataController : ControllerBase
     {
         try
         {
-            var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, dataSourceId, metadataRequestDto);
+            var currentUserId = UserContextStorage.UserId;
+            var createdMetadata = await _metadataBusiness.CreateMetadata(currentUserId, projectId, dataSourceId, metadataRequestDto);
             return Ok(createdMetadata);
         }
         catch (Exception exception)
@@ -68,7 +70,8 @@ public class MetadataController : ControllerBase
     {
         try
         {
-            var createdMetadata = await _metadataBusiness.CreateMetadataFromFile(projectId, dataSourceId, file);
+            var currentUserId = UserContextStorage.UserId;
+            var createdMetadata = await _metadataBusiness.CreateMetadataFromFile(currentUserId, projectId, dataSourceId, file);
             return Ok(createdMetadata);
         }
         catch (Exception exception)

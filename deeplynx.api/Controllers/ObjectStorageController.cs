@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -117,7 +118,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var objectStorage = await _objectStorageBusiness.CreateObjectStorage(organizationId, projectId, dto, makeDefault);
+                var currentUserId = UserContextStorage.UserId;
+                var objectStorage = await _objectStorageBusiness.CreateObjectStorage(currentUserId, organizationId, projectId, dto, makeDefault);
                 return Ok(objectStorage);
             }
             catch (Exception ex)
@@ -145,7 +147,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var objectStorage = await _objectStorageBusiness.UpdateObjectStorage(organizationId, projectId, objectStorageId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var objectStorage = await _objectStorageBusiness.UpdateObjectStorage(currentUserId, organizationId, projectId, objectStorageId, dto);
                 return Ok(objectStorage);
             }
             catch (Exception ex)
@@ -197,7 +200,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _objectStorageBusiness.ArchiveObjectStorage(organizationId, projectId, objectStorageId);
+                var currentUserId = UserContextStorage.UserId;
+                await _objectStorageBusiness.ArchiveObjectStorage(currentUserId, organizationId, projectId, objectStorageId);
                 return Ok(new { message = $"Archived object storage {objectStorageId}" });
             }
             catch (Exception ex)
@@ -223,7 +227,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _objectStorageBusiness.UnarchiveObjectStorage(organizationId, projectId, objectStorageId);
+                var currentUserId = UserContextStorage.UserId;
+                await _objectStorageBusiness.UnarchiveObjectStorage(currentUserId, organizationId, projectId, objectStorageId);
                 return Ok(new { message = $"Unarchived object storage {objectStorageId}" });
             }
             catch (Exception ex)
@@ -249,7 +254,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _objectStorageBusiness.SetDefaultObjectStorage(organizationId, projectId, objectStorageId);
+                var currentUserId = UserContextStorage.UserId;
+                await _objectStorageBusiness.SetDefaultObjectStorage(currentUserId, organizationId, projectId, objectStorageId);
                 return Ok(new { message = $"Made object storage with id {objectStorageId} default" });
             }
             catch (Exception ex)

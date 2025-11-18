@@ -543,6 +543,17 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_roles_last_updated_by");
+            
+            // Add filtered unique indexes
+            entity.HasIndex(e => new { e.OrganizationId, e.Name })
+                .HasDatabaseName("unique_organization_role_name")
+                .IsUnique()
+                .HasFilter("project_id IS NULL");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ProjectId, e.Name })
+                .HasDatabaseName("unique_project_role_name")
+                .IsUnique()
+                .HasFilter("project_id IS NOT NULL");
 
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedRoles)

@@ -98,10 +98,11 @@ public class TagBusiness : ITagBusiness
     /// Asynchronously creates a new tag for a specified project.
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="dto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<TagResponseDto> CreateTag(long projectId, CreateTagRequestDto dto)
+    public async Task<TagResponseDto> CreateTag(long currentUserId, long projectId, CreateTagRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (dto == null)
@@ -120,17 +121,11 @@ public class TagBusiness : ITagBusiness
             throw new ValidationException("Name is required and cannot be empty or whitespace");
         }
         
-        /*// Validate 'CreatedBy' field
-        if (string.IsNullOrWhiteSpace(dto.CreatedBy))
-        {
-            throw new ValidationException("CreatedBy is required and cannot be empty or whitespace");
-        }*/
-        
         var tag = new Tag
         {
             Name = dto.Name,
             ProjectId = projectId,
-            LastUpdatedBy = null, // TODO: handled in future by JWT.
+            LastUpdatedBy = currentUserId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
@@ -138,7 +133,7 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
         
         // Log Tag Create Event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = tag.ProjectId,
             Operation = "create",
@@ -163,10 +158,12 @@ public class TagBusiness : ITagBusiness
     /// Asynchronously creates new tags for a specified project.
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tags">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<List<TagResponseDto>> BulkCreateTags(
+        long currentUserId, 
         long projectId, 
         List<CreateTagRequestDto> tags)
     {
@@ -177,15 +174,17 @@ public class TagBusiness : ITagBusiness
             INSERT INTO deeplynx.tags (project_id, name, last_updated_at, is_archived, last_updated_by)
             VALUES {0}
             ON CONFLICT (project_id, name) DO UPDATE SET
-                last_updated_at = @now
+                last_updated_at = @now,
+                last_updated_by = @lastUpdatedBy
             RETURNING *;
         ";
 
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new("@projectId", projectId),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@lastUpdatedBy", currentUserId)
         };
         
         // establish "dynamic" parameters (new for each dto in the list)
@@ -196,7 +195,7 @@ public class TagBusiness : ITagBusiness
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", tags.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @now, false, NUll)"));
+            $"(@projectId, @p{i}_name, @now, false, @lastUpdatedBy)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -229,12 +228,13 @@ public class TagBusiness : ITagBusiness
     /// <summary>
     /// Updates an existing tag for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag request data transfer object containing updated tag details.</param>
     /// <returns>The updated tag response DTO with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, UpdateTagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> UpdateTag(long currentUserId, long projectId, long tagId, UpdateTagRequestDto tagRequestDto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -250,14 +250,14 @@ public class TagBusiness : ITagBusiness
         }
 
         tag.Name = tagRequestDto.Name ?? tag.Name;
-        tag.LastUpdatedBy= null; // TODO: handled in future by JWT.
+        tag.LastUpdatedBy= currentUserId;
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
         
         // Log tag update event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "update",
             EntityType = "tag",
@@ -301,10 +301,11 @@ public class TagBusiness : ITagBusiness
     /// <summary>
     /// Archives a specific tag by its ID for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<bool> ArchiveTag(long projectId, long tagId)
+    public async Task<bool> ArchiveTag(long currentUserId, long projectId, long tagId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -314,11 +315,11 @@ public class TagBusiness : ITagBusiness
 
         tag.IsArchived = true;
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Tags.Update(tag);
+        tag.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         
         // Log tag soft delete event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "delete",
             EntityType = "tag",
@@ -335,10 +336,11 @@ public class TagBusiness : ITagBusiness
     /// <summary>
     /// Unarchives a specific tag by its ID for a specified project.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to unarchive.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<bool> UnarchiveTag(long projectId
+    public async Task<bool> UnarchiveTag( long currentUserId, long projectId
         , long tagId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
@@ -349,10 +351,10 @@ public class TagBusiness : ITagBusiness
 
         tag.IsArchived = false;
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Tags.Update(tag);
+        tag.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
         
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             Operation = "unarchive",
             EntityType = "tag",

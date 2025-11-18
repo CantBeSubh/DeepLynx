@@ -35,12 +35,10 @@ COPY deeplynx.sln ./deeplynx.sln
 COPY deeplynx.api ./deeplynx.api
 COPY deeplynx.business ./deeplynx.business
 COPY deeplynx.datalayer ./deeplynx.datalayer
-COPY deeplynx.graph ./deeplynx.graph
 COPY deeplynx.helpers ./deeplynx.helpers
 COPY deeplynx.interfaces ./deeplynx.interfaces
 COPY deeplynx.models ./deeplynx.models
 COPY deeplynx.tests ./deeplynx.tests
-COPY setup_kuzu.sh ./setup_kuzu.sh
 
 RUN dotnet restore deeplynx.sln
 

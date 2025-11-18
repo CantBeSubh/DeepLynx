@@ -47,7 +47,6 @@ COPY deeplynx.sln .
 COPY deeplynx.api ./deeplynx.api
 COPY deeplynx.business ./deeplynx.business
 COPY deeplynx.datalayer ./deeplynx.datalayer
-COPY deeplynx.graph ./deeplynx.graph
 COPY deeplynx.helpers ./deeplynx.helpers
 COPY deeplynx.interfaces ./deeplynx.interfaces
 COPY deeplynx.models ./deeplynx.models
@@ -77,14 +76,6 @@ COPY --from=publish /app/publish .
 
 # Copy additional files if needed
 COPY deeplynx.api/moon.css ./moon.css
-
-# Kuzu ops
-COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-x64/native/
-COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-x64/native/
-# Ensure the shared libraries are in the expected path
-RUN mkdir -p /app/backend/runtimes/linux-x64/native
-# Set the LD_LIBRARY_PATH to include the directory of your libraries
-ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-x64/native/:$LD_LIBRARY_PATH"
 
 # Update package list and upgrade specified packages during build time
 RUN apt-get update \

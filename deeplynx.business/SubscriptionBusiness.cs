@@ -98,10 +98,10 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk creates subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long userId, long projectId,
+    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long projectId,
         List<CreateSubscriptionRequestDto> dtos)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
@@ -131,7 +131,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
         // Bulk insert into subscriptions; if there is a conflict, do nothing
         var sql = @"
-        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id, last_updated_at, is_archived)
+        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived)
         VALUES {0}
         ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
         RETURNING id, user_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
@@ -142,12 +142,13 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         var parameters = new List<NpgsqlParameter>
         {
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new ("@lastUpdatedBy", currentUserId)
         };
 
         // Establish "dynamic" parameters (new for each dto in the list)
         parameters.AddRange(dtos.SelectMany((dto, i) => new[]
         {
-            new NpgsqlParameter($"@p{i}_userId", userId),
+            new NpgsqlParameter($"@p{i}_userId", currentUserId),
             new NpgsqlParameter($"@p{i}_actionId", dto.ActionId),
             new NpgsqlParameter($"@p{i}_operation", (object?)dto.Operation ?? DBNull.Value),
             new NpgsqlParameter($"@p{i}_projectId", projectId),
@@ -158,7 +159,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
         // Stringify the params and comma separate them
         var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, false)"));
+            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @lastUpdatedBy, false)"));
 
         // Put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -187,13 +188,13 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk updates subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <returns>A list of updated subscriptions</returns>
    public async Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
-    long userId,
-    long projectId,
-    List<UpdateSubscriptionRequestDto> dtos)
+        long currentUserId,
+        long projectId,
+        List<UpdateSubscriptionRequestDto> dtos)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         foreach (var dto in dtos)
@@ -229,7 +230,8 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
             data_source_id = data.data_source_id,
             entity_type = data.entity_type,
             entity_id = data.entity_id,
-            last_updated_at = @now
+            last_updated_at = @now,
+            last_updated_by = @userId
         FROM (VALUES {0}) AS data (id, action_id, operation, data_source_id, entity_type, entity_id)
         WHERE 
             subs.id = data.id 
@@ -243,9 +245,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new("@userId", userId),
+            new("@userId", currentUserId),
             new("@projectId", projectId),
-            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
         };
 
         // Establish "dynamic" parameters (new for each dto in the list)
@@ -291,11 +293,11 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk deletes subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be deleted</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<bool> BulkDeleteSubscriptions(long userId, long projectId, List<long> subscriptionIds)
+    public async Task<bool> BulkDeleteSubscriptions(long currentUserId, long projectId, List<long> subscriptionIds)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
@@ -311,9 +313,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray())
+            new("@userId", currentUserId),
+            new("@projectId", projectId),
+            new("@subscriptionIds", subscriptionIds.ToArray())
         };
 
         // Execute the query
@@ -331,18 +333,21 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk archives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be archived</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<bool> BulkArchiveSubscriptions(long userId, long projectId, List<long> subscriptionIds)
+    public async Task<bool> BulkArchiveSubscriptions(long currentUserId, long projectId, List<long> subscriptionIds)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // Build the SQL statement
         var sql = @"
         UPDATE deeplynx.subscriptions
-        SET is_archived = true
+        SET 
+            is_archived = true,
+            last_updated_at = @now,
+            last_updated_by = @userId
         WHERE 
             user_id = @userId 
             AND project_id = @projectId 
@@ -352,7 +357,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
+            new NpgsqlParameter("@userId", currentUserId),
             new NpgsqlParameter("@projectId", projectId),
             new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray()),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
@@ -373,18 +378,21 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <summary>
     /// Bulk unarchives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be unarchived</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<bool> BulkUnarchiveSubscriptions(long userId, long projectId, List<long> subscriptionIds)
+    public async Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long projectId, List<long> subscriptionIds)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // Build the SQL statement
         var sql = @"
     UPDATE deeplynx.subscriptions
-    SET is_archived = false
+    SET 
+        is_archived = false,
+        last_updated_at = @now,
+        last_updated_by = @userId
     WHERE 
         user_id = @userId 
         AND project_id = @projectId 
@@ -394,9 +402,10 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray())
+            new("@userId", currentUserId),
+            new("@projectId", projectId),
+            new("@subscriptionIds", subscriptionIds.ToArray()),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
 
         // Execute the query

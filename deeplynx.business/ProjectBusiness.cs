@@ -176,7 +176,7 @@ public class ProjectBusiness : IProjectBusiness
             Abbreviation = dto.Abbreviation,
             OrganizationId = organizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = currentUserId
         };
 
         _context.Projects.Add(project);
@@ -216,7 +216,7 @@ public class ProjectBusiness : IProjectBusiness
         }
 
         // Log create Project event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             OrganizationId = project.OrganizationId,
             ProjectId = projectId,
@@ -228,7 +228,7 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name }),
         });
 
-        await SetProjectDefaults(projectId, userId);
+        await SetProjectDefaults(currentUserId, project.OrganizationId, projectId);
 
         return projectResponseDto;
     }
@@ -236,11 +236,12 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Updates an existing project by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to update</param>
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project was not found.</exception>
-    public async Task<ProjectResponseDto> UpdateProject(long projectId, UpdateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> UpdateProject(long currentUserId, long projectId, UpdateProjectRequestDto dto)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
@@ -252,14 +253,14 @@ public class ProjectBusiness : IProjectBusiness
         project.Name = dto.Name ?? project.Name;
         project.Description = dto.Description ?? project.Description;
         project.Abbreviation = dto.Abbreviation ?? project.Abbreviation;
-        project.LastUpdatedBy = null; // TODO: handled in future by JWT.
+        project.LastUpdatedBy = currentUserId;
         project.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
 
         // Log update Project event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = project.Id,
             Operation = "update",
@@ -345,11 +346,12 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Archive (soft delete) a project by id. This also archives downstream dependents.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to archive.</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
-    public async Task<bool> ArchiveProject(long projectId)
+    public async Task<bool> ArchiveProject(long currentUserId, long projectId)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
@@ -367,8 +369,8 @@ public class ProjectBusiness : IProjectBusiness
                 // run the archive project procedure, which archives this project
                 // and all child objects with project_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    projectId, lastUpdatedAt
+                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)",
+                    projectId, lastUpdatedAt, currentUserId
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
@@ -387,7 +389,7 @@ public class ProjectBusiness : IProjectBusiness
             }
         }
 
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
             Operation = "archive",
@@ -435,11 +437,12 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Unarchive a project by id. This also unarchives downstream dependents.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to unarchive.</param>
     /// <returns>Boolean true when successfully unarchived.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if unarchive action fails.</exception>
-    public async Task<bool> UnarchiveProject(long projectId)
+    public async Task<bool> UnarchiveProject(long currentUserId, long projectId)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
@@ -457,8 +460,8 @@ public class ProjectBusiness : IProjectBusiness
                 // run the unarchive project procedure, which unarchives this project
                 // and all child objects with project_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    projectId, lastUpdatedAt
+                    "CALL deeplynx.unarchive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE,  {2}::INTEGER)",
+                    projectId, lastUpdatedAt, currentUserId
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
@@ -501,7 +504,7 @@ public class ProjectBusiness : IProjectBusiness
                 await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
 
                 // Log the event
-                await _eventBusiness.CreateEvent(new CreateEventRequestDto
+                await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
                 {
                     ProjectId = projectId,
                     Operation = "unarchive",
@@ -790,7 +793,7 @@ public class ProjectBusiness : IProjectBusiness
         }).ToList();
     }
 
-    private async Task SetProjectDefaults(long projectId, long userId)
+    private async Task SetProjectDefaults(long currentUserId, long organizationId, long projectId)
     {
         // ===============================
         // CREATE DEFAULT CLASSES
@@ -802,7 +805,7 @@ public class ProjectBusiness : IProjectBusiness
             new CreateClassRequestDto { Name = "Report" },
             new CreateClassRequestDto { Name = "File" }
         };
-        var cls = await _classBusiness.BulkCreateClasses(projectId, defaultClasses);
+        var cls = await _classBusiness.BulkCreateClasses(currentUserId, projectId, defaultClasses);
 
         // ===============================
         // CREATE DEFAULT DATA SOURCE
@@ -813,7 +816,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
-        await _dataSourceBusiness.CreateDataSource(projectId, defaultDataSource, true);
+        await _dataSourceBusiness.CreateDataSource(currentUserId, projectId, defaultDataSource, true);
 
         // ===============================
         // CREATE DEFAULT OBJECT STORAGE
@@ -854,7 +857,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Instance Default",
             Config = config
         };
-        await _objectStorageBusiness.CreateObjectStorage(null, projectId, objectStorageRequestDto, true);
+        await _objectStorageBusiness.CreateObjectStorage(currentUserId, null, projectId, objectStorageRequestDto, true);
 
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT
@@ -869,7 +872,7 @@ public class ProjectBusiness : IProjectBusiness
             }
 
         };
-        var obj = await _objectStorageBusiness.CreateObjectStorage(null, projectId, timeseriesObjectStorageMethod);
+        var obj = await _objectStorageBusiness.CreateObjectStorage(currentUserId, null, projectId, timeseriesObjectStorageMethod);
 
         // ===============================
         // CREATE DEFAULT PROJECT ROLES
@@ -880,15 +883,15 @@ public class ProjectBusiness : IProjectBusiness
             new CreateRoleRequestDto { Name = "Admin" },
             new CreateRoleRequestDto { Name = "User" }
         };
-        var roles = await _roleBusiness.BulkCreateRoles(projectId, defaultRoles);
+        var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
         var userRoleId = roles.Single(r => r.Name == "User").Id;
 
         // set role permissions for admin and user
-        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions);
-        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions, organizationId, projectId);
+        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions, organizationId, projectId);
 
-        await AddMemberToProject(projectId, adminRoleId, userId, null);
+        await AddMemberToProject(projectId, adminRoleId, currentUserId, null);
     }
 
     private void SetDefaultPermissions(Project project)

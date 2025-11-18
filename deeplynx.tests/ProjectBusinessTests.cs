@@ -319,7 +319,7 @@ namespace deeplynx.tests
             //Ensure
             _organizationBusiness.Verify(x => x.GetAllOrganizations(It.IsAny<bool>()), Times.Never);
             _organizationBusiness.Verify(
-                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
+                x => x.CreateOrganization(uid, It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
                 Times.Never);
             _organizationBusiness.Verify(
                 x => x.AddUserToOrganization(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()),
@@ -484,7 +484,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var updatedResult = await _projectBusiness.UpdateProject(pid, dto);
+            var updatedResult = await _projectBusiness.UpdateProject(uid, pid, dto);
 
             // Assert
             Assert.True(originalUpdatedAt <= updatedResult.LastUpdatedAt);
@@ -518,7 +518,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.UpdateProject(nonExistentId, dto));
+                () => _projectBusiness.UpdateProject(uid, nonExistentId, dto));
 
             Assert.Contains("Project not found.", exception.Message);
 
@@ -568,7 +568,7 @@ namespace deeplynx.tests
             var originalUpdatedAt = originalProject.LastUpdatedAt;
 
             // Act
-            var archivedResult = await _projectBusiness.ArchiveProject(pid);
+            var archivedResult = await _projectBusiness.ArchiveProject(uid, pid);
 
             // Assert
             Assert.True(archivedResult);
@@ -601,7 +601,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.ArchiveProject(nonExistentId));
+                () => _projectBusiness.ArchiveProject(uid, nonExistentId));
 
             Assert.Contains($"Project not found.", exception.Message);
 
@@ -618,7 +618,7 @@ namespace deeplynx.tests
         public async Task UnarchiveProject_Success_WhenArchived()
         {
             // Act
-            var unarchivedResult = await _projectBusiness.UnarchiveProject(pid4); //pid4 is archived
+            var unarchivedResult = await _projectBusiness.UnarchiveProject(uid, pid4); //pid4 is archived
 
             // Assert
             Assert.True(unarchivedResult);
@@ -629,6 +629,7 @@ namespace deeplynx.tests
             var unarchivedProject = await Context.Projects.FindAsync(pid4);
             Assert.NotNull(unarchivedProject);
             Assert.False(unarchivedProject.IsArchived);
+            Assert.Equal(uid, unarchivedProject.LastUpdatedBy);
         }
 
         [Fact]
@@ -639,7 +640,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.UnarchiveProject(nonExistentId));
+                () => _projectBusiness.UnarchiveProject(uid, nonExistentId));
 
             Assert.Contains($"Project not found or is not archived.", exception.Message);
         }
@@ -649,7 +650,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _projectBusiness.UnarchiveProject(pid)); // pid is not archived
+                () => _projectBusiness.UnarchiveProject(uid, pid)); // pid is not archived
 
             Assert.Contains($"Project not found or is not archived.", exception.Message);
         }
@@ -1052,13 +1053,15 @@ namespace deeplynx.tests
             {
                 Name = "Original Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             var newRole = new Role
             {
                 Name = "New Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             Context.Roles.AddRange(originalRole, newRole);
             await Context.SaveChangesAsync();
@@ -1085,13 +1088,15 @@ namespace deeplynx.tests
             {
                 Name = "Original Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid,
             };
             var newRole = new Role
             {
                 Name = "New Role",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             Context.Roles.AddRange(originalRole, newRole);
             await Context.SaveChangesAsync();
@@ -1540,8 +1545,8 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Add test roles
-            var testRole = new Role { Name = "Test Role" };
-            var missingRole = new Role { Name = "Missing Role" };
+            var testRole = new Role { Name = "Test Role", OrganizationId = oid};
+            var missingRole = new Role { Name = "Missing Role", OrganizationId = oid};
             Context.Roles.AddRange(testRole, missingRole);
             await Context.SaveChangesAsync();
             rid = testRole.Id;

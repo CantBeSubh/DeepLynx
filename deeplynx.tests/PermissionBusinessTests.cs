@@ -226,7 +226,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _permissionBusiness.CreatePermission(dto, pid, null);
+            var result = await _permissionBusiness.CreatePermission(uid, dto, pid, null);
 
             // Assert
             Assert.NotNull(result);
@@ -266,7 +266,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _permissionBusiness.CreatePermission(dto, null, oid);
+            var result = await _permissionBusiness.CreatePermission(uid, dto, null, oid);
 
             // Assert
             Assert.NotNull(result);
@@ -305,7 +305,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _permissionBusiness.CreatePermission(dto, pid, null);
+            var result = await _permissionBusiness.CreatePermission(uid, dto, pid, null);
 
             // Assert
             Assert.NotNull(result);
@@ -336,7 +336,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _permissionBusiness.CreatePermission(dto, pid, oid));
+                () => _permissionBusiness.CreatePermission(uid, dto, pid, oid));
             Assert.Contains("Please provide only one of Project ID or Organization ID, not both", exception.Message);
 
             // Ensure that no event was logged
@@ -357,7 +357,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _permissionBusiness.CreatePermission(dto, null, null));
+                () => _permissionBusiness.CreatePermission(uid, dto, null, null));
             Assert.Contains("One of Project ID or Organization ID must be provided", exception.Message);
 
             // Ensure that no event was logged
@@ -377,7 +377,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _permissionBusiness.CreatePermission(dto, pid, null));
+                () => _permissionBusiness.CreatePermission(uid, dto, pid, null));
 
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -396,7 +396,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _permissionBusiness.CreatePermission(dto, pid, null));
+                () => _permissionBusiness.CreatePermission(uid, dto, pid, null));
 
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -419,7 +419,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _permissionBusiness.UpdatePermission(permid1, dto);
+            var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -455,7 +455,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _permissionBusiness.UpdatePermission(permid1, dto);
+            var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -483,7 +483,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.UpdatePermission(permid4, dto)); // deleted permission
+                () => _permissionBusiness.UpdatePermission(uid, permid4, dto)); // deleted permission
 
             Assert.Contains($"Permission with id {permid4} not found", exception.Message);
 
@@ -502,7 +502,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _permissionBusiness.UpdatePermission(permid1, dto);
+            var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
 
             // Assert - Resource should not be modifiable through update
             Assert.Null(result.Resource);
@@ -532,7 +532,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _permissionBusiness.UpdatePermission(permid1, dto);
+            var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
 
             // Assert - IsDefault should remain false for user permissions
             Assert.False(result.IsDefault);
@@ -568,7 +568,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.UpdatePermission(isDefault.Id, dto)); // default permission
+                () => _permissionBusiness.UpdatePermission(uid, isDefault.Id, dto)); // default permission
 
             Assert.Contains($"Permission with id {isDefault.Id} cannot be updated", exception.Message);
 
@@ -585,7 +585,7 @@ namespace deeplynx.tests
         public async Task ArchivePermission_Succeeds_IfNotArchived()
         {
             // Act
-            var result = await _permissionBusiness.ArchivePermission(permid1);
+            var result = await _permissionBusiness.ArchivePermission(uid, permid1);
 
             // Assert
             Assert.True(result);
@@ -611,7 +611,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.ArchivePermission(permid2)); // already archived
+                () => _permissionBusiness.ArchivePermission(uid, permid2)); // already archived
 
             Assert.Contains($"Permission with id {permid2} not found or is already archived", exception.Message);
 
@@ -631,7 +631,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.ArchivePermission(isDefault.Id)); // default permission
+                () => _permissionBusiness.ArchivePermission(uid, isDefault.Id)); // default permission
 
             Assert.Contains($"Permission with id {isDefault.Id} cannot be updated", exception.Message);
 
@@ -648,7 +648,7 @@ namespace deeplynx.tests
         public async Task UnarchivePermission_Succeeds_IfArchived()
         {
             // Act
-            var result = await _permissionBusiness.UnarchivePermission(permid2);
+            var result = await _permissionBusiness.UnarchivePermission(uid, permid2);
 
             // Assert
             Assert.True(result);
@@ -674,7 +674,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.UnarchivePermission(permid1)); // not archived
+                () => _permissionBusiness.UnarchivePermission(uid, permid1)); // not archived
 
             Assert.Contains($"Permission with id {permid1} not found or is not archived", exception.Message);
 
@@ -694,7 +694,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.UnarchivePermission(isDefault.Id)); // default permission
+                () => _permissionBusiness.UnarchivePermission(uid, isDefault.Id)); // default permission
 
             Assert.Contains($"Permission with id {isDefault.Id} cannot be updated", exception.Message);
 
@@ -711,7 +711,7 @@ namespace deeplynx.tests
         public async Task DeletePermission_Succeeds_WhenExists()
         {
             // Act
-            var result = await _permissionBusiness.DeletePermission(permid1);
+            var result = await _permissionBusiness.DeletePermission(uid, permid1);
 
             // Assert
             Assert.True(result);
@@ -736,7 +736,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.DeletePermission(permid4)); // deleted permission
+                () => _permissionBusiness.DeletePermission(uid, permid4)); // deleted permission
 
             Assert.Contains($"Permission with id {permid4} not found", exception.Message);
 
@@ -756,7 +756,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _permissionBusiness.DeletePermission(isDefault.Id)); // default permission
+                () => _permissionBusiness.DeletePermission(uid, isDefault.Id)); // default permission
 
             Assert.Contains($"Permission with id {isDefault.Id} cannot be deleted", exception.Message);
 

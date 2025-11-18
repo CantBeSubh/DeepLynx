@@ -1,3 +1,5 @@
+using deeplynx.helpers.Context;
+using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -94,7 +96,8 @@ public class RelationshipController : ControllerBase
     {
         try
         {
-            var created = await _business.CreateRelationship(projectId, dto);
+                var currentUserId = UserContextStorage.UserId;
+            var created = await _business.CreateRelationship(currentUserId, projectId, dto);
             return Ok(created);
         }
         catch (Exception exc)
@@ -119,7 +122,8 @@ public class RelationshipController : ControllerBase
     {
         try
         {
-            var created = await _business.BulkCreateRelationships(projectId, relationships);
+                var currentUserId = UserContextStorage.UserId;
+            var created = await _business.BulkCreateRelationships(currentUserId, projectId, relationships);
             return Ok(created);
         }
         catch (Exception exc)
@@ -145,7 +149,8 @@ public class RelationshipController : ControllerBase
     {
         try
         {
-            var result = await _business.UpdateRelationship(projectId, relationshipId, dto);
+                var currentUserId = UserContextStorage.UserId;
+            var result = await _business.UpdateRelationship(currentUserId, projectId, relationshipId, dto);
             return Ok(result);
         }
         catch (Exception exc)
@@ -193,7 +198,8 @@ public class RelationshipController : ControllerBase
     {
         try
         {
-            await _business.ArchiveRelationship(projectId, relationshipId);
+                var currentUserId = UserContextStorage.UserId;
+            await _business.ArchiveRelationship(currentUserId, projectId, relationshipId);
             return Ok(new { message = $"Relationship with ID {relationshipId} was successfully archived." });
         }
         catch (Exception exc)
@@ -217,7 +223,8 @@ public class RelationshipController : ControllerBase
     {
         try
         {
-            await _business.UnarchiveRelationship(projectId, relationshipId);
+                var currentUserId = UserContextStorage.UserId;
+            await _business.UnarchiveRelationship(currentUserId, projectId, relationshipId);
             return Ok(new { message = $"Relationship with ID {relationshipId} was successfully unarchived." });
         }
         catch (Exception exc)

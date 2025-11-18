@@ -119,7 +119,8 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            var project = await _projectBusiness.UpdateProject(projectId, dto);
+                var  currentUserId = UserContextStorage.UserId;
+            var project = await _projectBusiness.UpdateProject(currentUserId, projectId, dto);
             return Ok(project);
         }
         catch (Exception exc)
@@ -163,7 +164,8 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            await _projectBusiness.ArchiveProject(projectId);
+                var currentUserId = UserContextStorage.UserId;
+            await _projectBusiness.ArchiveProject(currentUserId, projectId);
             return Ok(new { message = $"Archived project {projectId}" });
         }
         catch (Exception exc)
@@ -185,7 +187,8 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            await _projectBusiness.UnarchiveProject(projectId);
+                var currentUserId = UserContextStorage.UserId;
+            await _projectBusiness.UnarchiveProject(currentUserId, projectId);
             return Ok(new { message = $"Unarchived project {projectId}" });
         }
         catch (Exception exc)

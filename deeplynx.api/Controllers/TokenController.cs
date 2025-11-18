@@ -73,8 +73,8 @@ public class TokenController : ControllerBase
     {
         try
         {
-            var userId = UserContextStorage.UserId;
-            var tokenDto = await _tokenBusiness.CreateApiKey(userId, clientId);
+            var currentUserId = UserContextStorage.UserId;
+            var tokenDto = await _tokenBusiness.CreateApiKey(currentUserId, clientId);
             return Ok(tokenDto);
         }
         catch (KeyNotFoundException ex)
@@ -99,8 +99,8 @@ public class TokenController : ControllerBase
     {
         try
         {
-            var userId = UserContextStorage.UserId;
-            await _tokenBusiness.DeleteApiKey(userId, key);
+            var currentUserId = UserContextStorage.UserId;
+            await _tokenBusiness.DeleteApiKey(currentUserId, key);
             return Ok(new { message = "Successfully deleted API key" });
         }
         catch (KeyNotFoundException ex)
@@ -124,8 +124,8 @@ public class TokenController : ControllerBase
     {
         try
         {
-            var userId = UserContextStorage.UserId;
-            var keys = await _tokenBusiness.GetAllUserKeys(userId);
+            var currentUserId = UserContextStorage.UserId;
+            var keys = await _tokenBusiness.GetAllUserKeys(currentUserId);
             return Ok(keys);
         }
         catch (Exception ex)
@@ -145,8 +145,8 @@ public class TokenController : ControllerBase
     {
         try
         {
-            var userId = UserContextStorage.UserId;
-            var revokedCount = await _tokenBusiness.RevokeAllUserTokens(userId);
+            var currentUserId = UserContextStorage.UserId;
+            var revokedCount = await _tokenBusiness.RevokeAllUserTokens(currentUserId);
 
             return Ok(new
             {
