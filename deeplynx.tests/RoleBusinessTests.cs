@@ -801,6 +801,29 @@ namespace deeplynx.tests
     
             Assert.Contains($"Role {rid1} does not belong to project {pid2}", exception.Message);
         }
+        
+                
+        [Fact]
+        public async Task UpdateRole_Fails_WhenWrongOrgSupplied()
+        {
+            // Arrange
+            var organization = new Organization 
+            { 
+                Name = "Test 2",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            
+            var dto = new UpdateRoleRequestDto { Name = "Role 2" };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _roleBusiness.UpdateRole(rid1, organization.Id, pid2, dto));
+    
+            Assert.Contains($"Role {rid1} does not belong to organization {organization.Id}", exception.Message);
+        }
 
         [Fact]
         public async Task UpdateRole_Success_AllowsSameNameInDifferentScope()
