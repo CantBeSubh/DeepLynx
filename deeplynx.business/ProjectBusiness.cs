@@ -393,13 +393,11 @@ public class ProjectBusiness : IProjectBusiness
         {
             try
             {
-                //Todo: update archive procedure to include lastUpdatedBy
-                
                 // run the archive project procedure, which archives this project
                 // and all child objects with project_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    projectId, lastUpdatedAt
+                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)",
+                    projectId, lastUpdatedAt, currentUserId
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
@@ -486,13 +484,11 @@ public class ProjectBusiness : IProjectBusiness
         {
             try
             {
-                //Todo: update archive procedure to include lastUpdatedBy
-                
                 // run the unarchive project procedure, which unarchives this project
                 // and all child objects with project_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    projectId, lastUpdatedAt
+                    "CALL deeplynx.unarchive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE,  {2}::INTEGER)",
+                    projectId, lastUpdatedAt, currentUserId
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure

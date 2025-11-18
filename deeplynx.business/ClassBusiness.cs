@@ -333,8 +333,6 @@ public class ClassBusiness : IClassBusiness
             
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
-        
-        //Todo: Add lastUpdatedBy to the sql procedure
 
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -344,8 +342,8 @@ public class ClassBusiness : IClassBusiness
                 // run the archive class procedure, which archives this class
                 // and all child objects with class_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    classId, lastUpdatedAt
+                    "CALL deeplynx.archive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE,  {2}::INTEGER)",
+                    classId, lastUpdatedAt, currentUserId
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
@@ -398,8 +396,6 @@ public class ClassBusiness : IClassBusiness
             
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
-        
-        //Todo: Add lastUpdatedBy to the sql procedure
 
         // run unarchive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -409,8 +405,8 @@ public class ClassBusiness : IClassBusiness
                 // run the unarchive class procedure, which unarchives this class
                 // and all child objects with class_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    classId, lastUpdatedAt
+                    "CALL deeplynx.unarchive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)",
+                    classId, lastUpdatedAt,  currentUserId
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure

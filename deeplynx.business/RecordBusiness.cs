@@ -499,13 +499,11 @@ public class RecordBusiness : IRecordBusiness
         {
             try
             {
-                //Todo: update procedure to use lastUpdatedBy
-                
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    recordId, lastUpdatedAt
+                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)})",
+                    recordId, lastUpdatedAt,  currentUserId
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
@@ -563,13 +561,11 @@ public class RecordBusiness : IRecordBusiness
         {
             try
             {
-                //Todo: update procedure to use lastUpdatedBy
-                
                 // run the unarchive record procedure, which unarchives this record
                 // and all child objects with record_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    recordId, lastUpdatedAt
+                    "CALL deeplynx.unarchive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)})",
+                    recordId, lastUpdatedAt, currentUserId
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
