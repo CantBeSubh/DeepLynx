@@ -863,6 +863,27 @@ public class RecordBusinessTests : IntegrationTestBase
 
     #region ArchiveRecord Tests
 
+    
+    [Fact]
+    public async Task ArchiveRecord_Success_RecordIsArchived()
+    {
+        // Act
+        var archived = await _recordBusiness.ArchiveRecord(uid, pid, rid);
+        Assert.True(archived);
+        
+        // force EF to update context with db
+        Context.ChangeTracker.Clear();
+        
+        // Assert
+        var archivedRecord = await Context.Records.FindAsync(rid);
+        Assert.NotNull(archivedRecord);
+        Assert.Equal(rid, archivedRecord.Id);
+        Assert.True(archivedRecord.IsArchived);
+        Assert.Equal(pid, archivedRecord.ProjectId);
+        Assert.Equal(uid, archivedRecord.LastUpdatedBy);
+        
+    }
+    
     [Fact]
     public async Task ArchiveRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
@@ -1064,6 +1085,7 @@ public class RecordBusinessTests : IntegrationTestBase
         var reloaded = await Context.Records.FindAsync(rid);
         Assert.NotNull(reloaded);
         Assert.Equal("Test Record", reloaded.Name);
+        Assert.Equal(uid, reloaded.LastUpdatedBy);
         Assert.False(reloaded.IsArchived); 
         
         // Ensure that the record unarchive event was logged

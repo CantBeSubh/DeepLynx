@@ -668,6 +668,7 @@ namespace deeplynx.tests
             var unarchivedProject = await Context.Projects.FindAsync(pid4);
             Assert.NotNull(unarchivedProject);
             Assert.False(unarchivedProject.IsArchived);
+            Assert.Equal(uid, unarchivedProject.LastUpdatedBy);
         }
 
         [Fact]

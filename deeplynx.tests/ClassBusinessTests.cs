@@ -488,6 +488,7 @@ namespace deeplynx.tests
             Assert.NotNull(archivedClass);
             Assert.True(archivedClass.IsArchived);
             Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
+            Assert.Equal(uid, archivedClass.LastUpdatedBy);
 
             // Ensure that class soft delete event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -850,6 +851,7 @@ namespace deeplynx.tests
             // Assert
             Assert.True(result);
             Assert.False(updated?.IsArchived);
+            Assert.Equal(uid, updated?.LastUpdatedBy);
         }
 
         [Fact]

@@ -502,7 +502,7 @@ public class RecordBusiness : IRecordBusiness
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)})",
+                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)",
                     recordId, lastUpdatedAt,  currentUserId
                 );
 
@@ -564,7 +564,7 @@ public class RecordBusiness : IRecordBusiness
                 // run the unarchive record procedure, which unarchives this record
                 // and all child objects with record_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)})",
+                    "CALL deeplynx.unarchive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)",
                     recordId, lastUpdatedAt, currentUserId
                 );
 
