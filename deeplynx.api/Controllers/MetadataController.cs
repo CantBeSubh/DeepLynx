@@ -5,16 +5,16 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("projects/{projectId}/datasources/{dataSourceId}/metadata")]
+[Route("organizations/{organizationId}/projects/{projectId}/datasources/{dataSourceId}/metadata")]
 [ApiController]
 [Authorize]
 public class MetadataController : ControllerBase
 {
-    private readonly IMetadataBusiness _metadataBusiness;
     private readonly ILogger<MetadataController> _logger;
+    private readonly IMetadataBusiness _metadataBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MetadataController"/> class.
+    ///     Initializes a new instance of the <see cref="MetadataController" /> class.
     /// </summary>
     /// <param name="metadataBusiness">The business logic interface for handling metadata operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
@@ -23,16 +23,18 @@ public class MetadataController : ControllerBase
         _metadataBusiness = metadataBusiness;
         _logger = logger;
     }
-    
+
     /// <summary>
-    /// Parses metadata from raw JSON
+    ///     Parses metadata from raw JSON
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="metadataRequestDto">The metadata data transfer object containing metadata details.</param>
     [HttpPost("CreateMetadata", Name = "api_create_metadata")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(
-        long projectId, 
+        long organizationId,
+        long projectId,
         long dataSourceId,
         [FromBody] CreateMetadataRequestDto metadataRequestDto)
     {
@@ -49,16 +51,18 @@ public class MetadataController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
-    /// Parses metadata from a JSON file
+    ///     Parses metadata from a JSON file
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="file">The .json file that contains the metadata.</param>
     [HttpPost("CreateMetadataFromFile", Name = "api_create_metadata_from_file")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadataFromFile(
-        long projectId, 
+        long organizationId,
+        long projectId,
         long dataSourceId,
         IFormFile file)
     {

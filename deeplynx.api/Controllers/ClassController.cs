@@ -31,13 +31,13 @@ public class ClassController : ControllerBase
     }
 
     /// <summary>
-    ///     Get all classes
+    ///     Get All Classes
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>List of class response DTOs</returns>
-    [HttpGet("GetAllClasses", Name = "api_get_all_classes")]
+    [HttpGet(Name = "api_get_all_classes")]
     public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
         long organizationId,
         long projectId,
@@ -57,14 +57,14 @@ public class ClassController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a class
+    ///     Get a Class
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="classId">The ID of the class to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>Class response DTO</returns>
-    [HttpGet("{classId}/GetClass", Name = "api_get_a_class")]
+    [HttpGet("{classId}", Name = "api_get_a_class")]
     public async Task<ActionResult<ClassResponseDto>> GetClass(
         long organizationId,
         long projectId,
@@ -86,13 +86,13 @@ public class ClassController : ControllerBase
 
 
     /// <summary>
-    ///     Create a class
+    ///     Create a Class
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="dto">The request DTO for classes</param>
     /// <returns>Class response DTOs</returns>
-    [HttpPost("CreateClass", Name = "api_create_a_class")]
+    [HttpPost(Name = "api_create_a_class")]
     public async Task<ActionResult<ClassResponseDto>> CreateClass(
         long organizationId,
         long projectId,
@@ -112,13 +112,13 @@ public class ClassController : ControllerBase
     }
 
     /// <summary>
-    ///     Create many classes
+    ///     Bulk Create Classes
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="classes">List of request DTOs for classes</param>
     /// <returns>Bulk class response DTOs</returns>
-    [HttpPost("BulkCreateClasses", Name = "api_create_many_classes")]
+    [HttpPost("bulk", Name = "api_create_many_classes")]
     public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
         long organizationId,
         long projectId,
@@ -138,7 +138,7 @@ public class ClassController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a class
+    ///     Update a Class
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
@@ -146,7 +146,7 @@ public class ClassController : ControllerBase
     /// <param name="classId">The ID of the class to update</param>
     /// <param name="dto">The request DTO for the class</param>
     /// <returns>Class response DTO</returns>
-    [HttpPut("{classId}/UpdateClass", Name = "api_update_a_class")]
+    [HttpPut("{classId}", Name = "api_update_a_class")]
     public async Task<ActionResult<ClassResponseDto>> UpdateClass(
         long organizationId,
         long projectId,
@@ -167,13 +167,13 @@ public class ClassController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a class
+    ///     Delete a Class
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="classId">The ID of the class to delete.</param>
     /// <returns>A message stating the class was successfully deleted.</returns>
-    [HttpDelete("{classId}/DeleteClass", Name = "api_delete_a_class")]
+    [HttpDelete("{classId}", Name = "api_delete_a_class")]
     public async Task<IActionResult> DeleteClass(
         long organizationId,
         long projectId,
@@ -193,52 +193,35 @@ public class ClassController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive a class
+    ///     Archive or Unarchive a Class
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
-    /// <param name="classId">The ID of the class to archive.</param>
-    /// <returns>A message stating the class was successfully archived.</returns>
-    [HttpDelete("{classId}/ArchiveClass", Name = "api_archive_a_class")]
+    /// <param name="classId">The ID of the class to archive or unarchive.</param>
+    /// <param name="archive">True to archive the class, false to unarchive it.</param>
+    /// <returns>A message stating the class was successfully archived or unarchived.</returns>
+    [HttpPatch("{classId}", Name = "api_archive_class")]
     public async Task<IActionResult> ArchiveClass(
         long organizationId,
         long projectId,
-        long classId)
+        long classId,
+        [FromQuery] bool archive)
     {
         try
         {
-            await _classBusiness.ArchiveClass(projectId, classId);
-            return Ok(new { message = $"Archived class {classId}" });
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while archiving class {classId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
+            if (archive)
+            {
+                await _classBusiness.ArchiveClass(projectId, classId);
+                return Ok(new { message = $"Archived class {classId}" });
+            }
 
-    /// <summary>
-    ///     Unarchive a class
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
-    /// <param name="projectId">The ID of the project to which the class belongs</param>
-    /// <param name="classId">The ID of the class to unarchive.</param>
-    /// <returns>A message stating the class was successfully unarchived.</returns>
-    [HttpPut("{classId}/UnarchiveClass", Name = "api_unarchive_a_class")]
-    public async Task<IActionResult> UnarchiveClass(
-        long organizationId,
-        long projectId,
-        long classId)
-    {
-        try
-        {
             await _classBusiness.UnarchiveClass(projectId, classId);
             return Ok(new { message = $"Unarchived class {classId}" });
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while unarchiving class {classId}: {exc}";
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} class {classId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

@@ -56,7 +56,7 @@ public class OauthApplicationController : ControllerBase
     /// <param name="applicationId">ID of OAuth application</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>
     /// <returns></returns>
-    [HttpGet("GetOauthApplication/{applicationId}", Name = "api_get_oauth_application")]
+    [HttpGet("{applicationId}/GetOauthApplication", Name = "api_get_oauth_application")]
     public async Task<ActionResult<OauthApplicationResponseDto>> GetOauthApplication(
         long applicationId, [FromQuery] bool hideArchived = true)
     {
@@ -78,7 +78,7 @@ public class OauthApplicationController : ControllerBase
     /// </summary>
     /// <param name="dto">Data structure of OAuth application to create</param>
     /// <returns></returns>
-    [HttpPost("CreateOauthApplication", Name = "api_create_oauth_application")]
+    [HttpPost("{applicationId}/CreateOauthApplication", Name = "api_create_oauth_application")]
     public async Task<ActionResult<OauthApplicationSecureResponseDto>> CreateOauthApplication(
         [FromBody] CreateOauthApplicationRequestDto dto)
     {
@@ -103,7 +103,7 @@ public class OauthApplicationController : ControllerBase
     /// <param name="applicationId">ID of the OAuth application</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("UpdateOauthApplication/{applicationId}", Name = "api_update_oauth_application")]
+    [HttpPut("{applicationId}/UpdateOauthApplication", Name = "api_update_oauth_application")]
     public async Task<ActionResult<OauthApplicationResponseDto>> UpdateOauthApplication(
         long applicationId,
         [FromBody] UpdateOauthApplicationRequestDto dto)
@@ -128,7 +128,7 @@ public class OauthApplicationController : ControllerBase
     /// </summary>
     /// <param name="applicationId">ID of the OAuth application to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("DeleteOauthApplication/{applicationId}", Name = "api_delete_oauth_application")]
+    [HttpDelete("{applicationId}/DeleteOauthApplication", Name = "api_delete_oauth_application")]
     public async Task<ActionResult> DeleteOauthApplication(long applicationId)
     {
         try
@@ -151,7 +151,7 @@ public class OauthApplicationController : ControllerBase
     /// </summary>
     /// <param name="applicationId">ID of the OAuth application</param>
     /// <returns></returns>
-    [HttpDelete("ArchiveOauthApplication/{applicationId}", Name = "api_archive_oauth_application")]
+    [HttpDelete("{applicationId}/ArchiveOauthApplication", Name = "api_archive_oauth_application")]
     public async Task<ActionResult> ArchiveOauthApplication(long applicationId)
     {
         try
@@ -174,7 +174,7 @@ public class OauthApplicationController : ControllerBase
     /// </summary>
     /// <param name="applicationId">ID of the OAuth application</param>
     /// <returns></returns>
-    [HttpPut("UnarchiveOauthApplication/{applicationId}", Name = "api_unarchive_oauth_application")]
+    [HttpPut("{applicationId}/UnarchiveOauthApplication", Name = "api_unarchive_oauth_application")]
     public async Task<ActionResult> UnarchiveOauthApplication(long applicationId)
     {
         try
