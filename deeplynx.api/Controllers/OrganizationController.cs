@@ -185,9 +185,9 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of the user to be added</param>
         /// <param name="isAdmin"></param>
         /// <returns></returns>
-        [HttpPost("AddUserToOrganization", Name = "api_add_user_to_organization")]
+        [HttpPost("{organizationId}/AddUserToOrganization", Name = "api_add_user_to_organization")]
         public async Task<ActionResult> AddUserToOrganization(
-            [FromQuery] long organizationId, 
+            long organizationId, 
             [FromQuery] long userId,
             [FromQuery] bool isAdmin = false)
         {
@@ -211,9 +211,9 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of the user</param>
         /// <param name="isAdmin">isAdmin status</param>
         /// <returns></returns>
-        [HttpPut("SetOrganizationAdminStatus", Name = "api_update_organization_admin_status")]
+        [HttpPut("{organizationId}/SetOrganizationAdminStatus", Name = "api_update_organization_admin_status")]
         public async Task<ActionResult> SetOrganizationAdminStatus(
-            [FromQuery] long organizationId, 
+            long organizationId, 
             [FromQuery] long userId,
             [FromQuery] bool isAdmin)
         {
@@ -236,9 +236,9 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">ID of the organization to remove from</param>
         /// <param name="userId">ID of user to be removed</param>
         /// <returns></returns>
-        [HttpDelete("RemoveUserFromOrganization", Name = "api_remove_user_from_organization")]
+        [HttpDelete("{organizationId}/RemoveUserFromOrganization", Name = "api_remove_user_from_organization")]
         public async Task<ActionResult> RemoveUserFromOrganization(
-            [FromQuery] long organizationId, 
+            long organizationId, 
             [FromQuery] long userId)
         {
             try
