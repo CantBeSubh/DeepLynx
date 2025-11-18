@@ -164,10 +164,10 @@ public class TokenBusiness : ITokenBusiness
     /// </summary>
     /// <param name="userId">ID of the user for which to revoke tokens</param>
     /// <returns></returns>
-    public async Task<int> RevokeAllUserTokens(long userId)
+    public async Task<int> RevokeAllUserTokens(long currentUserId)
     {
         var tokens = await _context.OauthTokens
-            .Where(t => t.UserId == userId && !t.Revoked)
+            .Where(t => t.UserId == currentUserId && !t.Revoked)
             .ToListAsync();
 
         foreach (var token in tokens)
@@ -199,11 +199,11 @@ public class TokenBusiness : ITokenBusiness
     /// <summary>
     /// Create a new api keypair for a given user
     /// </summary>
-    /// <param name="userId">The ID of the requesting user</param>
+    /// <param name="currentUserId">The ID of the requesting user</param>
     /// <param name="clientId">(optional) the client ID of the oauth application requesting</param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException">Returned if user or application not found</exception>
-    public async Task<TokenResponseDto> CreateApiKey(long userId, string? clientId = null)
+    public async Task<TokenResponseDto> CreateApiKey(long currentUserId, string? clientId = null)
     {
         // Generate random key and secret
         string apiKey = KeyGenerator.GenerateKeyBase64();
@@ -212,11 +212,11 @@ public class TokenBusiness : ITokenBusiness
         // Hash the SECRET
         string hashedSecret = HashApiSecret(apiSecret);
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId);
 
         if (user == null)
         {
-            throw new KeyNotFoundException($"User with id {userId} not found");
+            throw new KeyNotFoundException($"User with id {currentUserId} not found");
         }
 
         // Look up application by ClientId if provided
@@ -260,9 +260,9 @@ public class TokenBusiness : ITokenBusiness
     /// <param name="key">api key</param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException">Returned if key not found</exception>
-    public async Task<bool> DeleteApiKey(long userId, string key)
+    public async Task<bool> DeleteApiKey(long currentUserId, string key)
     {
-        var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k => k.Key == key && k.UserId == userId);
+        var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k => k.Key == key && k.UserId == currentUserId);
 
         if (keyToRemove == null)
             throw new KeyNotFoundException($"Key {key} not found.");
@@ -311,11 +311,11 @@ public class TokenBusiness : ITokenBusiness
     /// </summary>
     /// <param name="userId">The ID of the user for which to list API keys</param>
     /// <returns></returns>
-    async Task<List<string>> ITokenBusiness.GetAllUserKeys(long userId)
+    async Task<List<string>> ITokenBusiness.GetAllUserKeys(long currentUserId)
     {
         // Query for existing records (excluding archived)
         var userApiKeys = await _context.ApiKeys
-            .Where(r => r.UserId == userId)
+            .Where(r => r.UserId == currentUserId)
             .ToListAsync();
         // Send just the key, not the secret
         var keys = userApiKeys.Select(c => c.Key).ToList();
