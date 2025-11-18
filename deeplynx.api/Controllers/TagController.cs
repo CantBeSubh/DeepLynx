@@ -29,6 +29,7 @@ public class TagController : ControllerBase
     /// Get all tags
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet("GetAllTags", Name = "api_get_all_tags")]
@@ -52,6 +53,7 @@ public class TagController : ControllerBase
     /// Get a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
@@ -80,6 +82,7 @@ public class TagController : ControllerBase
     /// Creates a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("CreateTag", Name = "api_create_a_tag")]
@@ -103,6 +106,7 @@ public class TagController : ControllerBase
     /// Creates many tags
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
@@ -128,6 +132,7 @@ public class TagController : ControllerBase
     /// Update a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
@@ -151,6 +156,7 @@ public class TagController : ControllerBase
     /// Delete a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
     [HttpDelete("DeleteTag/{tagId}", Name = "api_delete_a_tag")]
@@ -173,6 +179,7 @@ public class TagController : ControllerBase
     /// Archive a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>
     /// <returns> A message stating the tag was successfully archived.</returns>
     [HttpDelete("ArchiveTag/{tagId}", Name = "api_archive_a_tag")]
@@ -195,6 +202,7 @@ public class TagController : ControllerBase
     /// Unarchive a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to unarchive.</param>
     /// <returns> A message stating the tag was successfully unarchived.</returns>
     [HttpPut("UnarchiveTag/{tagId}", Name = "api_unarchive_a_tag")]

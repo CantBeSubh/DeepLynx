@@ -38,23 +38,31 @@ public class TagBusiness : ITagBusiness
     /// <returns>A list of tags belonging to the project.</returns>
     public async Task<List<TagResponseDto>> GetAllTags(long organizationId, long? projectId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
+        // Ensure organization exists
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId, hideArchived);
+
+        //If given projectId, filter to project-level roles
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
+        }
 
         var tagQuery = _context.Tags
-            .Where(t => t.ProjectId == projectId);
+            .Where(t => t.OrganizationId == organizationId
+                && (!hideArchived || !t.IsArchived)
+                && (!projectId.HasValue || t.ProjectId == projectId.Value));
 
-        if (hideArchived)
-        {
-            tagQuery = tagQuery.Where(t => !t.IsArchived);
-        }
+        if (tagQuery == null)
+            throw new KeyNotFoundException($"Tags not found or do not belong to the specified organization/project context");
 
         return await tagQuery.Select(t => new TagResponseDto()
         {
             Id = t.Id,
             Name = t.Name,
-            // ProjectId = t.ProjectId,
+            ProjectId = t.ProjectId,
             LastUpdatedBy = t.LastUpdatedBy,
             LastUpdatedAt = t.LastUpdatedAt,
+            OrganizationId = t.OrganizationId,
         })
             .ToListAsync();
     }
@@ -85,14 +93,30 @@ public class TagBusiness : ITagBusiness
             throw new KeyNotFoundException($"Tag with id {tagId} is archived");
         }
 
+        // Validate tag belongs to the specified organization
+        if (tag.OrganizationId != organizationId)
+        {
+            throw new InvalidOperationException($"Role {tagId} does not belong to organization {organizationId}");
+        }
+
+        // If projectId is provided, validate role belongs to that project
+        if (projectId.HasValue)
+        {
+            if (tag.ProjectId != projectId.Value)
+            {
+                throw new InvalidOperationException($"Role {tagId} does not belong to project {projectId.Value}");
+            }
+        }
+
         return new TagResponseDto
         {
             Id = tag.Id,
             Name = tag.Name,
-            // ProjectId = tag.ProjectId,
+            ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
             LastUpdatedAt = tag.LastUpdatedAt,
             IsArchived = tag.IsArchived,
+            OrganizationId = tag.OrganizationId,
         };
     }
 
@@ -106,6 +130,14 @@ public class TagBusiness : ITagBusiness
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<TagResponseDto> CreateTag(long organizationId, long? projectId, CreateTagRequestDto dto)
     {
+        // Ensure organization exists (always required)
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
+
+        if (projectId.HasValue)
+        {
+
+        }
+
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
@@ -135,6 +167,7 @@ public class TagBusiness : ITagBusiness
             ProjectId = projectId,
             LastUpdatedBy = null, // TODO: handled in future by JWT.
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            // OrganizationId = organizationId,
         };
 
         _context.Tags.Add(tag);
@@ -156,9 +189,10 @@ public class TagBusiness : ITagBusiness
         {
             Id = tag.Id,
             Name = tag.Name,
-            // ProjectId = tag.ProjectId,
+            ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
-            LastUpdatedAt = tag.LastUpdatedAt
+            LastUpdatedAt = tag.LastUpdatedAt,
+            OrganizationId = organizationId,
         };
     }
 
@@ -278,10 +312,11 @@ public class TagBusiness : ITagBusiness
         {
             Id = tag.Id,
             Name = tag.Name,
-            // ProjectId = tag.ProjectId,
+            ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
             LastUpdatedAt = tag.LastUpdatedAt,
             IsArchived = tag.IsArchived,
+            OrganizationId = organizationId,
         };
     }
 
@@ -427,6 +462,7 @@ public class TagBusiness : ITagBusiness
             LastUpdatedBy = t.LastUpdatedBy,
             LastUpdatedAt = t.LastUpdatedAt,
             IsArchived = t.IsArchived,
+            OrganizationId = organizationId,
         }).ToList();
     }
 }
