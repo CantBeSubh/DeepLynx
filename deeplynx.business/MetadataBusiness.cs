@@ -136,8 +136,8 @@ public class MetadataBusiness : IMetadataBusiness
     private async Task<MetadataResponseDto> ParseMetadata(
         CreateMetadataRequestDto metadataRequestDto,
         long dataSourceId,
-        long organizationId,
-        long projectId)
+        long projectId,
+        long organizationId)
     {
         var metadataResponseDto = new MetadataResponseDto();
 
@@ -406,7 +406,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
         long organizationId,
-        long? projectId,
+        long projectId,
         List<CreateTagRequestDto> tags,
         MetadataResponseDto metadataResponseDto)
     {

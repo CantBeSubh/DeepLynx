@@ -264,7 +264,7 @@ public class TagBusiness : ITagBusiness
 
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", tags.Select((dto, i) =>
-            $"(@projectId, @organizationId, @p{i}_name, @p{i}_desc, @now, NULL)"));
+            $"(@projectId, @organizationId, @p{i}_name, @now, NULL)"));
 
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);

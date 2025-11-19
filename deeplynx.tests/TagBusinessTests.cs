@@ -60,6 +60,7 @@ namespace deeplynx.tests
             // Assert
             Assert.Equal(2, tags.Count);
             Assert.All(tags, t => Assert.Equal(pid, t.ProjectId));
+            Assert.All(tags, t => Assert.Equal(oid, t.OrganizationId));
             Assert.All(tags, t => Assert.Equal(false, t.IsArchived));
             Assert.Contains(tags, t => t.Id == tid);
             Assert.Contains(tags, t => t.Id == tid2);
@@ -88,7 +89,33 @@ namespace deeplynx.tests
             // Assert
             Assert.Equal(2, tags.Count);
             Assert.All(tags, ds => Assert.Equal(pid, ds.ProjectId));
+            Assert.All(tags, ds => Assert.Equal(oid, ds.OrganizationId));
             Assert.Equal(pid, tags.First().ProjectId);
+        }
+
+        [Fact]
+        public async Task GetAllOrgTags_Succeeds_ReturnsOrgTags()
+        {
+            // Arrange - Create an org-level tag
+            var orgTag = new Tag
+            {
+                Name = "Org-Level Tag",
+                ProjectId = null,
+                OrganizationId = oid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            Context.Tags.Add(orgTag);
+            await Context.SaveChangesAsync();
+
+            // Act - Get all tags at org level (no projectId)
+            var result = await _tagBusiness.GetAllTags(oid, null, true);
+            var tags = result.ToList();
+
+            // Assert
+            Assert.Single(tags);
+            Assert.All(tags, t => Assert.Null(t.ProjectId));
+            Assert.All(tags, t => Assert.Equal(oid, t.OrganizationId));
         }
 
         #endregion
@@ -108,6 +135,7 @@ namespace deeplynx.tests
             Assert.Equal(uid, result.LastUpdatedBy);
             Assert.False(result.IsArchived);
             Assert.Equal(pid, result.ProjectId);
+            Assert.Equal(oid, result.OrganizationId);
         }
 
         [Fact]
@@ -173,11 +201,13 @@ namespace deeplynx.tests
             Assert.True(result.Id > 0);
             Assert.Equal("Tag One", result.Name);
             Assert.Equal(pid, result.ProjectId);
+            Assert.Equal(oid, result.OrganizationId);
 
             // Verify it was actually saved to database
             var savedTag = await Context.Tags.FindAsync(result.Id);
             Assert.NotNull(savedTag);
             Assert.Equal("Tag One", savedTag.Name);
+            Assert.Equal(oid, savedTag.OrganizationId);
 
             // Ensure that the Tag create event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -204,6 +234,7 @@ namespace deeplynx.tests
 
             // Assert
             Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
+            Assert.Equal(oid, result.OrganizationId);
 
             // Ensure that the Tag create event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -235,6 +266,7 @@ namespace deeplynx.tests
             Assert.Equal(2, result.Count);
             Assert.Equal("Test Tag 1", result.First().Name);
             Assert.Equal("Test Tag 2", result.Last().Name);
+            Assert.All(result, t => Assert.Equal(oid, t.OrganizationId));
 
             // Ensure that create event was logged for each created tag
             var eventList = await Context.Events.ToListAsync();
@@ -268,6 +300,84 @@ namespace deeplynx.tests
             Assert.Empty(eventList);
         }
 
+        [Fact]
+        public async Task CreateTag_Fails_WhenNotInOrganization()
+        {
+            //Arange
+            var otherOrg = await Context.Organizations.AddAsync(new Organization { Name = "X" });
+            await Context.SaveChangesAsync();
+            var foreignProj = await Context.Projects.AddAsync(new Project { Name = "Y", OrganizationId = otherOrg.Entity.Id });
+            await Context.SaveChangesAsync();
+
+            //Act
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => _tagBusiness.CreateTag(oid, foreignProj.Entity.Id, new CreateTagRequestDto { Name = "n" }));
+
+            //Assert
+            Assert.Empty(await Context.Events.ToListAsync());
+        }
+
+        [Fact]
+        public async Task CreateTagDuplicate_Fails_InSameProject()
+        {
+            //Arrange
+            var dto = new CreateTagRequestDto { Name = "Dup" };
+            var first = await _tagBusiness.CreateTag(oid, pid, dto);
+            Assert.NotNull(first);
+
+            //Act
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _tagBusiness.CreateTag(oid, pid, dto));
+
+            //Assert
+            var events = await Context.Events.ToListAsync();
+            Assert.Single(events);
+            Assert.Equal("create", events[0].Operation);
+            Assert.Equal("tag", events[0].EntityType);
+            Assert.Equal(first.Id, events[0].EntityId);
+        }
+
+        [Fact]
+        public async Task CreateOrgTag_Succeeds_NoProject()
+        {
+            var dto = new CreateTagRequestDto { Name = "Org-Level Tag" };
+
+            var result = await _tagBusiness.CreateTag(oid, null, dto);
+
+            Assert.NotNull(result);
+            Assert.Null(result.ProjectId);
+            Assert.Equal(oid, result.OrganizationId);
+
+            var saved = await Context.Tags.FindAsync(result.Id);
+            Assert.NotNull(saved);
+            Assert.Null(saved!.ProjectId);
+            Assert.Equal(oid, saved.OrganizationId);
+
+            var events = await Context.Events.ToListAsync();
+            Assert.Single(events);
+            Assert.Null(events[0].ProjectId);
+            Assert.Equal("create", events[0].Operation);
+            Assert.Equal("tag", events[0].EntityType);
+            Assert.Equal(result.Id, events[0].EntityId);
+        }
+
+        [Fact]
+        public async Task CreateOrgTag_DuplicateName_SucceedsDifferentScopes()
+        {
+            // Arrange
+            var dto = new CreateTagRequestDto { Name = "Shared Name" };
+
+            // Act
+            var orgTag = await _tagBusiness.CreateTag(oid, null, dto);
+            var projectTag = await _tagBusiness.CreateTag(oid, pid, dto);
+
+            // Assert
+            Assert.NotEqual(orgTag.Id, projectTag.Id);
+            Assert.Null(orgTag.ProjectId);
+            Assert.Equal(pid, projectTag.ProjectId);
+            Assert.Equal(oid, orgTag.OrganizationId);
+            Assert.Equal(oid, projectTag.OrganizationId);
+        }
+
         #endregion
 
         #region UpdateTag Tests
@@ -288,6 +398,7 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(tid, result.Id);
             Assert.Equal("Updated Test Tag", result.Name);
+            Assert.Equal(oid, result.OrganizationId);
             Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
 
             // Verify it was actually updated in database
@@ -327,6 +438,7 @@ namespace deeplynx.tests
             Assert.Equal(originalTag.Id, result.Id);
             Assert.Equal("Updated Tag", result.Name);
             Assert.Equal(originalTag.LastUpdatedBy, result.LastUpdatedBy);
+            Assert.Equal(oid, result.OrganizationId);
 
             // Verify it was actually updated in database
             var updatedTag = await Context.Tags.FindAsync(originalTag.Id);
@@ -558,6 +670,8 @@ namespace deeplynx.tests
 
             Assert.Equal("Concurrent Tag Update 1", result1.Name);
             Assert.Equal("Concurrent Tag Update 2", result2.Name);
+            Assert.Equal(oid, result1.OrganizationId);
+            Assert.Equal(oid, result2.OrganizationId);
         }
 
         [Fact]
@@ -574,6 +688,7 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Equal("Test with émojis 🚀 and ñ special chars 中文", result.Name);
+            Assert.Equal(oid, result.OrganizationId);
         }
 
         [Fact]
@@ -602,7 +717,8 @@ namespace deeplynx.tests
                 LastUpdatedBy = uid,
                 ProjectId = 1,
                 LastUpdatedAt = now,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
 
             // Assert
@@ -613,6 +729,7 @@ namespace deeplynx.tests
             Assert.Equal(uid, dto.LastUpdatedBy);
             Assert.Equal(now, dto.LastUpdatedAt);
             Assert.False(dto.IsArchived);
+            Assert.Equal(oid, dto.OrganizationId);
         }
 
         #endregion
@@ -630,6 +747,7 @@ namespace deeplynx.tests
             var refreshed = await Context.Tags.FindAsync(tid3);
             Assert.NotNull(refreshed);
             Assert.False(refreshed.IsArchived);
+            Assert.Equal(oid, refreshed.OrganizationId);
         }
 
         [Fact]
@@ -687,6 +805,7 @@ namespace deeplynx.tests
             var savedTag = await Context.Tags.FindAsync(testTag.Id);
             Assert.NotNull(savedTag);
             Assert.Equal(uid, savedTag.LastUpdatedBy);
+            Assert.Equal(oid, savedTag.OrganizationId);
         }
 
         [Fact]
@@ -715,6 +834,7 @@ namespace deeplynx.tests
             Assert.Equal("Test User", tagWithUser.LastUpdatedByUser.Name);
             Assert.Equal("test.user@test.com", tagWithUser.LastUpdatedByUser.Email);
             Assert.Equal(uid, tagWithUser.LastUpdatedBy);
+            Assert.Equal(oid, tagWithUser.OrganizationId);
         }
 
         [Fact]
@@ -777,6 +897,7 @@ namespace deeplynx.tests
             Assert.NotNull(updatedTag.LastUpdatedByUser);
             Assert.Equal("Test User", updatedTag.LastUpdatedByUser.Name);
             Assert.Equal("Updated Tag Name", updatedTag.Name);
+            Assert.Equal(oid, updatedTag.OrganizationId);
         }
 
         #endregion
@@ -801,12 +922,12 @@ namespace deeplynx.tests
             var organization = new Organization { Name = "Test Organization" };
             Context.Organizations.Add(organization);
             await Context.SaveChangesAsync();
-            var organizationId = organization.Id;
+            oid = organization.Id;
 
             // Add projects
-            var project = new Project { Name = "Project 1", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-            var project2 = new Project { Name = "Project2", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-            var project3 = new Project { Name = "Project 3", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+            var project = new Project { Name = "Project 1", LastUpdatedBy = uid, OrganizationId = oid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+            var project2 = new Project { Name = "Project2", LastUpdatedBy = uid, OrganizationId = oid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+            var project3 = new Project { Name = "Project 3", LastUpdatedBy = uid, OrganizationId = oid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
             Context.Projects.Add(project);
             Context.Projects.Add(project2);
             Context.Projects.Add(project3);

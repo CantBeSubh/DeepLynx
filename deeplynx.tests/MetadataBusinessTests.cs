@@ -239,6 +239,8 @@ namespace deeplynx.tests
             Assert.Single(result.Records);
             Assert.Equal(2, result.Tags.Count);
             Assert.Equal(2, result.Records.First().Tags.Count);
+            Assert.All(result.Tags, tag => Assert.Equal(oid, tag.OrganizationId));
+            Assert.All(result.Tags, tag => Assert.Equal(pid, tag.ProjectId));
 
             // Ensure both create record and tags are logged
             var eventList = await Context.Events.ToListAsync();
@@ -502,6 +504,7 @@ namespace deeplynx.tests
             var createdTag = result.Tags[0];
             Assert.Equal("Test Tag", createdTag.Name);
             Assert.Equal(pid, createdTag.ProjectId);
+            Assert.Equal(oid, createdTag.OrganizationId);
 
             var createdRecord1 = result.Records[0];
             Assert.Equal("Test Record", createdRecord1.Name);
@@ -809,6 +812,8 @@ namespace deeplynx.tests
             Assert.Single(result.Records);
             Assert.Equal(2, result.Tags.Count);
             Assert.Equal(2, result.Records.First().Tags.Count);
+            Assert.All(result.Tags, tag => Assert.Equal(oid, tag.OrganizationId));
+            Assert.All(result.Tags, tag => Assert.Equal(pid, tag.ProjectId));
 
             // Ensure both create record and tags are logged
             var eventList = await Context.Events.ToListAsync();
@@ -1276,6 +1281,12 @@ namespace deeplynx.tests
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(6, eventList.Count);
 
+            var createdTag = result.Tags[0];
+            Assert.Equal("Test Tag", createdTag.Name);
+            Assert.Equal(oid, createdTag.OrganizationId);
+            Assert.Equal(pid, createdTag.ProjectId);
+            Assert.NotNull(createdTag.ProjectId);
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -1311,6 +1322,20 @@ namespace deeplynx.tests
             Assert.Equal("create", actualEvent5.Operation);
             Assert.Equal("edge", actualEvent5.EntityType);
             Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Success_TagsBelongToCorrectOrganization()
+        {
+            // Arrange
+            var dto = new CreateMetadataRequestDto
+            {
+                Tags = new List<CreateTagRequestDto>
+                {
+                    new CreateTagRequestDto { Name = "Org Tag 1" },
+                    new CreateTagRequestDto { Name = "Org Tag 2" }
+                }
+            };
         }
 
         [Fact]
@@ -1446,6 +1471,159 @@ namespace deeplynx.tests
             Assert.Single(result.Records);
             Assert.Equal("Complex System", result.Records.First().Name);
             Assert.NotNull(result.Records.First().Properties);
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Success_TagsIsolatedByOrganization()
+        {
+            // Arrange - Create another organization and project
+            var organization2 = new Organization { Name = "Test Organization 2" };
+            Context.Organizations.Add(organization2);
+            await Context.SaveChangesAsync();
+            var oid2 = organization2.Id;
+
+            var project2 = new Project
+            {
+                Name = "Project 2",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = false,
+                OrganizationId = oid2,
+            };
+            Context.Projects.Add(project2);
+            await Context.SaveChangesAsync();
+            var pid2 = project2.Id;
+
+            var dataSource2 = new DataSource
+            {
+                Name = "Test Datasource 2",
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = false
+            };
+            Context.DataSources.Add(dataSource2);
+            await Context.SaveChangesAsync();
+            var did2 = dataSource2.Id;
+
+            var dto1 = new CreateMetadataRequestDto
+            {
+                Tags = new List<CreateTagRequestDto>
+                {
+                    new CreateTagRequestDto { Name = "SharedTagName" }
+                }
+            };
+
+            var dto2 = new CreateMetadataRequestDto
+            {
+                Tags = new List<CreateTagRequestDto>
+                {
+                    new CreateTagRequestDto { Name = "SharedTagName" }
+                }
+            };
+
+            // Act - Create tags with same name in different organizations
+            var result1 = await _metadataBusiness.CreateMetadata(oid, pid, did, dto1);
+            var result2 = await _metadataBusiness.CreateMetadata(oid2, pid2, did2, dto2);
+
+            // Assert - Both should succeed because they're in different orgs
+            Assert.Single(result1.Tags);
+            Assert.Single(result2.Tags);
+            Assert.Equal("SharedTagName", result1.Tags[0].Name);
+            Assert.Equal("SharedTagName", result2.Tags[0].Name);
+            Assert.NotEqual(result1.Tags[0].Id, result2.Tags[0].Id); // Different IDs
+            Assert.Equal(oid, result1.Tags[0].OrganizationId);
+            Assert.Equal(oid2, result2.Tags[0].OrganizationId);
+            Assert.Equal(pid, result1.Tags[0].ProjectId);
+            Assert.Equal(pid2, result2.Tags[0].ProjectId);
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Success_SameTagNameDifferentOrganizations()
+        {
+            // Arrange - Create second organization with project and datasource
+            var org2 = new Organization { Name = "Test Organization 2" };
+            Context.Organizations.Add(org2);
+            await Context.SaveChangesAsync();
+
+            var project2 = new Project
+            {
+                Name = "Project 2",
+                OrganizationId = org2.Id,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            Context.Projects.Add(project2);
+            await Context.SaveChangesAsync();
+
+            var dataSource2 = new DataSource
+            {
+                Name = "Datasource 2",
+                ProjectId = project2.Id,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            Context.DataSources.Add(dataSource2);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateMetadataRequestDto
+            {
+                Tags = new List<CreateTagRequestDto> { new CreateTagRequestDto { Name = "SharedTag" } }
+            };
+
+            // Act - Create same tag name in different organizations
+            var result1 = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result2 = await _metadataBusiness.CreateMetadata(org2.Id, project2.Id, dataSource2.Id, dto);
+
+            // Assert - Both succeed with different IDs and correct organization
+            Assert.Single(result1.Tags);
+            Assert.Single(result2.Tags);
+            Assert.Equal("SharedTag", result1.Tags[0].Name);
+            Assert.Equal("SharedTag", result2.Tags[0].Name);
+            Assert.NotEqual(result1.Tags[0].Id, result2.Tags[0].Id);
+            Assert.Equal(oid, result1.Tags[0].OrganizationId);
+            Assert.Equal(org2.Id, result2.Tags[0].OrganizationId);
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Success_SameTagNameInDifferentProjectsSameOrg()
+        {
+            // Arrange - Create second project in same organization
+            var project2 = new Project
+            {
+                Name = "Project 2",
+                OrganizationId = oid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            Context.Projects.Add(project2);
+            await Context.SaveChangesAsync();
+
+            var dataSource2 = new DataSource
+            {
+                Name = "Datasource 2",
+                ProjectId = project2.Id,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            Context.DataSources.Add(dataSource2);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateMetadataRequestDto
+            {
+                Tags = new List<CreateTagRequestDto> { new CreateTagRequestDto { Name = "ProjectTag" } }
+            };
+
+            // Act - Create same tag name in different projects
+            var result1 = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result2 = await _metadataBusiness.CreateMetadata(oid, project2.Id, dataSource2.Id, dto);
+
+            // Assert - Both succeed with different IDs but same organization
+            Assert.NotEqual(result1.Tags[0].Id, result2.Tags[0].Id);
+            Assert.Equal(oid, result1.Tags[0].OrganizationId);
+            Assert.Equal(oid, result2.Tags[0].OrganizationId);
+            Assert.Equal(pid, result1.Tags[0].ProjectId);
+            Assert.Equal(project2.Id, result2.Tags[0].ProjectId);
         }
 
         #endregion
