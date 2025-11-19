@@ -30,6 +30,21 @@ namespace deeplynx.datalayer.Migrations
                 schema: "deeplynx",
                 table: "object_storages");
 
+            migrationBuilder.DropForeignKey(
+                name: "project_members_role_id_fkey",
+                schema: "deeplynx",
+                table: "project_members");            
+
+            migrationBuilder.AddForeignKey(
+                name: "project_members_role_id_fkey",
+                schema: "deeplynx",
+                table: "project_members",
+                column: "role_id",
+                principalSchema: "deeplynx",
+                principalTable: "roles",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Cascade);
+
             migrationBuilder.AddForeignKey(
                 name: "events_data_source_id_fkey",
                 schema: "deeplynx",
@@ -108,6 +123,20 @@ namespace deeplynx.datalayer.Migrations
                 name: "object_storage_project_id_fkey",
                 schema: "deeplynx",
                 table: "object_storages");
+
+            migrationBuilder.DropForeignKey(
+                name: "project_members_role_id_fkey",
+                schema: "deeplynx",
+                table: "project_members");
+
+            migrationBuilder.AddForeignKey(
+                name: "project_members_role_id_fkey",
+                schema: "deeplynx",
+                table: "project_members",
+                column: "role_id",
+                principalSchema: "deeplynx",
+                principalTable: "roles",
+                principalColumn: "id");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_events_data_sources_data_source_id",

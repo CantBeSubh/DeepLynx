@@ -37,7 +37,7 @@ public class QueryController : ControllerBase
     /// <param name="userQuery">String phrase entered by user</param>
     /// <param name="projectIds">Project IDs in the organization to search across</param>
     /// <returns>List of historical record response DTOs</returns>
-    [HttpGet("Filter", Name = "api_filter_records")]
+    [HttpGet("records", Name = "api_filter_records")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
         long organizationId, [FromQuery] string userQuery, [FromQuery] long[] projectIds)
     {
@@ -62,7 +62,7 @@ public class QueryController : ControllerBase
     /// <param name="textSearch">Full text search phrase</param>
     /// <param name="projectIds">Project IDs in the organization to search across</param>
     /// <returns>List of historical record response DTOs</returns>
-    [HttpPost("QueryBuilder", Name = "api_query_builder_records")]
+    [HttpPost("records/advanced", Name = "api_query_builder_records")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> QueryBuilder(
         long organizationId, [FromQuery] string? textSearch, [FromQuery] long[] projectIds,
         [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
@@ -88,7 +88,7 @@ public class QueryController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>List of class response DTOs</returns>
     // TODO: move to OrgMgmt or ClassController?
-    [HttpGet("GetAllClasses", Name = "api_query_class_records")]
+    [HttpGet("classes", Name = "api_query_class_records")]
     public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
         long organizationId, [FromQuery] long[] projectIds, bool hideArchived = true)
     {
@@ -113,7 +113,7 @@ public class QueryController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
     /// <returns>A list of data sources for the given project.</returns>
     // TODO: move to OrgMgmt or DataSourceController?
-    [HttpGet("GetAllDataSources", Name = "api_query_data_source_records")]
+    [HttpGet("datasources", Name = "api_query_data_source_records")]
     public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
         long organizationId, [FromQuery] long[] projectIds, bool hideArchived = true)
     {
@@ -138,7 +138,7 @@ public class QueryController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     // TODO: move to OrgMgmt or TagController?
-    [HttpGet("GetAllTags", Name = "api_query_tag_records")]
+    [HttpGet("tags", Name = "api_query_tag_records")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
         long organizationId, [FromQuery] long[] projectIds, bool hideArchived = true)
     {
@@ -164,7 +164,7 @@ public class QueryController : ControllerBase
     /// <param name="favorite">Boolean for if favorite search or not</param>
     /// <returns>True if successfully saved</returns>
     // TODO: move to UserController
-    [HttpPost("SavedSearch", Name = "api_save_search")]
+    [HttpPost("saved", Name = "api_save_search")]
     public async Task<ActionResult<bool>> SaveSearch(
         [FromQuery] string? textSearch, [FromQuery] string? alias, [FromQuery] bool favorite,
         [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
@@ -189,7 +189,7 @@ public class QueryController : ControllerBase
     /// </summary>
     /// <returns>A list of saved searches belonging to the user.</returns>
     // TODO: move to UserController
-    [HttpGet("GetSavedSearches", Name = "api_query_get_saved_searches")]
+    [HttpGet("saved", Name = "api_query_get_saved_searches")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetSavedSearches()
     {
         try

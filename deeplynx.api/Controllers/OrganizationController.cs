@@ -30,7 +30,7 @@ public class OrganizationController : ControllerBase
     /// </summary>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
-    [HttpGet("GetAllOrganizations", Name = "api_get_all_organizations")]
+    [HttpGet(Name = "api_get_all_organizations")]
     public async Task<ActionResult<IEnumerable<OrganizationResponseDto>>> GetAllOrganizations(
         [FromQuery] bool hideArchived = true)
     {
@@ -54,7 +54,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of organization</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
-    [HttpGet("{organizationId}/GetOrganization", Name = "api_get_organization")]
+    [HttpGet("{organizationId}", Name = "api_get_organization")]
     public async Task<ActionResult<OrganizationResponseDto>> GetOrganization(
         long organizationId, [FromQuery] bool hideArchived = true)
     {
@@ -76,7 +76,7 @@ public class OrganizationController : ControllerBase
     /// </summary>
     /// <param name="dto">Data structure of organization to create</param>
     /// <returns></returns>
-    [HttpPost("CreateOrganization", Name = "api_create_organization")]
+    [HttpPost(Name = "api_create_organization")]
     public async Task<ActionResult<OrganizationResponseDto>> CreateOrganization(
         [FromBody] CreateOrganizationRequestDto dto)
     {
@@ -100,7 +100,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of the organization</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("{organizationId}/UpdateOrganization", Name = "api_update_organization")]
+    [HttpPut("{organizationId}", Name = "api_update_organization")]
     public async Task<ActionResult<OrganizationResponseDto>> UpdateOrganization(
         long organizationId,
         [FromBody] UpdateOrganizationRequestDto dto)
@@ -124,7 +124,7 @@ public class OrganizationController : ControllerBase
     /// </summary>
     /// <param name="organizationId">ID of the organization to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("{organizationId}/DeleteOrganization", Name = "api_delete_organization")]
+    [HttpDelete("{organizationId}", Name = "api_delete_organization")]
     public async Task<ActionResult> DeleteOrganization(long organizationId)
     {
         try
@@ -139,46 +139,34 @@ public class OrganizationController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-
+    
     /// <summary>
-    ///     Archive an organization
+    ///     Archive or Unarchive an Organization
     /// </summary>
-    /// <param name="organizationId">ID of the organization</param>
-    /// <returns></returns>
-    [HttpDelete("{organizationId}/ArchiveOrganization", Name = "api_archive_organization")]
-    public async Task<ActionResult> ArchiveOrganization(long organizationId)
+    /// <param name="organizationId">The ID of the organization</param>
+    /// <param name="archive">True to archive the organization, false to unarchive it.</param>
+    /// <returns>A message stating the organization was successfully archived or unarchived.</returns>
+    [HttpPatch("{organizationId}", Name = "api_archive_organization")]
+    public async Task<IActionResult> ArchiveOrganization(
+        long organizationId,
+        [FromQuery] bool archive)
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
-            await _organizationBusiness.ArchiveOrganization(currentUserId, organizationId);
-            return Ok(new { message = $"Archived organization {organizationId}" });
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while archiving organization {organizationId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
+            var userId = UserContextStorage.UserId;
+            if (archive)
+            {
+                await _organizationBusiness.ArchiveOrganization(userId, organizationId);
+                return Ok(new { message = $"Archived organization {organizationId}" });
+            }
 
-    /// <summary>
-    ///     Unarchive an Organization
-    /// </summary>
-    /// <param name="organizationId">ID of the organization</param>
-    /// <returns></returns>
-    [HttpPut("{organizationId}/UnarchiveOrganization", Name = "api_unarchive_organization")]
-    public async Task<ActionResult> UnarchiveOrganization(long organizationId)
-    {
-        try
-        {
-                var currentUserId = UserContextStorage.UserId;
-            await _organizationBusiness.UnarchiveOrganization(currentUserId, organizationId);
+            await _organizationBusiness.UnarchiveOrganization(userId, organizationId);
             return Ok(new { message = $"Unarchived organization {organizationId}" });
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while unarchiving organization {organizationId}: {exc}";
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} organization {organizationId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -191,7 +179,7 @@ public class OrganizationController : ControllerBase
     /// <param name="userId">ID of the user to be added</param>
     /// <param name="isAdmin"></param>
     /// <returns></returns>
-    [HttpPost("{organizationId}/AddUserToOrganization", Name = "api_add_user_to_organization")]
+    [HttpPost("{organizationId}/user", Name = "api_add_user_to_organization")]
     public async Task<ActionResult> AddUserToOrganization(
         long organizationId,
         [FromQuery] long userId,
@@ -217,7 +205,7 @@ public class OrganizationController : ControllerBase
     /// <param name="userId">ID of the user</param>
     /// <param name="isAdmin">isAdmin status</param>
     /// <returns></returns>
-    [HttpPut("{organizationId}/SetOrganizationAdminStatus", Name = "api_update_organization_admin_status")]
+    [HttpPut("{organizationId}/admin", Name = "api_update_organization_admin_status")]
     public async Task<ActionResult> SetOrganizationAdminStatus(
         long organizationId,
         [FromQuery] long userId,
@@ -243,7 +231,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of the organization to remove from</param>
     /// <param name="userId">ID of user to be removed</param>
     /// <returns></returns>
-    [HttpDelete("{organizationId}/RemoveUserFromOrganization", Name = "api_remove_user_from_organization")]
+    [HttpDelete("{organizationId}/user", Name = "api_remove_user_from_organization")]
     public async Task<ActionResult> RemoveUserFromOrganization(
         long organizationId,
         [FromQuery] long userId)

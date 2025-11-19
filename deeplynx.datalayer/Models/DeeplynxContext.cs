@@ -429,9 +429,13 @@ public partial class DeeplynxContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("project_members_group_id_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.ProjectMembers).HasConstraintName("project_members_project_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.ProjectMembers)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("project_members_project_id_fkey");
 
-            entity.HasOne(d => d.Role).WithMany(p => p.ProjectMembers).HasConstraintName("project_members_role_id_fkey");
+            entity.HasOne(d => d.Role).WithMany(p => p.ProjectMembers)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("project_members_role_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.ProjectMembers)
                 .OnDelete(DeleteBehavior.Cascade)

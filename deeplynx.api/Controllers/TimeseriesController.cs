@@ -35,7 +35,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="request"> The request containing an sql query string</param>
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns></returns>
-    [HttpPost("Query", Name = "api_query_timeseries")]
+    [HttpPost("query", Name = "api_query_timeseries")]
     public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(
         long organizationId, long projectId, long dataSourceId,
         [FromQuery] string fileType, [FromBody] TimeseriesQueryRequestDto request)
@@ -93,7 +93,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
     /// <param name="request">Timeseries request DTO</param>
     /// <returns>{UploadId}</returns>
-    [HttpPost("start-upload", Name = "api_start_timeseries_upload")]
+    [HttpPost("upload/start", Name = "api_start_timeseries_upload")]
     public async Task<IActionResult> StartUpload(
         long organizationId, long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
     {
@@ -120,7 +120,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="uploadId">ID of upload</param>
     /// <param name="chunkNumber">Chunk number from form</param>
     /// <returns>{ChunkUploadStatus}</returns>
-    [HttpPost("upload-chunk", Name = "api_upload_timeseries_chunk")]
+    [HttpPost("upload/chunk", Name = "api_upload_timeseries_chunk")]
     public async Task<IActionResult> UploadChunk(
         long organizationId, long projectId, long dataSourceId,
         IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
@@ -147,7 +147,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
     /// <param name="request">Timeseries request DTO</param>
     /// <returns>{TimeseriesUploadRecord}</returns>
-    [HttpPost("complete-upload", Name = "api_complete_timeseries_upload")]
+    [HttpPost("upload/complete", Name = "api_complete_timeseries_upload")]
     public async Task<ActionResult<RecordResponseDto>> CompleteUpload(
         long organizationId, long projectId, long dataSourceId,
         [FromBody] TimeseriesUploadCompleteRequestDto request)
@@ -203,7 +203,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="rowNumber">every nth row to get (row number 4 = every 4th row)</param>
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns></returns>
-    [HttpGet("InterpolateRows", Name = "api_interpolate_timeseries_rows")]
+    [HttpGet("interpolate", Name = "api_interpolate_timeseries_rows")]
     public async Task<IActionResult> InterpolateRows(
         long organizationId, long projectId, long dataSourceId,
         [FromQuery] string tableName, [FromQuery] string rowNumber, [FromQuery] string fileType)
@@ -232,7 +232,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="tableName">Name of the duckDB table on which the timeseries data is encoded</param>
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns></returns>
-    [HttpGet("Export", Name = "api_export_timeseries_table")]
+    [HttpGet("export", Name = "api_export_timeseries_table")]
     public async Task<IActionResult> ExportTimeseriesTable(
         long organizationId, long projectId, long dataSourceId, [FromQuery] string tableName, string fileType)
     {
