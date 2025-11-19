@@ -6,7 +6,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("groups")]
+    [Route("organizations/{organizationId}/groups")]
     public class GroupController : ControllerBase
     {
         private readonly IGroupBusiness _groupBusiness;
@@ -26,12 +26,12 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// List all groups within an organization
         /// </summary>
-        /// <param name="organizationId">ID of the organization from which to list groups</param>
+        /// <param name="organizationId">ID of the organization to which the groups belong</param>
         /// <param name="hideArchived">Flag indicating whether to hide or show archived groups</param>
         /// <returns></returns>
-        [HttpGet("GetAllGroups", Name = "api_get_all_groups")]
+        [HttpGet(Name = "api_get_all_groups")]
         public async Task<ActionResult<IEnumerable<GroupResponseDto>>> GetAllGroups(
-            [FromQuery] long organizationId,
+            long organizationId,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -50,12 +50,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Fetch Group by ID
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the group belongs</param>
         /// <param name="groupId">ID of group</param>
         /// <param name="hideArchived">Flag indicating whether to hide or show archived groups</param>
         /// <returns></returns>
-        [HttpGet("GetGroup/{groupId}", Name = "api_get_group")]
+        [HttpGet("{groupId}", Name = "api_get_group")]
         public async Task<ActionResult<GroupResponseDto>> GetGroup(
-            long groupId, [FromQuery] bool hideArchived = true)
+            long organizationId,
+            long groupId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -73,10 +76,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all members of a group
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the group belongs</param>
         /// <param name="groupId">ID of the group</param>
         /// <returns>List of users in the group</returns>
-        [HttpGet("GetGroupMembers/{groupId}", Name = "api_get_group_members")]
-        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetGroupMembers(long groupId)
+        [HttpGet("{groupId}/users", Name = "api_get_group_members")]
+        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetGroupMembers(
+            long organizationId,
+            long groupId)
         {
             try
             {
@@ -94,13 +100,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a Group
         /// </summary>
-        /// <param name="dto">Data structure of group to create</param>
         /// <param name="organizationId">ID of the organization to which the group belongs</param>
+        /// <param name="dto">Data structure of group to create</param>
         /// <returns></returns>
-        [HttpPost("CreateGroup", Name = "api_create_group")]
+        [HttpPost(Name = "api_create_group")]
         public async Task<ActionResult<GroupResponseDto>> CreateGroup(
-            [FromBody] CreateGroupRequestDto dto,
-            [FromQuery] long organizationId)
+            long organizationId,
+            [FromBody] CreateGroupRequestDto dto)
         {
             try
             {
@@ -119,11 +125,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update a Group
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the group belongs</param>
         /// <param name="groupId">ID of the group</param>
         /// <param name="dto">Fields to update</param>
         /// <returns></returns>
-        [HttpPut("UpdateGroup/{groupId}", Name = "api_update_group")]
+        [HttpPut("{groupId}", Name = "api_update_group")]
         public async Task<ActionResult<GroupResponseDto>> UpdateGroup(
+            long organizationId,
             long groupId,
             [FromBody] UpdateGroupRequestDto dto)
         {
@@ -144,10 +152,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Delete a group
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the group belongs</param>
         /// <param name="groupId">ID of the group to hard delete</param>
         /// <returns></returns>
-        [HttpDelete("DeleteGroup/{groupId}", Name = "api_delete_group")]
-        public async Task<ActionResult> DeleteGroup(long groupId)
+        [HttpDelete("{groupId}", Name = "api_delete_group")]
+        public async Task<ActionResult> DeleteGroup(
+            long organizationId,
+            long groupId)
         {
             try
             {
@@ -164,44 +175,34 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Archive a group
+        ///     Archive or Unarchive a Group
         /// </summary>
-        /// <param name="groupId">ID of the group</param>
-        /// <returns></returns>
-        [HttpDelete("ArchiveGroup/{groupId}", Name = "api_archive_group")]
-        public async Task<ActionResult> ArchiveGroup(long groupId)
+        /// <param name="organizationId">The ID of the organization to which the group belongs</param>
+        /// <param name="groupId">The ID of the group to archive or unarchive.</param>
+        /// <param name="archive">True to archive the group, false to unarchive it.</param>
+        /// <returns>A message stating the group was successfully archived or unarchived.</returns>
+        [HttpPatch("{groupId}", Name = "api_archive_group")]
+        public async Task<IActionResult> ArchiveGroup(
+            long organizationId,
+            long groupId,
+            [FromQuery] bool archive)
         {
             try
             {
-                var currentUserId = UserContextStorage.UserId;
-                await _groupBusiness.ArchiveGroup(currentUserId, groupId);
-                return Ok(new { message = $"Archived group {groupId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while archiving group {groupId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
+                var userId = UserContextStorage.UserId;
+                if (archive)
+                {
+                    await _groupBusiness.ArchiveGroup(userId, groupId);
+                    return Ok(new { message = $"Archived group {groupId}" });
+                }
 
-        /// <summary>
-        /// Unarchive a Group
-        /// </summary>
-        /// <param name="groupId">ID of the group</param>
-        /// <returns></returns>
-        [HttpPut("UnarchiveGroup/{groupId}", Name = "api_unarchive_group")]
-        public async Task<ActionResult> UnarchiveGroup(long groupId)
-        {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                await _groupBusiness.UnarchiveGroup(currentUserId, groupId);
+                await _groupBusiness.UnarchiveGroup(userId, groupId);
                 return Ok(new { message = $"Unarchived group {groupId}" });
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while unarchiving group {groupId}: {exc}";
+                var action = archive ? "archiving" : "unarchiving";
+                var message = $"An error occurred while {action} group {groupId}: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -210,12 +211,14 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Add user to group
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the group belongs</param>
         /// <param name="groupId">ID of the group</param>
         /// <param name="userId">ID of the user to be added</param>
         /// <returns></returns>
-        [HttpPost("AddUserToGroup", Name = "api_add_user_to_group")]
+        [HttpPost("{groupId}/users", Name = "api_add_user_to_group")]
         public async Task<ActionResult> AddUserToGroup(
-            [FromQuery] long groupId,
+            long organizationId,
+            long groupId,
             [FromQuery] long userId)
         {
             try
@@ -234,13 +237,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Remove user from group
         /// </summary>
+        /// <param name="organizationId">ID of the organization to which the group belongs</param>
         /// <param name="groupId">ID of the group to remove from</param>
         /// <param name="userId">ID of user to be removed</param>
         /// <returns></returns>
-        [HttpDelete("RemoveUserFromGroup", Name = "api_remove_user_from_group")]
+        [HttpDelete("{groupId}/users/{userId}", Name = "api_remove_user_from_group")]
         public async Task<ActionResult> RemoveUserFromGroup(
-            [FromQuery] long groupId,
-            [FromQuery] long userId)
+            long organizationId,
+            long groupId,
+            long userId)
         {
             try
             {

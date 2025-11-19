@@ -143,7 +143,6 @@ public class PermissionBusiness : IPermissionBusiness
             Name = dto.Name,
             Description = dto.Description,
             Action = dto.Action,
-            Resource = dto.Resource,
             LabelId = dto.LabelId,
             IsDefault = false,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),

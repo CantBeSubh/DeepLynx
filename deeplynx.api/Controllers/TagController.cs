@@ -33,7 +33,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project whose tags are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    [HttpGet("GetAllTags", Name = "api_get_all_tags")]
+    [HttpGet(Name = "api_get_all_tags")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
         long organizationId, long projectId, [FromQuery] bool hideArchived = true)
     {
@@ -58,7 +58,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
-    [HttpGet("{tagId}/GetTag", Name = "api_get_a_tag")]
+    [HttpGet("{tagId}", Name = "api_get_a_tag")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
         long organizationId, long projectId, long tagId,
         [FromQuery] bool hideArchived = true)
@@ -84,7 +84,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
-    [HttpPost("CreateTag", Name = "api_create_a_tag")]
+    [HttpPost(Name = "api_create_a_tag")]
     public async Task<ActionResult<TagResponseDto>> CreateTag(
         long organizationId, long projectId,
         [FromBody] CreateTagRequestDto tagRequestDto)
@@ -110,7 +110,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
-    [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
+    [HttpPost("bulk", Name = "api_create_many_tags")]
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
         long organizationId, long projectId,
         [FromBody] List<CreateTagRequestDto> tagRequestDto)
@@ -137,7 +137,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
-    [HttpPut("{tagId}/UpdateTag", Name = "api_update_a_tag")]
+    [HttpPut("{tagId}", Name = "api_update_a_tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(
         long organizationId, long projectId, long tagId,
         [FromBody] UpdateTagRequestDto tagRequestDto)
@@ -163,7 +163,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
-    [HttpDelete("{tagId}/DeleteTag", Name = "api_delete_a_tag")]
+    [HttpDelete("{tagId}", Name = "api_delete_a_tag")]
     public async Task<IActionResult> DeleteTag(
         long organizationId, long projectId, long tagId)
     {
@@ -181,50 +181,36 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive a tag
+    ///     Archive or Unarchive a Tag
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the tag's project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
-    /// <param name="tagId">The ID of the tag to archive.</param>
-    /// <returns> A message stating the tag was successfully archived.</returns>
-    [HttpDelete("{tagId}/ArchiveTag", Name = "api_archive_a_tag")]
+    /// <param name="tagId">The ID of the tag to archive or unarchive.</param>
+    /// <param name="archive">True to archive the tag, false to unarchive it.</param>
+    /// <returns>A message stating the tag was successfully archived or unarchived.</returns>
+    [HttpPatch("{tagId}", Name = "api_archive_tag")]
     public async Task<IActionResult> ArchiveTag(
-        long organizationId, long projectId, long tagId)
+        long organizationId,
+        long projectId,
+        long tagId,
+        [FromQuery] bool archive)
     {
         try
         {
-            var currentUserId = UserContextStorage.UserId;
-            await _tagBusiness.ArchiveTag(currentUserId, projectId, tagId);
-            return Ok(new { message = "Tag archived successfully" });
-        }
-        catch (Exception exception)
-        {
-            var message = $"An error occurred while archiving tag {tagId}: {exception}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
+            var userId = UserContextStorage.UserId;
+            if (archive)
+            {
+                await _tagBusiness.ArchiveTag(userId, projectId, tagId);
+                return Ok(new { message = $"Archived tag {tagId}" });
+            }
 
-    /// <summary>
-    ///     Unarchive a tag
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the tag belongs</param>
-    /// <param name="tagId">The ID of the tag to unarchive.</param>
-    /// <returns> A message stating the tag was successfully unarchived.</returns>
-    [HttpPut("{tagId}/UnarchiveTag", Name = "api_unarchive_a_tag")]
-    public async Task<IActionResult> UnarchiveTag(
-        long organizationId, long projectId, long tagId)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-            await _tagBusiness.UnarchiveTag(currentUserId, projectId, tagId);
-            return Ok(new { message = "Tag unarchived successfully" });
+            await _tagBusiness.UnarchiveTag(userId, projectId, tagId);
+            return Ok(new { message = $"Unarchived tag {tagId}" });
         }
-        catch (Exception exception)
+        catch (Exception exc)
         {
-            var message = $"An error occurred while unarchiving tag {tagId}: {exception}";
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} tag {tagId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
