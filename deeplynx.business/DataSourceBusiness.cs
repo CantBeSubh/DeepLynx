@@ -46,10 +46,11 @@ namespace deeplynx.business
         /// <summary>
         /// Retrieves all data sources for a specific project.
         /// </summary>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
-        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
+        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long organizationId, long projectId, bool hideArchived)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
             
@@ -84,12 +85,13 @@ namespace deeplynx.business
         /// <summary>
         /// Retrieve a specific data source by its ID
         /// </summary>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="datasourceId">The ID of the data source</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>The data source in question</returns>
         /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
-        public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
+        public async Task<DataSourceResponseDto> GetDataSource(long organizationId, long projectId, long datasourceId, bool hideArchived)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
             var dataSource = await _context.DataSources
@@ -127,10 +129,11 @@ namespace deeplynx.business
         /// <summary>
         /// Retrieve a project's default data source.
         /// </summary>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <returns>The data source in question</returns>
         /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
-        public async Task<DataSourceResponseDto> GetDefaultDataSource(long projectId)
+        public async Task<DataSourceResponseDto> GetDefaultDataSource(long organizationId, long projectId)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources
@@ -164,10 +167,11 @@ namespace deeplynx.business
         /// Asynchronously creates a new data source for a specified project.
         /// </summary>
         /// <param name="currentUserId">ID of the User executing this method.</param>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source.</returns>
-        public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false)
+        public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId, long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             if (dto == null)
@@ -191,7 +195,7 @@ namespace deeplynx.business
             await _context.DataSources.AddAsync(dataSource);
             
             if (makeDefault)
-                await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
+                await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
             
             await _context.SaveChangesAsync();
             
@@ -228,6 +232,7 @@ namespace deeplynx.business
         /// Asynchronously updates an existing data source based on its ID.
         /// </summary>
         /// <param name="currentUserId">ID of the User executing this method.</param>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dataSourceId">The ID of the existing data source to update.</param>
         /// <param name="dto">The data transfer object containing the updated data source details</param>
@@ -235,6 +240,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
         public async Task<DataSourceResponseDto> UpdateDataSource(
             long currentUserId,
+            long organizationId, 
             long projectId,
             long dataSourceId,
             UpdateDataSourceRequestDto dto)
@@ -291,11 +297,12 @@ namespace deeplynx.business
         /// <summary>
         /// Deletes a specific data source by its ID.
         /// </summary>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <param name="dataSourceId">The ID of the data source to delete</param>
         /// <returns>Boolean true on successful deletion.</returns>
         /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
-        public async Task<bool> DeleteDataSource(long projectId, long dataSourceId)
+        public async Task<bool> DeleteDataSource(long organizationId, long projectId, long dataSourceId)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
@@ -313,11 +320,12 @@ namespace deeplynx.business
         /// Archives a specific data source by its ID.
         /// </summary>
         /// <param name="currentUserId">ID of the User executing this method.</param>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <param name="dataSourceId">The ID of the data source to archive</param>
         /// <returns>Boolean true on successful archival.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-        public async Task<bool> ArchiveDataSource(long currentUserId, long projectId, long dataSourceId)
+        public async Task<bool> ArchiveDataSource(long currentUserId, long organizationId, long projectId, long dataSourceId)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
@@ -350,11 +358,12 @@ namespace deeplynx.business
         /// Unarchives a specific data source by its ID.
         /// </summary>
         /// <param name="currentUserId">ID of the User executing this method.</param>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <param name="dataSourceId">The ID of the data source to unarchive</param>
         /// <returns>Boolean true on successful unarchive action.</returns>
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-        public async Task<bool> UnarchiveDataSource(long currentUserId, long projectId, long dataSourceId)
+        public async Task<bool> UnarchiveDataSource(long currentUserId, long organizationId, long projectId, long dataSourceId)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
@@ -387,12 +396,14 @@ namespace deeplynx.business
         /// Sets an existing data source as default for a project.
         /// </summary>
         /// <param name="currentUserId">ID of the User executing this method.</param>
+        /// <param name="organizationId">ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dataSourceId">The ID of the existing data source to update.</param>
         /// <returns>The updated data source.</returns>
         /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
         public async Task<DataSourceResponseDto> SetDefaultDataSource(
             long currentUserId,
+            long organizationId, 
             long projectId,
             long dataSourceId)
         {
@@ -410,7 +421,7 @@ namespace deeplynx.business
                 dataSource.LastUpdatedBy = currentUserId;
                 dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-                await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
+                await MakePreviousDefaultsFalse(currentUserId, currentUserId, projectId, dataSource.Id);
                 await _context.SaveChangesAsync();
 
                 await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
@@ -443,7 +454,7 @@ namespace deeplynx.business
             };
         }
         
-        private async Task MakePreviousDefaultsFalse(long currentUserId, long projectId, long defaultDataSourceId)
+        private async Task MakePreviousDefaultsFalse(long currentUserId, long organizaionId, long projectId, long defaultDataSourceId)
         {
             var previousDefaults = 
                 await _context.DataSources
