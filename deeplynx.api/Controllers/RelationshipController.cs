@@ -1,5 +1,4 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -7,59 +6,66 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
+/// <summary>
+///     Controller for managing relationships.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints to create, update, delete, and retrieve relationship information.
+/// </remarks>
 [ApiController]
 [Route("organizations/{organizationId}/projects/{projectId}/relationships")]
 [Authorize]
 public class RelationshipController : ControllerBase
 {
-    private readonly IRelationshipBusiness _business;
+    private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly ILogger<RelationshipController> _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RelationshipController" /> class
     /// </summary>
-    /// <param name="business">The business logic interface for handling relationship operations.</param>
+    /// <param name="relationshipBusiness">The business logic interface for handling relationship operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public RelationshipController(IRelationshipBusiness business, ILogger<RelationshipController> logger)
+    public RelationshipController(IRelationshipBusiness relationshipBusiness, ILogger<RelationshipController> logger)
     {
-        _business = business;
+        _relationshipBusiness = relationshipBusiness;
         _logger = logger;
     }
 
     /// <summary>
-    ///     Get all relationships
+    ///     Get All Relationships
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
+    /// <param name="projectId">The ID of the project whose relationships are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
-    /// <returns>List of relationship response DTOs</returns>
-    [HttpGet("GetAllRelationships", Name = "api_get_all_relationships")]
+    /// <returns>A list of relationships for the given project.</returns>
+    [HttpGet(Name = "api_get_all_relationships")]
     public async Task<ActionResult<IEnumerable<RelationshipResponseDto>>> GetAllRelationships(
+        long organizationId,
         long projectId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var relationships = await _business.GetAllRelationships(projectId, hideArchived);
+            var relationships = await _relationshipBusiness.GetAllRelationships(projectId, hideArchived);
             return Ok(relationships);
         }
         catch (Exception exc)
         {
-            var message = $"An unexpected error occurred while fetching all relationships.: {exc}";
+            var message = $"An error occurred while listing all relationships: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Get a relationship
+    ///     Get a Relationship
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="relationshipId">ID of relationship</param>
+    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="relationshipId">The ID of the relationship to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
-    /// <returns>Relationship response DTO</returns>
-    [HttpGet("{relationshipId}/GetRelationship", Name = "api_get_a_relationship")]
+    /// <returns>The relationship associated with the given ID</returns>
+    [HttpGet("{relationshipId:long}", Name = "api_get_a_relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
         long organizationId,
         long projectId,
@@ -68,7 +74,8 @@ public class RelationshipController : ControllerBase
     {
         try
         {
-            return Ok(await _business.GetRelationship(projectId, relationshipId, hideArchived));
+            var relationship = await _relationshipBusiness.GetRelationship(projectId, relationshipId, hideArchived);
+            return Ok(relationship);
         }
         catch (KeyNotFoundException ex)
         {
@@ -76,160 +83,152 @@ public class RelationshipController : ControllerBase
         }
         catch (Exception exc)
         {
-            var message = $"An unexpected error occurred while fetching the relationship {relationshipId}: {exc}";
+            var message = $"An error occurred while retrieving relationship {relationshipId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Create a relationship
+    ///     Create a Relationship
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="dto">Relationship request DTO</param>
-    /// <returns>Relationship response DTO</returns>
-    [HttpPost("CreateRelationship", Name = "api_create_a_relationship")]
+    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="dto">The relationship request data transfer object containing relationship details</param>
+    /// <returns>The created relationship</returns>
+    [HttpPost(Name = "api_create_a_relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(
-        long organizationId, long projectId,
+        long organizationId,
+        long projectId,
         [FromBody] CreateRelationshipRequestDto dto)
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
-            var created = await _business.CreateRelationship(currentUserId, projectId, dto);
+            var currentUserId = UserContextStorage.UserId;
+            var created = await _relationshipBusiness.CreateRelationship(currentUserId, projectId, dto);
             return Ok(created);
         }
         catch (Exception exc)
         {
-            var message = $"Unexpected error while creating relationship.: {exc}";
+            var message = $"An error occurred while creating relationship: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Create many relationships
+    ///     Bulk Create Relationships
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="relationships">Relationship request DTOs</param>
-    /// <returns>Relationship response DTO</returns>
-    [HttpPost("BulkCreateRelationships", Name = "api_create_many_relationships")]
+    /// <param name="projectId">The ID of the project to which the relationships belong</param>
+    /// <param name="relationships">List of relationship request data transfer objects containing relationship details</param>
+    /// <returns>The created relationships</returns>
+    [HttpPost("bulk", Name = "api_create_many_relationships")]
     public async Task<ActionResult<List<RelationshipResponseDto>>> BulkCreateRelationships(
-        long organizationId, long projectId,
+        long organizationId,
+        long projectId,
         [FromBody] List<CreateRelationshipRequestDto> relationships)
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
-            var created = await _business.BulkCreateRelationships(currentUserId, projectId, relationships);
+            var currentUserId = UserContextStorage.UserId;
+            var created = await _relationshipBusiness.BulkCreateRelationships(currentUserId, projectId, relationships);
             return Ok(created);
         }
         catch (Exception exc)
         {
-            var message = $"Unexpected error while creating relationships: {exc}";
+            var message = $"An error occurred while creating relationships: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Update a relationship
+    ///     Update a Relationship
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="relationshipId">Relationship ID</param>
-    /// <param name="dto">Relationship request DTO</param>
-    /// <returns>Relationship response DTO</returns>
-    [HttpPut("{relationshipId}/UpdateRelationship", Name = "api_update_a_relationship")]
+    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="relationshipId">The ID of the relationship to update</param>
+    /// <param name="dto">The relationship request data transfer object containing updated relationship details</param>
+    /// <returns>The updated relationship</returns>
+    [HttpPut("{relationshipId:long}", Name = "api_update_a_relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(
-        long organizationId, long projectId, long relationshipId,
+        long organizationId,
+        long projectId,
+        long relationshipId,
         [FromBody] UpdateRelationshipRequestDto dto)
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
-            var result = await _business.UpdateRelationship(currentUserId, projectId, relationshipId, dto);
+            var currentUserId = UserContextStorage.UserId;
+            var result = await _relationshipBusiness.UpdateRelationship(currentUserId, projectId, relationshipId, dto);
             return Ok(result);
         }
         catch (Exception exc)
         {
-            var message = $"Unexpected error while updating relationship {relationshipId}: {exc}";
+            var message = $"An error occurred while updating relationship {relationshipId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Delete a relationship
+    ///     Delete a Relationship
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="relationshipId">Relationship ID</param>
-    /// <returns>Relationship was successfully deleted.</returns>
-    [HttpDelete("{relationshipId}/DeleteRelationship", Name = "api_delete_a_relationship")]
+    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="relationshipId">The ID of the relationship to delete</param>
+    /// <returns>A message stating the relationship was successfully deleted.</returns>
+    [HttpDelete("{relationshipId:long}", Name = "api_delete_a_relationship")]
     public async Task<IActionResult> DeleteRelationship(
-        long organizationId, long projectId, long relationshipId)
+        long organizationId,
+        long projectId,
+        long relationshipId)
     {
         try
         {
-            await _business.DeleteRelationship(projectId, relationshipId);
-            return Ok(new { message = $"Relationship with ID {relationshipId} was successfully deleted." });
+            await _relationshipBusiness.DeleteRelationship(projectId, relationshipId);
+            return Ok(new { message = $"Deleted relationship {relationshipId}" });
         }
         catch (Exception exc)
         {
-            var message = $"Unexpected error while deleting relationship {relationshipId}: {exc}";
+            var message = $"An error occurred while deleting relationship {relationshipId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Archive a relationship
+    ///     Archive or Unarchive a Relationship
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="relationshipId">Relationship ID</param>
-    /// <returns>A message stating the relationship was successfully archived.</returns>
-    [HttpDelete("{relationshipId}/ArchiveRelationship", Name = "api_archive_a_relationship")]
+    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="relationshipId">The ID of the relationship to archive or unarchive</param>
+    /// <param name="archive">True to archive the relationship, false to unarchive it.</param>
+    /// <returns>A message stating the relationship was successfully archived or unarchived.</returns>
+    [HttpPatch("{relationshipId:long}", Name = "api_archive_relationship")]
     public async Task<IActionResult> ArchiveRelationship(
-        long organizationId, long projectId, long relationshipId)
+        long organizationId,
+        long projectId,
+        long relationshipId,
+        [FromQuery] bool archive)
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
-            await _business.ArchiveRelationship(currentUserId, projectId, relationshipId);
-            return Ok(new { message = $"Relationship with ID {relationshipId} was successfully archived." });
-        }
-        catch (Exception exc)
-        {
-            var message = $"Unexpected error while archiving relationship {relationshipId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
+            var currentUserId = UserContextStorage.UserId;
+            if (archive)
+            {
+                await _relationshipBusiness.ArchiveRelationship(currentUserId, projectId, relationshipId);
+                return Ok(new { message = $"Archived relationship {relationshipId}" });
+            }
 
-    /// <summary>
-    ///     Unarchive a relationship
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="relationshipId">Relationship ID</param>
-    /// <returns>A message stating the relationship was successfully unarchived.</returns>
-    [HttpPut("{relationshipId}/UnarchiveRelationship", Name = "api_unarchive_a_relationship")]
-    public async Task<IActionResult> UnarchiveRelationship(
-        long organizationId, long projectId, long relationshipId)
-    {
-        try
-        {
-                var currentUserId = UserContextStorage.UserId;
-            await _business.UnarchiveRelationship(currentUserId, projectId, relationshipId);
-            return Ok(new { message = $"Relationship with ID {relationshipId} was successfully unarchived." });
+            await _relationshipBusiness.UnarchiveRelationship(currentUserId, projectId, relationshipId);
+            return Ok(new { message = $"Unarchived relationship {relationshipId}" });
         }
         catch (Exception exc)
         {
-            var message = $"Unexpected error while unarchiving relationship {relationshipId}: {exc}";
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} relationship {relationshipId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

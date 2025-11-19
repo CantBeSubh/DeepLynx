@@ -1,5 +1,4 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -7,13 +6,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
+/// <summary>
+///     Controller for managing records.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints to create, update, delete, and retrieve record information.
+/// </remarks>
 [ApiController]
 [Route("organizations/{organizationId}/projects/{projectId}/records")]
 [Authorize]
 public class RecordController : ControllerBase
 {
-    private readonly ILogger<RecordController> _logger;
     private readonly IRecordBusiness _recordBusiness;
+    private readonly ILogger<RecordController> _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RecordController" /> class
@@ -27,20 +32,20 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Get all records
+    ///     Get All Records
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Project ID which records are associated with</param>
-    /// <param name="dataSourceId">Datasource ID which records are associated with</param>
-    /// <param name="fileType">File extension to filter by (e.g., pdf, png, jpg) - leading dot is optional and will be removed</param>
+    /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
+    /// <param name="fileType">(Optional) File extension to filter by (e.g., pdf, png, jpg) - leading dot is optional and will be removed</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
-    /// <returns>List of record response DTOs</returns>
-    [HttpGet("GetAllRecords", Name = "api_get_all_records")]
+    /// <returns>A list of records based on the applied filters.</returns>
+    [HttpGet(Name = "api_get_all_records")]
     public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
         long organizationId,
         long projectId,
-        [FromQuery] long? dataSourceId,
-        [FromQuery] string? fileType,
+        [FromQuery] long? dataSourceId = null,
+        [FromQuery] string? fileType = null,
         [FromQuery] bool hideArchived = true)
     {
         try
@@ -50,21 +55,21 @@ public class RecordController : ControllerBase
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while listing records: {exc}";
+            var message = $"An error occurred while listing all records: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Get all records that have every given tagId.
+    ///     Get Records by Tags
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Project ID which records are associated with</param>
-    /// <param name="tagIds">The list of Ids to filter records by - records must contain all Ids in the list</param>
+    /// <param name="projectId">The ID of the project to which the records belong</param>
+    /// <param name="tagIds">The list of tag IDs to filter records by - records must contain all IDs in the list</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
-    /// <returns>List of record response DTOs</returns>
-    [HttpGet("GetRecordsByTags", Name = "api_get_records_by_tags")]
+    /// <returns>A list of records that have all the specified tags.</returns>
+    [HttpGet("by-tags", Name = "api_get_records_by_tags")]
     public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetRecordsByTags(
         long organizationId,
         long projectId,
@@ -85,14 +90,14 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a record
+    ///     Get a Record
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Project ID which record is associated with</param>
-    /// <param name="recordId">Datasource ID which record is associated with</param>
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
+    /// <param name="recordId">The ID of the record to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
-    /// <returns>Record response DTO</returns>
-    [HttpGet("{recordId}/GetRecord", Name = "api_get_a_record")]
+    /// <returns>The record associated with the given ID</returns>
+    [HttpGet("{recordId:long}", Name = "api_get_a_record")]
     public async Task<ActionResult<RecordResponseDto>> GetRecord(
         long organizationId,
         long projectId,
@@ -113,14 +118,14 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a record
+    ///     Create a Record
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Project ID which record is associated with</param>
-    /// <param name="dataSourceId">Datasource ID which record is associated with</param>
-    /// <param name="dto">Record request DTO</param>
-    /// <returns>Record response DTO</returns>
-    [HttpPost("CreateRecord", Name = "api_create_a_record")]
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
+    /// <param name="dataSourceId">The ID of the data source to which the record belongs</param>
+    /// <param name="dto">The record request data transfer object containing record details</param>
+    /// <returns>The created record</returns>
+    [HttpPost(Name = "api_create_a_record")]
     public async Task<ActionResult<RecordResponseDto>> CreateRecord(
         long organizationId,
         long projectId,
@@ -129,7 +134,7 @@ public class RecordController : ControllerBase
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
+            var currentUserId = UserContextStorage.UserId;
             var record = await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, dto);
             return Ok(record);
         }
@@ -142,14 +147,14 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Create many records
+    ///     Bulk Create Records
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Project ID which record is associated with</param>
-    /// <param name="dataSourceId">Datasource ID which record is associated with</param>
-    /// <param name="records">List of record request DTOs</param>
-    /// <returns>Record response DTO</returns>
-    [HttpPost("BulkCreateRecords", Name = "api_create_many_records")]
+    /// <param name="projectId">The ID of the project to which the records belong</param>
+    /// <param name="dataSourceId">The ID of the data source to which the records belong</param>
+    /// <param name="records">List of record request data transfer objects containing record details</param>
+    /// <returns>The created records</returns>
+    [HttpPost("bulk", Name = "api_create_many_records")]
     public async Task<ActionResult<List<RecordResponseDto>>> BulkCreateRecords(
         long organizationId,
         long projectId,
@@ -158,7 +163,7 @@ public class RecordController : ControllerBase
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
+            var currentUserId = UserContextStorage.UserId;
             var newRecords = await _recordBusiness.BulkCreateRecords(currentUserId, projectId, dataSourceId, records);
             return Ok(newRecords);
         }
@@ -171,14 +176,14 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a record
+    ///     Update a Record
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Project ID which record is associated with</param>
-    /// <param name="recordId">ID of record to be upated</param>
-    /// <param name="dto">Record request DTO</param>
-    /// <returns>Record response DTO</returns>
-    [HttpPut("{recordId}/UpdateRecord", Name = "api_update_a_record")]
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
+    /// <param name="recordId">The ID of the record to update</param>
+    /// <param name="dto">The record request data transfer object containing updated record details</param>
+    /// <returns>The updated record</returns>
+    [HttpPut("{recordId:long}", Name = "api_update_a_record")]
     public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
         long organizationId,
         long projectId,
@@ -187,7 +192,7 @@ public class RecordController : ControllerBase
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
+            var currentUserId = UserContextStorage.UserId;
             var updated = await _recordBusiness.UpdateRecord(currentUserId, projectId, recordId, dto);
             return Ok(updated);
         }
@@ -200,13 +205,13 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a record
+    ///     Delete a Record
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
     /// <param name="recordId">The ID of the record to delete</param>
     /// <returns>A message stating the record was successfully deleted.</returns>
-    [HttpDelete("{recordId}/DeleteRecord", Name = "api_delete_a_record")]
+    [HttpDelete("{recordId:long}", Name = "api_delete_a_record")]
     public async Task<IActionResult> DeleteRecord(
         long organizationId,
         long projectId,
@@ -226,68 +231,50 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive a record
+    ///     Archive or Unarchive a Record
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
-    /// <param name="recordId">The ID of the record to archive</param>
-    /// <returns>A message stating the record was successfully archived.</returns>
-    [HttpDelete("{recordId}/ArchiveRecord", Name = "api_archive_a_record")]
+    /// <param name="recordId">The ID of the record to archive or unarchive</param>
+    /// <param name="archive">True to archive the record, false to unarchive it.</param>
+    /// <returns>A message stating the record was successfully archived or unarchived.</returns>
+    [HttpPatch("{recordId:long}", Name = "api_archive_record")]
     public async Task<IActionResult> ArchiveRecord(
         long organizationId,
         long projectId,
-        long recordId)
+        long recordId,
+        [FromQuery] bool archive)
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
-            await _recordBusiness.ArchiveRecord(currentUserId, projectId, recordId);
-            return Ok(new { message = $"Archived record {recordId}" });
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while archiving record {recordId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
+            var currentUserId = UserContextStorage.UserId;
+            if (archive)
+            {
+                await _recordBusiness.ArchiveRecord(currentUserId, projectId, recordId);
+                return Ok(new { message = $"Archived record {recordId}" });
+            }
 
-    /// <summary>
-    ///     Unarchive a record
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the record belongs</param>
-    /// <param name="recordId">The ID of the record to unarchive</param>
-    /// <returns>A message stating the record was successfully unarchived.</returns>
-    [HttpPut("{recordId}/UnarchiveRecord", Name = "api_unarchive_a_record")]
-    public async Task<IActionResult> UnarchiveRecord(
-        long organizationId,
-        long projectId,
-        long recordId)
-    {
-        try
-        {
-                var currentUserId = UserContextStorage.UserId;
             await _recordBusiness.UnarchiveRecord(currentUserId, projectId, recordId);
             return Ok(new { message = $"Unarchived record {recordId}" });
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while unarchiving record {recordId}: {exc}";
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} record {recordId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Attach a tag to a record
+    ///     Attach a Tag to a Record
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
     /// <param name="recordId">The ID of the record</param>
-    /// <param name="tagId">The ID of the tag</param>
+    /// <param name="tagId">The ID of the tag to attach</param>
     /// <returns>A message stating the tag was successfully attached to the record.</returns>
-    [HttpPost("{recordId}/AttachTag", Name = "api_attach_a_tag")]
+    [HttpPost("{recordId:long}/tags", Name = "api_attach_a_tag")]
     public async Task<IActionResult> AttachTag(
         long organizationId,
         long projectId,
@@ -308,14 +295,14 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Unattach a tag to a record
+    ///     Unattach a Tag from a Record
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
     /// <param name="recordId">The ID of the record</param>
-    /// <param name="tagId">The ID of the tag</param>
+    /// <param name="tagId">The ID of the tag to unattach</param>
     /// <returns>A message stating the tag was successfully unattached from the record.</returns>
-    [HttpPost("{recordId}/UnattachTag", Name = "api_unattach_a_tag")]
+    [HttpDelete("{recordId:long}/tags", Name = "api_unattach_a_tag")]
     public async Task<IActionResult> UnattachTag(
         long organizationId,
         long projectId,
