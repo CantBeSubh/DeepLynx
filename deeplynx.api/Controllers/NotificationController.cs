@@ -26,6 +26,7 @@ namespace deeplynx.api.Controllers
             _notificationBusiness = notificationBusiness;
             _logger = logger;
         }
+        
         /// <summary>
         /// Send email
         /// </summary>
@@ -38,14 +39,24 @@ namespace deeplynx.api.Controllers
                 {
                     name = email;
                 }
-                var message = await _notificationBusiness.SendEmail(email, name);
-                return Ok(message);
+                var success = await _notificationBusiness.SendEmail(email, name);
+                
+                if (success)
+                {
+                    return Ok(new { success = true, message = $"Email sent successfully to {email}" });
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, 
+                        new { success = false, message = "Failed to send email. Check server logs for details." });
+                }
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while sending email: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
+                var message = $"An unexpected error occurred while sending email: {exc.Message}";
+                _logger.LogError(exc, message);
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    new { success = false, message = message });
             }
         }
     }

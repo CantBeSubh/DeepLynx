@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Authorize]
-[Route("token")]
+[Route("oauth")]
 public class TokenController : ControllerBase
 {
     private readonly IEventBusiness _eventBusiness;
@@ -34,7 +34,7 @@ public class TokenController : ControllerBase
     /// <param name="tokenDto">Token creation request with API key, secret, and optional expiration</param>
     /// <returns>JWT token string</returns>
     [AllowAnonymous]
-    [HttpPost("CreateToken", Name = "api_create_token")]
+    [HttpPost("tokens", Name = "api_create_token")]
     public async Task<IActionResult> CreateToken([FromBody] CreateTokenDto tokenDto)
     {
         try
@@ -68,7 +68,7 @@ public class TokenController : ControllerBase
     /// </summary>
     /// <param name="clientId">Optional OAuth client ID to associate with the API key</param>
     /// <returns>API key and secret (secret only returned once)</returns>
-    [HttpPost("CreateApiKey", Name = "api_create_api_key")]
+    [HttpPost("keys", Name = "api_create_api_key")]
     public async Task<IActionResult> CreateApiKey([FromQuery] string? clientId = null)
     {
         try
@@ -94,7 +94,7 @@ public class TokenController : ControllerBase
     /// </summary>
     /// <param name="key">API key to be deleted</param>
     /// <returns>Success message</returns>
-    [HttpDelete("{key}/DeleteApiKey", Name = "api_delete_api_key")]
+    [HttpDelete("keys/{key}", Name = "api_delete_api_key")]
     public async Task<IActionResult> DeleteApiKey(string key)
     {
         try
@@ -119,7 +119,7 @@ public class TokenController : ControllerBase
     ///     Get all API keys associated with the current user
     /// </summary>
     /// <returns>List of API keys (secrets are never returned)</returns>
-    [HttpGet("GetAllUserKeys", Name = "api_get_all_user_keys")]
+    [HttpGet("keys", Name = "api_get_all_user_keys")]
     public async Task<ActionResult<List<string>>> GetAllUserKeys()
     {
         try
@@ -140,7 +140,7 @@ public class TokenController : ControllerBase
     ///     Revoke all active tokens for the current user
     /// </summary>
     /// <returns>Number of tokens revoked</returns>
-    [HttpPost("RevokeAllUserTokens", Name = "api_revoke_all_user_tokens")]
+    [HttpDelete("tokens/revoke", Name = "api_revoke_all_user_tokens")]
     public async Task<IActionResult> RevokeAllUserTokens()
     {
         try
