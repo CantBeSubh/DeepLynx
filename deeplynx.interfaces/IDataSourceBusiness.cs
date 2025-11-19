@@ -10,11 +10,11 @@ namespace deeplynx.interfaces
         Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived);
         Task<DataSourceResponseDto> GetDataSource(long projectId, long dataSourceId, bool hideArchived);
         Task<DataSourceResponseDto> GetDefaultDataSource(long projectId);
-        Task<DataSourceResponseDto> CreateDataSource(long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false);
-        Task<DataSourceResponseDto> UpdateDataSource(long projectId, long dataSourceId, UpdateDataSourceRequestDto dto);
-        Task<DataSourceResponseDto> SetDefaultDataSource(long projectId, long dataSourceId);
+        Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false);
+        Task<DataSourceResponseDto> UpdateDataSource(long currentUserId, long projectId, long dataSourceId, UpdateDataSourceRequestDto dto);
+        Task<DataSourceResponseDto> SetDefaultDataSource(long currentUserId, long projectId, long dataSourceId);
         Task<bool> DeleteDataSource(long projectId, long dataSourceId);
-        Task<bool> ArchiveDataSource(long projectId, long dataSourceId);
-        Task<bool> UnarchiveDataSource(long projectId, long dataSourceId);
+        Task<bool> ArchiveDataSource(long currentUserId, long projectId, long dataSourceId);
+        Task<bool> UnarchiveDataSource(long currentUserId, long projectId, long dataSourceId);
     }
 }

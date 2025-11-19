@@ -1,4 +1,5 @@
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -90,7 +91,8 @@ public class TagController : ControllerBase
     {
         try
         {
-            var createdTag = await _tagBusiness.CreateTag(organizationId, projectId, tagRequestDto);
+            var currentUserId = UserContextStorage.UserId;
+            var createdTag = await _tagBusiness.CreateTag(organizationId, currentUserId, projectId, tagRequestDto);
             return CreatedAtAction(nameof(GetTag), new { projectId = projectId, tagId = createdTag.Id },
                 createdTag);
         }
@@ -117,7 +119,8 @@ public class TagController : ControllerBase
     {
         try
         {
-            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(organizationId, projectId, tagRequestDto);
+            var currentUserId = UserContextStorage.UserId;
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(organizationId, currentUserId, projectId, tagRequestDto);
             return Ok(bulkTagResponseDto);
         }
         catch (Exception exception)
@@ -141,7 +144,8 @@ public class TagController : ControllerBase
     {
         try
         {
-            var updatedTag = await _tagBusiness.UpdateTag(organizationId, projectId, tagId, tagRequestDto);
+            var currentUserId = UserContextStorage.UserId;
+            var updatedTag = await _tagBusiness.UpdateTag(organizationId, currentUserId, projectId, tagId, tagRequestDto);
             return Ok(updatedTag);
         }
         catch (Exception exception)
@@ -187,7 +191,8 @@ public class TagController : ControllerBase
     {
         try
         {
-            await _tagBusiness.ArchiveTag(organizationId, projectId, tagId);
+            var currentUserId = UserContextStorage.UserId;
+            await _tagBusiness.ArchiveTag(organizationId, currentUserId, projectId, tagId);
             return Ok(new { message = $"Tag archived successfully" });
         }
         catch (Exception exception)
@@ -210,7 +215,8 @@ public class TagController : ControllerBase
     {
         try
         {
-            await _tagBusiness.UnarchiveTag(organizationId, projectId, tagId);
+            var currentUserId = UserContextStorage.UserId;
+            await _tagBusiness.UnarchiveTag(organizationId, currentUserId, projectId, tagId);
             return Ok(new { message = $"Tag unarchived successfully" });
         }
         catch (Exception exception)

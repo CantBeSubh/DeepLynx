@@ -50,6 +50,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
@@ -57,7 +58,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long organizationId, long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long organizationId, long currentUserId, long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -65,13 +66,14 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
 
-        return await ParseMetadata(metadataRequestDto, dataSourceId, projectId, organizationId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
     }
 
     /// <summary>
     /// Check file format and file properties and deserialize into our CreateMetadataRequestDto.
     /// Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
@@ -82,7 +84,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="ArgumentNullException">If file is null.</exception>
     /// <exception cref="ArgumentException">If file is empty or not a .json file.</exception>
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
-    public async Task<MetadataResponseDto> CreateMetadataFromFile(long organizationId, long projectId, long dataSourceId, IFormFile file)
+    public async Task<MetadataResponseDto> CreateMetadataFromFile(long organizationId, long currentUserId, long projectId, long dataSourceId, IFormFile file)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -122,18 +124,20 @@ public class MetadataBusiness : IMetadataBusiness
             throw new JsonException($"Error reading JSON from file: {ex.Message}", ex);
         }
 
-        return await ParseMetadata(metadataRequestDto, dataSourceId, projectId, organizationId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
     }
 
     /// <summary>
     /// Individually call the bulk create functions of all metadata fields and append to return object.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     private async Task<MetadataResponseDto> ParseMetadata(
+        long currentUserId,
         CreateMetadataRequestDto metadataRequestDto,
         long dataSourceId,
         long projectId,
@@ -156,7 +160,7 @@ public class MetadataBusiness : IMetadataBusiness
             var classesToInsert = BuildClasses(classes, records);
             if (classesToInsert.Any())
             {
-                classMap = await BulkUpsertClasses(organizationId, projectId, classesToInsert, metadataResponseDto);
+                classMap = await BulkUpsertClasses(organizationId, currentUserId, projectId, classesToInsert, metadataResponseDto);
                 // load class IDs into records objects before insert
                 UpdateRecordsWithIds(records, classMap);
             }
@@ -169,7 +173,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional relationships and then insert
             var relationshipsToInsert = BuildRelationships(relationships, edges);
             if (relationshipsToInsert.Any())
-                relMap = await BulkUpsertRelationships(organizationId, projectId, relationshipsToInsert, metadataResponseDto);
+                relMap = await BulkUpsertRelationships(organizationId, currentUserId, projectId, relationshipsToInsert, metadataResponseDto);
         }
 
         // Tags
@@ -179,7 +183,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional tags and then insert
             var tagsToInsert = BuildTags(tags, records);
             if (tagsToInsert.Any())
-                tagMap = await BulkUpsertTags(organizationId, projectId, tagsToInsert, metadataResponseDto);
+                tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert, metadataResponseDto);
         }
 
         // Records
@@ -187,7 +191,7 @@ public class MetadataBusiness : IMetadataBusiness
         if (records.Any())
         {
             Console.WriteLine("creating record map");
-            recordMap = await BulkUpsertRecords(projectId, dataSourceId, records, metadataResponseDto);
+            recordMap = await BulkUpsertRecords(currentUserId, projectId, dataSourceId, records, metadataResponseDto);
 
             // Record Tags
             var recordTags = BuildRecordTags(records, tagMap, recordMap);
@@ -205,7 +209,7 @@ public class MetadataBusiness : IMetadataBusiness
             CheckRecordsByOriginalId(recordMap, edges);
             // load relationship, origin and destination IDs into classes before insert
             UpdateEdgesWithIds(edges, relMap, recordMap);
-            metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
+            metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, edges);
         }
 
         return metadataResponseDto;
@@ -361,6 +365,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts classes and returns a mapping of class name to ID
     /// </summary>
+    /// <param name="currentUserId"></param>
     /// <param name="projectId"></param>
     /// <param name="organizationId"></param>
     /// <param name="classes"></param>
@@ -368,11 +373,12 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of class name to class ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertClasses(
         long organizationId,
+        long currentUserId,
         long projectId,
         List<CreateClassRequestDto> classes,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _classBusiness.BulkCreateClasses(projectId, classes);
+        var inserted = await _classBusiness.BulkCreateClasses(currentUserId, projectId, classes);
         metadataResponseDto.Classes = inserted;
         return inserted.ToDictionary(c => c.Name, c => c.Id);
     }
@@ -380,6 +386,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts relationships and returns a mapping of relationship name to ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="organizationId"></param>
     /// <param name="relationships"></param>
@@ -387,11 +394,12 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of relationship name to relationship ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRelationships(
         long organizationId,
+        long currentUserId,
         long projectId,
         List<CreateRelationshipRequestDto> relationships,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
+        var inserted = await _relationshipBusiness.BulkCreateRelationships(currentUserId, projectId, relationships);
         metadataResponseDto.Relationships = inserted;
         return inserted.ToDictionary(r => r.Name, r => r.Id);
     }
@@ -399,18 +407,20 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts tags and returns a mapping of tag name to ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="organizationId"></param>
     /// <param name="tags"></param>
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
+        long currentUserId,
         long organizationId,
         long projectId,
         List<CreateTagRequestDto> tags,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _tagBusiness.BulkCreateTags(organizationId, projectId, tags);
+        var inserted = await _tagBusiness.BulkCreateTags(organizationId, currentUserId, projectId, tags);
         metadataResponseDto.Tags = inserted;
         return inserted.ToDictionary(t => t.Name, t => t);
     }
@@ -418,18 +428,20 @@ public class MetadataBusiness : IMetadataBusiness
     /// <summary>
     /// Bulk upserts records and returns a mapping of record original ID to database ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <param name="records"></param>
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of record name to record ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRecords(
+        long currentUserId,
         long projectId,
         long dataSourceId,
         List<CreateRecordRequestDto> records,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
+        var inserted = await _recordBusiness.BulkCreateRecords(currentUserId, projectId, dataSourceId, records);
         metadataResponseDto.Records = inserted;
         return inserted.ToDictionary(r => r.OriginalId, r => r.Id);
     }

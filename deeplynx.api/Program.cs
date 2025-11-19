@@ -2,7 +2,6 @@ using System.Text.Json.Serialization;
 using deeplynx.business;
 using deeplynx.datalayer.MigrationRunner;
 using deeplynx.datalayer.Models;
-using deeplynx.graph;
 using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
@@ -184,11 +183,6 @@ try
 
     Console.WriteLine("Program cs: " + connectionString);
 
-    builder.Services.AddTransient<IKuzuDatabaseManager>(provider =>
-    {
-        var configuration = provider.GetRequiredService<IConfiguration>();
-        return new KuzuDatabaseManager(configuration, connectionString, "d332f23f");
-    });
     builder.Services.AddTransient<IQueryBusiness, QueryBusiness>();
     builder.Services.AddTransient<IMetadataBusiness, MetadataBusiness>();
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
@@ -209,6 +203,7 @@ try
     builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
     builder.Services.AddTransient<ISysAdminService, SysAdminService>();
     builder.Services.AddTransient<IOauthHandshakeBusiness, OauthHandshakeBusiness>();
+    builder.Services.AddTransient<IOrganizationService, OrganizationService>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -270,12 +265,6 @@ try
                     Name = "HistoricalRecord",
                     Description =
                         "Manages operations related to historical records, including retrieval and analysis of past records."
-                },
-                new()
-                {
-                    Name = "KuzuDatabaseManager",
-                    Description =
-                        "Oversees operations related to Kuzu database management, including data export and querying."
                 },
                 new()
                 {

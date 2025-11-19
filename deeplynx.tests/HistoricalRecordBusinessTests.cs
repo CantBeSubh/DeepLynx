@@ -24,6 +24,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public long rid;
     public long rid2;
     public long os1;
+    public long uid;
     private long organizationId;
     private HistoricalRecordBusiness _historicalRecordBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
@@ -86,8 +87,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ClassId = cid
         };
 
-        await _recordBusiness.UpdateRecord(pid, rid, dto);
-        await _recordBusiness.UpdateRecord(pid, rid2, dto2);
+        await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
+        await _recordBusiness.UpdateRecord(uid, pid, rid2, dto2);
 
         // Act
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
@@ -103,7 +104,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public async Task GetHistoricalRecords_ContainsArchivedHistoricalRecords()
     {
         // Arrange
-        await _recordBusiness.ArchiveRecord(pid, rid);
+        await _recordBusiness.ArchiveRecord(uid, pid, rid);
         
         // Act
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, null, null, false);
@@ -126,7 +127,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         Assert.Equal(2, historicalRecords.Count());
         
         // Act
-        await _recordBusiness.ArchiveRecord(pid, rid);
+        await _recordBusiness.ArchiveRecord(uid, pid, rid);
         var arcHistoricalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
         
         // Assert
@@ -214,8 +215,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         };
         
         // Act
-        await _recordBusiness.UpdateRecord(pid, rid, dto);
-        await _recordBusiness.ArchiveRecord(pid, rid);
+        await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
+        await _recordBusiness.ArchiveRecord(uid, pid, rid);
         var recordHistory = await _historicalRecordBusiness.GetHistoryForRecord(rid);
         
         
@@ -282,7 +283,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ClassId = cid
         };
         
-        var updatedRecord = await _recordBusiness.UpdateRecord(pid, rid, dto);
+        var updatedRecord = await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
         Assert.NotNull(updatedRecord);
         
         // Act
@@ -310,7 +311,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public async Task GetHistoricalRecord_ReturnsAllCorrectFields_AfterArchive()
     {
         // Arrange
-        var archived = await _recordBusiness.ArchiveRecord(pid, rid);
+        var archived = await _recordBusiness.ArchiveRecord(uid, pid, rid);
         Assert.True(archived);
         
         var archivedRecord = await _recordBusiness.GetRecord(pid, rid, false);
@@ -351,7 +352,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ClassId = cid
         };
         
-        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
         
         
         // Act
@@ -377,7 +378,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         };
         
         // Act
-        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
         
         // Assert
@@ -400,8 +401,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         };
         
         // Act
-        await _recordBusiness.UpdateRecord(pid, rid, dto);
-        await _recordBusiness.ArchiveRecord(pid, rid);
+        await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
+        await _recordBusiness.ArchiveRecord(uid, pid, rid);
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
         
         // Assert
@@ -425,8 +426,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ClassId = cid
         };
         
-        await _recordBusiness.UpdateRecord(pid, rid, dto);
-        await _recordBusiness.ArchiveRecord(pid, rid);
+        await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
+        await _recordBusiness.ArchiveRecord(uid, pid, rid);
         
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _historicalRecordBusiness.GetHistoricalRecord(rid, null));
@@ -450,7 +451,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         };
         
         // Act
-        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, pointInTime);
         
         // Assert
@@ -470,6 +471,19 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     
     protected override async Task SeedTestDataAsync()
     {
+        await base.SeedTestDataAsync();
+        
+        var testUser = new User
+        {
+            Name = "Test User",
+            Email = "test.user@test.com",
+            Password = "test_password",
+            IsArchived = false
+        };
+        Context.Users.Add(testUser);
+        await Context.SaveChangesAsync();
+        uid = testUser.Id;
+        
         var organization = new Organization { Name = $"unique org {Guid.NewGuid()}"  };
         Context.Organizations.Add(organization);
         await Context.SaveChangesAsync();

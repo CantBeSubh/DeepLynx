@@ -1,8 +1,6 @@
 # Stage 1: Build the C# backend
 FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-test-build
 
-ENV ENABLE_KUZU=False
-
 # Set working directory
 WORKDIR /usr/src/app
 

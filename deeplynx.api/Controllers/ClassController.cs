@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -94,7 +95,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var newClass = await _classBusiness.CreateClass(projectId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var newClass = await _classBusiness.CreateClass(currentUserId, projectId, dto);
                 return Ok(newClass);
             }
             catch (Exception exc)
@@ -118,7 +120,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var newClasses = await _classBusiness.BulkCreateClasses(projectId, classes);
+                var currentUserId = UserContextStorage.UserId;
+                var newClasses = await _classBusiness.BulkCreateClasses(currentUserId, projectId, classes);
                 return Ok(newClasses);
             }
             catch (Exception exc)
@@ -141,7 +144,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var updatedClass = await _classBusiness.UpdateClass(projectId, classId, dto);
+                var currentUserId = UserContextStorage.UserId;
+                var updatedClass = await _classBusiness.UpdateClass(currentUserId, projectId, classId, dto);
                 return Ok(updatedClass);
             }
             catch (Exception exc)
@@ -185,7 +189,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _classBusiness.ArchiveClass(projectId, classId);
+                var currentUserId = UserContextStorage.UserId;
+                await _classBusiness.ArchiveClass(currentUserId, projectId, classId);
                 return Ok(new { message = $"Archived class {classId}" });
             }
             catch (Exception exc)
@@ -207,7 +212,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _classBusiness.UnarchiveClass(projectId, classId);
+                var currentUserId = UserContextStorage.UserId;
+                await _classBusiness.UnarchiveClass(currentUserId, projectId, classId);
                 return Ok(new { message = $"Unarchived class {classId}" });
             }
             catch (Exception exc)

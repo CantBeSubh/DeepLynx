@@ -177,7 +177,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _tagBusiness.CreateTag(oid, pid, null));
+                () => _tagBusiness.CreateTag(oid, uid, pid, null));
 
             // Ensure event was not logged
             var eventList = await Context.Events.ToListAsync();
@@ -194,7 +194,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _tagBusiness.CreateTag(oid, pid, dto);
+            var result = await _tagBusiness.CreateTag(oid, uid, pid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -230,7 +230,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _tagBusiness.CreateTag(oid, pid, dto);
+            var result = await _tagBusiness.CreateTag(oid, uid, pid, dto);
 
             // Assert
             Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
@@ -262,7 +262,7 @@ namespace deeplynx.tests
                 }
             };
 
-            var result = await _tagBusiness.BulkCreateTags(oid, pid, tags);
+            var result = await _tagBusiness.BulkCreateTags(oid, uid, pid, tags);
             Assert.Equal(2, result.Count);
             Assert.Equal("Test Tag 1", result.First().Name);
             Assert.Equal("Test Tag 2", result.Last().Name);
@@ -293,7 +293,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
-                () => _tagBusiness.CreateTag(oid, pid, dto));
+                () => _tagBusiness.CreateTag(oid, uid, pid, dto));
 
             // Ensure that no tag create event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -311,7 +311,7 @@ namespace deeplynx.tests
 
             //Act
             await Assert.ThrowsAsync<ArgumentException>(
-                () => _tagBusiness.CreateTag(oid, foreignProj.Entity.Id, new CreateTagRequestDto { Name = "n" }));
+                () => _tagBusiness.CreateTag(oid, uid, foreignProj.Entity.Id, new CreateTagRequestDto { Name = "n" }));
 
             //Assert
             Assert.Empty(await Context.Events.ToListAsync());
@@ -322,11 +322,11 @@ namespace deeplynx.tests
         {
             //Arrange
             var dto = new CreateTagRequestDto { Name = "Dup" };
-            var first = await _tagBusiness.CreateTag(oid, pid, dto);
+            var first = await _tagBusiness.CreateTag(oid, uid, pid, dto);
             Assert.NotNull(first);
 
             //Act
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _tagBusiness.CreateTag(oid, pid, dto));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _tagBusiness.CreateTag(oid, uid, pid, dto));
 
             //Assert
             var events = await Context.Events.ToListAsync();
@@ -341,7 +341,7 @@ namespace deeplynx.tests
         {
             var dto = new CreateTagRequestDto { Name = "Org-Level Tag" };
 
-            var result = await _tagBusiness.CreateTag(oid, null, dto);
+            var result = await _tagBusiness.CreateTag(oid, uid, null, dto);
 
             Assert.NotNull(result);
             Assert.Null(result.ProjectId);
@@ -367,8 +367,8 @@ namespace deeplynx.tests
             var dto = new CreateTagRequestDto { Name = "Shared Name" };
 
             // Act
-            var orgTag = await _tagBusiness.CreateTag(oid, null, dto);
-            var projectTag = await _tagBusiness.CreateTag(oid, pid, dto);
+            var orgTag = await _tagBusiness.CreateTag(oid, uid, null, dto);
+            var projectTag = await _tagBusiness.CreateTag(oid, uid, pid, dto);
 
             // Assert
             Assert.NotEqual(orgTag.Id, projectTag.Id);
@@ -392,7 +392,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _tagBusiness.UpdateTag(oid, pid, tid, dto);
+            var result = await _tagBusiness.UpdateTag(oid, uid, pid, tid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -431,7 +431,7 @@ namespace deeplynx.tests
 
 
             // Act
-            var result = await _tagBusiness.UpdateTag(oid, pid, tid, updateDto);
+            var result = await _tagBusiness.UpdateTag(oid, uid, pid, tid, updateDto);
 
             // Assert
             Assert.NotNull(result);
@@ -468,7 +468,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UpdateTag(oid, pid, 999, dto));
+                () => _tagBusiness.UpdateTag(oid, uid, pid, 999, dto));
 
             Assert.Contains("Tag with id 999 not found", exception.Message);
 
@@ -488,7 +488,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UpdateTag(oid, pid2, tid, dto)); // Tag 1 belongs to project 2
+                () => _tagBusiness.UpdateTag(oid, uid, pid2, tid, dto)); // Tag 1 belongs to project 2
 
             Assert.Contains($"Tag with id {tid} not found", exception.Message);
 
@@ -508,7 +508,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UpdateTag(oid, pid, tid3, dto)); // Tag 3 is archived
+                () => _tagBusiness.UpdateTag(oid, uid, pid, tid3, dto)); // Tag 3 is archived
 
             Assert.Contains($"Tag with id {tid3} not found", exception.Message);
 
@@ -563,7 +563,7 @@ namespace deeplynx.tests
         public async Task ArchiveTag_ValidTag_ArchivesSuccessfully()
         {
             // Act
-            var result = await _tagBusiness.ArchiveTag(oid, pid, tid);
+            var result = await _tagBusiness.ArchiveTag(oid, uid, pid, tid);
 
             // Assert
             Assert.True(result);
@@ -588,7 +588,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.ArchiveTag(oid, pid, 999));
+                () => _tagBusiness.ArchiveTag(oid, uid, pid, 999));
 
             Assert.Contains("Tag with id 999 not found", exception.Message);
 
@@ -602,7 +602,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.ArchiveTag(oid, pid2, tid));
+                () => _tagBusiness.ArchiveTag(oid, uid, pid2, tid));
 
             Assert.Contains($"Tag with id {tid} not found", exception.Message);
 
@@ -616,7 +616,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-             () => _tagBusiness.ArchiveTag(oid, pid, tid3)); // Tag 3 is already archived
+             () => _tagBusiness.ArchiveTag(oid, uid, pid, tid3)); // Tag 3 is already archived
 
             Assert.Contains($"Tag with id {tid3} not found", exception.Message);
 
@@ -632,7 +632,7 @@ namespace deeplynx.tests
             var initialCount = (await _tagBusiness.GetAllTags(oid, pid, true)).Count;
 
             // Act
-            await _tagBusiness.ArchiveTag(oid, pid, tid);
+            await _tagBusiness.ArchiveTag(oid, uid, pid, tid);
             var finalCount = (await _tagBusiness.GetAllTags(oid, pid, true)).Count;
 
             // Assert
@@ -661,8 +661,8 @@ namespace deeplynx.tests
             };
 
             // Act
-            var task1 = await _tagBusiness.UpdateTag(oid, pid, tid, dto1);
-            var task2 = await _tagBusiness.UpdateTag(oid, pid, tid2, dto2);
+            var task1 = await _tagBusiness.UpdateTag(oid, uid, pid, tid, dto1);
+            var task2 = await _tagBusiness.UpdateTag(oid, uid, pid, tid2, dto2);
 
             // Assert
             var result1 = task1;
@@ -684,7 +684,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _tagBusiness.CreateTag(oid, pid, dto);
+            var result = await _tagBusiness.CreateTag(oid, uid, pid, dto);
 
             // Assert
             Assert.Equal("Test with émojis 🚀 and ñ special chars 中文", result.Name);
@@ -740,7 +740,7 @@ namespace deeplynx.tests
         public async Task UnarchiveTag_ValidArchivedTag_UnarchivesSuccessfully()
         {
             // Act
-            var result = await _tagBusiness.UnarchiveTag(oid, pid, tid3);
+            var result = await _tagBusiness.UnarchiveTag(oid, uid, pid, tid3);
 
             Assert.True(result);
             Context.ChangeTracker.Clear();
@@ -755,7 +755,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UnarchiveTag(oid, pid, 99999));
+                () => _tagBusiness.UnarchiveTag(oid, uid, pid, 99999));
 
             Assert.Contains("Tag with id 99999 not found", exception.Message);
         }
@@ -765,7 +765,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UnarchiveTag(oid, pid, tid4)); // Calling with pid (wrong project)
+                () => _tagBusiness.UnarchiveTag(oid, uid, pid, tid4)); // Calling with pid (wrong project)
 
             Assert.Contains($"Tag with id {tid4} not found", exception.Message);
         }
@@ -775,7 +775,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UnarchiveTag(oid, pid, tid));
+                () => _tagBusiness.UnarchiveTag(oid, uid, pid, tid));
 
             Assert.Contains($"Tag with id {tid} not found", exception.Message);
         }

@@ -36,6 +36,7 @@ namespace deeplynx.tests
         public long did;
         public long cid; // origin class ID
         public long cid2; // destination class ID
+        public long uid;
         private long oid;
 
         public MetadataBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
@@ -95,7 +96,7 @@ namespace deeplynx.tests
                 }
             };
             // Act
-            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -142,7 +143,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
 
             // Assert
             Assert.Equal(2, result.Classes.Count);
@@ -186,7 +187,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
 
             // Assert
             Assert.Single(result.Classes);
@@ -233,7 +234,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
 
             // Assert
             Assert.Single(result.Records);
@@ -277,7 +278,7 @@ namespace deeplynx.tests
                 }
             };
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid + 99, did, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, uid, pid + 99, did, dto));
             Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
 
             // Ensure create event was NOT logged
@@ -304,7 +305,7 @@ namespace deeplynx.tests
             };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid, did + 99, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, uid, pid, did + 99, dto));
             Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
 
             // Ensure create event was NOT logged
@@ -333,7 +334,7 @@ namespace deeplynx.tests
             };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto));
             Assert.Contains($"Project with id {pid} not found.", exception.Message);
 
             // Ensure create event was NOT logged
@@ -365,7 +366,7 @@ namespace deeplynx.tests
             };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto));
             Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
 
             // Ensure create event was NOT logged
@@ -377,7 +378,7 @@ namespace deeplynx.tests
         public async Task CreateMetadata_Fails_IfNullDto()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(oid, uid, pid, did, null));
 
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -398,7 +399,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -420,7 +421,7 @@ namespace deeplynx.tests
             var dto = new CreateMetadataRequestDto(); // All arrays are null by default
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -484,7 +485,7 @@ namespace deeplynx.tests
                 }
             };
 
-            var result = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
 
             // Assert
             Assert.Single(result.Classes);
@@ -614,7 +615,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
+            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto));
         }
 
         [Fact]
@@ -635,7 +636,7 @@ namespace deeplynx.tests
             };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(oid, pid, did, dto));
+            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto));
             Assert.Contains("Records not found matching Original IDs", exception.Message);
 
             var eventList = await Context.Events.ToListAsync();
@@ -674,7 +675,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -713,7 +714,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.Equal(2, result.Classes.Count);
@@ -758,7 +759,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.Single(result.Classes);
@@ -806,7 +807,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.Single(result.Records);
@@ -853,7 +854,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid + 99, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid + 99, did, file));
             Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
 
             // Ensure create event was NOT logged
@@ -882,7 +883,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did + 99, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did + 99, file));
             Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
 
             // Ensure create event was NOT logged
@@ -910,7 +911,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file));
             Assert.Contains($"Project with id {pid} not found.", exception.Message);
 
             // Ensure create event was NOT logged
@@ -944,7 +945,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file));
             Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
 
             // Ensure create event was NOT logged
@@ -957,7 +958,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, null)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, null)
             );
 
             Assert.Equal("file", exception.ParamName);
@@ -984,7 +985,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1012,7 +1013,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file)
             );
 
             Assert.Equal("file", exception.ParamName);
@@ -1036,7 +1037,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file)
             );
 
             Assert.Equal("file", exception.ParamName);
@@ -1060,7 +1061,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file)
             );
 
             Assert.Contains("File must be a .json file", exception.Message);
@@ -1079,7 +1080,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file)
             );
 
             Assert.Contains("File must be a .json file", exception.Message);
@@ -1101,7 +1102,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file)
             );
 
             // Ensure no events were logged
@@ -1125,7 +1126,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file)
             );
         }
 
@@ -1145,7 +1146,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file)
+                () => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file)
             );
 
             Assert.Contains("Failed to deserialize metadata from file", exception.Message);
@@ -1163,7 +1164,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent, "metadata.JSON");
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1183,7 +1184,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent, "metadata.Json");
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1199,7 +1200,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1268,7 +1269,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.Single(result.Classes);
@@ -1385,7 +1386,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
+            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file));
         }
 
         [Fact]
@@ -1408,7 +1409,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file));
+            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file));
             Assert.Contains("Records not found matching Original IDs", exception.Message);
 
             var eventList = await Context.Events.ToListAsync();
@@ -1464,7 +1465,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadataFromFile(oid, pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(oid, uid, pid, did, file);
 
             // Assert
             Assert.NotNull(result);
@@ -1523,8 +1524,8 @@ namespace deeplynx.tests
             };
 
             // Act - Create tags with same name in different organizations
-            var result1 = await _metadataBusiness.CreateMetadata(oid, pid, did, dto1);
-            var result2 = await _metadataBusiness.CreateMetadata(oid2, pid2, did2, dto2);
+            var result1 = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto1);
+            var result2 = await _metadataBusiness.CreateMetadata(oid2, uid, pid2, did2, dto2);
 
             // Assert - Both should succeed because they're in different orgs
             Assert.Single(result1.Tags);
@@ -1572,8 +1573,8 @@ namespace deeplynx.tests
             };
 
             // Act - Create same tag name in different organizations
-            var result1 = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
-            var result2 = await _metadataBusiness.CreateMetadata(org2.Id, project2.Id, dataSource2.Id, dto);
+            var result1 = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
+            var result2 = await _metadataBusiness.CreateMetadata(org2.Id, uid, project2.Id, dataSource2.Id, dto);
 
             // Assert - Both succeed with different IDs and correct organization
             Assert.Single(result1.Tags);
@@ -1615,8 +1616,8 @@ namespace deeplynx.tests
             };
 
             // Act - Create same tag name in different projects
-            var result1 = await _metadataBusiness.CreateMetadata(oid, pid, did, dto);
-            var result2 = await _metadataBusiness.CreateMetadata(oid, project2.Id, dataSource2.Id, dto);
+            var result1 = await _metadataBusiness.CreateMetadata(oid, uid, pid, did, dto);
+            var result2 = await _metadataBusiness.CreateMetadata(oid, uid, project2.Id, dataSource2.Id, dto);
 
             // Assert - Both succeed with different IDs but same organization
             Assert.NotEqual(result1.Tags[0].Id, result2.Tags[0].Id);
@@ -1708,6 +1709,17 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             cid = originClass.Id;
             cid2 = destClass.Id;
+
+            var testUser = new User
+            {
+                Name = "Test User",
+                Email = "test.user@test.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(testUser);
+            await Context.SaveChangesAsync();
+            uid = testUser.Id;
         }
     }
 }

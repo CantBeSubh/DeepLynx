@@ -20,6 +20,7 @@ import { ProjectResponseDto } from "./types/responseDTOs";
 import { useOrganizationSession } from "../contexts/OrganizationSessionProvider";
 import { useRBAC } from "./rbac/useRBAC";
 import { useSafeSession } from "../hooks/useSafeSession";
+import { useProjectSession } from "../contexts/ProjectSessionProvider";
 
 type Props = { initialProjects: ProjectResponseDto[] };
 
@@ -33,7 +34,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   const { data: session } = useSafeSession();
   const { user } = useRBAC();
   const { organization, hasLoaded } = useOrganizationSession();
-
+  const { setProject } = useProjectSession();
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
@@ -90,6 +91,10 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   });
 
   const onExplore = (row: ProjectResponseDto) => {
+    setProject({
+      projectId: row.id.toString(),
+      projectName: row.name,
+    });
     router.push(`/project/${row.id}`);
   };
 
@@ -99,6 +104,14 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       data: (row: ProjectResponseDto) => (
         <Link
           href={`/project/${row.id}`}
+          onClick={(e) => {
+            e.preventDefault();
+            setProject({
+              projectId: row.id.toString(),
+              projectName: row.name,
+            });
+            router.push(`/project/${row.id}`);
+          }}
           className="font-bold text-secondary hover:text-base-content/80 underline underline-offset-2 transition-colors"
         >
           {row.name}

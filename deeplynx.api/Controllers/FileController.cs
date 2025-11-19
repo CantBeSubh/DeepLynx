@@ -1,4 +1,5 @@
 using deeplynx.business;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -36,8 +37,9 @@ namespace deeplynx.api.Controllers
             {
                 try
                 {
+                    var currentUserId = UserContextStorage.UserId;
                     var fileUploadInfo = await _fileBusiness
-                        .UploadFile(projectId, dataSourceId, objectStorageId, file);
+                        .UploadFile(currentUserId, projectId, dataSourceId, objectStorageId, file);
                     return Ok(fileUploadInfo);
                 }
                 catch (Exception e)
@@ -63,8 +65,9 @@ namespace deeplynx.api.Controllers
             {
                 try
                 {
+                    var  currentUserId = UserContextStorage.UserId;
                     var updatedFileInfo = await _fileBusiness
-                        .UpdateFile(projectId, recordId, file);
+                        .UpdateFile(currentUserId, projectId, recordId, file);
                     return Ok(updatedFileInfo);
                 }
                 catch (Exception e)

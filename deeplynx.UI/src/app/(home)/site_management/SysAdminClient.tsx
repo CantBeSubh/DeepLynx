@@ -7,7 +7,7 @@ import {
   OrganizationResponseDto,
   UserResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "../components/SiteManagementPortal/UsersTable";
+import UsersTable from "../organization_management/users/UsersTable";
 import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
 import SiteOrganizationManagement from "../components/SiteManagementPortal/OrgTable";
 

@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -12,7 +13,7 @@ namespace deeplynx.api.Controllers
     /// This controller provides endpoints to create, update, delete, and retrieve subscription information.
     /// </remarks>
     [ApiController]
-    [Route("projects/{projectId}/users/{userId}/subscriptions")] //TODO: remove userID from route when JWT are implemented
+    [Route("projects/{projectId}/subscriptions")]
     [Authorize]
     public class SubscriptionController : ControllerBase
     {
@@ -33,17 +34,17 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscription belongs</param>
         /// <param name="projectId">The ID of the project to which the subscription belongs</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>List of subscription response DTOs</returns>
         [HttpGet("GetAllSubscriptions", Name = "api_get_all_subscriptions")]
         public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptions(
-            long userId, long projectId, [FromQuery] bool hideArchived = true)
+            long projectId, [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(userId, projectId, hideArchived);
+                var currentUserId = UserContextStorage.UserId;
+                var subscriptions = await _subscriptionBusiness.GetAllSubscriptions(currentUserId, projectId, hideArchived);
                 return Ok(subscriptions);
             }
             catch (Exception exc)
@@ -57,18 +58,18 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a subscription
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscription belongs</param>
         /// <param name="projectId">The ID of the project to which the subscription belongs</param>
         /// <param name="subscriptionId">The ID of the subscription to retrieve</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>Subscription response DTO</returns>
         [HttpGet("GetSubscription/{subscriptionId}", Name = "api_get_a_subscription")]
         public async Task<ActionResult<SubscriptionResponseDto>> GetSubscription(
-            long userId, long projectId, long subscriptionId, [FromQuery] bool hideArchived = true)
+            long projectId, long subscriptionId, [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var subscription = await _subscriptionBusiness.GetSubscription(userId, projectId, subscriptionId, hideArchived);
+                var currentUserId = UserContextStorage.UserId;
+                var subscription = await _subscriptionBusiness.GetSubscription(currentUserId, projectId, subscriptionId, hideArchived);
                 return Ok(subscription);
             }
             catch (Exception exc)
@@ -82,17 +83,17 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create many subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
         /// <returns>Bulk subscription response DTOs</returns>
         [HttpPost("BulkCreateSubscriptions", Name = "api_create_many_subscriptions")]
         public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkCreateSubscriptions(
-            long userId, long projectId, [FromBody] List<CreateSubscriptionRequestDto> subscriptions)
+            long projectId, [FromBody] List<CreateSubscriptionRequestDto> subscriptions)
         {
             try
             {
-                var newSubscriptions = await _subscriptionBusiness.BulkCreateSubscriptions(userId, projectId, subscriptions);
+                var currentUserId = UserContextStorage.UserId;
+                var newSubscriptions = await _subscriptionBusiness.BulkCreateSubscriptions(currentUserId, projectId, subscriptions);
                 return Ok(newSubscriptions);
             }
             catch (Exception exc)
@@ -106,17 +107,17 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update many subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
         /// <returns>Bulk subscription response DTOs</returns>
         [HttpPut("BulkUpdateSubscriptions", Name = "api_update_many_subscriptions")]
         public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkUpdateSubscriptions(
-            long userId, long projectId, [FromBody] List<UpdateSubscriptionRequestDto> subscriptions)
+            long projectId, [FromBody] List<UpdateSubscriptionRequestDto> subscriptions)
         {
             try
             {
-                var updatedSubscriptions = await _subscriptionBusiness.BulkUpdateSubscriptions(userId, projectId, subscriptions);
+                var currentUserId = UserContextStorage.UserId;
+                var updatedSubscriptions = await _subscriptionBusiness.BulkUpdateSubscriptions(currentUserId, projectId, subscriptions);
                 return Ok(updatedSubscriptions);
             }
             catch (Exception exc)
@@ -130,16 +131,16 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Delete many subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptionIds">List of subscription IDs to delete</param>
         /// <returns>A message stating the subscriptions were successfully deleted.</returns>
         [HttpDelete("BulkDeleteSubscriptions", Name = "api_delete_many_subscriptions")]
-        public async Task<IActionResult> BulkDeleteSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
+        public async Task<IActionResult> BulkDeleteSubscriptions(long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
             {
-                await _subscriptionBusiness.BulkDeleteSubscriptions(userId, projectId, subscriptionIds);
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkDeleteSubscriptions(currentUserId, projectId, subscriptionIds);
                 return Ok(new { message = $"Deleted subscriptions" });
             }
             catch (Exception exc)
@@ -153,16 +154,16 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive many subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptionIds">List of subscription IDs to archive</param>
         /// <returns>A message stating the subscriptions were successfully archived.</returns>
         [HttpPut("BulkArchiveSubscriptions", Name = "api_archive_many_subscriptions")]
-        public async Task<IActionResult> BulkArchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
+        public async Task<IActionResult> BulkArchiveSubscriptions(long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
             {
-                await _subscriptionBusiness.BulkArchiveSubscriptions(userId, projectId, subscriptionIds);
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkArchiveSubscriptions(currentUserId, projectId, subscriptionIds);
                 return Ok(new { message = $"Archived subscriptions" });
             }
             catch (Exception exc)
@@ -176,16 +177,16 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Unarchive many subscriptions
         /// </summary>
-        /// <param name="userId">The ID of the user to which the subscriptions belong</param>
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptionIds">List of subscription IDs to unarchive</param>
         /// <returns>A message stating the subscriptions were successfully unarchived.</returns>
         [HttpPut("BulkUnarchiveSubscriptions", Name = "api_unarchive_many_subscriptions")]
-        public async Task<IActionResult> BulkUnarchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
+        public async Task<IActionResult> BulkUnarchiveSubscriptions(long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
             {
-                await _subscriptionBusiness.BulkUnarchiveSubscriptions(userId, projectId, subscriptionIds);
+                var currentUserId = UserContextStorage.UserId;
+                await _subscriptionBusiness.BulkUnarchiveSubscriptions(currentUserId, projectId, subscriptionIds);
                 return Ok(new { message = $"Unarchived subscriptions" });
             }
             catch (Exception exc)
