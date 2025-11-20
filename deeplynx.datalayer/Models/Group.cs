@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("groups", Schema = "deeplynx")]
-[Index("Id", Name = "idx_groups_id")]
-[Index("OrganizationId", Name = "idx_groups_organization_id")]
 public partial class Group
 {
     [Key]

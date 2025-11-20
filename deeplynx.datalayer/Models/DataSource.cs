@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("data_sources", Schema = "deeplynx")]
-[Index("Id", Name = "idx_data_sources_id")]
-[Index("ProjectId", Name = "idx_data_sources_project_id")]
 public partial class DataSource
 {
     [Key]
@@ -32,6 +27,9 @@ public partial class DataSource
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
@@ -54,6 +52,10 @@ public partial class DataSource
     [ForeignKey("ProjectId")]
     [InverseProperty("DataSources")]
     public virtual Project Project { get; set; } = null!;
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("DataSources")]
+    public virtual Organization Organization { get; set; } = null!;
 
     [InverseProperty("DataSource")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();

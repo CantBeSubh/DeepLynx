@@ -203,6 +203,7 @@ try
     builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
     builder.Services.AddTransient<ISysAdminService, SysAdminService>();
     builder.Services.AddTransient<IOauthHandshakeBusiness, OauthHandshakeBusiness>();
+    builder.Services.AddTransient<IOrganizationService, OrganizationService>();
     
     builder.Services.AddOpenApi(options =>
     {

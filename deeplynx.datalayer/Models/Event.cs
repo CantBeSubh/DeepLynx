@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("events", Schema = "deeplynx")]
-[Index("DataSourceId", Name = "idx_events_data_source_id")]
-[Index("Id", Name = "idx_events_id")]
-[Index("ProjectId", Name = "idx_events_project_id")]
-[Index("OrganizationId", Name = "idx_events_organization_id")]
 public partial class Event
 {
     [Key]
