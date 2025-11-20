@@ -14,7 +14,7 @@ public partial class Tag
     public string Name { get; set; } = null!;
 
     [Column("project_id")]
-    public long ProjectId { get; set; }
+    public long? ProjectId { get; set; }
 
     [Column("organization_id")]
     public long OrganizationId { get; set; }
