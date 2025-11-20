@@ -6,274 +6,273 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
+/// <summary>
+///     Controller for managing object storages.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints to create, update, delete, and retrieve object storage information.
+/// </remarks>
 [ApiController]
-[Route("projects/{projectId}/storages")]
+[Route("organizations/{organizationId}/projects/{projectId}/storages")]
 [Authorize]
 public class ObjectStorageController : ControllerBase
 {
     private readonly ILogger<ObjectStorageController> _logger;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
 
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="ObjectStorageController" /> class
+    /// </summary>
+    /// <param name="objectStorageBusiness">The business logic interface for handling object storage operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
     public ObjectStorageController(
         IObjectStorageBusiness objectStorageBusiness,
-        ILogger<ObjectStorageController> logger
-    )
+        ILogger<ObjectStorageController> logger)
     {
         _objectStorageBusiness = objectStorageBusiness;
         _logger = logger;
     }
 
     /// <summary>
-    ///     Get all object storages
+    ///     Get All Object Storages
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the object storages belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <param name="hidearchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
-    /// <returns></returns>
-    [HttpGet("GetAllObjectStorages", Name = "api_get_all_object_storages")]
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project whose object storages are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
+    /// <returns>A list of object storages for the given project.</returns>
+    [HttpGet(Name = "api_get_all_object_storages")]
     public async Task<ActionResult<IEnumerable<ObjectStorageResponseDto>>> GetAllObjectStorages(
-        long? organizationId,
-        long? projectId,
-        [FromQuery] bool hidearchived = true)
+        long organizationId,
+        long projectId,
+        [FromQuery] bool hideArchived = true)
     {
         try
         {
             var objectStorages =
-                await _objectStorageBusiness.GetAllObjectStorages(organizationId, projectId, hidearchived);
+                await _objectStorageBusiness.GetAllObjectStorages(organizationId, null,
+                    hideArchived); //setting project ID null for now to circumvent xor logic
 
             return Ok(objectStorages);
         }
         catch (Exception ex)
         {
-            var message = $"An unexpected error occurred while fetching all classes.: {ex}";
+            var message = $"An error occurred while listing all object storages: {ex}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Get object storage
+    ///     Get an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <param name="hidearchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
-    /// <param name="objectStorageId">ID of object storage to retrieve</param>
-    /// <returns></returns>
-    [HttpGet("GetObjectStorage/{objectStorageId}", Name = "api_get_object_storage")]
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="objectStorageId">The ID of the object storage to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
+    /// <returns>The object storage associated with the given ID</returns>
+    [HttpGet("{objectStorageId}", Name = "api_get_object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> GetObjectStorage(
-        long? organizationId,
-        long? projectId,
+        long organizationId,
+        long projectId,
         long objectStorageId,
-        [FromQuery] bool hidearchived = true)
+        [FromQuery] bool hideArchived = true)
     {
         try
         {
             var objectStorage =
-                await _objectStorageBusiness.GetObjectStorage(organizationId, projectId, objectStorageId, hidearchived);
+                await _objectStorageBusiness.GetObjectStorage(organizationId, null,
+                    objectStorageId, //setting project ID null for now to circumvent xor logic
+                    hideArchived);
             return Ok(objectStorage);
         }
         catch (Exception ex)
         {
-            var message = $"An unexpected error occurred while fetching object storage with id {objectStorageId}: {ex}";
+            var message = $"An error occurred while retrieving object storage {objectStorageId}: {ex}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Get default object storage
+    ///     Get Default Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <returns></returns>
-    [HttpGet("GetDefaultObjectStorage", Name = "api_get_default_object_storage")]
-    public async Task<ActionResult<ObjectStorageResponseDto>> GetDefaultObjectStorage(long? organizationId,
-        long? projectId)
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <returns>The default object storage for the project</returns>
+    [HttpGet("default", Name = "api_get_default_object_storage")]
+    public async Task<ActionResult<ObjectStorageResponseDto>> GetDefaultObjectStorage(
+        long organizationId,
+        long projectId)
     {
         try
         {
-            var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(organizationId, projectId);
+            var defaultObjectStorage =
+                await _objectStorageBusiness.GetDefaultObjectStorage(organizationId,
+                    null); //setting project ID null for now to circumvent xor logic
             return Ok(defaultObjectStorage);
         }
         catch (Exception ex)
         {
             var message =
-                $"An unexpected error occurred while fetching default object storage for project {projectId}: {ex}";
+                $"An error occurred while retrieving default object storage for project {projectId}: {ex}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Create object storage
+    ///     Create an Object Storage
     /// </summary>
-    /// <param name="organizationId">(Required) The ID of the organization to which the object storage belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <param name="dto">The dto of an object storage to be created</param>
-    /// <param name="makeDefault">
-    ///     Flag to indicate whether to make the created storage procedure default (Default Value =
-    ///     false)
-    /// </param>
-    /// <returns></returns>
-    [HttpPost("CreateObjectStorage", Name = "api_create_object_storage")]
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="dto">The data transfer object containing object storage details</param>
+    /// <param name="makeDefault">Flag to indicate whether to make the created storage default (Default false)</param>
+    /// <returns>The created object storage</returns>
+    [HttpPost(Name = "api_create_object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> CreateObjectStorage(
         long organizationId,
-        long? projectId,
+        long projectId,
         [FromBody] CreateObjectStorageRequestDto dto,
         [FromQuery] bool makeDefault = false)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var objectStorage =
-                await _objectStorageBusiness.CreateObjectStorage(currentUserId, organizationId, projectId, dto,
-                    makeDefault);
+            var objectStorage = await _objectStorageBusiness.CreateObjectStorage(
+                currentUserId, organizationId, null, dto,
+                makeDefault); //setting project ID null for now to circumvent xor logic
             return Ok(objectStorage);
         }
         catch (Exception ex)
         {
-            var message = $"An unexpected error occurred while creating this object storage: {ex}";
+            var message = $"An error occurred while creating object storage: {ex}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Update object storage
+    ///     Update an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <param name="dto">The dto of an object storage to be created</param>
-    /// <param name="objectStorageId">ID of object storage to retrieve</param>
-    /// <returns></returns>
-    [HttpPut("UpdateObjectStorage/{objectStorageId}", Name = "api_update_object_storage")]
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="objectStorageId">The ID of the object storage to update</param>
+    /// <param name="dto">The data transfer object containing updated object storage details</param>
+    /// <returns>The updated object storage</returns>
+    [HttpPut("{objectStorageId}", Name = "api_update_object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> UpdateObjectStorage(
-        long? organizationId,
-        long? projectId,
+        long organizationId,
+        long projectId,
         long objectStorageId,
         [FromBody] UpdateObjectStorageRequestDto dto)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var objectStorage =
-                await _objectStorageBusiness.UpdateObjectStorage(currentUserId, organizationId, projectId,
-                    objectStorageId, dto);
+            var objectStorage = await _objectStorageBusiness.UpdateObjectStorage(
+                currentUserId, organizationId, null, objectStorageId, dto);
             return Ok(objectStorage);
         }
         catch (Exception ex)
         {
-            var message = $"An unexpected error occurred while updating this object storage {objectStorageId}: {ex}";
+            var message = $"An error occurred while updating object storage {objectStorageId}: {ex}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Delete object storage
+    ///     Delete an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <param name="objectStorageId">ID of object storage to delete</param>
-    /// <returns></returns>
-    [HttpDelete("DeleteObjectStorage/{objectStorageId}", Name = "api_delete_object_storage")]
-    public async Task<ActionResult> DeleteObjectStorage(
-        long? organizationId,
-        long? projectId,
-        long objectStorageId)
-    {
-        try
-        {
-            await _objectStorageBusiness.DeleteObjectStorage(organizationId, projectId, objectStorageId);
-            return Ok(new { message = $"Deleted object storage {objectStorageId}" });
-        }
-        catch (Exception ex)
-        {
-            var message = $"An unexpected error occurred while deleting this object storage {objectStorageId}: {ex}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Archive object storage
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <param name="objectStorageId">ID of object storage to delete</param>
-    /// <returns></returns>
-    [HttpDelete("ArchiveObjectStorage/{objectStorageId}", Name = "api_archive_object_storage")]
-    public async Task<ActionResult> ArchiveObjectStorage(
-        long? organizationId,
-        long? projectId,
-        long objectStorageId)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-            await _objectStorageBusiness.ArchiveObjectStorage(currentUserId, organizationId, projectId,
-                objectStorageId);
-            return Ok(new { message = $"Archived object storage {objectStorageId}" });
-        }
-        catch (Exception ex)
-        {
-            var message = $"An unexpected error occurred while archiving this object storage {objectStorageId}: {ex}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Unarchive object storage
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storages belong</param>
-    /// <param name="objectStorageId">ID of object storage to retrieve</param>
-    /// <returns></returns>
-    [HttpPut("UnarchiveObjectStorage/{objectStorageId}", Name = "api_unarchive_object_storage")]
-    public async Task<ActionResult<ObjectStorageResponseDto>> UnarchiveObjectStorage(
-        long? organizationId,
-        long? projectId,
-        long objectStorageId)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-            await _objectStorageBusiness.UnarchiveObjectStorage(currentUserId, organizationId, projectId,
-                objectStorageId);
-            return Ok(new { message = $"Unarchived object storage {objectStorageId}" });
-        }
-        catch (Exception ex)
-        {
-            var message = $"An unexpected error occurred while unarchiving this object storage {objectStorageId}: {ex}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Sets default object storage
-    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
-    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
-    /// <param name="objectStorageId">ID of object storage to make default</param>
-    /// <returns></returns>
-    [HttpPut("SetDefaultObjectStorage/{objectStorageId}", Name = "api_change_default_object_storage")]
-    public async Task<ActionResult<ObjectStorageResponseDto>> SetDefaultObjectStorage(
-        long? organizationId,
+    /// <param name="objectStorageId">The ID of the object storage to delete</param>
+    /// <returns>A message stating the object storage was successfully deleted.</returns>
+    [HttpDelete("{objectStorageId}", Name = "api_delete_object_storage")]
+    public async Task<ActionResult> DeleteObjectStorage(
+        long organizationId,
         long projectId,
         long objectStorageId)
     {
         try
         {
-            var currentUserId = UserContextStorage.UserId;
-            await _objectStorageBusiness.SetDefaultObjectStorage(currentUserId, organizationId, projectId,
-                objectStorageId);
-            return Ok(new { message = $"Made object storage with id {objectStorageId} default" });
+            await _objectStorageBusiness.DeleteObjectStorage(organizationId, null,
+                objectStorageId); //setting project ID null for now to circumvent xor logic
+            return Ok(new { message = $"Deleted object storage {objectStorageId}" });
         }
         catch (Exception ex)
         {
-            var message = $"An unexpected error occurred while unarchiving this object storage {objectStorageId}: {ex}";
+            var message = $"An error occurred while deleting object storage {objectStorageId}: {ex}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive an Object Storage
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="objectStorageId">The ID of the object storage to archive or unarchive</param>
+    /// <param name="archive">True to archive the object storage, false to unarchive it.</param>
+    /// <returns>A message stating the object storage was successfully archived or unarchived.</returns>
+    [HttpPatch("{objectStorageId}", Name = "api_archive_object_storage")]
+    public async Task<ActionResult> ArchiveObjectStorage(
+        long organizationId,
+        long projectId,
+        long objectStorageId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            if (archive)
+            {
+                await _objectStorageBusiness.ArchiveObjectStorage(
+                    currentUserId, organizationId, null, objectStorageId);
+                return Ok(new { message = $"Archived object storage {objectStorageId}" });
+            }
+
+            await _objectStorageBusiness.UnarchiveObjectStorage(currentUserId, organizationId,
+                null, //setting project ID null for now to circumvent xor logic
+                objectStorageId);
+            return Ok(new { message = $"Unarchived object storage {objectStorageId}" });
+        }
+        catch (Exception ex)
+        {
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} object storage {objectStorageId}: {ex}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Set Default Object Storage
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="objectStorageId">The ID of the object storage to set as default</param>
+    /// <param name="isDefault">True to set as default, false to unset as default.</param>
+    /// <returns>The updated object storage</returns>
+    [HttpPatch("{objectStorageId}/default", Name = "api_set_default_object_storage")]
+    public async Task<ActionResult<ObjectStorageResponseDto>> SetDefaultObjectStorage(
+        long organizationId,
+        long projectId,
+        long objectStorageId,
+        [FromQuery] bool isDefault = true)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            await _objectStorageBusiness.SetDefaultObjectStorage(currentUserId, organizationId,
+                null, //setting project ID null for now to circumvent xor logic
+                objectStorageId);
+            return Ok(new { message = $"Set object storage {objectStorageId} as default" });
+        }
+        catch (Exception ex)
+        {
+            var message = $"An error occurred while setting default object storage {objectStorageId}: {ex}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

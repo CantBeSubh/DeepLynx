@@ -1,303 +1,370 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers
+namespace deeplynx.api.Controllers;
+
+/// <summary>
+///     Controller for managing edges.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints to create, update, delete, and retrieve edge information.
+/// </remarks>
+[ApiController]
+[Route("organizations/{organizationId}/projects/{projectId}/edges")]
+[Authorize]
+public class EdgeController : ControllerBase
 {
-    [ApiController]
-    [Route("projects/{projectId}/edges")]
-    [Authorize]
-    public class EdgeController : ControllerBase
+    private readonly IEdgeBusiness _edgeBusiness;
+    private readonly ILogger<EdgeController> _logger;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="EdgeController" /> class
+    /// </summary>
+    /// <param name="edgeBusiness">The business logic interface for handling edge operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public EdgeController(IEdgeBusiness edgeBusiness, ILogger<EdgeController> logger)
     {
-        private readonly IEdgeBusiness _edgeBusiness;
-        private readonly ILogger<EdgeController> _logger;
+        _edgeBusiness = edgeBusiness;
+        _logger = logger;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EdgeController"/> class
-        /// </summary>
-        /// <param name="edgeBusiness">The business logic interface for handling edge operations.</param>
-        /// <param name="logger">Error/Info logging interface for database log table.</param>
-        public EdgeController(IEdgeBusiness edgeBusiness, ILogger<EdgeController> logger)
+    /// <summary>
+    ///     Get All Edges
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
+    /// <returns>A list of edges based on the applied filters.</returns>
+    [HttpGet(Name = "api_get_all_edges")]
+    public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdges(
+        long organizationId,
+        long projectId,
+        [FromQuery] long? dataSourceId = null,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            _edgeBusiness = edgeBusiness;
-            _logger = logger;
+            var edges = await _edgeBusiness.GetAllEdges(projectId, dataSourceId, hideArchived);
+            return Ok(edges);
         }
-
-        /// <summary>
-        /// Get all edges
-        /// </summary>
-        /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
-        /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
-        /// <returns>A list of edges based on the applied filters.</returns>
-        [HttpGet("GetAllEdges", Name = "api_get_all_edges")]
-        public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdges(
-            long projectId,
-            [FromQuery] long? dataSourceId = null,
-            [FromQuery] bool hideArchived = true)
+        catch (Exception exc)
         {
-            try
-            {
-                var edges = await _edgeBusiness.GetAllEdges(projectId, dataSourceId, hideArchived);
-                return Ok(edges);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while listing all edges: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while listing all edges: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Get edges by record
-        /// </summary>
-        /// <param name="recordId">The ID of the datasource by which to filter edges</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
-        /// <returns>A list of edges based on the applied filters.</returns>
-        [HttpGet("GetAllEdgesByRecord", Name = "api_get_edges_by_record")]
-        public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
-            long recordId,
-            bool isOrigin,
-            int page,
-            bool hideArchived = true,
-            int pageSize = 20)
+    /// <summary>
+    ///     Get an Edge by ID
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="edgeId">The ID of the edge to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
+    /// <returns>The edge associated with the given ID</returns>
+    [HttpGet("{edgeId:long}", Name = "api_get_edge_by_id")]
+    public async Task<ActionResult<EdgeResponseDto>> GetEdgeById(
+        long organizationId,
+        long projectId,
+        long edgeId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            try
-            {
-                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize);
-                return Ok(edges);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while listing all edges: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var edge = await _edgeBusiness.GetEdge(projectId, edgeId, null, null, hideArchived);
+            return Ok(edge);
         }
-
-        /// <summary>
-        /// Get Graph Data
-        /// </summary>
-        /// <param name="recordId">The ID of the datasource by which to filter edges</param>
-        /// <param name="depth">The number of levels you want to search through</param>
-        /// <returns>A list of edges based on the applied filters.</returns>
-        [HttpGet("GetGraphDataForRecord", Name = "api_get_graph_data_for_record")]
-        public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
-            long recordId,
-            int depth)
+        catch (Exception exc)
         {
-            try
-            {
-                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth);
-                return Ok(edges);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while listing all edges: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while retrieving edge {edgeId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Get edge 
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the edge belongs</param>
-        /// <param name="edgeId">The ID whereby to fetch the edge</param>
-        /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
-        /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
-        /// <returns>The edge associated with the given id or origin/destination combo</returns>
-        [HttpGet("GetEdge", Name = "api_get_an_edge")]
-        public async Task<ActionResult<EdgeResponseDto>> GetEdge(
-            long projectId,
-            [FromQuery] long? edgeId,
-            [FromQuery] long? originId,
-            [FromQuery] long? destinationId,
-            [FromQuery] bool hideArchived = true)
+    /// <summary>
+    ///     Get an Edge by Origin and Destination
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="originId">The origin ID of the edge to retrieve</param>
+    /// <param name="destinationId">The destination ID of the edge to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
+    /// <returns>The edge associated with the given origin and destination</returns>
+    [HttpGet("by-relationship", Name = "api_get_edge_by_relationship")]
+    public async Task<ActionResult<EdgeResponseDto>> GetEdgeByRelationship(
+        long organizationId,
+        long projectId,
+        [FromQuery] long originId,
+        [FromQuery] long destinationId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            try
-            {
-                var edge = await _edgeBusiness.GetEdge(projectId, edgeId, originId, destinationId, hideArchived);
-                return Ok(edge);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while retrieving edge: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var edge = await _edgeBusiness.GetEdge(projectId, null, originId, destinationId, hideArchived);
+            return Ok(edge);
         }
-
-        /// <summary>
-        /// Create edge 
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the edge belongs</param>
-        /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
-        /// <param name="edge">The edge request data transfer object containing edge details</param>
-        [HttpPost("CreateEdge", Name = "api_create_an_edge")]
-        public async Task<ActionResult<EdgeResponseDto>> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] CreateEdgeRequestDto edge)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var createdEdge = await _edgeBusiness.CreateEdge(currentUserId, projectId, dataSourceId, edge);
-                return Ok(createdEdge);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while creating edge: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message =
+                $"An error occurred while retrieving edge (origin: {originId}, destination: {destinationId}): {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Create many edges 
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the edge belongs</param>
-        /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
-        /// <param name="edges">List of the edge request data transfer objects containing edge details</param>
-        [HttpPost("BulkCreateEdges", Name = "api_create_many_edges")]
-        public async Task<ActionResult<List<EdgeResponseDto>>> BulkCreateEdges(
-            long projectId,
-            [Required] long dataSourceId,
-            [FromBody] List<CreateEdgeRequestDto> edges)
+    /// <summary>
+    ///     Create an Edge
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+    /// <param name="edge">The edge request data transfer object containing edge details</param>
+    [HttpPost(Name = "api_create_an_edge")]
+    public async Task<ActionResult<EdgeResponseDto>> CreateEdge(
+        long organizationId,
+        long projectId,
+        [FromQuery] [Required] long dataSourceId,
+        [FromBody] CreateEdgeRequestDto edge)
+    {
+        try
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var createdEdge = await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, edges);
-                return Ok(createdEdge);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while creating edges: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var currentUserId = UserContextStorage.UserId;
+            var createdEdge = await _edgeBusiness.CreateEdge(currentUserId, projectId, dataSourceId, edge);
+            return Ok(createdEdge);
         }
-
-        /// <summary>
-        /// Update edge
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the edge belongs.</param>
-        /// <param name="dto">The edge request data transfer object containing updated edge details.</param>
-        /// <param name="edgeId">The ID of the edge to update</param>
-        /// <param name="originId">The origin ID of the edge to update if edgeID is not present.</param>
-        /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
-        /// <returns>The updated edge response DTO with its details</returns>
-        [HttpPut("UpdateEdge", Name = "api_update_an_edge")]
-        public async Task<ActionResult<EdgeResponseDto>> UpdateEdge(
-            long projectId,
-            [FromBody] UpdateEdgeRequestDto dto,
-            [FromQuery] long? edgeId,
-            [FromQuery] long? originId,
-            [FromQuery] long? destinationId)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var updatedEdge = await _edgeBusiness.UpdateEdge(currentUserId, projectId, dto, edgeId, originId, destinationId);
-                return Ok(updatedEdge);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while updating edge: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while creating edge: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Delete edge
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the edge belongs.</param>
-        /// <param name="edgeId">The ID of the edge to delete</param>
-        /// <param name="originId">The origin ID of the edge to delete if edgeID is not present.</param>
-        /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
-        /// <returns>A message stating the edge was successfully deleted.</returns>
-        [HttpDelete("DeleteEdge", Name = "api_delete_an_edge")]
-        public async Task<IActionResult> DeleteEdge(
-            long projectId,
-            [FromQuery] long? edgeId,
-            [FromQuery] long? originId,
-            [FromQuery] long? destinationId,
-            [FromQuery] bool force = false)
+    /// <summary>
+    ///     Bulk Create Edges
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edges belong</param>
+    /// <param name="dataSourceId">The ID of the data source to which the edges belong</param>
+    /// <param name="edges">List of edge request data transfer objects containing edge details</param>
+    [HttpPost("bulk", Name = "api_create_many_edges")]
+    public async Task<ActionResult<List<EdgeResponseDto>>> BulkCreateEdges(
+        long organizationId,
+        long projectId,
+        [FromQuery] [Required] long dataSourceId,
+        [FromBody] List<CreateEdgeRequestDto> edges)
+    {
+        try
         {
-            try
-            {
-                edgeId = await _edgeBusiness.DeleteEdge(projectId, edgeId, originId, destinationId);
-                return Ok(new { message = $"Deleted edge {edgeId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting edge: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var currentUserId = UserContextStorage.UserId;
+            var createdEdges = await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, edges);
+            return Ok(createdEdges);
         }
-
-        /// <summary>
-        /// Archive an edge
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the edge belongs.</param>
-        /// <param name="edgeId">The ID of the edge to archive</param>
-        /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
-        /// <param name="destinationId">The destination ID of the edge to archive if edgeID is not present.</param>
-        /// <returns>A message stating the edge was successfully archived.</returns>
-        [HttpDelete("ArchiveEdge", Name = "api_archive_an_edge")]
-        public async Task<IActionResult> ArchiveEdge(
-            long projectId,
-            [FromQuery] long? edgeId,
-            [FromQuery] long? originId,
-            [FromQuery] long? destinationId)
+        catch (Exception exc)
         {
-            try
+            var message = $"An error occurred while creating edges: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Update an Edge by ID
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="edgeId">The ID of the edge to update</param>
+    /// <param name="dto">The edge request data transfer object containing updated edge details</param>
+    /// <returns>The updated edge response DTO with its details</returns>
+    [HttpPut("{edgeId:long}", Name = "api_update_edge_by_id")]
+    public async Task<ActionResult<EdgeResponseDto>> UpdateEdgeById(
+        long organizationId,
+        long projectId,
+        long edgeId,
+        [FromBody] UpdateEdgeRequestDto dto)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            var updatedEdge = await _edgeBusiness.UpdateEdge(currentUserId, projectId, dto, edgeId, null, null);
+            return Ok(updatedEdge);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while updating edge {edgeId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Update an Edge by Origin and Destination
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="originId">The origin ID of the edge to update</param>
+    /// <param name="destinationId">The destination ID of the edge to update</param>
+    /// <param name="dto">The edge request data transfer object containing updated edge details</param>
+    /// <returns>The updated edge response DTO with its details</returns>
+    [HttpPut("by-relationship", Name = "api_update_edge_by_relationship")]
+    public async Task<ActionResult<EdgeResponseDto>> UpdateEdgeByRelationship(
+        long organizationId,
+        long projectId,
+        [FromQuery] long originId,
+        [FromQuery] long destinationId,
+        [FromBody] UpdateEdgeRequestDto dto)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            var updatedEdge =
+                await _edgeBusiness.UpdateEdge(currentUserId, projectId, dto, null, originId, destinationId);
+            return Ok(updatedEdge);
+        }
+        catch (Exception exc)
+        {
+            var message =
+                $"An error occurred while updating edge (origin: {originId}, destination: {destinationId}): {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Delete an Edge by ID
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="edgeId">The ID of the edge to delete</param>
+    /// <returns>A message stating the edge was successfully deleted.</returns>
+    [HttpDelete("{edgeId:long}", Name = "api_delete_edge_by_id")]
+    public async Task<IActionResult> DeleteEdgeById(
+        long organizationId,
+        long projectId,
+        long edgeId)
+    {
+        try
+        {
+            await _edgeBusiness.DeleteEdge(projectId, edgeId, null, null);
+            return Ok(new { message = $"Deleted edge {edgeId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while deleting edge {edgeId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Delete an Edge by Origin and Destination
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="originId">The origin ID of the edge to delete</param>
+    /// <param name="destinationId">The destination ID of the edge to delete</param>
+    /// <returns>A message stating the edge was successfully deleted.</returns>
+    [HttpDelete("by-relationship", Name = "api_delete_edge_by_relationship")]
+    public async Task<IActionResult> DeleteEdgeByRelationship(
+        long organizationId,
+        long projectId,
+        [FromQuery] long originId,
+        [FromQuery] long destinationId)
+    {
+        try
+        {
+            var edgeId = await _edgeBusiness.DeleteEdge(projectId, null, originId, destinationId);
+            return Ok(new { message = $"Deleted edge {edgeId}" });
+        }
+        catch (Exception exc)
+        {
+            var message =
+                $"An error occurred while deleting edge (origin: {originId}, destination: {destinationId}): {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive an Edge by ID
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="edgeId">The ID of the edge to archive or unarchive</param>
+    /// <param name="archive">True to archive the edge, false to unarchive it.</param>
+    /// <returns>A message stating the edge was successfully archived or unarchived.</returns>
+    [HttpPatch("{edgeId:long}", Name = "api_archive_edge_by_id")]
+    public async Task<IActionResult> ArchiveEdgeById(
+        long organizationId,
+        long projectId,
+        long edgeId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            if (archive)
             {
-                var currentUserId = UserContextStorage.UserId;
-                edgeId = await _edgeBusiness.ArchiveEdge(currentUserId, projectId, edgeId, originId, destinationId);
+                await _edgeBusiness.ArchiveEdge(currentUserId, projectId, edgeId, null, null);
                 return Ok(new { message = $"Archived edge {edgeId}" });
             }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while archiving edge: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
 
-        /// <summary>
-        /// Unarchive an edge
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the edge belongs.</param>
-        /// <param name="edgeId">The ID of the edge to unarchive</param>
-        /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>
-        /// <param name="destinationId">The destination ID of the edge to unarchive if edgeID is not present.</param>
-        /// <returns>A message stating the edge was successfully unarchived.</returns>
-        [HttpPut("UnarchiveEdge", Name = "api_unarchive_an_edge")]
-        public async Task<IActionResult> UnarchiveEdge(
-            long projectId,
-            [FromQuery] long? edgeId,
-            [FromQuery] long? originId,
-            [FromQuery] long? destinationId)
+            await _edgeBusiness.UnarchiveEdge(currentUserId, projectId, edgeId, null, null);
+            return Ok(new { message = $"Unarchived edge {edgeId}" });
+        }
+        catch (Exception exc)
         {
-            try
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} edge {edgeId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive an Edge by Origin and Destination
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="originId">The origin ID of the edge to archive or unarchive</param>
+    /// <param name="destinationId">The destination ID of the edge to archive or unarchive</param>
+    /// <param name="archive">True to archive the edge, false to unarchive it.</param>
+    /// <returns>A message stating the edge was successfully archived or unarchived.</returns>
+    [HttpPatch("by-relationship", Name = "api_archive_edge_by_relationship")]
+    public async Task<IActionResult> ArchiveEdgeByRelationship(
+        long organizationId,
+        long projectId,
+        [FromQuery] long originId,
+        [FromQuery] long destinationId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            long edgeId;
+            if (archive)
             {
-                var currentUserId = UserContextStorage.UserId;
-                edgeId = await _edgeBusiness.UnarchiveEdge(currentUserId, projectId, edgeId, originId, destinationId);
-                return Ok(new { message = $"Unarchived edge {edgeId}" });
+                edgeId = await _edgeBusiness.ArchiveEdge(currentUserId, projectId, null, originId, destinationId);
+                return Ok(new { message = $"Archived edge {edgeId}" });
             }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while unarchiving edge: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+
+            edgeId = await _edgeBusiness.UnarchiveEdge(currentUserId, projectId, null, originId, destinationId);
+            return Ok(new { message = $"Unarchived edge {edgeId}" });
+        }
+        catch (Exception exc)
+        {
+            var action = archive ? "archiving" : "unarchiving";
+            var message =
+                $"An error occurred while {action} edge (origin: {originId}, destination: {destinationId}): {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 }

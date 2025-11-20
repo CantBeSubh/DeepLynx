@@ -1,22 +1,22 @@
-using Microsoft.EntityFrameworkCore;
-using deeplynx.models;
-using deeplynx.interfaces;
+using System.Text.Json;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
-using Microsoft.Extensions.Logging;
-using System.Text.Json;
+using deeplynx.interfaces;
+using deeplynx.models;
 using deeplynx.models.Configuration;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace deeplynx.business;
 
 public class OrganizationBusiness : IOrganizationBusiness
 {
     private readonly DeeplynxContext _context;
-    private readonly ILogger<OrganizationBusiness> _logger;
     private readonly IEventBusiness _eventBusiness;
+    private readonly ILogger<OrganizationBusiness> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="OrganizationBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="OrganizationBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context used for organization CRUD operations.</param>
     /// <param name="eventBusiness">Used for logging events during CRUD operations.</param>
@@ -33,7 +33,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     }
 
     /// <summary>
-    /// Retrieves all organizations
+    ///     Retrieves all organizations
     /// </summary>
     /// <param name="hideArchived">Flag indicating whether to hide archived organizations from the result</param>
     /// <returns>A list of organizations</returns>
@@ -41,27 +41,24 @@ public class OrganizationBusiness : IOrganizationBusiness
     {
         var organizationQuery = _context.Organizations.AsQueryable();
 
-        if (hideArchived)
-        {
-            organizationQuery = organizationQuery.Where(o => !o.IsArchived);
-        }
+        if (hideArchived) organizationQuery = organizationQuery.Where(o => !o.IsArchived);
 
         var organizations = await organizationQuery.ToListAsync();
 
         return organizations
-            .Select(o => new OrganizationResponseDto()
+            .Select(o => new OrganizationResponseDto
             {
                 Id = o.Id,
                 Name = o.Name,
                 Description = o.Description,
                 LastUpdatedAt = o.LastUpdatedAt,
                 LastUpdatedBy = o.LastUpdatedBy,
-                IsArchived = o.IsArchived,
+                IsArchived = o.IsArchived
             });
     }
 
     /// <summary>
-    /// Retrieves a specific organization by ID
+    ///     Retrieves a specific organization by ID
     /// </summary>
     /// <param name="organizationId">The ID by which to retrieve the organization</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived organizations from the result</param>
@@ -74,14 +71,10 @@ public class OrganizationBusiness : IOrganizationBusiness
             .FirstOrDefaultAsync();
 
         if (organization == null)
-        {
             throw new KeyNotFoundException($"Organization with id {organizationId} does not exist");
-        }
 
         if (hideArchived && organization.IsArchived)
-        {
             throw new KeyNotFoundException($"Organization with id {organizationId} is archived");
-        }
 
         return new OrganizationResponseDto
         {
@@ -90,18 +83,19 @@ public class OrganizationBusiness : IOrganizationBusiness
             Description = organization.Description,
             LastUpdatedAt = organization.LastUpdatedAt,
             LastUpdatedBy = organization.LastUpdatedBy,
-            IsArchived = organization.IsArchived,
+            IsArchived = organization.IsArchived
         };
     }
 
     /// <summary>
-    /// Creates a new organization and logs the creation event.
+    ///     Creates a new organization and logs the creation event.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="isDefault">Indicates whether the organization will be made the default</param>
     /// <param name="dto">A data transfer object with details on the organization to be created.</param>
     /// <returns>The created organization.</returns>
-    public async Task<OrganizationResponseDto> CreateOrganization(long currentUserId, CreateOrganizationRequestDto dto, bool isDefault = false)
+    public async Task<OrganizationResponseDto> CreateOrganization(long currentUserId, CreateOrganizationRequestDto dto,
+        bool isDefault = false)
     {
         ValidationHelper.ValidateModel(dto);
         var organization = new Organization
@@ -114,15 +108,12 @@ public class OrganizationBusiness : IOrganizationBusiness
         };
 
         _context.Organizations.Add(organization);
-        
-        if (isDefault)
-        {
-            await MakePreviousDefaultsFalse(organization.Id);
-        }
 
-        
-        SetDefaultPermissions(organization);
-        
+        if (isDefault) await MakePreviousDefaultsFalse(organization.Id);
+
+
+        await SetDefaultPermissions(organization);
+
         await _context.SaveChangesAsync();
 
         // Log create Organization event
@@ -133,7 +124,7 @@ public class OrganizationBusiness : IOrganizationBusiness
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
+            Properties = JsonSerializer.Serialize(new { organization.Name })
         });
 
         return new OrganizationResponseDto
@@ -143,26 +134,25 @@ public class OrganizationBusiness : IOrganizationBusiness
             Description = organization.Description,
             LastUpdatedAt = organization.LastUpdatedAt,
             LastUpdatedBy = organization.LastUpdatedBy,
-            IsArchived = organization.IsArchived,
+            IsArchived = organization.IsArchived
         };
     }
 
     /// <summary>
-    /// Update an organization by ID
+    ///     Update an organization by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to be updated</param>
     /// <param name="dto">A data transfer object with details on the organization to be updated</param>
     /// <returns>The updated organization</returns>
     /// <exception cref="KeyNotFoundException">Returned if organization to update was not found</exception>
-    public async Task<OrganizationResponseDto> UpdateOrganization(long currentUserId, long organizationId, UpdateOrganizationRequestDto dto)
+    public async Task<OrganizationResponseDto> UpdateOrganization(long currentUserId, long organizationId,
+        UpdateOrganizationRequestDto dto)
     {
         var organization = await _context.Organizations.FindAsync(organizationId);
 
         if (organization == null || organization.IsArchived)
-        {
             throw new KeyNotFoundException($"Organization with id {organizationId} does not exist");
-        }
 
         organization.Name = dto.Name ?? organization.Name;
         organization.Description = dto.Description ?? organization.Description;
@@ -172,11 +162,8 @@ public class OrganizationBusiness : IOrganizationBusiness
 
         _context.Organizations.Update(organization);
 
-        if (dto.DefaultOrg != null && dto.DefaultOrg == true)
-        {
-            await MakePreviousDefaultsFalse(organization.Id);
-        }
-        
+        if (dto.DefaultOrg != null && dto.DefaultOrg == true) await MakePreviousDefaultsFalse(organization.Id);
+
         await _context.SaveChangesAsync();
 
         // log update Organization event
@@ -187,7 +174,7 @@ public class OrganizationBusiness : IOrganizationBusiness
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
+            Properties = JsonSerializer.Serialize(new { organization.Name })
         });
 
         return new OrganizationResponseDto
@@ -197,12 +184,12 @@ public class OrganizationBusiness : IOrganizationBusiness
             Description = organization.Description,
             LastUpdatedAt = organization.LastUpdatedAt,
             LastUpdatedBy = organization.LastUpdatedBy,
-            IsArchived = organization.IsArchived,
+            IsArchived = organization.IsArchived
         };
     }
 
     /// <summary>
-    /// Archive a specific organization by ID
+    ///     Archive a specific organization by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to archive</param>
@@ -230,14 +217,14 @@ public class OrganizationBusiness : IOrganizationBusiness
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
+            Properties = JsonSerializer.Serialize(new { organization.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// Unarchive a specific organization by ID
+    ///     Unarchive a specific organization by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization to unarchive</param>
@@ -264,14 +251,14 @@ public class OrganizationBusiness : IOrganizationBusiness
             EntityType = "organization",
             EntityId = organization.Id,
             EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
+            Properties = JsonSerializer.Serialize(new { organization.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// Delete a specific organization by ID
+    ///     Delete a specific organization by ID
     /// </summary>
     /// <param name="organizationId">The ID of the organization to delete</param>
     /// <returns>Boolean true on successful deletion</returns>
@@ -290,7 +277,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     }
 
     /// <summary>
-    /// Add a user to an Organization
+    ///     Add a user to an Organization
     /// </summary>
     /// <param name="organizationId">The ID of the org to add the user to</param>
     /// <param name="userId">The ID of the user to add</param>
@@ -319,7 +306,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         {
             OrganizationId = organizationId,
             UserId = userId,
-            IsOrgAdmin = isAdmin,
+            IsOrgAdmin = isAdmin
         };
 
         _context.OrganizationUsers.Add(orgUser);
@@ -329,7 +316,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     }
 
     /// <summary>
-    /// Update a user's permissions within an Organization
+    ///     Update a user's permissions within an Organization
     /// </summary>
     /// <param name="organizationId">ID of org in which to adjust user perms</param>
     /// <param name="userId">ID of user to adjust</param>
@@ -354,7 +341,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     }
 
     /// <summary>
-    /// Remove a user from an organization
+    ///     Remove a user from an organization
     /// </summary>
     /// <param name="organizationId">ID of organization</param>
     /// <param name="userId">ID of user</param>
@@ -377,38 +364,44 @@ public class OrganizationBusiness : IOrganizationBusiness
 
     private async Task MakePreviousDefaultsFalse(long defaultOrganizationId)
     {
-        var previousDefaults = 
+        var previousDefaults =
             await _context.Organizations
                 .Where(o => o.DefaultOrg && o.Id != defaultOrganizationId)
                 .ToListAsync();
 
         if (previousDefaults.Count > 0)
-        {
             foreach (var defaultOrg in previousDefaults)
             {
                 defaultOrg.DefaultOrg = false;
                 _context.Organizations.Update(defaultOrg);
             }
-        }
     }
-    
-    
-    private void SetDefaultPermissions(Organization organization)
+
+    private async Task SetDefaultPermissions(Organization organization)
     {
         var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
 
         foreach (var defaultPermission in defaultPermissions)
         {
-            var permission = new Permission
+            // Check if this permission already exists for this organization
+            var existingPermission = await _context.Permissions
+                .FirstOrDefaultAsync(p =>
+                    p.Resource == defaultPermission.Resource &&
+                    p.Action == defaultPermission.Action);
+
+            // Only add if it doesn't exist
+            if (existingPermission == null)
             {
-                Name = defaultPermission.Name,
-                Resource = defaultPermission.Resource,
-                Action = defaultPermission.Action,
-                Description = defaultPermission.Description,
-                Organization = organization,
-                IsDefault = true
-            };
-            _context.Permissions.Add(permission);
+                var permission = new Permission
+                {
+                    Name = defaultPermission.Name,
+                    Resource = defaultPermission.Resource,
+                    Action = defaultPermission.Action,
+                    Description = defaultPermission.Description,
+                    IsDefault = true
+                };
+                _context.Permissions.Add(permission);
+            }
         }
     }
 }

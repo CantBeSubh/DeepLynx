@@ -2426,6 +2426,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Role", "Role")
                         .WithMany("ProjectMembers")
                         .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("project_members_role_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
@@ -2571,6 +2572,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
                         .WithMany("SavedSearches")
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("saved_searches_user_id_fkey");
 
                     b.Navigation("User");

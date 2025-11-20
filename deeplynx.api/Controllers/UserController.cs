@@ -1,325 +1,253 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers
+namespace deeplynx.api.Controllers;
+
+[ApiController]
+[Route("users")]
+[Authorize]
+public class UserController : ControllerBase
 {
-    [ApiController]
-    [Route("users")]
-    [Authorize]
-    public class UserController : ControllerBase
+    private readonly ILogger<UserController> _logger;
+    private readonly IUserBusiness _userBusiness;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="UserController" /> class
+    /// </summary>
+    /// <param name="userBusiness">The business logic interface for handling user operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public UserController(IUserBusiness userBusiness, ILogger<UserController> logger)
     {
-        private readonly IUserBusiness _userBusiness;
-        private readonly ILogger<UserController> _logger;
+        _userBusiness = userBusiness;
+        _logger = logger;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="UserController"/> class
-        /// </summary>
-        /// <param name="userBusiness">The business logic interface for handling user operations.</param>
-        /// <param name="logger">Error/Info logging interface for database log table.</param>
-        public UserController(IUserBusiness userBusiness, ILogger<UserController> logger)
+    /// <summary>
+    ///     Get all users
+    /// </summary>
+    /// <param name="projectId">(Optional) ID of project that users are associated with</param>
+    /// <param name="organizationId">(Optional) ID of organization that users are associated with</param>
+    /// <returns>List of user response DTOs</returns>
+    [HttpGet(Name = "api_get_all_users")]
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(
+        [FromQuery] long? projectId,
+        [FromQuery] long? organizationId)
+    {
+        try
         {
-            _userBusiness = userBusiness;
-            _logger = logger;
+            var users = await _userBusiness.GetAllUsers(projectId, organizationId);
+            return Ok(users);
         }
-
-        /// <summary>
-        /// Get all users
-        /// </summary>
-        /// <param name="projectId">(Optional) ID of project that users are associated with</param>
-        /// <param name="organizationId">(Optional) ID of organization that users are associated with</param>
-        /// <returns>List of user response DTOs</returns>
-        [HttpGet("GetAllUsers", Name = "api_get_all_users")]
-        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(
-            [FromQuery] long? projectId,
-            [FromQuery] long? organizationId)
+        catch (Exception exc)
         {
-            try
-            {
-                var users = await _userBusiness.GetAllUsers(projectId, organizationId);
-                return Ok(users);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while fetching all users.: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-
+            var message = $"An unexpected error occurred while fetching all users.: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Get a user
-        /// </summary>
-        /// <param name="userId">ID of user</param>
-        /// <returns>User response DTO</returns>
-        [HttpGet("GetUser/{userId}", Name = "api_get_a_user")]
-        public async Task<ActionResult<UserResponseDto>> GetUser(long userId)
+    /// <summary>
+    ///     Get a user
+    /// </summary>
+    /// <param name="userId">ID of user</param>
+    /// <returns>User response DTO</returns>
+    [HttpGet("{userId}", Name = "api_get_a_user")]
+    public async Task<ActionResult<UserResponseDto>> GetUser(long userId)
+    {
+        try
         {
-            try
-            {
-                var user = await _userBusiness.GetUser(userId);
-                return Ok(user);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while fetching user {userId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var user = await _userBusiness.GetUser(userId);
+            return Ok(user);
         }
-
-        /// <summary>
-        /// Get the local development user
-        /// </summary>
-        /// <returns>User response DTO with the local dev user info</returns>
-        [HttpGet("GetLocalDevUser", Name = "api_get_local_dev_user")]
-        public async Task<ActionResult<UserResponseDto>> GetLocalDevUser()
+        catch (Exception exc)
         {
-            try
-            {
-                var user = await _userBusiness.GetLocalDevUser();
-                return Ok(user);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while fetching local dev user: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-
+            var message = $"An unexpected error occurred while fetching user {userId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Create a user
-        /// </summary>
-        /// <param name="dto">User request DTO</param>
-        /// <returns>User response DTO</returns>
-        [HttpPost("CreateUser", Name = "api_create_a_user")]
-        public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] CreateUserRequestDto dto)
+    /// <summary>
+    ///     Get the local development user
+    /// </summary>
+    /// <returns>User response DTO with the local dev user info</returns>
+    [HttpGet("superuser", Name = "api_get_local_dev_user")]
+    public async Task<ActionResult<UserResponseDto>> GetLocalDevUser()
+    {
+        try
         {
-            try
-            {
-                var newUser = await _userBusiness.CreateUser(dto);
-                return Ok(newUser);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while creating this user.: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var user = await _userBusiness.GetLocalDevUser();
+            return Ok(user);
         }
-
-        /// <summary>
-        /// Update a user
-        /// </summary>
-        /// /// <param name="userId">ID of user</param>
-        /// <param name="dto">User request DTO</param>
-        /// <returns>User response DTO</returns>
-        [HttpPut("UpdateUser/{userId}", Name = "api_update_a_user")]
-        public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UpdateUserRequestDto dto)
+        catch (Exception exc)
         {
-            try
-            {
-                var updatedUser = await _userBusiness.UpdateUser(userId, dto);
-                return Ok(updatedUser);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while updating this user {userId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while fetching local dev user: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Deletes a user
-        /// </summary>
-        /// <param name="userId">The ID of the user to delete.</param>
-        /// <returns>A message stating the user was successfully deleted.</returns>
-        [HttpDelete("DeleteUser/{userId}", Name = "api_delete_a_user")]
-        public async Task<IActionResult> DeleteUser(long userId)
+    /// <summary>
+    ///     Create a user
+    /// </summary>
+    /// <param name="dto">User request DTO</param>
+    /// <returns>User response DTO</returns>
+    [HttpPost(Name = "api_create_a_user")]
+    public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] CreateUserRequestDto dto)
+    {
+        try
         {
-            try
-            {
-                await _userBusiness.DeleteUser(userId);
-                return Ok(new { message = $"Deleted user {userId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting user {userId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var newUser = await _userBusiness.CreateUser(dto);
+            return Ok(newUser);
         }
-
-        /// <summary>
-        /// Archive a user
-        /// </summary>
-        /// <param name="userId">The ID of the user to archive.</param>
-        /// <returns>A message stating the user was successfully archived.</returns>
-        [HttpDelete("ArchiveUser/{userId}", Name = "api_archive_a_user")]
-        public async Task<IActionResult> ArchiveUser(long userId)
+        catch (Exception exc)
         {
-            try
+            var message = $"An unexpected error occurred while creating this user.: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Update a user
+    /// </summary>
+    /// ///
+    /// <param name="userId">ID of user</param>
+    /// <param name="dto">User request DTO</param>
+    /// <returns>User response DTO</returns>
+    [HttpPut("{userId}", Name = "api_update_a_user")]
+    public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UpdateUserRequestDto dto)
+    {
+        try
+        {
+            var updatedUser = await _userBusiness.UpdateUser(userId, dto);
+            return Ok(updatedUser);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An unexpected error occurred while updating this user {userId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Deletes a user
+    /// </summary>
+    /// <param name="userId">The ID of the user to delete.</param>
+    /// <returns>A message stating the user was successfully deleted.</returns>
+    [HttpDelete("{userId}", Name = "api_delete_a_user")]
+    public async Task<IActionResult> DeleteUser(long userId)
+    {
+        try
+        {
+            await _userBusiness.DeleteUser(userId);
+            return Ok(new { message = $"Deleted user {userId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while deleting user {userId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive an User
+    /// </summary>
+    /// <param name="userId">The ID of the user</param>
+    /// <param name="archive">True to archive the user, false to unarchive it.</param>
+    /// <returns>A message stating the user was successfully archived or unarchived.</returns>
+    [HttpPatch("{userId}", Name = "api_archive_user")]
+    public async Task<IActionResult> ArchiveUser(
+        long userId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            if (archive)
             {
                 await _userBusiness.ArchiveUser(userId);
                 return Ok(new { message = $"Archived user {userId}" });
             }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while archiving user {userId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+
+            await _userBusiness.UnarchiveUser(userId);
+            return Ok(new { message = $"Unarchived user {userId}" });
         }
-
-        /// <summary>
-        /// Grant System Admin Rights
-        /// </summary>
-        /// <param name="candidateId">ID of user to grant the sysadmin rights to </param>
-        /// <returns>User response DTO</returns>
-        [HttpGet("SetSysAdmin/{candidateID}", Name = "api_set_sys_admin")]
-        public async Task<ActionResult<UserResponseDto>> SetSysAdmin(long candidateId)
+        catch (Exception exc)
         {
-            try
-            {
-                // get the authorizer ID from the middleware context
-                var authorizerId = UserContextStorage.UserId;
-                var granted = await _userBusiness.SetSysAdmin(authorizerId, candidateId);
-                return Ok(new { message = $"Granted sysadmin rights to user {candidateId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while setting user {candidateId} as admin: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} user {userId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Get data overview for user
-        /// </summary>
-        /// <param name="userId">ID of user</param>
-        /// <returns>Data overview DTO</returns>
-        [HttpGet("GetDataOverview/{userId}", Name = "api_get_a_user_overview")]
-        public async Task<ActionResult<DataOverviewDto>> GetDataOverview(long userId)
+    /// <summary>
+    ///     Grant System Admin Rights
+    /// </summary>
+    /// <param name="userId">ID of user to grant the sysadmin rights to </param>
+    /// <returns>User response DTO</returns>
+    [HttpPatch("{userId}/admin", Name = "api_set_sys_admin")]
+    public async Task<ActionResult<UserResponseDto>> SetSysAdmin(long userId)
+    {
+        try
         {
-            try
-            {
-                var user = await _userBusiness.GetUserOverview(userId);
-                return Ok(user);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while fetching user {userId} data overview: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-
+            // get the authorizer ID from the middleware context
+            var authorizerId = UserContextStorage.UserId;
+            var granted = await _userBusiness.SetSysAdmin(authorizerId, userId);
+            return Ok(new { message = $"Granted sysadmin rights to user {userId}" });
         }
-
-        /// <summary>
-        /// Unarchive a user
-        /// </summary>
-        /// <param name="userId">The ID of the user to unarchive.</param>
-        /// <returns>A message stating the user was successfully unarchived.</returns>
-        [HttpPut("UnarchiveUser/{userId}", Name = "api_unarchive_a_user")]
-        public async Task<IActionResult> UnarchiveUser(long userId)
+        catch (Exception exc)
         {
-            try
-            {
-                await _userBusiness.UnarchiveUser(userId);
-                return Ok(new { message = $"Unarchived user {userId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while unarchiving user {userId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An unexpected error occurred while setting user {userId} as admin: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Get recent records
-        /// </summary>
-        /// <param name="projectId">Array of project ids</param>
-        /// <returns>List of record response DTOs sorted by most recent</returns>
-        [HttpGet("GetRecentlyAddedRecords", Name = "api_get_recent_records")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords([FromQuery] long[] projectId)
+    /// <summary>
+    ///     Get data overview for user
+    /// </summary>
+    /// <param name="userId">ID of user</param>
+    /// <returns>Data overview DTO</returns>
+    [HttpGet("{userId}/overview", Name = "api_get_a_user_overview")]
+    public async Task<ActionResult<DataOverviewDto>> GetDataOverview(long userId)
+    {
+        try
         {
-            try
-            {
-                var records = await _userBusiness.GetRecentlyAddedRecords(projectId);
-                return Ok(records);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while listing historical records: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var user = await _userBusiness.GetUserOverview(userId);
+            return Ok(user);
         }
-
-        /// <summary>
-        /// Get the current authenticated user
-        /// </summary>
-        /// <returns>User response DTO</returns>
-        [HttpGet("GetCurrentUser", Name = "api_get_current_user")]
-        public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
+        catch (Exception exc)
         {
-            try
-            {
-                // Try multiple claim types since different auth providers use different claims
-                // First try the Okta UID claim
-                var ssoId = User.FindFirst("uid")?.Value;
+            var message = $"An unexpected error occurred while fetching user {userId} data overview: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
-                // If not found, try the standard subject claim
-                if (string.IsNullOrEmpty(ssoId))
-                {
-                    ssoId = User.FindFirst("sub")?.Value;
-                }
-
-                // If still not found, try using email as fallback
-                if (string.IsNullOrEmpty(ssoId))
-                {
-                    var email = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
-                    if (!string.IsNullOrEmpty(email))
-                    {
-                        // Get user by email instead
-                        var userByEmail = await _userBusiness.GetUserByEmail(email);
-                        if (userByEmail == null)
-                        {
-                            return NotFound($"User with email {email} not found");
-                        }
-                        return Ok(userByEmail);
-                    }
-                }
-
-                if (string.IsNullOrEmpty(ssoId))
-                {
-                    return Unauthorized("Unable to identify user from token");
-                }
-
-                // Get user by SSO ID
-                var user = await _userBusiness.GetUserBySsoId(ssoId);
-
-                if (user == null)
-                {
-                    return NotFound($"User with SSO ID {ssoId} not found");
-                }
-
-                return Ok(user);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while fetching current user: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+    /// <summary>
+    ///     Get the current authenticated user
+    /// </summary>
+    /// <returns>User response DTO</returns>
+    [HttpGet("current", Name = "api_get_current_user")]
+    public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
+    {
+        try
+        {
+            var userId = UserContextStorage.UserId;
+            var user = await _userBusiness.GetUser(userId);
+            return Ok(user);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An unexpected error occurred while fetching current user: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 }

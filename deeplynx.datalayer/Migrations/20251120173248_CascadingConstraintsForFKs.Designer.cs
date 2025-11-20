@@ -12,7 +12,7 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20251117232346_CascadingConstraintsForFKs")]
+    [Migration("20251120173248_CascadingConstraintsForFKs")]
     partial class CascadingConstraintsForFKs
     {
         /// <inheritdoc />
@@ -1392,7 +1392,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OrganizationId")
+                    b.Property<long>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
@@ -1406,17 +1406,21 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_roles_last_updated_by");
 
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_organization_role_name")
+                        .HasFilter("project_id IS NULL");
+
+                    b.HasIndex("OrganizationId", "ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_project_role_name")
+                        .HasFilter("project_id IS NOT NULL");
+
                     b.HasIndex(new[] { "Id" }, "idx_roles_id");
 
                     b.HasIndex(new[] { "OrganizationId" }, "idx_roles_organization_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_roles_project_id");
-
-                    b.HasIndex(new[] { "OrganizationId", "Name" }, "unique_organization_role_name")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_project_role_name")
-                        .IsUnique();
 
                     b.ToTable("roles", "deeplynx");
                 });
@@ -2154,6 +2158,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Role", "Role")
                         .WithMany("ProjectMembers")
                         .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("project_members_role_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
@@ -2260,6 +2265,7 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Roles")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("roles_organization_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
@@ -2280,6 +2286,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
                         .WithMany("SavedSearches")
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("saved_searches_user_id_fkey");
 
                     b.Navigation("User");
