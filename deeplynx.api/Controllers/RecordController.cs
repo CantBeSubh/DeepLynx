@@ -18,6 +18,7 @@ namespace deeplynx.api.Controllers;
 public class RecordController : ControllerBase
 {
     private readonly IRecordBusiness _recordBusiness;
+    private readonly IGraphBusiness _graphBusiness;
     private readonly ILogger<RecordController> _logger;
 
     /// <summary>
@@ -25,9 +26,10 @@ public class RecordController : ControllerBase
     /// </summary>
     /// <param name="recordBusiness">The business logic interface for handling record operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public RecordController(IRecordBusiness recordBusiness, ILogger<RecordController> logger)
+    public RecordController(IRecordBusiness recordBusiness, IGraphBusiness graphBusiness, ILogger<RecordController> logger)
     {
         _recordBusiness = recordBusiness;
+        _graphBusiness = graphBusiness;
         _logger = logger;
     }
 
@@ -317,6 +319,68 @@ public class RecordController : ControllerBase
         catch (Exception exc)
         {
             var message = $"An error occurred while unattaching tag {tagId} from record {recordId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Get Edges by Record
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
+    /// <param name="recordId">The ID of the record by which to filter edges</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
+    /// <param name="isOrigin">Indicates whether to find where recordId is origin or not</param>
+    /// <param name="page">Indicates the page number for pagination</param>
+    /// <param name="pageSize">Indicates the page size for pagination</param>
+    /// <returns>A list of related records based on edges.</returns>
+    [HttpGet("{recordId}/edges", Name = "api_get_edges_by_record")]
+    public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
+        long organizationId,
+        long projectId,
+        long recordId,
+        [FromQuery] bool isOrigin,
+        [FromQuery] int page,
+        [FromQuery] bool hideArchived = true,
+        [FromQuery] int pageSize = 20)
+    {
+        try
+        {
+            var edges = await _graphBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize);
+            return Ok(edges);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing edges by record: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Get Graph Data for Record
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
+    /// <param name="recordId">The ID of the record for which to retrieve graph data</param>
+    /// <param name="depth">The number of levels you want to search through</param>
+    /// <returns>Graph data including nodes and edges.</returns>
+    [HttpGet("{recordId}/graph", Name = "api_get_graph_data_for_record")]
+    public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
+        long organizationId,
+        long projectId,
+        long recordId,
+        [FromQuery] int depth)
+    {
+        try
+        {
+            var edges = await _graphBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth);
+            return Ok(edges);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while retrieving graph data: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

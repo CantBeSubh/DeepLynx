@@ -61,70 +61,6 @@ public class EdgeController : ControllerBase
     }
 
     /// <summary>
-    ///     Get Edges by Record
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the record belongs</param>
-    /// <param name="recordId">The ID of the record by which to filter edges</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
-    /// <param name="isOrigin">Indicates whether to find where recordId is origin or not</param>
-    /// <param name="page">Indicates the page number for pagination</param>
-    /// <param name="pageSize">Indicates the page size for pagination</param>
-    /// <returns>A list of related records based on edges.</returns>
-    // TODO: move to RecordController?
-    [HttpGet("records/{recordId}", Name = "api_get_edges_by_record")]
-    public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
-        long organizationId,
-        long projectId,
-        long recordId,
-        [FromQuery] bool isOrigin,
-        [FromQuery] int page,
-        [FromQuery] bool hideArchived = true,
-        [FromQuery] int pageSize = 20)
-    {
-        try
-        {
-            var edges = await _edgeBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize);
-            return Ok(edges);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while listing edges by record: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Get Graph Data for Record
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the record belongs</param>
-    /// <param name="recordId">The ID of the record for which to retrieve graph data</param>
-    /// <param name="depth">The number of levels you want to search through</param>
-    /// <returns>Graph data including nodes and edges.</returns>
-    // TODO: move to RecordController?
-    [HttpGet("graph/{recordId}", Name = "api_get_graph_data_for_record")]
-    public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
-        long organizationId,
-        long projectId,
-        long recordId,
-        [FromQuery] int depth)
-    {
-        try
-        {
-            var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth);
-            return Ok(edges);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while retrieving graph data: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
     ///     Get an Edge by ID
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
@@ -176,7 +112,8 @@ public class EdgeController : ControllerBase
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while retrieving edge (origin: {originId}, destination: {destinationId}): {exc}";
+            var message =
+                $"An error occurred while retrieving edge (origin: {originId}, destination: {destinationId}): {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -287,12 +224,14 @@ public class EdgeController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var updatedEdge = await _edgeBusiness.UpdateEdge(currentUserId, projectId, dto, null, originId, destinationId);
+            var updatedEdge =
+                await _edgeBusiness.UpdateEdge(currentUserId, projectId, dto, null, originId, destinationId);
             return Ok(updatedEdge);
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while updating edge (origin: {originId}, destination: {destinationId}): {exc}";
+            var message =
+                $"An error occurred while updating edge (origin: {originId}, destination: {destinationId}): {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -346,7 +285,8 @@ public class EdgeController : ControllerBase
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting edge (origin: {originId}, destination: {destinationId}): {exc}";
+            var message =
+                $"An error occurred while deleting edge (origin: {originId}, destination: {destinationId}): {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -421,7 +361,8 @@ public class EdgeController : ControllerBase
         catch (Exception exc)
         {
             var action = archive ? "archiving" : "unarchiving";
-            var message = $"An error occurred while {action} edge (origin: {originId}, destination: {destinationId}): {exc}";
+            var message =
+                $"An error occurred while {action} edge (origin: {originId}, destination: {destinationId}): {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
