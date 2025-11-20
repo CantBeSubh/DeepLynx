@@ -214,9 +214,10 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     #region CreateSensitivityLabel Tests
 
     [Fact]
-    public async Task CreateSensitivityLabel_Success_ReturnsLabel()
+    public async Task CreateSensitivityLabel_Success_ReturnsCorrectValues()
     {
         // Arrange
+            var now = DateTime.UtcNow;
         var dto = new CreateSensitivityLabelRequestDto
         {
             Name = "New Test Label",
@@ -231,7 +232,10 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
         Assert.Equal(dto.Name, result.Name);
         Assert.Equal(dto.Description, result.Description);
         Assert.Equal(pid, result.ProjectId);
+            Assert.Null(result.OrganizationId);
         Assert.False(result.IsArchived);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
         // verify label was actually created in database
         var createdLabel = await Context.SensitivityLabels.FindAsync(result.Id);
@@ -400,6 +404,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     public async Task UpdateSensitivityLabel_Success_ReturnsLabel()
     {
         // Arrange
+            var now = DateTime.UtcNow;
         var dto = new UpdateSensitivityLabelRequestDto
         {
             Name = "Updated Label",
@@ -412,8 +417,13 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         Assert.Equal(lid, result.Id);
+        Assert.False(result.IsArchived);
         Assert.Equal("Updated Label", result.Name);
         Assert.Equal("Updated description", result.Description);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.Null(result.OrganizationId);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually saved to DB
         var savedLabel = await Context.SensitivityLabels.FindAsync(lid);
@@ -510,6 +520,9 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     [Fact]
     public async Task ArchiveSensitivityLabel_Succeeds_IfNotArchived()
     {
+        // Arrange
+        var now =  DateTime.UtcNow;
+            
         // Act
         var result = await _labelBusiness.ArchiveSensitivityLabel(uid, lid);
 
@@ -520,6 +533,13 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
         var savedLabel = await Context.SensitivityLabels.FindAsync(lid);
         Assert.NotNull(savedLabel);
         Assert.True(savedLabel.IsArchived);
+        Assert.Equal("Test Label", savedLabel.Name);
+        Assert.Equal("Test label for unit tests", savedLabel.Description);
+        Assert.Equal(pid, savedLabel.ProjectId);
+        Assert.Null(savedLabel.OrganizationId);
+        Assert.True(savedLabel.LastUpdatedAt >= now);
+        Assert.Equal(uid, savedLabel.LastUpdatedBy);
+            
 
         // Ensure that the SensitivityLabel archive event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -569,6 +589,9 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnarchiveSensitivityLabel_Succeeds_IfArchived()
     {
+        //Arrange
+        var now = DateTime.UtcNow;
+            
         // Act
         var result = await _labelBusiness.UnarchiveSensitivityLabel(uid, lid2);
 
@@ -579,6 +602,12 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
         var savedLabel = await Context.SensitivityLabels.FindAsync(lid2);
         Assert.NotNull(savedLabel);
         Assert.False(savedLabel.IsArchived);
+        Assert.Equal("Archived Label", savedLabel.Name);
+        Assert.Equal("Archived label for tests", savedLabel.Description);
+        Assert.Equal(pid, savedLabel.ProjectId);
+        Assert.Null(savedLabel.OrganizationId);
+        Assert.True(savedLabel.LastUpdatedAt >= now);
+        Assert.Equal(uid, savedLabel.LastUpdatedBy);
 
         // Ensure that the SensitivityLabel unarchive event was logged
         var eventList = await Context.Events.ToListAsync();

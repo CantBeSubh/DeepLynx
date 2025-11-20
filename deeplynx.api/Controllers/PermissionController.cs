@@ -5,8 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
+/// <summary>
+///     Controller for managing permissions.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints to create, update, delete, and retrieve permission information.
+/// </remarks>
 [ApiController]
-[Route("permissions")]
+[Route("organizations/{organizationId}/projects/{projectId}/permissions")]
 public class PermissionController : ControllerBase
 {
     private readonly ILogger<PermissionController> _logger;
@@ -22,26 +28,37 @@ public class PermissionController : ControllerBase
         _permissionBusiness = permissionBusiness;
         _logger = logger;
     }
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PermissionController" /> class
+    /// </summary>
+    /// <param name="permissionBusiness">The business logic interface for handling Permission operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public PermissionController(IPermissionBusiness permissionBusiness, ILogger<PermissionController> logger)
+    {
+        _permissionBusiness = permissionBusiness;
+        _logger = logger;
+    }
 
     /// <summary>
-    ///     List Permissions
+    ///     Get All Permissions
     /// </summary>
-    /// <param name="organizationId">(Required) ID of an organization to filter by</param>
-    /// <param name="labelId">(optional) ID of a sensitivity label to filter by</param>
-    /// <param name="projectId">(optional) ID of a project to filter by</param>
-    /// <param name="hideArchived">Flag indicating whether to hide or show archived permissions</param>
-    /// <returns></returns>
-    [HttpGet("GetAllPermissions", Name = "api_get_all_permissions")]
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project whose permissions are to be retrieved</param>
+    /// <param name="labelId">Optional sensitivity label ID to filter permissions</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
+    /// <returns>A list of permissions for the given organization/project.</returns>
+    [HttpGet(Name = "api_get_all_permissions")]
     public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetAllPermissions(
-        [FromQuery] long organizationId,
+        long organizationId,
+        long projectId,
         [FromQuery] long? labelId = null,
-        [FromQuery] long? projectId = null,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
             var permissions =
-                await _permissionBusiness.GetAllPermissions(labelId, projectId, organizationId, hideArchived);
+                await _permissionBusiness.GetAllPermissions(labelId, null, organizationId,
+                    hideArchived); //setting project ID null for now to circumvent xor logic
             return Ok(permissions);
         }
         catch (Exception exc)
@@ -53,14 +70,19 @@ public class PermissionController : ControllerBase
     }
 
     /// <summary>
-    ///     Fetch Permission by ID
+    ///     Get a Permission
     /// </summary>
-    /// <param name="permissionId">ID of permission</param>
-    /// <param name="hideArchived">Flag indicating whether to hide or show archived permissions</param>
-    /// <returns></returns>
-    [HttpGet("GetPermission/{permissionId}", Name = "api_get_permission")]
+    /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
+    /// <param name="projectId">The ID of the project to which the permission belongs</param>
+    /// <param name="permissionId">The ID of the permission to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
+    /// <returns>The permission associated with the given ID</returns>
+    [HttpGet("{permissionId}", Name = "api_get_permission")]
     public async Task<ActionResult<PermissionResponseDto>> GetPermission(
-        long permissionId, [FromQuery] bool hideArchived = true)
+        long organizationId,
+        long projectId,
+        long permissionId,
+        [FromQuery] bool hideArchived = true)
     {
         try
         {
@@ -78,20 +100,22 @@ public class PermissionController : ControllerBase
     /// <summary>
     ///     Create a Permission
     /// </summary>
-    /// <param name="dto">Data structure of permission to create</param>
-    /// <param name="projectId">(use this or org ID) ID of the project to which the permission belongs</param>
-    /// <param name="organizationId">(use this or org ID) ID of the organization to which the permission belongs</param>
-    /// <returns></returns>
-    [HttpPost("CreatePermission", Name = "api_create_permission")]
+    /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
+    /// <param name="projectId">The ID of the project to which the permission belongs</param>
+    /// <param name="dto">The data transfer object containing permission details</param>
+    /// <returns>The created permission</returns>
+    [HttpPost(Name = "api_create_permission")]
     public async Task<ActionResult<PermissionResponseDto>> CreatePermission(
-        [FromQuery] long organizationId,
-        [FromBody] CreatePermissionRequestDto dto,
-        [FromQuery] long? projectId = null)
+        long organizationId,
+        long projectId,
+        [FromBody] CreatePermissionRequestDto dto)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var permission = await _permissionBusiness.CreatePermission(currentUserId, dto, projectId, organizationId);
+            var permission =
+                await _permissionBusiness.CreatePermission(currentUserId, dto, null,
+                    organizationId); //setting project ID null for now to circumvent xor logic
             return Ok(permission);
         }
         catch (Exception exc)
@@ -105,11 +129,15 @@ public class PermissionController : ControllerBase
     /// <summary>
     ///     Update a Permission
     /// </summary>
-    /// <param name="permissionId">ID of the permission</param>
-    /// <param name="dto">Fields to update</param>
-    /// <returns></returns>
-    [HttpPut("UpdatePermission/{permissionId}", Name = "api_update_permission")]
+    /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
+    /// <param name="projectId">The ID of the project to which the permission belongs</param>
+    /// <param name="permissionId">The ID of the permission to update</param>
+    /// <param name="dto">The data transfer object containing updated permission details</param>
+    /// <returns>The updated permission</returns>
+    [HttpPut("{permissionId}", Name = "api_update_permission")]
     public async Task<ActionResult<PermissionResponseDto>> UpdatePermission(
+        long organizationId,
+        long projectId,
         long permissionId,
         [FromBody] UpdatePermissionRequestDto dto)
     {
@@ -128,12 +156,17 @@ public class PermissionController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a permission
+    ///     Delete a Permission
     /// </summary>
-    /// <param name="permissionId">ID of the permission to hard delete</param>
-    /// <returns></returns>
-    [HttpDelete("DeletePermission/{permissionId}", Name = "api_delete_permission")]
-    public async Task<ActionResult> DeletePermission(long permissionId)
+    /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
+    /// <param name="projectId">The ID of the project to which the permission belongs</param>
+    /// <param name="permissionId">The ID of the permission to delete</param>
+    /// <returns>A message stating the permission was successfully deleted.</returns>
+    [HttpDelete("{permissionId}", Name = "api_delete_permission")]
+    public async Task<ActionResult> DeletePermission(
+        long organizationId,
+        long projectId,
+        long permissionId)
     {
         try
         {
@@ -150,44 +183,36 @@ public class PermissionController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive a permission
+    ///     Archive or Unarchive a Permission
     /// </summary>
-    /// <param name="permissionId">ID of the permission</param>
-    /// <returns></returns>
-    [HttpDelete("ArchivePermission/{permissionId}", Name = "api_archive_permission")]
-    public async Task<ActionResult> ArchivePermission(long permissionId)
+    /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
+    /// <param name="projectId">The ID of the project to which the permission belongs</param>
+    /// <param name="permissionId">The ID of the permission to archive or unarchive</param>
+    /// <param name="archive">True to archive the permission, false to unarchive it.</param>
+    /// <returns>A message stating the permission was successfully archived or unarchived.</returns>
+    [HttpPatch("{permissionId}", Name = "api_archive_permission")]
+    public async Task<IActionResult> ArchivePermission(
+        long organizationId,
+        long projectId,
+        long permissionId,
+        [FromQuery] bool archive)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            await _permissionBusiness.ArchivePermission(currentUserId, permissionId);
-            return Ok(new { message = $"Archived permission {permissionId}" });
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while archiving permission {permissionId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
+            if (archive)
+            {
+                await _permissionBusiness.ArchivePermission(currentUserId, permissionId);
+                return Ok(new { message = $"Archived permission {permissionId}" });
+            }
 
-    /// <summary>
-    ///     Unarchive a Permission
-    /// </summary>
-    /// <param name="permissionId">ID of the permission</param>
-    /// <returns></returns>
-    [HttpPut("UnarchivePermission/{permissionId}", Name = "api_unarchive_permission")]
-    public async Task<ActionResult> UnarchivePermission(long permissionId)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
             await _permissionBusiness.UnarchivePermission(currentUserId, permissionId);
             return Ok(new { message = $"Unarchived permission {permissionId}" });
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while unarchiving permission {permissionId}: {exc}";
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} permission {permissionId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

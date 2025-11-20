@@ -24,13 +24,13 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="context">The database context used for the record operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
-    public RecordBusiness(DeeplynxContext context,  ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
+    public RecordBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
     }
-    
+
     /// <summary>
     /// Retrieves all records for a specific project and datasource.
     /// </summary>
@@ -60,7 +60,7 @@ public class RecordBusiness : IRecordBusiness
         {
             var formattedFileType = fileType.TrimStart('.').ToLower();
             recordQuery = recordQuery.Where(r => r.FileType == formattedFileType);
-        }   
+        }
 
         var records = await recordQuery
             .Include(r => r.Tags)
@@ -102,19 +102,19 @@ public class RecordBusiness : IRecordBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var recordQuery = _context.Records
-            .Where(r => r.ProjectId == projectId);     
-        
+            .Where(r => r.ProjectId == projectId);
+
         if (hideArchived)
         {
             recordQuery = recordQuery.Where(r => !r.IsArchived);
         }
-        
+
         // Only return records that contain ALL given IDs
-        recordQuery = recordQuery.Where(r => 
+        recordQuery = recordQuery.Where(r =>
             tagIds.All(tagId => r.Tags.Any(t => t.Id == tagId)));
-        
+
         var records = await recordQuery.Include(r => r.Tags).ToListAsync();
-        
+
         return records
             .Select(r => new RecordResponseDto()
             {
@@ -151,7 +151,7 @@ public class RecordBusiness : IRecordBusiness
         long projectId, long recordId, bool hideArchived)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-        
+
         var record = await _context.Records
             .Where(r => r.ProjectId == projectId && r.Id == recordId)
             .Include(r => r.Tags)
@@ -201,26 +201,28 @@ public class RecordBusiness : IRecordBusiness
     /// <returns>The newly created metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
-    public async Task<RecordResponseDto> CreateRecord(long currentUserId, long projectId, long dataSourceId, CreateRecordRequestDto dto)
+    public async Task<RecordResponseDto> CreateRecord(long currentUserId, long projectId, long dataSourceId,
+        CreateRecordRequestDto dto)
     {
-       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-       await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-       ValidationHelper.ValidateModel(dto);
-        
-        if(dto.Properties == null)
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
+        ValidationHelper.ValidateModel(dto);
+
+        if (dto.Properties == null)
             throw new ArgumentNullException(nameof(dto.Properties), "Properties cannot be null");
-        
+
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
         {
-            throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
+            throw new Exception(
+                $"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
 
         if (dto.ObjectStorageId != null)
         {
             await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
         }
-        
+
         var record = new Record
         {
             ProjectId = projectId,
@@ -239,7 +241,7 @@ public class RecordBusiness : IRecordBusiness
 
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
-        
+
         // Log Record Create Event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -269,7 +271,7 @@ public class RecordBusiness : IRecordBusiness
             FileType = record.FileType
         };
     }
-    
+
     /// <summary>
     /// Create new records
     /// </summary>
@@ -281,30 +283,30 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<List<RecordResponseDto>> BulkCreateRecords(
-        long currentUserId, 
-        long projectId, 
-        long dataSourceId, 
+        long currentUserId,
+        long projectId,
+        long dataSourceId,
         List<CreateRecordRequestDto> records)
     {
-       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-       await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
-       if (records.Count == 0)
-       {
-           throw new Exception("Unable to bulk create records: no records selected for creation");
-       }
-       
-       // Checks to see if Object Storage Ids reference an existing object storage in the project
-       foreach (var dto in records)
-       {
-           if (dto.ObjectStorageId != null)
-           {
-               await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
-           }
-       }
-       
-       // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
-       var sql = @"
+        if (records.Count == 0)
+        {
+            throw new Exception("Unable to bulk create records: no records selected for creation");
+        }
+
+        // Checks to see if Object Storage Ids reference an existing object storage in the project
+        foreach (var dto in records)
+        {
+            if (dto.ObjectStorageId != null)
+            {
+                await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
+            }
+        }
+
+        // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
+        var sql = @"
             INSERT INTO deeplynx.records (project_id, data_source_id, name, description, uri,
                               original_id, properties, class_id, object_storage_id, file_type,
                               last_updated_at, is_archived, last_updated_by)
@@ -321,36 +323,36 @@ public class RecordBusiness : IRecordBusiness
                 file_type = COALESCE(EXCLUDED.file_type, records.file_type)
             RETURNING *;                                                          
         ";
-       
-       // establish "constant" parameters
-       var parameters = new List<NpgsqlParameter>
-       {
-           new NpgsqlParameter("@projectId", projectId),
-           new NpgsqlParameter("@dataSourceId", dataSourceId),
-           new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-           new NpgsqlParameter("@lastUpdatedBy", currentUserId)
-       };
-       
-       // establish "dynamic" parameters (new for each dto in the list)
-       parameters.AddRange(records.SelectMany((dto, i) => new[]
-       {
-           new NpgsqlParameter($"@p{i}_name", dto.Name),
-           new NpgsqlParameter($"@p{i}_desc", dto.Description),
-           new NpgsqlParameter($"@p{i}_uri", (object?)dto.Uri ?? DBNull.Value),
-           new NpgsqlParameter($"@p{i}_props", JsonSerializer.Serialize(dto.Properties)),
-           new NpgsqlParameter($"@p{i}_orig", dto.OriginalId),
-           new NpgsqlParameter($"@p{i}_class", (object?)dto.ClassId ?? DBNull.Value),
-           new NpgsqlParameter($"@p{i}_object_storage", (object?)dto.ObjectStorageId ?? DBNull.Value),
-           new NpgsqlParameter($"@p{i}_file_type", (object?)dto.FileType ?? DBNull.Value)
-       }));
 
-       // stringify the params and comma separate them
-       var valueTuples = string.Join(", ", records.Select((dto, i) =>
-           $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @p{i}_file_type, @now, false, @lastUpdatedBy)"));
-        
-       // put everything together and execute the query
-       sql = string.Format(sql, valueTuples);
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
+        {
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@dataSourceId", dataSourceId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
+        };
+
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(records.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@p{i}_name", dto.Name),
+            new NpgsqlParameter($"@p{i}_desc", dto.Description),
+            new NpgsqlParameter($"@p{i}_uri", (object?)dto.Uri ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_props", JsonSerializer.Serialize(dto.Properties)),
+            new NpgsqlParameter($"@p{i}_orig", dto.OriginalId),
+            new NpgsqlParameter($"@p{i}_class", (object?)dto.ClassId ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_object_storage", (object?)dto.ObjectStorageId ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_file_type", (object?)dto.FileType ?? DBNull.Value)
+        }));
+
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", records.Select((dto, i) =>
+            $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
+            $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @p{i}_file_type, @now, false, @lastUpdatedBy)"));
+
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
 
        // returns the resulting upserted classes
        var result = await _context.Database
@@ -385,26 +387,28 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dto">The data transfer object containing details on the record to be updated</param>
     /// <returns>The newly updated metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long currentUserId, long projectId, long recordId, UpdateRecordRequestDto dto)
+    public async Task<RecordResponseDto> UpdateRecord(long currentUserId, long projectId, long recordId,
+        UpdateRecordRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        var record= await _context.Records.FindAsync(recordId);
+        var record = await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.IsArchived)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
-        
+
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
         {
-            throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
+            throw new Exception(
+                $"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
 
         if (dto.ObjectStorageId != null)
         {
             await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
         }
-        
+
         record.Uri = dto.Uri ?? record.Uri;
         record.Properties = dto.Properties != null ? dto.Properties.ToString() : record.Properties;
         record.OriginalId = dto.OriginalId ?? record.OriginalId;
@@ -415,10 +419,10 @@ public class RecordBusiness : IRecordBusiness
         record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.LastUpdatedBy = currentUserId;
         record.FileType = dto.FileType ?? record.FileType;
-        
+
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
-        
+
         // Log Record Update Event
         // await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         // {
@@ -447,7 +451,6 @@ public class RecordBusiness : IRecordBusiness
             IsArchived = record.IsArchived,
             FileType = record.FileType
         };
-        
     }
 
     /// <summary>
@@ -462,16 +465,16 @@ public class RecordBusiness : IRecordBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
-        
+
         if (record == null || record.ProjectId != projectId)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
-        
+
         _context.Records.Remove(record);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Archive a metadata record.
     /// </summary>
@@ -484,10 +487,10 @@ public class RecordBusiness : IRecordBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
-        
+
         if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
-        
+
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
 
@@ -500,7 +503,7 @@ public class RecordBusiness : IRecordBusiness
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
                     "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)",
-                    recordId, lastUpdatedAt,  currentUserId
+                    recordId, lastUpdatedAt, currentUserId
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
@@ -508,7 +511,7 @@ public class RecordBusiness : IRecordBusiness
                     throw new DependencyDeletionException(
                         $"unable to archive record {recordId} or its downstream dependents.");
                 }
-                
+
                 await transaction.CommitAsync();
             }
             catch (Exception exc)
@@ -532,7 +535,7 @@ public class RecordBusiness : IRecordBusiness
         
         return true;
     }
-    
+
     /// <summary>
     /// Unarchive a metadata record.
     /// </summary>
@@ -545,10 +548,10 @@ public class RecordBusiness : IRecordBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
-        
+
         if (record == null || record.ProjectId != projectId || !record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
-        
+
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
 
@@ -569,7 +572,7 @@ public class RecordBusiness : IRecordBusiness
                     throw new DependencyDeletionException(
                         $"unable to unarchive record {recordId} or its downstream dependents.");
                 }
-                
+
                 await transaction.CommitAsync();
             }
             catch (Exception exc)
@@ -613,22 +616,22 @@ public class RecordBusiness : IRecordBusiness
         var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
         if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
-        
+
         // find tag
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
             throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
-        
+
         // ensure the tag is not already attached to the record
         _context.Records.Include(r => r.Tags);
         if (record.Tags.Any(t => t.Id == tagId))
             throw new Exception($"Tag with id {tagId} is already attached to record {recordId}");
-        
+
         record.Tags.Add(tag);
         await _context.SaveChangesAsync();
         return true;
     }
-    
+
     /// <summary>
     /// Unattach a tag from a record
     /// </summary>
@@ -646,12 +649,12 @@ public class RecordBusiness : IRecordBusiness
         var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
         if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
-        
+
         // find tag
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
             throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
-        
+
         record.Tags.Remove(tag);
         await _context.SaveChangesAsync();
         return true;
@@ -667,7 +670,7 @@ public class RecordBusiness : IRecordBusiness
     {
         // Bulk insert into record_tags
         var sql = @"INSERT INTO deeplynx.record_tags (record_id, tag_id) VALUES {0} ON CONFLICT DO NOTHING;";
-        
+
         // establish parameters
         var parameters = new List<NpgsqlParameter>();
         parameters.AddRange(dtos.SelectMany((dto, i) => new[]
@@ -675,15 +678,15 @@ public class RecordBusiness : IRecordBusiness
             new NpgsqlParameter($"@record{i}_id", dto.RecordId),
             new NpgsqlParameter($"@tag{i}_id", dto.TagId)
         }));
-        
+
         // stringify params and comma separate them
         var valueTuples = string.Join(", ", dtos.Select((dto, i) => $"(@record{i}_id, @tag{i}_id)"));
-        
+
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
-        
+
         await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
-        
+
         return true;
     }
 
@@ -719,7 +722,7 @@ public class RecordBusiness : IRecordBusiness
 
         return maxDepth + 1;
     }
-    
+
     /// <summary>
     /// Determine if datasource exists
     /// </summary>
@@ -728,13 +731,15 @@ public class RecordBusiness : IRecordBusiness
     /// <returns>Throws error if datasource does not exist</returns>
     private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
     {
-        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
-                : _context.DataSources.Any(p => p.Id == datasourceId);
+        var datasource = hideArchived
+            ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
+            : _context.DataSources.Any(p => p.Id == datasourceId);
         if (!datasource)
         {
             throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
         }
     }
+
     // </summary>
     /// <param name="projectId">The project ID to search within</param>
     /// <param name="originalIds">List of original IDs to validate</param>
@@ -759,9 +764,9 @@ public class RecordBusiness : IRecordBusiness
 
         // Query for existing records (excluding archived)
         var existingRecords = await _context.Records
-            .Where(r => r.ProjectId == projectId 
-                       && !r.IsArchived
-                       && cleanOriginalIds.Contains(r.OriginalId))
+            .Where(r => r.ProjectId == projectId
+                        && !r.IsArchived
+                        && cleanOriginalIds.Contains(r.OriginalId))
             .Include(r => r.Tags)
             .ToListAsync();
 
@@ -801,7 +806,8 @@ public class RecordBusiness : IRecordBusiness
 
     private async Task CheckObjectStorageExists(long projectId, long objectStorageId)
     {
-        var referencedObjectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(o => o.ProjectId == projectId && o.Id == objectStorageId);
+        var referencedObjectStorage =
+            await _context.ObjectStorages.FirstOrDefaultAsync(o => o.ProjectId == projectId && o.Id == objectStorageId);
         if (referencedObjectStorage == null)
         {
             throw new KeyNotFoundException($"Object storage with ID {objectStorageId} does not exist");

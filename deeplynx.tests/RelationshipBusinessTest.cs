@@ -98,6 +98,8 @@ namespace deeplynx.tests
             Assert.Equal(pid, result.ProjectId);
             Assert.NotNull(result.OriginId);
             Assert.NotNull(result.DestinationId);
+            Assert.Equal(dto.Uuid, result.Uuid);
+            Assert.Equal(uid, result.LastUpdatedBy);
             
             // Ensure that relationship create event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -342,6 +344,8 @@ namespace deeplynx.tests
             Assert.Equal(2, result.Count);
             Assert.All(result, r => Assert.True(r.Id > 0));
             Assert.All(result, r => Assert.True(r.LastUpdatedAt >= now));
+            Assert.All(result, r => Assert.True(r.LastUpdatedBy >= uid));
+            Assert.All(result, r => Assert.True(r.ProjectId == pid));
             Assert.Equal("Bulk Relationship 1", result.First().Name);
             Assert.Equal("Bulk Relationship 2", result.Last().Name);
 
@@ -504,6 +508,8 @@ namespace deeplynx.tests
 
             // Assert
             Assert.True((DateTime.UtcNow - updatedResult.LastUpdatedAt).TotalSeconds < 1);
+            Assert.Equal(testRelationship.ProjectId, updatedResult.ProjectId);
+            Assert.Equal(testRelationship.LastUpdatedBy, updatedResult.LastUpdatedBy);
             Assert.Equal(dto.Name, updatedResult.Name);
             Assert.Equal(dto.Description, updatedResult.Description);
             Assert.Equal(cid2, updatedResult.OriginId);
@@ -616,6 +622,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveRelationship_Success_WhenExists()
         {
+            // Arrange
+            var originalRelationship = await Context.Relationships.FindAsync(rid);
             // Act
             var archivedResult = await _relationshipBusiness.ArchiveRelationship(uid, pid, rid);
 
@@ -626,9 +634,19 @@ namespace deeplynx.tests
             // This forces EF to sync to db on next query
             Context.ChangeTracker.Clear();
 
+            // Assert
             var archivedRelationship = await Context.Relationships.FindAsync(rid);
             Assert.NotNull(archivedRelationship);
             Assert.True(archivedRelationship.IsArchived);
+            Assert.Equal(originalRelationship.Id, archivedRelationship.Id);
+            Assert.Equal(originalRelationship.Name, archivedRelationship.Name);
+            Assert.True(originalRelationship.LastUpdatedAt <= archivedRelationship.LastUpdatedAt);
+            Assert.Equal(originalRelationship.Description, archivedRelationship.Description);
+            Assert.Equal(originalRelationship.Uuid, archivedRelationship.Uuid);
+            Assert.Equal(originalRelationship.ProjectId, archivedRelationship.ProjectId);
+            Assert.Equal(originalRelationship.DestinationId, archivedRelationship.DestinationId);
+            Assert.Equal(originalRelationship.OriginId, archivedRelationship.OriginId);
+            Assert.Equal(uid, archivedRelationship.LastUpdatedBy);
     
             // Assert
             var eventList = await Context.Events.ToListAsync();
@@ -681,6 +699,9 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveRelationship_Success_WhenArchived()
         {
+            // Arrange
+            var originalRelationship = await Context.Relationships.FindAsync(rid2);
+            
             // Act
             var unarchivedResult = await _relationshipBusiness.UnarchiveRelationship(uid, pid, rid2);
             Assert.True(unarchivedResult);
@@ -693,6 +714,16 @@ namespace deeplynx.tests
             var unarchivedRelationship = await Context.Relationships.FindAsync(rid2);
             Assert.NotNull(unarchivedRelationship);
             Assert.False(unarchivedRelationship.IsArchived);
+            Assert.Equal(originalRelationship.Id, unarchivedRelationship.Id);
+            Assert.Equal(originalRelationship.Name, unarchivedRelationship.Name);
+            Assert.True(originalRelationship.LastUpdatedAt <= unarchivedRelationship.LastUpdatedAt);
+            Assert.Equal(originalRelationship.Description, unarchivedRelationship.Description);
+            Assert.Equal(originalRelationship.Uuid, unarchivedRelationship.Uuid);
+            Assert.Equal(originalRelationship.ProjectId, unarchivedRelationship.ProjectId);
+            Assert.Equal(originalRelationship.DestinationId, unarchivedRelationship.DestinationId);
+            Assert.Equal(originalRelationship.OriginId, unarchivedRelationship.OriginId);
+            Assert.Equal(uid, unarchivedRelationship.LastUpdatedBy);
+            
         }
         
         [Fact]

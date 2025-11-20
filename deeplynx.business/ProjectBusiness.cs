@@ -141,12 +141,15 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     ///     Creates a new project based on the data transfer object supplied.
     /// </summary>
-    /// <param name="currentUserId">Name of user creating the project</param>
+    /// <param name="userId">Name of user creating the project</param>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(long currentUserId, CreateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(
+        long userId, long organizationId, CreateProjectRequestDto dto)
     {
-        await ExistenceHelper.EnsureUserExistsAsync(_context, currentUserId);
+        await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         ValidationHelper.ValidateModel(dto);
 
         long orgId;
@@ -184,9 +187,9 @@ public class ProjectBusiness : IProjectBusiness
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
-            OrganizationId = orgId,
+            OrganizationId = organizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = currentUserId
+            LastUpdatedBy = userId
         };
 
         _context.Projects.Add(project);
@@ -220,6 +223,7 @@ public class ProjectBusiness : IProjectBusiness
         if (cachedProjectList.Count != _context.Projects.Count()) await RefreshProjectsCache();
 
         // Log create Project event
+        // Log create Project event
         var eventLog = new CreateEventRequestDto
         {
             Operation = "create",
@@ -230,7 +234,7 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name }),
         };
         
-        await _eventBusiness.CreateEvent(currentUserId, eventLog, project.OrganizationId, null);
+        await _eventBusiness.CreateEvent(currentUserId, eventLog, null, project.OrganizationId, null);
         
         await SetProjectDefaults(currentUserId, project.OrganizationId, projectId);
 
@@ -389,7 +393,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityName = project.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-        }, project.OrganizationId, null);
+        }, null, project.OrganizationId);
         
         var projectResponse = new ProjectResponseDto
         {
@@ -495,7 +499,7 @@ public class ProjectBusiness : IProjectBusiness
                     EntityName = project.Name,
                     DataSourceId = null,
                     Properties = JsonSerializer.Serialize(new { project.Name }),
-                }, project.OrganizationId, null);
+                }, null, project.OrganizationId);
 
                 return true;
             }
