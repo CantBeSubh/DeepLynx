@@ -4,19 +4,24 @@ namespace deeplynx.interfaces;
 
 public interface IEventBusiness
 {
-    Task<List<EventResponseDto>> GetAllEvents(long? projectId, long? organizationId);
+    Task<List<EventResponseDto>> GetAllEvents(long? organizationId, long? projectId);
 
-    Task<PaginatedResponse<EventResponseDto>> QueryEvents(
-        long projectId, long organizationId, EventsQueryRequestDTO? filterDto);
+    Task<PaginatedResponse<EventResponseDto>> QueryAllEvents(EventsQueryRequestDTO? queryDto,
+        long? organizationId, long? projectId);
 
-    Task<PaginatedResponse<EventResponseDto>> QueryEventsByUser(
-        long userId, long projectId, long organizationId, EventsQueryRequestDTO? filterDto);
+    Task<PaginatedResponse<EventResponseDto>> QueryAuthorizedEvents(long currentUserId,
+        EventsQueryRequestDTO? queryDto, long? organizationId, long? projectId);
+    
+    Task<PaginatedResponse<EventResponseDto>> QueryEventsBySubscriptions(long currentUserId,
+        EventsQueryRequestDTO? queryDto, long? organizationId, long? projectId);
 
-    Task<List<EventResponseDto>> GetAllEventsByUserProjectSubscriptions(long userId, long projectId);
+    Task<EventResponseDto> CreateEvent(long currentUserId, CreateEventRequestDto dto, long? organizationId,
+        long? projectId);
 
-    Task<EventResponseDto> CreateEvent(
-        long currentUserId, CreateEventRequestDto dto, long? projectId = null, long? organizationId = null);
-
-    Task<List<EventResponseDto>> BulkCreateEvents(
-        List<CreateEventRequestDto> events, long? projectId = null, long? organizationId = null);
+    Task<EventResponseDto> BulkCreateEvents(
+        long currentUserId,
+        List<CreateEventRequestDto> events,
+        long? organizationId,
+        long? projectId = null
+    );
 }

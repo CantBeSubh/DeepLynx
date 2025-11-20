@@ -331,102 +331,13 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Retrieves all events that the user is subscribed to at both organization and project levels.
+    /// Queries all events that the user is subscribed to at both organization and project levels.
     /// Organization-level subscriptions (projectId is null) match all events in the organization.
     /// Project-level subscriptions (projectId is not null) match only events in that specific project.
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
     /// <param name="organizationId">The ID of the organization</param>
     /// <param name="projectId">Optional ID of the project to filter events</param>
-    public async Task<List<EventResponseDto>> GetAllEventsBySubscriptions(long currentUserId, long? organizationId,
-        long? projectId)
-    {
-        var subscriptionsQuery = _context.Set<Subscription>()
-            .Where(s => s.UserId == currentUserId && s.OrganizationId == organizationId);
-
-        if (projectId.HasValue)
-        {
-            subscriptionsQuery = subscriptionsQuery.Where(s =>
-                s.ProjectId == projectId.Value);
-        }
-        else
-        {
-            subscriptionsQuery = subscriptionsQuery.Where(s => s.ProjectId == null);
-        }
-
-        var subscriptions = await subscriptionsQuery.ToListAsync();
-
-        if (!subscriptions.Any())
-            return new List<EventResponseDto>();
-
-        string sql;
-
-        if (projectId.HasValue)
-        {
-            // Get events that match project-level subscriptions
-            sql = @"
-                SELECT DISTINCT e.*
-                FROM deeplynx.events e
-                INNER JOIN deeplynx.subscriptions s
-                    ON s.user_id = @currentUserId
-                    AND s.project_id = @projectId
-                WHERE e.project_id = @projectId
-                    AND ((s.entity_id = e.entity_id) OR s.entity_id IS NULL)
-                    AND ((s.entity_type = e.entity_type) OR s.entity_type IS NULL)
-                    AND ((s.data_source_id = e.data_source_id) OR s.data_source_id IS NULL)
-                    AND ((s.operation = e.operation) OR s.operation IS NULL)";
-        }
-        else
-        {
-            // Get events that match organization-level subscriptions
-            sql = @"
-                SELECT DISTINCT e.*
-                FROM deeplynx.events e
-                INNER JOIN deeplynx.subscriptions s
-                    ON s.user_id = @currentUserId
-                    AND s.organization_id = @organizationId
-                    AND s.project_id IS NULL
-                WHERE e.organization_id = @organizationId
-                    AND ((s.entity_id = e.entity_id) OR s.entity_id IS NULL)
-                    AND ((s.entity_type = e.entity_type) OR s.entity_type IS NULL)
-                    AND ((s.data_source_id = e.data_source_id) OR s.data_source_id IS NULL)
-                    AND ((s.operation = e.operation) OR s.operation IS NULL)";
-        }
-
-        var currentUserIdParam = new NpgsqlParameter("currentUserId", currentUserId);
-        var organizationIdParam = new NpgsqlParameter("organizationId", organizationId);
-        var projectIdParam = new NpgsqlParameter("projectId", (object?)projectId ?? DBNull.Value);
-
-        var events = await _context.Events
-            .FromSqlRaw(sql, currentUserIdParam, organizationIdParam, projectIdParam)
-            .Include(e => e.Organization)
-            .Include(e => e.Project)
-            .Include(e => e.LastUpdatedByUser)
-            .Include(e => e.DataSource)
-            .OrderByDescending(e => e.LastUpdatedAt)
-            .Select(e => new EventResponseDto
-            {
-                Id = e.Id,
-                Operation = e.Operation,
-                EntityType = e.EntityType,
-                EntityId = e.EntityId,
-                EntityName = e.EntityName,
-                ProjectId = e.ProjectId,
-                OrganizationId = e.OrganizationId,
-                DataSourceId = e.DataSourceId,
-                Properties = e.Properties,
-                LastUpdatedAt = e.LastUpdatedAt,
-                LastUpdatedBy = e.LastUpdatedBy,
-                LastUpdatedByUserName = e.LastUpdatedByUser != null ? e.LastUpdatedByUser.Name : null,
-                ProjectName = e.ProjectId != null ? e.Project.Name : null,
-                DataSourceName = e.DataSourceId != null ? e.DataSource.Name : null,
-                OrganizationName = e.OrganizationId != null ? e.Organization.Name : null
-            })
-            .ToListAsync();
-
-        return events;
-    }
-
     public async Task<PaginatedResponse<EventResponseDto>> QueryEventsBySubscriptions(long currentUserId,
         EventsQueryRequestDTO? queryDto, long? organizationId, long? projectId)
     {

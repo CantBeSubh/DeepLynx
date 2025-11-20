@@ -70,8 +70,8 @@ public class EventController : ControllerBase
     {
         try
         {
-            var events = await _eventBusiness.QueryEvents(
-                projectId, organizationId, queryDto);
+            var events = await _eventBusiness.QueryAllEvents(
+                queryDto, organizationId, projectId );
             return Ok(events);
         }
         catch (Exception exc)
@@ -97,9 +97,9 @@ public class EventController : ControllerBase
     {
         try
         {
-            var userId = UserContextStorage.UserId;
-            var events = await _eventBusiness.QueryEventsByUser(
-                userId, projectId, organizationId, queryDto);
+            var currentUserId = UserContextStorage.UserId;
+            var events = await _eventBusiness.QueryAuthorizedEvents(
+                currentUserId, queryDto, organizationId, projectId);
             return Ok(events);
         }
         catch (Exception exc)
@@ -117,15 +117,16 @@ public class EventController : ControllerBase
     /// <param name="projectId">The ID of the project to which the events belong</param>
     /// <param name="userId">The ID of the user whose subscriptions to filter by</param>
     /// <returns>A list of events matching the user's subscriptions</returns>
-    [HttpGet("subscriptions", Name = "api_get_events_by_subscriptions")]
-    public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetEventsByUserSubscriptions(
+    [HttpGet("subscriptions", Name = "api_query_events_by_subscriptions")]
+    public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsBySubscriptions(
         long organizationId,
-        long projectId,
-        [FromQuery] long userId)
+        long projectId
+        )
     {
         try
         {
-            var events = await _eventBusiness.GetAllEventsByUserProjectSubscriptions(userId, projectId);
+            var currentUserId = UserContextStorage.UserId;
+            var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, projectId);
             return Ok(events);
         }
         catch (Exception exc)
@@ -184,6 +185,7 @@ public class EventController : ControllerBase
     {
         try
         {
+            var currentUserId = UserContextStorage.UserId;
             // Ensure organizationId from route is used for all events
             foreach (var evt in events)
             {
@@ -192,7 +194,7 @@ public class EventController : ControllerBase
             }
 
             var eventResponses = await _eventBusiness.BulkCreateEvents(
-                events, projectId, organizationId);
+                currentUserId, events, projectId, organizationId);
             return Ok(eventResponses);
         }
         catch (Exception exc)
