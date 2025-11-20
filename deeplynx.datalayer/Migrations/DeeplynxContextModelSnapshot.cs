@@ -2283,6 +2283,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
                         .WithMany("SavedSearches")
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("saved_searches_user_id_fkey");
 
                     b.Navigation("User");

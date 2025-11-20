@@ -1,4 +1,3 @@
-using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -154,59 +153,6 @@ public class QueryController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-
-    /// <summary>
-    ///     Saved searches
-    /// </summary>
-    /// <param name="filterArray">Array of QueryComponent dtos</param>
-    /// <param name="textSearch">Full text search phrase</param>
-    /// <param name="alias">Name for saved search</param>
-    /// <param name="favorite">Boolean for if favorite search or not</param>
-    /// <returns>True if successfully saved</returns>
-    // TODO: move to UserController
-    [HttpPost("saved", Name = "api_save_search")]
-    public async Task<ActionResult<bool>> SaveSearch(
-        [FromQuery] string? textSearch, [FromQuery] string? alias, [FromQuery] bool favorite,
-        [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
-    {
-        try
-        {
-            // get user ID from the middleware context
-            var currentUserId = UserContextStorage.UserId;
-            var result = await _queryBusiness.SaveSearch(currentUserId, alias, textSearch, filterArray, favorite);
-            return Ok(result);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An unexpected error occurred while searching for records.: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Get saved searches
-    /// </summary>
-    /// <returns>A list of saved searches belonging to the user.</returns>
-    // TODO: move to UserController
-    [HttpGet("saved", Name = "api_query_get_saved_searches")]
-    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetSavedSearches()
-    {
-        try
-        {
-            // get user ID from the middleware context
-            var currentUserId = UserContextStorage.UserId;
-            var savedSearches = await _queryBusiness.GetSavedSearches(currentUserId);
-            return Ok(savedSearches);
-        }
-        catch (Exception exception)
-        {
-            var message = $"An error occurred while listing all saved searches: {exception}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
 
     /// <summary>
     ///     Get recent records

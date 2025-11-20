@@ -4,6 +4,7 @@ public static class UserContextStorage
 {
     private static AsyncLocal<string> _email = new();
     private static AsyncLocal<long> _userId = new();
+    private static AsyncLocal<long> _organizationId = new();
 
     public static string Email
     {
@@ -15,5 +16,11 @@ public static class UserContextStorage
     {
         get => _userId.Value;
         set => _userId.Value = value;
+    }
+    
+    public static long OrganizationId
+    {
+        get => _organizationId.Value;
+        set => _organizationId.Value = value;
     }
 }
