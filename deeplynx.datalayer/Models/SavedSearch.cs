@@ -6,7 +6,8 @@ namespace deeplynx.datalayer.Models;
 [Table("saved_searches", Schema = "deeplynx")]
 public class SavedSearch
 {
-    [Key] [Column("id")] 
+    [Key]
+    [Column("id")] 
     public long Id { get; set; }
 
     [Column("name")] 
@@ -27,5 +28,4 @@ public class SavedSearch
     [ForeignKey("UserId")]
     [InverseProperty("SavedSearches")]
     public virtual User User { get; set; } = null!;
-    
 }

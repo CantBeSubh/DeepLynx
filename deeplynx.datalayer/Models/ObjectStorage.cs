@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("object_storages", Schema = "deeplynx")]
-[Index("ProjectId", Name = "IX_object_storages_project_id")]
-[Index("OrganizationId", Name = "IX_object_storages_organization_id")]
-[Index("Id", Name = "idx_object_storage_id")]
 public partial class ObjectStorage
 {
     [Key]
@@ -29,7 +23,7 @@ public partial class ObjectStorage
     public long? ProjectId { get; set; }
     
     [Column("organization_id")]
-    public long? OrganizationId { get; set; }
+    public long OrganizationId { get; set; }
 
     [Column("default")]
     public bool Default { get; set; }
@@ -46,10 +40,10 @@ public partial class ObjectStorage
     [ForeignKey("ProjectId")]
     [InverseProperty("ObjectStorages")]
     public virtual Project? Project { get; set; }
-    
+
     [ForeignKey("OrganizationId")]
     [InverseProperty("ObjectStorages")]
-    public virtual Organization? Organization { get; set; }
+    public virtual Organization Organization { get; set; } = null!;
 
     [InverseProperty("ObjectStorage")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();

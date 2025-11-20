@@ -1,21 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("permissions", Schema = "deeplynx")]
-[Index("Action", Name = "idx_permissions_action")]
-[Index("Resource", Name = "idx_permissions_resource")]
-[Index("Id", Name = "idx_permissions_id")]
-[Index("LabelId", Name = "idx_permissions_label_id")]
-[Index("ProjectId", Name = "idx_permissions_project_id")]
-[Index("OrganizationId", Name = "idx_permissions_organization_id")]
-[Index("IsDefault", Name = "idx_permissions_is_default")]
-[Index("ProjectId", "LabelId", "Action", Name = "permissions_unique_project_label_action", IsUnique = true)]
-[Index("OrganizationId", "LabelId", "Action", Name = "permissions_unique_org_label_action", IsUnique = true)]
-[Index("ProjectId", "Resource", "Action", Name = "permissions_unique_project_resource_action", IsUnique = true)]
-[Index("OrganizationId", "Resource", "Action", Name = "permissions_unique_org_resource_action", IsUnique = true)]
 public partial class Permission
 {
     [Key]
@@ -44,7 +32,7 @@ public partial class Permission
     public long? ProjectId { get; set; }
 
     [Column("organization_id")]
-    public long? OrganizationId { get; set; }
+    public long OrganizationId { get; set; }
 
     [Column("last_updated_by")]
     public long? LastUpdatedBy { get; set; }
@@ -65,7 +53,7 @@ public partial class Permission
 
     [ForeignKey("OrganizationId")]
     [InverseProperty("Permissions")]
-    public virtual Organization? Organization { get; set; }
+    public virtual Organization Organization { get; set; } = null!;
 
     [ForeignKey("PermissionId")]
     [InverseProperty("Permissions")]

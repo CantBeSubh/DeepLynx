@@ -1,14 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Net.Mime;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("oauth_tokens", Schema = "deeplynx")]
-[Index("Id", Name = "idx_oauth_tokens_id")]
-[Index("ApplicationId", Name = "idx_oauth_tokens_application_id")]
-[Index("UserId", Name = "idx_oauth_tokens_user_id")]
 public partial class OauthToken
 {
     [Key]
