@@ -116,7 +116,7 @@ namespace deeplynx.tests
         #region CreateOrganization Tests
 
         [Fact]
-        public async Task CreateOrganization_Success_ReturnsOrganization()
+        public async Task CreateOrganization_Success_ReturnsCorrectValues()
         {
             // Arrange
             var dto = new CreateOrganizationRequestDto
@@ -124,15 +124,21 @@ namespace deeplynx.tests
                 Name = "New Test Organization",
                 Description = "New Test Organization Description",
             };
-
+            
+            var now =  DateTime.UtcNow;
+            
             // Act
             var result = await _organizationBusiness.CreateOrganization(uid, dto);
 
             // Assert
             Assert.NotNull(result);
+            Assert.True(result.Id > 0);
             Assert.Equal(dto.Name, result.Name);
             Assert.Equal(dto.Description, result.Description);
+            Assert.False(result.DefaultOrg);
             Assert.False(result.IsArchived);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
             // verify org was actually created in database
             var createdOrg = await Context.Organizations.FindAsync(result.Id);
@@ -327,6 +333,8 @@ namespace deeplynx.tests
                 Name = "Updated Organization",
                 Description = "Updated description"
             };
+            
+            var now = DateTime.UtcNow;
 
             // Act
             var result = await _organizationBusiness.UpdateOrganization(uid, oid, dto);
@@ -336,6 +344,10 @@ namespace deeplynx.tests
             Assert.Equal(oid, result.Id);
             Assert.Equal("Updated Organization", result.Name);
             Assert.Equal("Updated description", result.Description);
+            Assert.False(result.DefaultOrg);
+            Assert.False(result.IsArchived);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
             // Verify it was actually saved to DB
             var savedOrg = await Context.Organizations.FindAsync(oid);
@@ -531,6 +543,9 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveOrganization_Succeeds_IfNotArchived()
         {
+            // Arrange
+            var now = DateTime.UtcNow;
+            
             // Act
             var result = await _organizationBusiness.ArchiveOrganization(uid, oid);
 
@@ -541,6 +556,11 @@ namespace deeplynx.tests
             var savedOrg = await Context.Organizations.FindAsync(oid);
             Assert.NotNull(savedOrg);
             Assert.True(savedOrg.IsArchived);
+            Assert.Equal("Test Organization",  savedOrg.Name);
+            Assert.Equal("Test org for unit tests", savedOrg.Description);
+            Assert.True(savedOrg.LastUpdatedAt >= now);
+            Assert.False(savedOrg.DefaultOrg);
+            Assert.Equal(uid, savedOrg.LastUpdatedBy);
 
             // Ensure that the Organization archive event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -588,16 +608,23 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveOrganization_Succeeds_IfArchived()
         {
+            // Arrange
+            var now = DateTime.UtcNow;
+            
             // Act
             var result = await _organizationBusiness.UnarchiveOrganization(uid, oid2);
 
             // Assert
             Assert.True(result);
-
+            
             // Verify it was actually saved to DB
             var savedOrg = await Context.Organizations.FindAsync(oid2);
-            Assert.NotNull(savedOrg);
-            Assert.False(savedOrg.IsArchived);
+            Assert.Equal("Archived Organization", savedOrg?.Name);
+            Assert.Equal("Archived org for tests", savedOrg?.Description);
+            Assert.False(savedOrg?.DefaultOrg);
+            Assert.False(savedOrg?.IsArchived);
+            Assert.True(savedOrg?.LastUpdatedAt >= now);
+            Assert.Equal(uid, savedOrg.LastUpdatedBy);
 
             // Ensure that the Organization unarchive event was logged
             var eventList = await Context.Events.ToListAsync();

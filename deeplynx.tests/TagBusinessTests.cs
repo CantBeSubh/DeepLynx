@@ -159,6 +159,7 @@ namespace deeplynx.tests
         public async Task CreateTag_ValidDto_CreatesTag()
         {
             // Arrange
+            var now = DateTime.UtcNow;
             var dto = new CreateTagRequestDto
             {
                 Name = "Tag One"
@@ -172,6 +173,10 @@ namespace deeplynx.tests
             Assert.True(result.Id > 0);
             Assert.Equal("Tag One", result.Name);
             Assert.Equal(pid, result.ProjectId);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
+            Assert.False(result.IsArchived);
+            
 
             // Verify it was actually saved to database
             var savedTag = await Context.Tags.FindAsync(result.Id);
@@ -275,6 +280,7 @@ namespace deeplynx.tests
         public async Task UpdateTag_ValidUpdate_UpdatesTag()
         {
             // Arrange
+            var now = DateTime.UtcNow;
             var dto = new UpdateTagRequestDto
             {
                 Name = "Updated Test Tag"
@@ -287,7 +293,10 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(tid, result.Id);
             Assert.Equal("Updated Test Tag", result.Name);
-            Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
+            Assert.False(result.IsArchived);
+            Assert.Equal(pid, result.ProjectId);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
             // Verify it was actually updated in database
             var updatedTag = await Context.Tags.FindAsync(tid);
@@ -449,6 +458,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveTag_ValidTag_ArchivesSuccessfully()
         {
+            // Arrange
+            var now = DateTime.UtcNow;
             // Act
             var result = await _tagBusiness.ArchiveTag(uid, pid, tid);
 
@@ -459,6 +470,11 @@ namespace deeplynx.tests
             var archivedTag = await Context.Tags.FindAsync(tid);
             Assert.NotNull(archivedTag);
             Assert.True(archivedTag.IsArchived);
+            Assert.Equal(tid, archivedTag.Id);
+            Assert.Equal("Analytics", archivedTag.Name);
+            Assert.Equal(pid, archivedTag.ProjectId);
+            Assert.True(archivedTag.LastUpdatedAt >= now);
+            Assert.Equal(uid, archivedTag.LastUpdatedBy);
 
             // Ensure that the tag delete event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -621,14 +637,22 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveTag_ValidArchivedTag_UnarchivesSuccessfully()
         {
+            // Arrange
+            var now = DateTime.UtcNow;    
+            
             // Act
             var result = await _tagBusiness.UnarchiveTag(uid, pid, tid3);
 
             Assert.True(result);
-            Context.ChangeTracker.Clear();
+            
             var refreshed = await Context.Tags.FindAsync(tid3);
             Assert.NotNull(refreshed);
             Assert.False(refreshed.IsArchived);
+            Assert.Equal(tid3, refreshed.Id);
+            Assert.Equal("Analytics 3", refreshed.Name);
+            Assert.Equal(pid, refreshed.ProjectId);
+            Assert.True(refreshed.LastUpdatedAt >= now);
+            Assert.Equal(uid, refreshed.LastUpdatedBy);
         }
 
         [Fact]

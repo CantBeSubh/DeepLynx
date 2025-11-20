@@ -147,8 +147,13 @@ namespace deeplynx.tests
             
             // Assert
             Assert.Equal(2, result.Classes.Count);
+            Assert.True(result.Classes.All(c => c.LastUpdatedBy == uid && 
+                                                c.ProjectId == pid && 
+                                                !c.IsArchived));
             Assert.Equal("Bulk Class 1", result.Classes.First().Name);
+            Assert.Equal("First class", result.Classes.First().Description);
             Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
+            Assert.Equal("Second class", result.Classes.Last().Description);
 
             // Ensure both create class events are logged
             var eventList = await Context.Events.ToListAsync();
@@ -715,8 +720,13 @@ namespace deeplynx.tests
     
             // Assert
             Assert.Equal(2, result.Classes.Count);
+            Assert.True(result.Classes.All(c => c.LastUpdatedBy == uid && 
+                                                c.ProjectId == pid &&
+                                                !c.IsArchived));
             Assert.Equal("Bulk Class 1", result.Classes.First().Name);
+            Assert.Equal("First class", result.Classes.First().Description);
             Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
+            Assert.Equal("Second class", result.Classes.Last().Description);
 
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(2, eventList.Count);

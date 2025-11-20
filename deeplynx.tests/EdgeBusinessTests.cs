@@ -72,7 +72,7 @@ namespace deeplynx.tests
 
         #region CreateEdge Tests
         [Fact]
-        public async Task CreateEdge_Success_ReturnsIdAndCreatedAt()
+        public async Task CreateEdge_Success_ReturnsCorrectValues()
         {
             // Arrange
             var now = DateTime.UtcNow;
@@ -89,10 +89,12 @@ namespace deeplynx.tests
             // Assert
             Assert.True(result.Id > 0);
             Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(relationshipId, result.RelationshipId);
             Assert.Equal(originRecordId, result.OriginId);
             Assert.Equal(destinationRecordId, result.DestinationId);
             Assert.Equal(pid, result.ProjectId);
             Assert.Equal(dsid, result.DataSourceId);
+            Assert.Equal(uid1, result.LastUpdatedBy);
 
             // Ensure that edge create event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -1097,7 +1099,7 @@ namespace deeplynx.tests
         #region UpdateEdge Tests
 
         [Fact]
-        public async Task UpdateEdge_Success_ReturnsModifiedAt()
+        public async Task UpdateEdge_Success_ReturnsCorrectvalues()
         {
             // Arrange
             var testEdge = new Edge
@@ -1111,7 +1113,7 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-
+            
             // Store the original timestamp for comparison
             var originalLastUpdatedAt = testEdge.LastUpdatedAt;
 
@@ -1140,8 +1142,15 @@ namespace deeplynx.tests
             var updatedResult = await _edgeBusiness.UpdateEdge(uid1, pid, dto, testEdge.Id, null, null);
 
             // Assert
-            Assert.True(updatedResult.LastUpdatedAt >= originalLastUpdatedAt);
+            Assert.NotNull(updatedResult);
+            Assert.False(updatedResult.IsArchived);
+            Assert.Equal(relationshipId, updatedResult.RelationshipId);
+            Assert.Equal(originRecordId, updatedResult.OriginId);
             Assert.Equal(destinationRecordId2, updatedResult.DestinationId);
+            Assert.Equal(pid, updatedResult.ProjectId);
+            Assert.Equal(dsid, updatedResult.DataSourceId);
+            Assert.True(updatedResult.LastUpdatedAt >= originalLastUpdatedAt);
+            Assert.Equal(uid1, updatedResult.LastUpdatedBy);
 
             // Ensure that update edge event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -1168,9 +1177,6 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-
-            // Store the original timestamp for comparison
-            var originalLastUpdatedAt = testEdge.LastUpdatedAt;
 
             // Create another destination record for update
             var newDestinationRecord = new Record
@@ -1311,16 +1317,24 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-
+            
+            var now = DateTime.UtcNow;
             // Act
             var archivedResult = await _edgeBusiness.ArchiveEdge(uid1, pid, testEdge.Id, null, null);
 
             var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
 
             // Assert
-            Assert.Equal(testEdge.Id, archivedResult);
             Assert.NotNull(archivedEdge);
-            Assert.True(archivedEdge.IsArchived);
+            Assert.Null(archivedEdge.RelationshipId);
+            Assert.Equal(testEdge.Id, archivedResult);
+            Assert.True(archivedEdge?.IsArchived);
+            Assert.Equal(originRecordId, archivedEdge?.OriginId);
+            Assert.Equal(destinationRecordId, archivedEdge?.DestinationId);
+            Assert.Equal(pid, archivedEdge?.ProjectId);
+            Assert.Equal(dsid, archivedEdge?.DataSourceId);
+            Assert.True(archivedEdge?.LastUpdatedAt >= now);
+            Assert.Equal(uid1, archivedEdge.LastUpdatedBy);
 
             // Ensure that soft delete edge event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -1403,7 +1417,7 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-
+            var now = DateTime.UtcNow;
             // Act
             var unarchivedResult = await _edgeBusiness.UnarchiveEdge(uid1, pid, testEdge.Id, null, null);
             Assert.Equal(testEdge.Id, unarchivedResult);
@@ -1412,7 +1426,14 @@ namespace deeplynx.tests
 
             // Assert
             Assert.NotNull(unarchivedEdge);
+            Assert.Null(unarchivedEdge.RelationshipId);
             Assert.False(unarchivedEdge.IsArchived);
+            Assert.Equal(originRecordId, unarchivedEdge.OriginId);
+            Assert.Equal(destinationRecordId, unarchivedEdge.DestinationId);
+            Assert.Equal(pid, unarchivedEdge.ProjectId);
+            Assert.Equal(dsid, unarchivedEdge.DataSourceId);
+            Assert.True(unarchivedEdge.LastUpdatedAt >= now);
+            Assert.Equal(uid1, unarchivedEdge.LastUpdatedBy);
         }
 
         [Fact]
