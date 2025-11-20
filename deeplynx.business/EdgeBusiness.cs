@@ -158,7 +158,7 @@ public class EdgeBusiness : IEdgeBusiness
                 RelationshipName = x.Edge.Relationship != null ? x.Edge.Relationship.Name : null,
             }).ToListAsync();
     }
-    
+
     /// <summary>
     /// Gets related records up to 3 levels deep
     /// </summary>
@@ -173,42 +173,43 @@ public class EdgeBusiness : IEdgeBusiness
         {
             throw new ArgumentException("Depth must be no more than 3");
         }
+
         var rootRecord = await _context.Records.FindAsync(recordId);
         if (rootRecord == null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
-        
+
         // find projects the user has access to
-        var userProjectIds = await _context.Projects.Where(p => 
-                p.ProjectMembers.Any(pm => 
+        var userProjectIds = await _context.Projects.Where(p =>
+                p.ProjectMembers.Any(pm =>
                     pm.UserId == userId ||
                     (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
                 ))
             .Select(p => p.Id)
             .ToListAsync();
-        
+
         if (userProjectIds.Count == 0 || !userProjectIds.Contains(rootRecord.ProjectId))
         {
             throw new AccessViolationException($"You do not have access to view record with id {recordId}");
         }
-        
-        var nodes = new Dictionary<long, GraphNode>();  // Stores all unique nodes we discover
-        var links = new List<GraphLink>();              // Stores all connections between nodes
-        var visitedEdges = new HashSet<long>();         // Tracks which edges we've already processed (prevents duplicates)
-        var visitedRecords = new HashSet<long>();         // Tracks which records we've already explored (prevents reprocessing)
+
+        var nodes = new Dictionary<long, GraphNode>(); // Stores all unique nodes we discover
+        var links = new List<GraphLink>(); // Stores all connections between nodes
+        var visitedEdges = new HashSet<long>(); // Tracks which edges we've already processed (prevents duplicates)
+        var visitedRecords = new HashSet<long>(); // Tracks which records we've already explored (prevents reprocessing)
 
         // Add the starting record as our root node
         nodes[recordId] = new GraphNode
         {
             Id = recordId,
             Label = rootRecord.Name,
-            Type = "root"  // root of the graph
+            Type = "root" // root of the graph
         };
 
         // Start with just the root node to process
         var currentLevelRecordIds = new List<long> { recordId };
-        
+
         for (int currentDepth = 0; currentDepth < depth; currentDepth++)
         {
             var nextLevelRecordIds = new List<long>();
@@ -221,12 +222,12 @@ public class EdgeBusiness : IEdgeBusiness
                 {
                     continue;
                 }
-                
+
                 visitedRecords.Add(currentLevelRecordId);
 
                 // Get all connections FROM this record (outgoing edges)
                 var outgoingEdges = await GetGraphEdges(currentLevelRecordId, userProjectIds, true);
-                
+
                 // Get all connections TO this record (incoming edges)
                 var incomingEdges = await GetGraphEdges(currentLevelRecordId, userProjectIds, false);
 
@@ -238,7 +239,7 @@ public class EdgeBusiness : IEdgeBusiness
             // Move next level records to current
             currentLevelRecordIds = nextLevelRecordIds;
         }
-        
+
         return new GraphResponse
         {
             Nodes = nodes.Values.ToList(),
@@ -257,15 +258,16 @@ public class EdgeBusiness : IEdgeBusiness
     {
         // Start building our database query
         var query = _context.Edges
-            .Include(e => e.Origin)      
-            .Include(e => e.Destination)  
+            .Include(e => e.Origin)
+            .Include(e => e.Destination)
             .Include(e => e.Relationship)
-            .Where(e => 
+            .Where(e =>
                 userProjectIds.Contains(e.ProjectId) && // only edges in user projects
                 userProjectIds.Contains(e.Origin.ProjectId) && // only edges that have origins in user projects
-                userProjectIds.Contains(e.Destination.ProjectId) && // only edges that have destinations in user projects
-                !e.IsArchived);    // Only non-archived edges
-        
+                userProjectIds.Contains(e.Destination
+                    .ProjectId) && // only edges that have destinations in user projects
+                !e.IsArchived); // Only non-archived edges
+
         if (isOutgoing)
         {
             query = query.Where(e => e.OriginId == recordId);
@@ -302,7 +304,7 @@ public class EdgeBusiness : IEdgeBusiness
             {
                 continue;
             }
-            
+
             visitedEdges.Add(edge.Id);
 
             // Figure out which record is on the other side of this edge
@@ -327,8 +329,8 @@ public class EdgeBusiness : IEdgeBusiness
             // Note: we always store Source -> Target in the original edge direction
             links.Add(new GraphLink
             {
-                Source = edge.OriginId,   
-                Target = edge.DestinationId,   
+                Source = edge.OriginId,
+                Target = edge.DestinationId,
                 RelationshipId = edge.RelationshipId,
                 RelationshipName = edge.Relationship?.Name,
                 EdgeId = edge.Id
@@ -400,27 +402,27 @@ public class EdgeBusiness : IEdgeBusiness
         {
             throw new ValidationException("Origin and/or Destination IDs are missing or invalid.");
         }
-        
+
         if (dto.OriginId == dto.DestinationId)
         {
             throw new ValidationException("Destination and origin IDs cannot be the same");
         }
-        
+
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context,dataSourceId, projectId);
-        
-        var originRecordExists = _context.Records.Any(r => r.Id == dto.OriginId); 
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
+
+        var originRecordExists = _context.Records.Any(r => r.Id == dto.OriginId);
         if (!originRecordExists)
         {
             throw new KeyNotFoundException($"Origin record with id {dto.OriginId} not found");
         }
-        
+
         var destinationRecordExists = _context.Records.Any(r => r.Id == dto.DestinationId);
         if (!destinationRecordExists)
         {
             throw new KeyNotFoundException($"Destination record with id {dto.DestinationId} not found");
         }
-        
+
         var edge = new Edge
         {
             OriginId = dto.OriginId.Value,
@@ -443,8 +445,8 @@ public class EdgeBusiness : IEdgeBusiness
             EntityType = "edge",
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
-            Properties = JsonSerializer.Serialize(new 
-            { 
+            Properties = JsonSerializer.Serialize(new
+            {
                 origin = edge.OriginId,
                 destination = edge.DestinationId
             }), // TODO: Determine the extent of data edge properties need
@@ -512,19 +514,19 @@ public class EdgeBusiness : IEdgeBusiness
             {
                 throw new ValidationException("Destination and origin IDs cannot be the same");
             }
-            
-            var originRecordExists = _context.Records.Any(r => r.Id == dto.OriginId); 
+
+            var originRecordExists = _context.Records.Any(r => r.Id == dto.OriginId);
             if (!originRecordExists)
             {
                 throw new KeyNotFoundException($"Origin record with id {dto.OriginId} not found");
             }
-        
+
             var destinationRecordExists = _context.Records.Any(r => r.Id == dto.DestinationId);
             if (!destinationRecordExists)
             {
                 throw new KeyNotFoundException($"Destination record with id {dto.DestinationId} not found");
             }
-            
+
             return new[]
             {
                 new NpgsqlParameter($"@p{i}_orig", dto.OriginId),
@@ -559,7 +561,8 @@ public class EdgeBusiness : IEdgeBusiness
                 Properties = "{}", // TODO: Determine the extent of data edge properties need
             });
         }
-        await _eventBusiness.BulkCreateEvents(projectId, events);
+
+        await _eventBusiness.BulkCreateEvents(events, projectId);
 
         return result;
     }
@@ -601,7 +604,7 @@ public class EdgeBusiness : IEdgeBusiness
         {
             throw new ValidationException("Destination and origin Ids can not be the same.");
         }
-        
+
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
 
@@ -726,7 +729,7 @@ public class EdgeBusiness : IEdgeBusiness
         edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         edge.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
-        
+
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
@@ -752,7 +755,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? edgeId,
         long? originId,
         long? destinationId
-        )
+    )
     {
         if (edgeId == null && (originId == null || destinationId == null))
         {
@@ -784,7 +787,8 @@ public class EdgeBusiness : IEdgeBusiness
             }
             else
             {
-                throw new KeyNotFoundException($"Edge with origin {originId} and destination {destinationId} not found");
+                throw new KeyNotFoundException(
+                    $"Edge with origin {originId} and destination {destinationId} not found");
             }
         }
 
@@ -799,8 +803,9 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>Throws error if datasource does not exist</returns>
     private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
     {
-        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
-                : _context.DataSources.Any(p => p.Id == datasourceId);
+        var datasource = hideArchived
+            ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
+            : _context.DataSources.Any(p => p.Id == datasourceId);
         if (!datasource)
         {
             throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
