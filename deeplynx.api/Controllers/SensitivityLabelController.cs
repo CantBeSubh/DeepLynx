@@ -40,7 +40,8 @@ public class SensitivityLabelController : ControllerBase
         try
         {
             var labels = await _sensitivityLabelBusiness
-                .GetAllSensitivityLabels(projectId, organizationId, hideArchived);
+                .GetAllSensitivityLabels(null, organizationId,
+                    hideArchived); //setting project ID null for now to circumvent xor logic
             return Ok(labels);
         }
         catch (Exception exc)
@@ -93,8 +94,8 @@ public class SensitivityLabelController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, projectId,
-                organizationId);
+            var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, null,
+                organizationId); //setting project ID null for now to circumvent xor logic
             return Ok(label);
         }
         catch (Exception exc)
