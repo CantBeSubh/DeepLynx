@@ -5,9 +5,13 @@ namespace deeplynx.interfaces;
 public interface IClassBusiness
 {
     Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived);
+    Task<List<ClassResponseDto>> GetAllClassesMultiProject(long[] projectIds, bool hideArchived);
     Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived);
     Task<ClassResponseDto> CreateClass(long currentUserId, long projectId, CreateClassRequestDto dto);
-    Task<List<ClassResponseDto>> BulkCreateClasses(long currentUserId, long projectId, List<CreateClassRequestDto> classRequestDtos);
+
+    Task<List<ClassResponseDto>> BulkCreateClasses(long currentUserId, long projectId,
+        List<CreateClassRequestDto> classRequestDtos);
+
     Task<ClassResponseDto> UpdateClass(long currentUserId, long projectId, long classId, UpdateClassRequestDto dto);
     Task<ClassResponseDto> GetClassInfo(long currentUserId, long projectId, string className);
     Task<bool> DeleteClass(long projectId, long classId);

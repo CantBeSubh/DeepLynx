@@ -1,25 +1,24 @@
+using System.Text.Json;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using deeplynx.helpers;
 using Npgsql;
-using System.Text.Json;
-using deeplynx.helpers.Context;
 
 namespace deeplynx.business;
 
 public class ClassBusiness : IClassBusiness
 {
+    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
+    private readonly IEventBusiness _eventBusiness;
     private readonly IRecordBusiness _recordBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
-    private readonly IEventBusiness _eventBusiness;
-    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ClassBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="ClassBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -43,7 +42,7 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Retrieves all classes
+    ///     Retrieves all classes
     /// </summary>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
@@ -54,13 +53,10 @@ public class ClassBusiness : IClassBusiness
         var classes = await _context.Classes
             .Where(c => c.ProjectId == projectId).ToListAsync();
 
-        if (hideArchived)
-        {
-            classes = classes.Where(c => !c.IsArchived).ToList();
-        }
+        if (hideArchived) classes = classes.Where(c => !c.IsArchived).ToList();
 
         return classes
-            .Select(c => new ClassResponseDto()
+            .Select(c => new ClassResponseDto
             {
                 Id = c.Id,
                 Name = c.Name,
@@ -69,13 +65,40 @@ public class ClassBusiness : IClassBusiness
                 ProjectId = c.ProjectId,
                 LastUpdatedAt = c.LastUpdatedAt,
                 LastUpdatedBy = c.LastUpdatedBy,
-                IsArchived = c.IsArchived,
+                IsArchived = c.IsArchived
+            }).ToList();
+    }
+
+    /// <summary>
+    ///     Retrieves all classes for specific projects.
+    /// </summary>
+    /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
+    /// <returns>A list of data sources within the given project.</returns>
+    public async Task<List<ClassResponseDto>> GetAllClassesMultiProject(long[] projectIds, bool hideArchived)
+    {
+        var classes = await _context.Classes
+            .Where(c => projectIds.Contains(c.ProjectId)).ToListAsync();
+
+        if (hideArchived) classes = classes.Where(c => !c.IsArchived).ToList();
+
+        return classes
+            .Select(c => new ClassResponseDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                Uuid = c.Uuid,
+                ProjectId = c.ProjectId,
+                LastUpdatedAt = c.LastUpdatedAt,
+                LastUpdatedBy = c.LastUpdatedBy,
+                IsArchived = c.IsArchived
             }).ToList();
     }
 
 
     /// <summary>
-    /// Retrieves a specific class by ID
+    ///     Retrieves a specific class by ID
     /// </summary>
     /// <param name="projectId">The ID by which to retrieve the class</param>
     /// <param name="classId">The ID of the class to retrieve</param>
@@ -87,15 +110,9 @@ public class ClassBusiness : IClassBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var newClass = await _context.Classes
             .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
-        if (newClass == null)
-        {
-            throw new KeyNotFoundException($"Class with id {classId} not found");
-        }
+        if (newClass == null) throw new KeyNotFoundException($"Class with id {classId} not found");
 
-        if (hideArchived && newClass.IsArchived)
-        {
-            throw new KeyNotFoundException($"Class with id {classId} is archived");
-        }
+        if (hideArchived && newClass.IsArchived) throw new KeyNotFoundException($"Class with id {classId} is archived");
 
         return new ClassResponseDto
         {
@@ -111,7 +128,7 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Creates a new class based on the data transfer object supplied.
+    ///     Creates a new class based on the data transfer object supplied.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
@@ -147,7 +164,7 @@ public class ClassBusiness : IClassBusiness
             EntityId = newClass.Id,
             EntityName = newClass.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { newClass.Name }),
+            Properties = JsonSerializer.Serialize(new { newClass.Name })
         });
 
         return new ClassResponseDto
@@ -164,7 +181,7 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Creates a new classes based on the data transfer object supplied.
+    ///     Creates a new classes based on the data transfer object supplied.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
@@ -191,9 +208,9 @@ public class ClassBusiness : IClassBusiness
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
+            new("@projectId", projectId),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@lastUpdatedBy", currentUserId)
         };
 
         // establish "dynamic" parameters (new for each dto in the list)
@@ -217,9 +234,8 @@ public class ClassBusiness : IClassBusiness
             .ToListAsync();
 
         // for each created class Bulk log events
-        var events = new List<CreateEventRequestDto> { };
+        var events = new List<CreateEventRequestDto>();
         foreach (var item in result)
-        {
             events.Add(new CreateEventRequestDto
             {
                 ProjectId = projectId,
@@ -228,9 +244,8 @@ public class ClassBusiness : IClassBusiness
                 EntityId = item.Id,
                 EntityName = item.Name,
                 DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new { item.Name }),
+                Properties = JsonSerializer.Serialize(new { item.Name })
             });
-        }
 
         await _eventBusiness.BulkCreateEvents(events, projectId);
 
@@ -238,7 +253,7 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Updates an existing class by its ID.
+    ///     Updates an existing class by its ID.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the class belongs.</param>
@@ -252,9 +267,7 @@ public class ClassBusiness : IClassBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var updatedClass = await _context.Classes.FindAsync(classId);
         if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.IsArchived)
-        {
             throw new KeyNotFoundException($"Class with id {classId} not found");
-        }
 
         updatedClass.ProjectId = projectId;
         updatedClass.Name = dto.Name ?? updatedClass.Name;
@@ -275,7 +288,7 @@ public class ClassBusiness : IClassBusiness
             EntityId = updatedClass.Id,
             EntityName = updatedClass.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { updatedClass.Name }),
+            Properties = JsonSerializer.Serialize(new { updatedClass.Name })
         });
 
         return new ClassResponseDto
@@ -292,7 +305,7 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Delete a class by id.
+    ///     Delete a class by id.
     /// </summary>
     /// <param name="projectId">ID of the project to which the class belongs.</param>
     /// <param name="classId">ID of the class to delete.</param>
@@ -316,7 +329,7 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Archive (soft delete) a class by id. This also archives downstream dependents.
+    ///     Archive (soft delete) a class by id. This also archives downstream dependents.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to which the class belongs.</param>
@@ -348,10 +361,8 @@ public class ClassBusiness : IClassBusiness
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
-                {
                     throw new DependencyDeletionException(
                         $"unable to archive class {classId} or its downstream dependents.");
-                }
 
                 await transaction.CommitAsync();
             }
@@ -371,7 +382,7 @@ public class ClassBusiness : IClassBusiness
             EntityId = dbClass.Id,
             EntityName = dbClass.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { dbClass.Name }),
+            Properties = JsonSerializer.Serialize(new { dbClass.Name })
         });
 
         return true;
@@ -379,7 +390,7 @@ public class ClassBusiness : IClassBusiness
 
 
     /// <summary>
-    /// Unarchive a class by id. This also unarchives downstream dependents.
+    ///     Unarchive a class by id. This also unarchives downstream dependents.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to which the class belongs.</param>
@@ -411,10 +422,8 @@ public class ClassBusiness : IClassBusiness
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
-                {
                     throw new DependencyDeletionException(
                         $"unable to unarchive class {classId} or its downstream dependents.");
-                }
 
                 await transaction.CommitAsync();
             }
@@ -434,15 +443,15 @@ public class ClassBusiness : IClassBusiness
             EntityId = dbClass.Id,
             EntityName = dbClass.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { dbClass.Name }),
+            Properties = JsonSerializer.Serialize(new { dbClass.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// This is used to get the general class that has been created with a project.
-    /// If there is a project that does not have the class, it creates one. 
+    ///     This is used to get the general class that has been created with a project.
+    ///     If there is a project that does not have the class, it creates one.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project we are searching</param>
@@ -455,15 +464,13 @@ public class ClassBusiness : IClassBusiness
             await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == projectId);
 
         if (projectClass != null)
-        {
-            return new ClassResponseDto()
+            return new ClassResponseDto
             {
                 Id = projectClass.Id,
-                Name = projectClass.Name,
+                Name = projectClass.Name
             };
-        }
 
-        var classDto = new CreateClassRequestDto()
+        var classDto = new CreateClassRequestDto
         {
             Name = className
         };
@@ -472,8 +479,8 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Validates that all provided class names exist in the database for the specified project.
-    /// Used by MetadataBusiness to enforce ontologyMutable settings.
+    ///     Validates that all provided class names exist in the database for the specified project.
+    ///     Used by MetadataBusiness to enforce ontologyMutable settings.
     /// </summary>
     /// <param name="projectId">The project ID to search within</param>
     /// <param name="classNames">List of class names to validate</param>
@@ -506,10 +513,8 @@ public class ClassBusiness : IClassBusiness
         var missingClassNames = cleanClassNames.Where(name => !foundClassNames.Contains(name)).ToList();
 
         if (missingClassNames.Any())
-        {
             throw new KeyNotFoundException(
                 $"Classes not found with names: {string.Join(", ", missingClassNames)}");
-        }
 
         return existingClasses.Select(c => new ClassResponseDto
         {

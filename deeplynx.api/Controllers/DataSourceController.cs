@@ -58,6 +58,35 @@ public class DataSourceController : ControllerBase
     }
 
     /// <summary>
+    ///     Get All Data Sources (Multi Project)
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
+    /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+    /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
+    /// <returns>A list of data sources for the given project.</returns>
+    [HttpGet("multiproject", Name = "api_get_all_data_sources_multi_project")]
+    public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSourcesMultiProject(
+        long organizationId,
+        long projectId,
+        [FromQuery] long[] projectIds,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var dataSources = await _dataSourceBusiness.GetAllDataSourcesMultiProject(
+                projectIds, hideArchived);
+            return Ok(dataSources);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing all data sources: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
     ///     Get a Data Source
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>

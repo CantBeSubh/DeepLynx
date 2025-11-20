@@ -85,6 +85,34 @@ public class ClassController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Get All Classes (Multi Project)
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
+    /// <param name="projectId">The ID of the project whose classes are to be retrieved</param>
+    /// <param name="projectIds">The IDs of the projects whose classes are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
+    /// <returns>A list of classes for the given project.</returns>
+    [HttpGet("multiproject", Name = "api_get_all_classes_multi_project")]
+    public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClassMultiProject(
+        long organizationId,
+        long projectId,
+        [FromQuery] long[] projectIds,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var classes = await _classBusiness.GetAllClassesMultiProject(
+                projectIds, hideArchived);
+            return Ok(classes);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing all classes: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
     /// <summary>
     ///     Create a Class

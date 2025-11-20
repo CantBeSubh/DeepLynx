@@ -38,7 +38,6 @@ public class SavedSearchController : ControllerBase
     /// <param name="alias">Name for saved search</param>
     /// <param name="favorite">Boolean for if favorite search or not</param>
     /// <returns>True if successfully saved</returns>
-    // TODO: move to UserController
     [HttpPost(Name = "api_save_search")]
     public async Task<ActionResult<bool>> SaveSearch(
         [FromQuery] string? textSearch, [FromQuery] string? alias, [FromQuery] bool favorite,
@@ -63,7 +62,6 @@ public class SavedSearchController : ControllerBase
     ///     Get saved searches
     /// </summary>
     /// <returns>A list of saved searches belonging to the user.</returns>
-    // TODO: move to UserController
     [HttpGet(Name = "api_query_get_saved_searches")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetSavedSearches()
     {

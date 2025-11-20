@@ -9,12 +9,6 @@ public interface IQueryBusiness
     Task<IEnumerable<HistoricalRecordResponseDto>> QueryBuilder(CustomQueryDtos.CustomQueryRequestDto[] request,
         long[] projectIds, string? textSearch);
 
-    Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived);
-
-    Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived);
-
-    Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived);
-
     Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(
         long[] projectId);
 

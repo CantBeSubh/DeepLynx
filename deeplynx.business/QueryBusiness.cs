@@ -343,6 +343,82 @@ public class QueryBusiness : IQueryBusiness
     }
 
     /// <summary>
+    ///     Retrieves current records for projects, ordered by last_updated_at first
+    /// </summary>
+    /// <param name="projectIds">An array of project ids</param>
+    /// <returns>An array of records</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectIds)
+    {
+        var records = _context.HistoricalRecords
+            .Where(p => projectIds.Contains(p.ProjectId))
+            .Where(r => !r.IsArchived)
+            .GroupBy(r => r.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
+            .ToList();
+
+        return records
+            .Select(r => new HistoricalRecordResponseDto
+            {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                Description = r.Description,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+
+
+    /// <summary>
+    ///     Retrieves all records for multiple projects.
+    /// </summary>
+    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns>A list of records based on the applied filters.</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
+        long[] projects, bool hideArchived)
+    {
+        var recordQuery = _context.HistoricalRecords
+            .Where(r => projects.Contains(r.ProjectId));
+
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
+
+        var records = await recordQuery
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
+            .ToListAsync();
+
+        return records
+            .Select(r => new HistoricalRecordResponseDto
+            {
+                Id = r.RecordId,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                LastUpdatedAt = r.LastUpdatedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
+                Tags = r.Tags
+            });
+    }
+
+    /// <summary>
     ///     Retrieves all classes for specific projects.
     /// </summary>
     /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
@@ -350,9 +426,6 @@ public class QueryBusiness : IQueryBusiness
     /// <returns>A list of data sources within the given project.</returns>
     public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
     {
-        foreach (var projectId in projectIds)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
-
         var classes = await _context.Classes
             .Where(c => projectIds.Contains(c.ProjectId)).ToListAsync();
 
@@ -431,81 +504,5 @@ public class QueryBusiness : IQueryBusiness
                 LastUpdatedAt = t.LastUpdatedAt
             })
             .ToListAsync();
-    }
-
-    /// <summary>
-    ///     Retrieves current records for projects, ordered by last_updated_at first
-    /// </summary>
-    /// <param name="projectIds">An array of project ids</param>
-    /// <returns>An array of records</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectIds)
-    {
-        var records = _context.HistoricalRecords
-            .Where(p => projectIds.Contains(p.ProjectId))
-            .Where(r => !r.IsArchived)
-            .GroupBy(r => r.RecordId)
-            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
-            .ToList();
-
-        return records
-            .Select(r => new HistoricalRecordResponseDto
-            {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                Description = r.Description,
-                LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                LastUpdatedAt = r.LastUpdatedAt
-            });
-    }
-
-
-    /// <summary>
-    ///     Retrieves all records for multiple projects.
-    /// </summary>
-    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
-    /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
-        long[] projects, bool hideArchived)
-    {
-        var recordQuery = _context.HistoricalRecords
-            .Where(r => projects.Contains(r.ProjectId));
-
-        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
-
-        var records = await recordQuery
-            .GroupBy(e => e.RecordId)
-            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
-            .ToListAsync();
-
-        return records
-            .Select(r => new HistoricalRecordResponseDto
-            {
-                Id = r.RecordId,
-                Description = r.Description,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                ProjectId = r.ProjectId,
-                LastUpdatedAt = r.LastUpdatedAt,
-                LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                Tags = r.Tags
-            });
     }
 }

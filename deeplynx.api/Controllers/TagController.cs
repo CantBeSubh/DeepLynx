@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -76,6 +75,34 @@ public class TagController : ControllerBase
         }
     }
 
+    /// <summary>
+    ///     Get All Tags (Multi Project)
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
+    /// <param name="projectId">The ID of the project whose tags are to be retrieved</param>
+    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
+    /// <returns>A list of tags for the given project.</returns>
+    [HttpGet("multiproject", Name = "api_get_all_tags_multi_project")]
+    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTagsMultiProject(
+        long organizationId,
+        long projectId,
+        [FromQuery] long[] projectIds,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var tags = await _tagBusiness.GetAllTagsMultiProject(
+                projectIds, hideArchived);
+            return Ok(tags);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing all tags: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
     /// <summary>
     ///     Creates a tag

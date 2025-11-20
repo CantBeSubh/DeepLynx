@@ -331,6 +331,11 @@ try
                 },
                 new()
                 {
+                    Name = "SavedSearch",
+                    Description = "Handles operations related to saving queries for future re-use"
+                },
+                new()
+                {
                     Name = "SensitivityLabel",
                     Description = "Handles operations related to Sensitivity Label management"
                 },

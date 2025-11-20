@@ -1,23 +1,22 @@
 using System.ComponentModel.DataAnnotations;
-using deeplynx.interfaces;
+using System.Text.Json;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
+using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using deeplynx.helpers;
-using deeplynx.helpers.exceptions;
-using System.Text.Json;
 
 namespace deeplynx.business;
 
 public class TagBusiness : ITagBusiness
 {
+    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TagBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="TagBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for tag operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -30,7 +29,7 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Retrieves all tags for a specified project.
+    ///     Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
@@ -42,24 +41,45 @@ public class TagBusiness : ITagBusiness
         var tagQuery = _context.Tags
             .Where(t => t.ProjectId == projectId);
 
-        if (hideArchived)
-        {
-            tagQuery = tagQuery.Where(t => !t.IsArchived);
-        }
+        if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
 
-        return await tagQuery.Select(t => new TagResponseDto()
+        return await tagQuery.Select(t => new TagResponseDto
             {
                 Id = t.Id,
                 Name = t.Name,
                 ProjectId = t.ProjectId,
                 LastUpdatedBy = t.LastUpdatedBy,
-                LastUpdatedAt = t.LastUpdatedAt,
+                LastUpdatedAt = t.LastUpdatedAt
             })
             .ToListAsync();
     }
 
     /// <summary>
-    /// Retrieves a specific tag by its ID for a specified project.
+    ///     Retrieves all tags for a specified project.
+    /// </summary>
+    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
+    /// <returns>A list of tags belonging to the project.</returns>
+    public async Task<List<TagResponseDto>> GetAllTagsMultiProject(long[] projectIds, bool hideArchived)
+    {
+        var tagQuery = _context.Tags
+            .Where(t => projectIds.Contains(t.ProjectId));
+
+        if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
+
+        return await tagQuery.Select(t => new TagResponseDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                ProjectId = t.ProjectId,
+                LastUpdatedBy = t.LastUpdatedBy,
+                LastUpdatedAt = t.LastUpdatedAt
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>
+    ///     Retrieves a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
@@ -73,15 +93,9 @@ public class TagBusiness : ITagBusiness
             .Where(t => t.ProjectId == projectId && t.Id == tagId)
             .FirstOrDefaultAsync();
 
-        if (tag == null)
-        {
-            throw new KeyNotFoundException($"Tag with id {tagId} not found");
-        }
+        if (tag == null) throw new KeyNotFoundException($"Tag with id {tagId} not found");
 
-        if (hideArchived && tag.IsArchived)
-        {
-            throw new KeyNotFoundException($"Tag with id {tagId} is archived");
-        }
+        if (hideArchived && tag.IsArchived) throw new KeyNotFoundException($"Tag with id {tagId} is archived");
 
         return new TagResponseDto
         {
@@ -90,13 +104,13 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
             LastUpdatedAt = tag.LastUpdatedAt,
-            IsArchived = tag.IsArchived,
+            IsArchived = tag.IsArchived
         };
     }
 
     /// <summary>
-    /// Asynchronously creates a new tag for a specified project.
-    /// Note: Will error out with foreign key constraint violation if project is not found.
+    ///     Asynchronously creates a new tag for a specified project.
+    ///     Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -111,15 +125,11 @@ public class TagBusiness : ITagBusiness
 
         var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == dto.Name);
         if (existingTag != null)
-        {
             throw new Exception($"Tag for project {projectId} with name {dto.Name} already exists");
-        }
 
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(dto.Name))
-        {
             throw new ValidationException("Name is required and cannot be empty or whitespace");
-        }
 
         var tag = new Tag
         {
@@ -141,7 +151,7 @@ public class TagBusiness : ITagBusiness
             EntityId = tag.Id,
             EntityName = tag.Name,
             Properties = JsonSerializer.Serialize(new { tag.Name }),
-            DataSourceId = null,
+            DataSourceId = null
         });
 
         return new TagResponseDto // Return validated response DTO back to user.
@@ -155,8 +165,8 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Asynchronously creates new tags for a specified project.
-    /// Note: Will error out with foreign key constraint violation if project is not found.
+    ///     Asynchronously creates new tags for a specified project.
+    ///     Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -206,9 +216,8 @@ public class TagBusiness : ITagBusiness
             .ToListAsync();
 
         // log tag create event for each tag created
-        var events = new List<CreateEventRequestDto> { };
+        var events = new List<CreateEventRequestDto>();
         foreach (var item in result)
-        {
             events.Add(new CreateEventRequestDto
             {
                 ProjectId = item.ProjectId,
@@ -217,9 +226,8 @@ public class TagBusiness : ITagBusiness
                 EntityId = item.Id,
                 EntityName = item.Name,
                 Properties = JsonSerializer.Serialize(new { item.Name }),
-                DataSourceId = null,
+                DataSourceId = null
             });
-        }
 
         await _eventBusiness.BulkCreateEvents(events, projectId);
 
@@ -227,7 +235,7 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Updates an existing tag for a specified project.
+    ///     Updates an existing tag for a specified project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -241,15 +249,11 @@ public class TagBusiness : ITagBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
-        {
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
-        }
 
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
-        {
             throw new ArgumentException("Name is required and cannot be empty.");
-        }
 
         tag.Name = tagRequestDto.Name ?? tag.Name;
         tag.LastUpdatedBy = currentUserId;
@@ -267,7 +271,7 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             EntityName = tag.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { tag.Name }),
+            Properties = JsonSerializer.Serialize(new { tag.Name })
         });
 
         return new TagResponseDto
@@ -277,12 +281,12 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             LastUpdatedBy = tag.LastUpdatedBy,
             LastUpdatedAt = tag.LastUpdatedAt,
-            IsArchived = tag.IsArchived,
+            IsArchived = tag.IsArchived
         };
     }
 
     /// <summary>
-    /// Deletes a specific tag by its ID for a specified project.
+    ///     Deletes a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
@@ -301,7 +305,7 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Archives a specific tag by its ID for a specified project.
+    ///     Archives a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -329,14 +333,14 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             EntityName = tag.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { tag.Name }),
+            Properties = JsonSerializer.Serialize(new { tag.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// Unarchives a specific tag by its ID for a specified project.
+    ///     Unarchives a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -364,15 +368,15 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             EntityName = tag.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { tag.Name }),
+            Properties = JsonSerializer.Serialize(new { tag.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// Validates that all provided tag names exist in the database for the specified project.
-    /// Used by MetadataBusiness to enforce tagsMutable settings.
+    ///     Validates that all provided tag names exist in the database for the specified project.
+    ///     Used by MetadataBusiness to enforce tagsMutable settings.
     /// </summary>
     /// <param name="projectId">The project ID to search within</param>
     /// <param name="tagNames">List of tag names to validate</param>
@@ -406,10 +410,8 @@ public class TagBusiness : ITagBusiness
         var missingTagNames = cleanTagNames.Where(name => !foundTagNames.Contains(name)).ToList();
 
         if (missingTagNames.Any())
-        {
             throw new KeyNotFoundException(
                 $"Tags not found with names: {string.Join(", ", missingTagNames)}");
-        }
 
         return existingTags.Select(t => new TagResponseDto
         {
@@ -418,7 +420,7 @@ public class TagBusiness : ITagBusiness
             ProjectId = t.ProjectId,
             LastUpdatedBy = t.LastUpdatedBy,
             LastUpdatedAt = t.LastUpdatedAt,
-            IsArchived = t.IsArchived,
+            IsArchived = t.IsArchived
         }).ToList();
     }
 }
