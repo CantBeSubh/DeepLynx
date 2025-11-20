@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251120201159_OrgRestructure")]
+    partial class OrgRestructure
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -136,6 +139,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
@@ -143,12 +150,17 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("actions_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_actions_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_actions_last_updated_by");
 
-                    b.HasIndex(new[] { "Id" }, "idx_actions_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_actions_organization_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_project_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_actions_project_id");
 
                     b.ToTable("actions", "deeplynx");
                 });
@@ -183,9 +195,10 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("api_keys_pkey");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("ApplicationId")
+                        .HasDatabaseName("idx_api_keys_application_id");
 
-                    b.HasIndex(new[] { "ApplicationId" }, "idx_api_keys_application_id");
+                    b.HasIndex("UserId");
 
                     b.ToTable("api_keys", "deeplynx");
                 });
@@ -224,6 +237,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
@@ -235,19 +252,27 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("classes_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_classes_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_classes_last_updated_by");
 
-                    b.HasIndex(new[] { "Id" }, "idx_classes_id");
+                    b.HasIndex("Name")
+                        .HasDatabaseName("idx_classes_name");
 
-                    b.HasIndex(new[] { "Name" }, "idx_classes_name");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_classes_organization_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_classes_project_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_classes_project_id");
 
-                    b.HasIndex(new[] { "Uuid" }, "idx_classes_uuid");
+                    b.HasIndex("Uuid")
+                        .HasDatabaseName("idx_classes_uuid");
 
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_class_name")
-                        .IsUnique();
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_class_name");
 
                     b.ToTable("classes", "deeplynx");
                 });
@@ -302,6 +327,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
@@ -313,12 +342,17 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("data_sources_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_data_sources_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_data_sources_last_updated_by");
 
-                    b.HasIndex(new[] { "Id" }, "idx_data_sources_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_data_sources_organization_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_data_sources_project_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_data_sources_project_id");
 
                     b.ToTable("data_sources", "deeplynx");
                 });
@@ -356,6 +390,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<long>("OriginId")
                         .HasColumnType("bigint")
                         .HasColumnName("origin_id");
@@ -371,23 +409,33 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("edges_pkey");
 
+                    b.HasIndex("DataSourceId")
+                        .HasDatabaseName("idx_edges_data_source_id");
+
+                    b.HasIndex("DestinationId")
+                        .HasDatabaseName("idx_edges_destination_id");
+
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_edges_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_edges_last_updated_by");
 
-                    b.HasIndex(new[] { "DataSourceId" }, "idx_edges_data_source_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_edges_organization_id");
 
-                    b.HasIndex(new[] { "DestinationId" }, "idx_edges_destination_id");
+                    b.HasIndex("OriginId")
+                        .HasDatabaseName("idx_edges_origin_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_edges_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_edges_project_id");
 
-                    b.HasIndex(new[] { "OriginId" }, "idx_edges_origin_id");
+                    b.HasIndex("RelationshipId")
+                        .HasDatabaseName("idx_edges_relationship_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_edges_project_id");
-
-                    b.HasIndex(new[] { "RelationshipId" }, "idx_edges_relationship_id");
-
-                    b.HasIndex(new[] { "ProjectId", "OriginId", "DestinationId" }, "unique_edge_record_ids")
-                        .IsUnique();
+                    b.HasIndex("ProjectId", "OriginId", "DestinationId")
+                        .IsUnique()
+                        .HasDatabaseName("unique_edge_record_ids");
 
                     b.ToTable("edges", "deeplynx", t =>
                         {
@@ -452,16 +500,20 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("events_pkey");
 
+                    b.HasIndex("DataSourceId")
+                        .HasDatabaseName("idx_events_data_source_id");
+
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_events_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_events_last_updated_by");
 
-                    b.HasIndex(new[] { "DataSourceId" }, "idx_events_data_source_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_events_organization_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_events_id");
-
-                    b.HasIndex(new[] { "OrganizationId" }, "idx_events_organization_id");
-
-                    b.HasIndex(new[] { "ProjectId" }, "idx_events_project_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_events_project_id");
 
                     b.ToTable("events", "deeplynx");
                 });
@@ -507,12 +559,14 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("groups_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_groups_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_groups_last_updated_by");
 
-                    b.HasIndex(new[] { "Id" }, "idx_groups_id");
-
-                    b.HasIndex(new[] { "OrganizationId" }, "idx_groups_organization_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_groups_organization_id");
 
                     b.ToTable("groups", "deeplynx");
                 });
@@ -561,6 +615,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<long>("OriginId")
                         .HasColumnType("bigint")
                         .HasColumnName("origin_id");
@@ -587,20 +645,32 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("historical_edges_pkey");
 
+                    b.HasIndex("DestinationId")
+                        .HasDatabaseName("idx_historical_edges_destination_id");
+
+                    b.HasIndex("EdgeId")
+                        .HasDatabaseName("idx_historical_edges_edge_id");
+
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_historical_edges_id");
+
+                    b.HasIndex("LastUpdatedAt")
+                        .HasDatabaseName("idx_historical_edges_last_updated_at");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_historical_edges_last_updated_by");
 
-                    b.HasIndex(new[] { "DestinationId" }, "idx_historical_edges_destination_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_historical_edges_organization_id");
 
-                    b.HasIndex(new[] { "EdgeId" }, "idx_historical_edges_edge_id");
+                    b.HasIndex("OriginId")
+                        .HasDatabaseName("idx_historical_edges_origin_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_historical_edges_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_historical_edges_project_id");
 
-                    b.HasIndex(new[] { "LastUpdatedAt" }, "idx_historical_edges_last_updated_at");
-
-                    b.HasIndex(new[] { "OriginId" }, "idx_historical_edges_origin_id");
-
-                    b.HasIndex(new[] { "RelationshipName" }, "idx_historical_edges_relationship_name");
+                    b.HasIndex("RelationshipName")
+                        .HasDatabaseName("idx_historical_edges_relationship_name");
 
                     b.ToTable("historical_edges", "deeplynx");
                 });
@@ -663,6 +733,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("object_storage_name");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<string>("OriginalId")
                         .HasColumnType("text")
                         .HasColumnName("original_id");
@@ -696,17 +770,27 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("historical_records_pkey");
 
-                    b.HasIndex(new[] { "ClassName" }, "idx_historical_records_class_name");
+                    b.HasIndex("ClassName")
+                        .HasDatabaseName("idx_historical_records_class_name");
 
-                    b.HasIndex(new[] { "Id" }, "idx_historical_records_id");
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_historical_records_id");
 
-                    b.HasIndex(new[] { "LastUpdatedAt" }, "idx_historical_records_last_updated_at");
+                    b.HasIndex("LastUpdatedAt")
+                        .HasDatabaseName("idx_historical_records_last_updated_at");
+
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_historical_records_organization_id");
+
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_historical_records_project_id");
+
+                    b.HasIndex("RecordId")
+                        .HasDatabaseName("idx_historical_records_record_id");
 
                     b.HasIndex(new[] { "Properties" }, "idx_historical_records_properties");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Properties" }, "idx_historical_records_properties"), "gin");
-
-                    b.HasIndex(new[] { "RecordId" }, "idx_historical_records_record_id");
 
                     b.ToTable("historical_records", "deeplynx");
                 });
@@ -771,12 +855,14 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("oauth_applications_pkey");
 
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("idx_oauth_applications_client_id");
+
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_oauth_applications_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_oauth_applications_last_updated_by");
-
-                    b.HasIndex(new[] { "ClientId" }, "idx_oauth_applications_client_id");
-
-                    b.HasIndex(new[] { "Id" }, "idx_oauth_applications_id");
 
                     b.ToTable("oauth_applications", "deeplynx");
                 });
@@ -822,11 +908,14 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("oauth_tokens_pkey");
 
-                    b.HasIndex(new[] { "ApplicationId" }, "idx_oauth_tokens_application_id");
+                    b.HasIndex("ApplicationId")
+                        .HasDatabaseName("idx_oauth_tokens_application_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_oauth_tokens_id");
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_oauth_tokens_id");
 
-                    b.HasIndex(new[] { "UserId" }, "idx_oauth_tokens_user_id");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("idx_oauth_tokens_user_id");
 
                     b.ToTable("oauth_tokens", "deeplynx");
                 });
@@ -870,7 +959,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OrganizationId")
+                    b.Property<long>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
@@ -886,19 +975,29 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("object_storage_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_object_storages_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_object_storages_last_updated_by");
 
-                    b.HasIndex(new[] { "OrganizationId" }, "IX_object_storages_organization_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_object_storages_organization_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "IX_object_storages_project_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_object_storages_project_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_object_storage_id");
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_organization_object_storage_name")
+                        .HasFilter("project_id IS NULL");
 
-                    b.ToTable("object_storages", "deeplynx", t =>
-                        {
-                            t.HasCheckConstraint("ck_object_storages_ProjectXorOrg", "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)");
-                        });
+                    b.HasIndex("OrganizationId", "ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_project_object_storage_name")
+                        .HasFilter("project_id IS NOT NULL");
+
+                    b.ToTable("object_storages", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
@@ -942,13 +1041,15 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("organization_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_organizations_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_organizations_last_updated_by");
 
-                    b.HasIndex(new[] { "Id" }, "idx_organizations_id");
-
-                    b.HasIndex(new[] { "Name" }, "unique_organization_name")
-                        .IsUnique();
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_organization_name");
 
                     b.ToTable("organizations", "deeplynx");
                 });
@@ -972,12 +1073,15 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("OrganizationId", "UserId")
                         .HasName("organization_user_pkey");
 
-                    b.HasIndex(new[] { "OrganizationId" }, "idx_organization_users_organization_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_organization_users_organization_id");
 
-                    b.HasIndex(new[] { "UserId" }, "idx_organization_users_user_id");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("idx_organization_users_user_id");
 
-                    b.HasIndex(new[] { "OrganizationId", "UserId" }, "unique_organization_user_ids")
-                        .IsUnique();
+                    b.HasIndex("OrganizationId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("unique_organization_user_ids");
 
                     b.ToTable("organization_users", "deeplynx");
                 });
@@ -1044,34 +1148,49 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("permission_pkey");
 
+                    b.HasIndex("Action")
+                        .HasDatabaseName("idx_permissions_action");
+
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_permissions_id");
+
+                    b.HasIndex("IsDefault")
+                        .HasDatabaseName("idx_permissions_is_default");
+
+                    b.HasIndex("LabelId")
+                        .HasDatabaseName("idx_permissions_label_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_permissions_last_updated_by");
 
-                    b.HasIndex(new[] { "Action" }, "idx_permissions_action");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_permissions_organization_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_permissions_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_permissions_project_id");
 
-                    b.HasIndex(new[] { "IsDefault" }, "idx_permissions_is_default");
+                    b.HasIndex("Resource")
+                        .HasDatabaseName("idx_permissions_resource");
 
-                    b.HasIndex(new[] { "LabelId" }, "idx_permissions_label_id");
+                    b.HasIndex("OrganizationId", "LabelId", "Action")
+                        .IsUnique()
+                        .HasDatabaseName("permissions_unique_org_label_action")
+                        .HasFilter("project_id IS NULL");
 
-                    b.HasIndex(new[] { "OrganizationId" }, "idx_permissions_organization_id");
+                    b.HasIndex("OrganizationId", "Resource", "Action")
+                        .IsUnique()
+                        .HasDatabaseName("permissions_unique_org_resource_action")
+                        .HasFilter("project_id IS NULL");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_permissions_project_id");
+                    b.HasIndex("OrganizationId", "ProjectId", "LabelId", "Action")
+                        .IsUnique()
+                        .HasDatabaseName("permissions_unique_project_label_action")
+                        .HasFilter("project_id IS NOT NULL");
 
-                    b.HasIndex(new[] { "Resource" }, "idx_permissions_resource");
-
-                    b.HasIndex(new[] { "OrganizationId", "LabelId", "Action" }, "permissions_unique_org_label_action")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "OrganizationId", "Resource", "Action" }, "permissions_unique_org_resource_action")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "ProjectId", "LabelId", "Action" }, "permissions_unique_project_label_action")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "ProjectId", "Resource", "Action" }, "permissions_unique_project_resource_action")
-                        .IsUnique();
+                    b.HasIndex("OrganizationId", "ProjectId", "Resource", "Action")
+                        .IsUnique()
+                        .HasDatabaseName("permissions_unique_project_resource_action")
+                        .HasFilter("project_id IS NOT NULL");
 
                     b.ToTable("permissions", "deeplynx");
                 });
@@ -1128,12 +1247,14 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("projects_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_projects_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_projects_last_updated_by");
 
-                    b.HasIndex(new[] { "Id" }, "idx_projects_id");
-
-                    b.HasIndex(new[] { "OrganizationId" }, "idx_projects_organization_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_projects_organization_id");
 
                     b.ToTable("projects", "deeplynx");
                 });
@@ -1166,18 +1287,24 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("project_members_pkey");
 
-                    b.HasIndex(new[] { "GroupId" }, "idx_project_members_group_id");
+                    b.HasIndex("GroupId")
+                        .HasDatabaseName("idx_project_members_group_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_project_members_id");
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_project_members_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_project_members_project_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_project_members_project_id");
 
-                    b.HasIndex(new[] { "RoleId" }, "idx_project_members_role_id");
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("idx_project_members_role_id");
 
-                    b.HasIndex(new[] { "UserId" }, "idx_project_members_user_id");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("idx_project_members_user_id");
 
-                    b.HasIndex(new[] { "ProjectId", "GroupId", "RoleId", "UserId" }, "unique_project_member_ids")
-                        .IsUnique();
+                    b.HasIndex("ProjectId", "GroupId", "RoleId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("unique_project_member_ids");
 
                     b.ToTable("project_members", "deeplynx");
                 });
@@ -1233,6 +1360,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("object_storage_id");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<string>("OriginalId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1254,29 +1385,40 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("records_pkey");
 
+                    b.HasIndex("ClassId")
+                        .HasDatabaseName("idx_records_class_id");
+
+                    b.HasIndex("DataSourceId")
+                        .HasDatabaseName("idx_records_data_source_id");
+
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_records_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_records_last_updated_by");
 
-                    b.HasIndex(new[] { "ObjectStorageId" }, "IX_records_object_storage_id");
+                    b.HasIndex("Name")
+                        .HasDatabaseName("idx_records_name");
 
-                    b.HasIndex(new[] { "ClassId" }, "idx_records_class_id");
+                    b.HasIndex("ObjectStorageId")
+                        .HasDatabaseName("idx_records_object_storage_id");
 
-                    b.HasIndex(new[] { "DataSourceId" }, "idx_records_data_source_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_records_organization_id");
 
-                    b.HasIndex(new[] { "Id" }, "idx_records_id");
+                    b.HasIndex("OriginalId")
+                        .HasDatabaseName("idx_records_original_id");
 
-                    b.HasIndex(new[] { "Name" }, "idx_records_name");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_records_project_id");
 
-                    b.HasIndex(new[] { "OriginalId" }, "idx_records_original_id");
-
-                    b.HasIndex(new[] { "ProjectId" }, "idx_records_project_id");
+                    b.HasIndex("ProjectId", "DataSourceId", "OriginalId")
+                        .IsUnique()
+                        .HasDatabaseName("unique_record_original_id");
 
                     b.HasIndex(new[] { "Properties" }, "idx_records_properties");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Properties" }, "idx_records_properties"), "gin");
-
-                    b.HasIndex(new[] { "ProjectId", "DataSourceId", "OriginalId" }, "unique_record_original_id")
-                        .IsUnique();
 
                     b.ToTable("records", "deeplynx");
                 });
@@ -1319,6 +1461,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
                     b.Property<long?>("OriginId")
                         .HasColumnType("bigint")
                         .HasColumnName("origin_id");
@@ -1334,23 +1480,33 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("relationships_pkey");
 
+                    b.HasIndex("DestinationId")
+                        .HasDatabaseName("idx_relationships_destination_id");
+
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_relationships_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_relationships_last_updated_by");
 
-                    b.HasIndex(new[] { "DestinationId" }, "idx_relationships_destination_id");
+                    b.HasIndex("Name")
+                        .HasDatabaseName("idx_relationships_name");
 
-                    b.HasIndex(new[] { "Id" }, "idx_relationships_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_relationships_organization_id");
 
-                    b.HasIndex(new[] { "Name" }, "idx_relationships_name");
+                    b.HasIndex("OriginId")
+                        .HasDatabaseName("idx_relationships_origin_id");
 
-                    b.HasIndex(new[] { "OriginId" }, "idx_relationships_origin_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_relationships_project_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_relationships_project_id");
+                    b.HasIndex("Uuid")
+                        .HasDatabaseName("idx_relationships_uuid");
 
-                    b.HasIndex(new[] { "Uuid" }, "idx_relationships_uuid");
-
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_relationship_name")
-                        .IsUnique();
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_relationship_name");
 
                     b.ToTable("relationships", "deeplynx");
                 });
@@ -1389,7 +1545,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OrganizationId")
+                    b.Property<long>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
@@ -1400,20 +1556,27 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("roles_pkey");
 
+                    b.HasIndex("Id")
+                        .HasDatabaseName("idx_roles_id");
+
                     b.HasIndex("LastUpdatedBy")
                         .HasDatabaseName("idx_roles_last_updated_by");
 
-                    b.HasIndex(new[] { "Id" }, "idx_roles_id");
+                    b.HasIndex("OrganizationId")
+                        .HasDatabaseName("idx_roles_organization_id");
 
-                    b.HasIndex(new[] { "OrganizationId" }, "idx_roles_organization_id");
+                    b.HasIndex("ProjectId")
+                        .HasDatabaseName("idx_roles_project_id");
 
-                    b.HasIndex(new[] { "ProjectId" }, "idx_roles_project_id");
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_organization_role_name")
+                        .HasFilter("project_id IS NULL");
 
-                    b.HasIndex(new[] { "OrganizationId", "Name" }, "unique_organization_role_name")
-                        .IsUnique();
-
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_project_role_name")
-                        .IsUnique();
+                    b.HasIndex("OrganizationId", "ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_project_role_name")
+                        .HasFilter("project_id IS NOT NULL");
 
                     b.ToTable("roles", "deeplynx");
                 });
@@ -2390,6 +2553,7 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Roles")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("roles_organization_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")

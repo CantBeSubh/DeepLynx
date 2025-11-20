@@ -1,38 +1,41 @@
-using Microsoft.EntityFrameworkCore;
-using deeplynx.models;
-using deeplynx.interfaces;
-using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
-using deeplynx.helpers;
-using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using deeplynx.helpers.Context;
+using deeplynx.datalayer.Models;
+using deeplynx.helpers;
+using deeplynx.helpers.exceptions;
+using deeplynx.interfaces;
+using deeplynx.models;
 using deeplynx.models.Configuration;
-using Newtonsoft.Json;
+using DotNetEnv;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace deeplynx.business;
 
-using DotNetEnv;
-using System.Linq;
-
 public class ProjectBusiness : IProjectBusiness
 {
-    private readonly DeeplynxContext _context;
-    private readonly IEventBusiness _eventBusiness;
-    private readonly IOrganizationBusiness _organizationBusiness;
-    private readonly ILogger<ProjectBusiness> _logger;
-    private readonly IClassBusiness _classBusiness;
-    private readonly IRoleBusiness _roleBusiness;
-    private readonly IDataSourceBusiness _dataSourceBusiness;
-    private readonly IObjectStorageBusiness _objectStorageBusiness;
     private readonly ICacheBusiness _cacheBusiness;
-    private readonly string ProjectsCacheKey = "projects";
+    private readonly IClassBusiness _classBusiness;
+    private readonly DeeplynxContext _context;
+    private readonly IDataSourceBusiness _dataSourceBusiness;
+    private readonly IEventBusiness _eventBusiness;
+
+    private readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly ILogger<ProjectBusiness> _logger;
+    private readonly IObjectStorageBusiness _objectStorageBusiness;
+    private readonly IOrganizationBusiness _organizationBusiness;
+    private readonly IRoleBusiness _roleBusiness;
     private readonly TimeSpan cacheTTL = TimeSpan.FromHours(1);
+    private readonly string ProjectsCacheKey = "projects";
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="ProjectBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context used for the project operations.</param>
     /// <param name="cacheBusiness">Used to cache project data</param>
@@ -45,7 +48,8 @@ public class ProjectBusiness : IProjectBusiness
     public ProjectBusiness(
         DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,
         IClassBusiness classBusiness, IRoleBusiness roleBusiness, IDataSourceBusiness dataSourceBusiness,
-        IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness, IOrganizationBusiness organizationBusiness)
+        IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness,
+        IOrganizationBusiness organizationBusiness)
     {
         _context = context;
         _logger = logger;
@@ -59,7 +63,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Retrieves all projects
+    ///     Retrieves all projects
     /// </summary>
     /// <param name="userId">ID of user querying projects</param>
     /// <param name="organizationId">(Optional)Organization ID within which to constrain returned projects</param>
@@ -72,36 +76,25 @@ public class ProjectBusiness : IProjectBusiness
         bool hideArchived = true)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-        if (user == null)
-        {
-            throw new ArgumentException($"User with id {userId} not found.");
-        }
+        if (user == null) throw new ArgumentException($"User with id {userId} not found.");
 
         var projectQuery = _context.Projects.AsQueryable();
 
-        if (hideArchived)
-        {
-            projectQuery = projectQuery.Where(p => !p.IsArchived);
-        }
+        if (hideArchived) projectQuery = projectQuery.Where(p => !p.IsArchived);
 
-        if (organizationId.HasValue)
-        {
-            projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
-        }
+        if (organizationId.HasValue) projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
 
         if (!user.IsSysAdmin)
-        {
             projectQuery = projectQuery.Where(p =>
                 p.ProjectMembers.Any(pm =>
                     pm.UserId == userId ||
                     (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
                 )
             );
-        }
 
         var projects = await projectQuery.ToListAsync();
         return projects
-            .Select(p => new ProjectResponseDto()
+            .Select(p => new ProjectResponseDto
             {
                 Id = p.Id,
                 Name = p.Name,
@@ -110,12 +103,12 @@ public class ProjectBusiness : IProjectBusiness
                 LastUpdatedAt = p.LastUpdatedAt,
                 LastUpdatedBy = p.LastUpdatedBy,
                 IsArchived = p.IsArchived,
-                OrganizationId = p.OrganizationId,
+                OrganizationId = p.OrganizationId
             });
     }
 
     /// <summary>
-    /// Retrieves a specific project by ID
+    ///     Retrieves a specific project by ID
     /// </summary>
     /// <param name="projectId">The ID by which to retrieve the project</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
@@ -131,32 +124,22 @@ public class ProjectBusiness : IProjectBusiness
             await RefreshProjectsCache();
             cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
 
-            if (cachedProjectList == null)
-            {
-                cachedProjectList = new List<ProjectResponseDto>();
-            }
+            if (cachedProjectList == null) cachedProjectList = new List<ProjectResponseDto>();
         }
 
         var cachedProject = cachedProjectList.FirstOrDefault(p => p.Id == projectId);
 
         if (hideArchived && cachedProject != null)
-        {
             if (cachedProject.IsArchived)
-            {
                 cachedProject = null;
-            }
-        }
 
-        if (cachedProject == null)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
+        if (cachedProject == null) throw new KeyNotFoundException($"Project with id {projectId} not found");
 
         return cachedProject;
     }
 
     /// <summary>
-    /// Creates a new project based on the data transfer object supplied.
+    ///     Creates a new project based on the data transfer object supplied.
     /// </summary>
     /// <param name="currentUserId">Name of user creating the project</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
@@ -185,12 +168,12 @@ public class ProjectBusiness : IProjectBusiness
             }
             else
             {
-                var orgRequestDto = new CreateOrganizationRequestDto()
+                var orgRequestDto = new CreateOrganizationRequestDto
                 {
                     Name = "INL",
-                    Description = "Default Organization",
+                    Description = "Default Organization"
                 };
-                
+
                 var newDefaultOrg = await _organizationBusiness.CreateOrganization(currentUserId, orgRequestDto, true);
                 orgId = newDefaultOrg.Id;
             }
@@ -207,12 +190,12 @@ public class ProjectBusiness : IProjectBusiness
         };
 
         _context.Projects.Add(project);
-        
+
         SetDefaultPermissions(project);
-        
+
         await _context.SaveChangesAsync();
         var projectId = project.Id;
-        
+
         var projectResponseDto = new ProjectResponseDto
         {
             Id = projectId,
@@ -226,21 +209,15 @@ public class ProjectBusiness : IProjectBusiness
 
         // Update the Project Cache List
         var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-        
-        if (cachedProjectList == null)
-        {
-            cachedProjectList = new List<ProjectResponseDto>();
-        }
+
+        if (cachedProjectList == null) cachedProjectList = new List<ProjectResponseDto>();
 
         // add the new project to the project list and set the cache
         cachedProjectList.Add(projectResponseDto);
         await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
 
         // If project cache count differs from the database refresh it to match the database and return
-        if (cachedProjectList.Count != _context.Projects.Count())
-        {
-            await RefreshProjectsCache();
-        }
+        if (cachedProjectList.Count != _context.Projects.Count()) await RefreshProjectsCache();
 
         // Log create Project event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
@@ -252,7 +229,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = projectId,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name }),
+            Properties = JsonSerializer.Serialize(new { project.Name })
         });
 
         await SetProjectDefaults(currentUserId, project.OrganizationId, projectId);
@@ -261,7 +238,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Updates an existing project by ID
+    ///     Updates an existing project by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to update</param>
@@ -272,10 +249,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.IsArchived)
-        {
-            throw new KeyNotFoundException("Project not found.");
-        }
+        if (project == null || project.IsArchived) throw new KeyNotFoundException("Project not found.");
 
         project.Name = dto.Name ?? project.Name;
         project.Description = dto.Description ?? project.Description;
@@ -295,7 +269,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name }),
+            Properties = JsonSerializer.Serialize(new { project.Name })
         });
 
         var updatedProject = new ProjectResponseDto
@@ -322,10 +296,7 @@ public class ProjectBusiness : IProjectBusiness
 
         // If cache exists, update the project in the list
         var projectIndex = cachedProjectList.FindIndex(p => p.Id == updatedProject.Id);
-        if (projectIndex != -1)
-        {
-            cachedProjectList[projectIndex] = updatedProject;
-        }
+        if (projectIndex != -1) cachedProjectList[projectIndex] = updatedProject;
 
         // Set the updated list back to the cache
         await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
@@ -334,7 +305,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Delete a project by id.
+    ///     Delete a project by id.
     /// </summary>
     /// <param name="projectId">ID of the project to delete.</param>
     /// <returns>Boolean true on successful deletion.</returns>
@@ -360,10 +331,7 @@ public class ProjectBusiness : IProjectBusiness
         }
 
         var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectId);
-        if (projectIndex != -1)
-        {
-            cachedProjectList.RemoveAt(projectIndex);
-        }
+        if (projectIndex != -1) cachedProjectList.RemoveAt(projectIndex);
 
         await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
 
@@ -371,7 +339,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Archive (soft delete) a project by id. This also archives downstream dependents.
+    ///     Archive (soft delete) a project by id. This also archives downstream dependents.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to archive.</param>
@@ -401,10 +369,8 @@ public class ProjectBusiness : IProjectBusiness
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
-                {
                     throw new DependencyDeletionException(
                         $"unable to archive project {projectId} or its downstream dependents.");
-                }
 
                 await transaction.CommitAsync();
             }
@@ -424,7 +390,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name }),
+            Properties = JsonSerializer.Serialize(new { project.Name })
         });
 
         var projectResponse = new ProjectResponseDto
@@ -435,7 +401,7 @@ public class ProjectBusiness : IProjectBusiness
             Abbreviation = project.Abbreviation,
             LastUpdatedAt = project.LastUpdatedAt,
             LastUpdatedBy = project.LastUpdatedBy,
-            IsArchived = project.IsArchived,
+            IsArchived = project.IsArchived
         };
 
         // Update the Project Cache List
@@ -450,10 +416,7 @@ public class ProjectBusiness : IProjectBusiness
 
         // If cache exists, update the project in the list
         var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
-        if (projectIndex != -1)
-        {
-            cachedProjectList[projectIndex] = projectResponse;
-        }
+        if (projectIndex != -1) cachedProjectList[projectIndex] = projectResponse;
 
         // Set the updated list back to the cache
         await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
@@ -462,7 +425,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Unarchive a project by id. This also unarchives downstream dependents.
+    ///     Unarchive a project by id. This also unarchives downstream dependents.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">ID of the project to unarchive.</param>
@@ -492,10 +455,8 @@ public class ProjectBusiness : IProjectBusiness
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
-                {
                     throw new DependencyDeletionException(
                         $"unable to unarchive project {projectId} or its downstream dependents.");
-                }
 
                 await transaction.CommitAsync();
 
@@ -507,7 +468,7 @@ public class ProjectBusiness : IProjectBusiness
                     Abbreviation = project.Abbreviation,
                     LastUpdatedAt = project.LastUpdatedAt,
                     LastUpdatedBy = project.LastUpdatedBy,
-                    IsArchived = project.IsArchived,
+                    IsArchived = project.IsArchived
                 };
 
                 // Update the Project Cache List
@@ -522,10 +483,7 @@ public class ProjectBusiness : IProjectBusiness
 
                 // If cache exists, update the project in the list
                 var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
-                if (projectIndex != -1)
-                {
-                    cachedProjectList[projectIndex] = projectResponse;
-                }
+                if (projectIndex != -1) cachedProjectList[projectIndex] = projectResponse;
 
                 // Set the updated list back to the cache
                 await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
@@ -539,7 +497,7 @@ public class ProjectBusiness : IProjectBusiness
                     EntityId = project.Id,
                     EntityName = project.Name,
                     DataSourceId = null,
-                    Properties = JsonSerializer.Serialize(new { project.Name }),
+                    Properties = JsonSerializer.Serialize(new { project.Name })
                 });
 
                 return true;
@@ -554,7 +512,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Retrieves project stats
+    ///     Retrieves project stats
     /// </summary>
     /// <returns>A list of project stats</returns>
     public async Task<ProjectStatResponseDto> GetProjectStats(long projectId)
@@ -567,7 +525,7 @@ public class ProjectBusiness : IProjectBusiness
         var datasources = _context.DataSources
             .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
 
-        var response = new ProjectStatResponseDto()
+        var response = new ProjectStatResponseDto
         {
             classes = classes,
             records = records,
@@ -577,7 +535,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Retrieves all records for multiple projects.
+    ///     Retrieves all records for multiple projects.
     /// </summary>
     /// <param name="projects">Array of project ids whose records are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
@@ -586,12 +544,9 @@ public class ProjectBusiness : IProjectBusiness
         long[] projects, bool hideArchived)
     {
         var recordQuery = _context.HistoricalRecords
-            .Where(r => projects.Contains(r.ProjectId));
+            .Where(r => Enumerable.Contains(projects, r.ProjectId));
 
-        if (hideArchived)
-        {
-            recordQuery = recordQuery.Where(r => !r.IsArchived);
-        }
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
 
         var records = await recordQuery
             .GroupBy(e => e.RecordId)
@@ -599,7 +554,7 @@ public class ProjectBusiness : IProjectBusiness
             .ToListAsync();
 
         return records
-            .Select(r => new HistoricalRecordResponseDto()
+            .Select(r => new HistoricalRecordResponseDto
             {
                 Id = r.RecordId,
                 Description = r.Description,
@@ -619,7 +574,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// List the users and groups in a given project, along with their roles
+    ///     List the users and groups in a given project, along with their roles
     /// </summary>
     /// <param name="projectId"></param>
     /// <returns></returns>
@@ -635,7 +590,7 @@ public class ProjectBusiness : IProjectBusiness
                 MemberId = pm.UserId,
                 Email = pm.User.Email,
                 Role = pm.Role.Name,
-                RoleId = pm.Role.Id,
+                RoleId = pm.Role.Id
             });
 
         var groups = _context.ProjectMembers
@@ -653,7 +608,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Add a user or a group to a project
+    ///     Add a user or a group to a project
     /// </summary>
     /// <param name="projectId">Project to which to add member</param>
     /// <param name="roleId">(optional) Role which member will be added under</param>
@@ -702,7 +657,7 @@ public class ProjectBusiness : IProjectBusiness
             ProjectId = projectId,
             RoleId = roleId,
             UserId = userId,
-            GroupId = groupId,
+            GroupId = groupId
         };
 
         _context.ProjectMembers.Add(projMember);
@@ -712,7 +667,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Update a user or group's role within a project
+    ///     Update a user or group's role within a project
     /// </summary>
     /// <param name="projectId">ID of project in which to adjust role</param>
     /// <param name="roleId">ID of role to adjust</param>
@@ -755,7 +710,7 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Remove a user or group from a project
+    ///     Remove a user or group from a project
     /// </summary>
     /// <param name="projectId">ID of the project</param>
     /// <param name="userId">(optional) ID of the user</param>
@@ -791,12 +746,6 @@ public class ProjectBusiness : IProjectBusiness
         return true;
     }
 
-    private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true
-    };
-
     private async Task<bool> RefreshProjectsCache()
     {
         var dbProjects = await _context.Projects.ToListAsync();
@@ -828,9 +777,9 @@ public class ProjectBusiness : IProjectBusiness
         // TODO: project config should determine whether to do this (true by default)
         var defaultClasses = new List<CreateClassRequestDto>
         {
-            new CreateClassRequestDto { Name = "Timeseries" },
-            new CreateClassRequestDto { Name = "Report" },
-            new CreateClassRequestDto { Name = "File" }
+            new() { Name = "Timeseries" },
+            new() { Name = "Report" },
+            new() { Name = "File" }
         };
         var cls = await _classBusiness.BulkCreateClasses(currentUserId, projectId, defaultClasses);
 
@@ -838,7 +787,7 @@ public class ProjectBusiness : IProjectBusiness
         // CREATE DEFAULT DATA SOURCE
         // ===============================
         // TODO: project config should determine whether to do this (true by default)
-        var defaultDataSource = new CreateDataSourceRequestDto()
+        var defaultDataSource = new CreateDataSourceRequestDto
         {
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
@@ -857,26 +806,26 @@ public class ProjectBusiness : IProjectBusiness
         {
             var mountPath =
                 Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ??
-                throw new NullReferenceException($"Storage file path not set");
+                throw new NullReferenceException("Storage file path not set");
             config["mountPath"] = mountPath;
         }
         else if (defaultObjectStorageMethod == "azure_object")
         {
             var azureConnectionString =
                 Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING") ??
-                throw new NullReferenceException($"Azure connection string not set");
+                throw new NullReferenceException("Azure connection string not set");
             config["azureConnectionString"] = azureConnectionString;
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
             var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
-                                      throw new NullReferenceException($"AWS connection string not set");
+                                      throw new NullReferenceException("AWS connection string not set");
             config["awsConnectionString"] = awsConnectionString;
         }
         else
         {
             throw new NullReferenceException(
-                $"Unknown object storage method, make sure your environment variables are correctly set");
+                "Unknown object storage method, make sure your environment variables are correctly set");
         }
 
         var objectStorageRequestDto = new CreateObjectStorageRequestDto
@@ -884,7 +833,8 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Instance Default",
             Config = config
         };
-        await _objectStorageBusiness.CreateObjectStorage(currentUserId, null, projectId, objectStorageRequestDto, true);
+        await _objectStorageBusiness.CreateObjectStorage(currentUserId, organizationId, projectId,
+            objectStorageRequestDto, true);
 
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT
@@ -897,9 +847,9 @@ public class ProjectBusiness : IProjectBusiness
             {
                 ["mountPath"] = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb"
             }
-
         };
-        var obj = await _objectStorageBusiness.CreateObjectStorage(currentUserId, null, projectId, timeseriesObjectStorageMethod);
+        var obj = await _objectStorageBusiness.CreateObjectStorage(currentUserId, organizationId, projectId,
+            timeseriesObjectStorageMethod);
 
         // ===============================
         // CREATE DEFAULT PROJECT ROLES
@@ -907,16 +857,18 @@ public class ProjectBusiness : IProjectBusiness
         // TODO: project config should determine whether to do this (true by default)
         var defaultRoles = new List<CreateRoleRequestDto>
         {
-            new CreateRoleRequestDto { Name = "Admin" },
-            new CreateRoleRequestDto { Name = "User" }
+            new() { Name = "Admin" },
+            new() { Name = "User" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
         var userRoleId = roles.Single(r => r.Name == "User").Id;
 
         // set role permissions for admin and user
-        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions, organizationId, projectId);
-        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions, organizationId, projectId);
+        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions,
+            organizationId, projectId);
+        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions,
+            organizationId, projectId);
 
         await AddMemberToProject(projectId, adminRoleId, currentUserId, null);
     }
@@ -933,7 +885,7 @@ public class ProjectBusiness : IProjectBusiness
                 Resource = defaultPermission.Resource,
                 Action = defaultPermission.Action,
                 Description = defaultPermission.Description,
-                Project= project,
+                Project = project,
                 IsDefault = true
             };
             _context.Permissions.Add(permission);

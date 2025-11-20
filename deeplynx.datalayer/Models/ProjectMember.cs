@@ -1,18 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("project_members", Schema = "deeplynx")]
-[Index("GroupId", Name = "idx_project_members_group_id")]
-[Index("Id", Name = "idx_project_members_id")]
-[Index("ProjectId", Name = "idx_project_members_project_id")]
-[Index("RoleId", Name = "idx_project_members_role_id")]
-[Index("UserId", Name = "idx_project_members_user_id")]
-[Index("ProjectId", "GroupId", "RoleId", "UserId", Name = "unique_project_member_ids", IsUnique = true)]
 public partial class ProjectMember
 {
     [Key]
