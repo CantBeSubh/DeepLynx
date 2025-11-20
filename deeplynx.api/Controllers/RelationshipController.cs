@@ -17,8 +17,8 @@ namespace deeplynx.api.Controllers;
 [Authorize]
 public class RelationshipController : ControllerBase
 {
-    private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly ILogger<RelationshipController> _logger;
+    private readonly IRelationshipBusiness _relationshipBusiness;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RelationshipController" /> class

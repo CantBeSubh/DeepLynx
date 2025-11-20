@@ -74,7 +74,8 @@ public class TimeseriesController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var timeSeriesUploadInfo = await _timeseriesBusiness.UploadFile(currentUserId, projectId, dataSourceId, file);
+            var timeSeriesUploadInfo =
+                await _timeseriesBusiness.UploadFile(currentUserId, projectId, dataSourceId, file);
             return Ok(timeSeriesUploadInfo);
         }
         catch (Exception e)
@@ -155,7 +156,8 @@ public class TimeseriesController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var timeseriesUploadRecord = await _timeseriesBusiness.CompleteUpload(currentUserId, projectId, dataSourceId, request);
+            var timeseriesUploadRecord =
+                await _timeseriesBusiness.CompleteUpload(currentUserId, projectId, dataSourceId, request);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
         }
         catch (Exception e)
@@ -212,7 +214,8 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.InterpolateRows(currentUserId, projectId, dataSourceId, rowNumber, tableName, fileType);
+                await _timeseriesBusiness.InterpolateRows(currentUserId, projectId, dataSourceId, rowNumber, tableName,
+                    fileType);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
         }
         catch (Exception e)
@@ -240,7 +243,8 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.ExportTimeseriesTable(currentUserId, projectId, dataSourceId, tableName, fileType);
+                await _timeseriesBusiness.ExportTimeseriesTable(currentUserId, projectId, dataSourceId, tableName,
+                    fileType);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
         }
         catch (Exception e)

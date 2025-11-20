@@ -24,7 +24,8 @@ public class HistoricalRecordController : ControllerBase
     /// </summary>
     /// <param name="historicalRecordBusiness">The business logic interface for handling historical record operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public HistoricalRecordController(IHistoricalRecordBusiness historicalRecordBusiness, ILogger<HistoricalRecordController> logger)
+    public HistoricalRecordController(IHistoricalRecordBusiness historicalRecordBusiness,
+        ILogger<HistoricalRecordController> logger)
     {
         _historicalRecordBusiness = historicalRecordBusiness;
         _logger = logger;
@@ -49,7 +50,9 @@ public class HistoricalRecordController : ControllerBase
     {
         try
         {
-            var records = await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, dataSourceId, pointInTime, hideArchived);
+            var records =
+                await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, dataSourceId, pointInTime,
+                    hideArchived);
             return Ok(records);
         }
         catch (Exception exc)

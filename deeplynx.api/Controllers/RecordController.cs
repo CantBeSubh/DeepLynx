@@ -17,16 +17,17 @@ namespace deeplynx.api.Controllers;
 [Authorize]
 public class RecordController : ControllerBase
 {
-    private readonly IRecordBusiness _recordBusiness;
     private readonly IGraphBusiness _graphBusiness;
     private readonly ILogger<RecordController> _logger;
+    private readonly IRecordBusiness _recordBusiness;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RecordController" /> class
     /// </summary>
     /// <param name="recordBusiness">The business logic interface for handling record operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public RecordController(IRecordBusiness recordBusiness, IGraphBusiness graphBusiness, ILogger<RecordController> logger)
+    public RecordController(IRecordBusiness recordBusiness, IGraphBusiness graphBusiness,
+        ILogger<RecordController> logger)
     {
         _recordBusiness = recordBusiness;
         _graphBusiness = graphBusiness;
@@ -39,7 +40,10 @@ public class RecordController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
-    /// <param name="fileType">(Optional) File extension to filter by (e.g., pdf, png, jpg) - leading dot is optional and will be removed</param>
+    /// <param name="fileType">
+    ///     (Optional) File extension to filter by (e.g., pdf, png, jpg) - leading dot is optional and will
+    ///     be removed
+    /// </param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
     /// <returns>A list of records based on the applied filters.</returns>
     [HttpGet(Name = "api_get_all_records")]

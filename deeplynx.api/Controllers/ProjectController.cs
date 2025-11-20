@@ -153,52 +153,6 @@ public class ProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive a project
-    /// </summary>
-    /// <param name="organizationId">ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID of the project to archive.</param>
-    /// <returns>A message stating the project was successfully archived.</returns>
-    [HttpDelete("{projectId}/ArchiveProject", Name = "api_archive_a_project")]
-    public async Task<IActionResult> ArchiveProject(long organizationId, long projectId)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-            await _projectBusiness.ArchiveProject(currentUserId, projectId);
-            return Ok(new { message = $"Archived project {projectId}" });
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while archiving project {projectId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Unarchive a project
-    /// </summary>
-    /// <param name="organizationId">ID of the organization to which the project belongs</param>
-    /// <param name="projectId">ID of the project to unarchive.</param>
-    /// <returns>A message stating the project was successfully unarchived.</returns>
-    [HttpPut("{projectId}/UnarchiveProject", Name = "api_unarchive_a_project")]
-    public async Task<IActionResult> UnarchiveProject(long organizationId, long projectId)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-            await _projectBusiness.UnarchiveProject(currentUserId, projectId);
-            return Ok(new { message = $"Unarchived project {projectId}" });
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while unarchiving project {projectId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
     ///     Archive or Unarchive a Project
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>

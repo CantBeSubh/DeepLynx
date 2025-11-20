@@ -21,7 +21,7 @@ public class EventController : ControllerBase
     private readonly ILogger<EventController> _logger;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="EventController"/> class
+    ///     Initializes a new instance of the <see cref="EventController" /> class
     /// </summary>
     /// <param name="eventBusiness">The business logic interface for handling Event operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>

@@ -74,7 +74,7 @@ public class UserController : ControllerBase
     ///     Get the local development user
     /// </summary>
     /// <returns>User response DTO with the local dev user info</returns>
-    [HttpGet("/superuser", Name = "api_get_local_dev_user")]
+    [HttpGet("superuser", Name = "api_get_local_dev_user")]
     public async Task<ActionResult<UserResponseDto>> GetLocalDevUser()
     {
         try

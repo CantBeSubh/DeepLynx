@@ -1,5 +1,4 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
@@ -82,7 +81,7 @@ public class OrganizationController : ControllerBase
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
+            var currentUserId = UserContextStorage.UserId;
             var organization = await _organizationBusiness.CreateOrganization(currentUserId, dto);
             return Ok(organization);
         }
@@ -107,7 +106,7 @@ public class OrganizationController : ControllerBase
     {
         try
         {
-                var currentUserId = UserContextStorage.UserId;
+            var currentUserId = UserContextStorage.UserId;
             var organization = await _organizationBusiness.UpdateOrganization(currentUserId, organizationId, dto);
             return Ok(organization);
         }
@@ -139,7 +138,7 @@ public class OrganizationController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
     ///     Archive or Unarchive an Organization
     /// </summary>

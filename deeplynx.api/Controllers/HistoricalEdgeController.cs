@@ -24,7 +24,8 @@ public class HistoricalEdgeController : ControllerBase
     /// </summary>
     /// <param name="historicalEdgeBusiness">The business logic interface for handling historical edge operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public HistoricalEdgeController(IHistoricalEdgeBusiness historicalEdgeBusiness, ILogger<HistoricalEdgeController> logger)
+    public HistoricalEdgeController(IHistoricalEdgeBusiness historicalEdgeBusiness,
+        ILogger<HistoricalEdgeController> logger)
     {
         _historicalEdgeBusiness = historicalEdgeBusiness;
         _logger = logger;
@@ -49,7 +50,8 @@ public class HistoricalEdgeController : ControllerBase
     {
         try
         {
-            var edges = await _historicalEdgeBusiness.GetAllHistoricalEdges(projectId, dataSourceId, pointInTime, hideArchived);
+            var edges = await _historicalEdgeBusiness.GetAllHistoricalEdges(projectId, dataSourceId, pointInTime,
+                hideArchived);
             return Ok(edges);
         }
         catch (Exception exc)
@@ -111,12 +113,14 @@ public class HistoricalEdgeController : ControllerBase
     {
         try
         {
-            var edge = await _historicalEdgeBusiness.GetHistoricalEdge(null, originId, destinationId, pointInTime, hideArchived);
+            var edge = await _historicalEdgeBusiness.GetHistoricalEdge(null, originId, destinationId, pointInTime,
+                hideArchived);
             return Ok(edge);
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while retrieving historical edge (origin: {originId}, destination: {destinationId}): {exc}";
+            var message =
+                $"An error occurred while retrieving historical edge (origin: {originId}, destination: {destinationId}): {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -170,7 +174,8 @@ public class HistoricalEdgeController : ControllerBase
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while retrieving history for edge (origin: {originId}, destination: {destinationId}): {exc}";
+            var message =
+                $"An error occurred while retrieving history for edge (origin: {originId}, destination: {destinationId}): {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

@@ -1,184 +1,199 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers
+namespace deeplynx.api.Controllers;
+
+[ApiController]
+[Route("organizations/{organizationId}/projects/{projectId}/labels")]
+public class SensitivityLabelController : ControllerBase
 {
-    [ApiController]
-    [Route("labels")]
-    public class SensitivityLabelController : ControllerBase
+    private readonly ILogger<SensitivityLabelController> _logger;
+    private readonly ISensitivityLabelBusiness _sensitivityLabelBusiness;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="SensitivityLabelController" /> class
+    /// </summary>
+    /// <param name="sensitivityLabelBusiness">The business logic interface for handling Sensitivity Label operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public SensitivityLabelController(ISensitivityLabelBusiness sensitivityLabelBusiness,
+        ILogger<SensitivityLabelController> logger)
     {
-        private readonly ISensitivityLabelBusiness _sensitivityLabelBusiness;
-        private readonly ILogger<SensitivityLabelController> _logger;
+        _sensitivityLabelBusiness = sensitivityLabelBusiness;
+        _logger = logger;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SensitivityLabelController"/> class
-        /// </summary>
-        /// <param name="sensitivityLabelBusiness">The business logic interface for handling Sensitivity Label operations.</param>
-        /// <param name="logger">Error/Info logging interface for database log table.</param>
-        public SensitivityLabelController(ISensitivityLabelBusiness sensitivityLabelBusiness,
-            ILogger<SensitivityLabelController> logger)
+    /// <summary>
+    ///     List Sensitivity Labels
+    /// </summary>
+    /// <param name="projectId">ID of the project across which to search</param>
+    /// <param name="organizationId">ID of the organization across which to search</param>
+    /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
+    /// <returns></returns>
+    [HttpGet(Name = "api_get_all_sensitivity_labels")]
+    public async Task<ActionResult<IEnumerable<SensitivityLabelResponseDto>>> GetAllSensitivityLabels(
+        long organizationId,
+        long projectId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            _sensitivityLabelBusiness = sensitivityLabelBusiness;
-            _logger = logger;
+            var labels = await _sensitivityLabelBusiness
+                .GetAllSensitivityLabels(projectId, organizationId, hideArchived);
+            return Ok(labels);
         }
-
-        /// <summary>
-        /// List Sensitivity Labels
-        /// </summary>
-        /// <param name="projectId">(optional) ID of the project across which to search</param>
-        /// <param name="organizationId">(optional) ID of the organization across which to search</param>
-        /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
-        /// <returns></returns>
-        [HttpGet(Name = "api_get_all_sensitivity_labels")]
-        public async Task<ActionResult<IEnumerable<SensitivityLabelResponseDto>>> GetAllSensitivityLabels(
-            [FromQuery] long? projectId = null,
-            [FromQuery] long? organizationId = null,
-            [FromQuery] bool hideArchived = true)
+        catch (Exception exc)
         {
-            try
-            {
-                var labels = await _sensitivityLabelBusiness
-                    .GetAllSensitivityLabels(projectId, organizationId, hideArchived);
-                return Ok(labels);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while listing sensitivity labels: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while listing sensitivity labels: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Fetch Sensitivity Label by ID
-        /// </summary>
-        /// <param name="labelId">ID of sensitivity label</param>
-        /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
-        /// <returns></returns>
-        [HttpGet("{labelId}", Name = "api_get_sensitivity_label")]
-        public async Task<ActionResult<SensitivityLabelResponseDto>> GetSensitivityLabel(
-            long labelId, [FromQuery] bool hideArchived = true)
+    /// <summary>
+    ///     Fetch Sensitivity Label by ID
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
+    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="labelId">ID of sensitivity label</param>
+    /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
+    /// <returns></returns>
+    [HttpGet("{labelId}", Name = "api_get_sensitivity_label")]
+    public async Task<ActionResult<SensitivityLabelResponseDto>> GetSensitivityLabel(
+        long organizationId, long projectId,
+        long labelId, [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            try
-            {
-                var label = await _sensitivityLabelBusiness.GetSensitivityLabel(labelId, hideArchived);
-                return Ok(label);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while retrieving sensitivity label {labelId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var label = await _sensitivityLabelBusiness.GetSensitivityLabel(labelId, hideArchived);
+            return Ok(label);
         }
-
-        /// <summary>
-        /// Create a Sensitivity Label
-        /// </summary>
-        /// <param name="dto">Data structure of sensitivity label to create</param>
-        /// <param name="projectId">(use this or org ID) ID of the project to which the label belongs</param>
-        /// <param name="organizationId">(use this or project ID) ID of the organization to which the label belongs</param>
-        /// <returns></returns>
-        [HttpPost(Name = "api_create_sensitivity_label")]
-        public async Task<ActionResult<SensitivityLabelResponseDto>> CreateSensitivityLabel(
-            [FromBody] CreateSensitivityLabelRequestDto dto,
-            [FromQuery] long? projectId = null,
-            [FromQuery] long? organizationId = null)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, projectId,
-                    organizationId);
-                return Ok(label);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while creating sensitivity label: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while retrieving sensitivity label {labelId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Update a Sensitivity Label
-        /// </summary>
-        /// <param name="labelId">ID of the sensitivity label</param>
-        /// <param name="dto">Fields to update</param>
-        /// <returns></returns>
-        [HttpPut("{labelId}", Name = "api_update_sensitivity_label")]
-        public async Task<ActionResult<SensitivityLabelResponseDto>> UpdateSensitivityLabel(
-            long labelId,
-            [FromBody] UpdateSensitivityLabelRequestDto dto)
+    /// <summary>
+    ///     Create a Sensitivity Label
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
+    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="dto">Data structure of sensitivity label to create</param>
+    /// <returns></returns>
+    [HttpPost(Name = "api_create_sensitivity_label")]
+    public async Task<ActionResult<SensitivityLabelResponseDto>> CreateSensitivityLabel(
+        long organizationId,
+        long projectId,
+        [FromBody] CreateSensitivityLabelRequestDto dto)
+    {
+        try
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, dto);
-                return Ok(label);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while updating sensitivity label {labelId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var currentUserId = UserContextStorage.UserId;
+            var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, projectId,
+                organizationId);
+            return Ok(label);
         }
-
-        /// <summary>
-        /// Delete a Sensitivity Label
-        /// </summary>
-        /// <param name="labelId">ID of the sensitivity label to hard delete</param>
-        /// <returns></returns>
-        [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label")]
-        public async Task<ActionResult> DeleteSensitivityLabel(long labelId)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId);
-                return Ok(new { message = $"Deleted sensitivity label {labelId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting sensitivity label {labelId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while creating sensitivity label: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        ///     Archive or Unarchive a Sensitivity Label
-        /// </summary>
-        /// <param name="labelId">The ID of the sensitivity label to archive or unarchive.</param>
-        /// <param name="archive">True to archive the label, false to unarchive it.</param>
-        /// <returns>A message stating the label was successfully archived or unarchived.</returns>
-        [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label")]
-        public async Task<IActionResult> ArchiveSensitivityLabel(
-            long labelId,
-            [FromQuery] bool archive)
+    /// <summary>
+    ///     Update a Sensitivity Label
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
+    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="labelId">ID of the sensitivity label</param>
+    /// <param name="dto">Fields to update</param>
+    /// <returns></returns>
+    [HttpPut("{labelId}", Name = "api_update_sensitivity_label")]
+    public async Task<ActionResult<SensitivityLabelResponseDto>> UpdateSensitivityLabel(
+        long organizationId,
+        long projectId,
+        long labelId,
+        [FromBody] UpdateSensitivityLabelRequestDto dto)
+    {
+        try
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                if (archive)
-                {
-                    await _sensitivityLabelBusiness.ArchiveSensitivityLabel(currentUserId, labelId);
-                    return Ok(new { message = $"Archived sensitivity label {labelId}" });
-                }
+            var currentUserId = UserContextStorage.UserId;
+            var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, dto);
+            return Ok(label);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while updating sensitivity label {labelId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
-                await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(currentUserId, labelId);
-                return Ok(new { message = $"Unarchived sensitivity label {labelId}" });
-            }
-            catch (Exception exc)
+    /// <summary>
+    ///     Delete a Sensitivity Label
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
+    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="labelId">ID of the sensitivity label to hard delete</param>
+    /// <returns></returns>
+    [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label")]
+    public async Task<ActionResult> DeleteSensitivityLabel(
+        long organizationId,
+        long projectId,
+        long labelId)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId);
+            return Ok(new { message = $"Deleted sensitivity label {labelId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while deleting sensitivity label {labelId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive a Sensitivity Label
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
+    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="labelId">The ID of the sensitivity label to archive or unarchive.</param>
+    /// <param name="archive">True to archive the label, false to unarchive it.</param>
+    /// <returns>A message stating the label was successfully archived or unarchived.</returns>
+    [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label")]
+    public async Task<IActionResult> ArchiveSensitivityLabel(
+        long organizationId,
+        long projectId,
+        long labelId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            if (archive)
             {
-                var action = archive ? "archiving" : "unarchiving";
-                var message = $"An error occurred while {action} sensitivity label {labelId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
+                await _sensitivityLabelBusiness.ArchiveSensitivityLabel(currentUserId, labelId);
+                return Ok(new { message = $"Archived sensitivity label {labelId}" });
             }
+
+            await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(currentUserId, labelId);
+            return Ok(new { message = $"Unarchived sensitivity label {labelId}" });
+        }
+        catch (Exception exc)
+        {
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} sensitivity label {labelId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 }

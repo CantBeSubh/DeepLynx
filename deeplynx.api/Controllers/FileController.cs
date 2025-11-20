@@ -51,7 +51,8 @@ public class FileController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var fileUploadInfo = await _fileBusiness.UploadFile(currentUserId, projectId, dataSourceId, objectStorageId, file);
+            var fileUploadInfo =
+                await _fileBusiness.UploadFile(currentUserId, projectId, dataSourceId, objectStorageId, file);
             return Ok(fileUploadInfo);
         }
         catch (Exception exc)
