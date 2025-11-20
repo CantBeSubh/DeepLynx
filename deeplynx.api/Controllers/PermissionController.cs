@@ -28,16 +28,6 @@ public class PermissionController : ControllerBase
         _permissionBusiness = permissionBusiness;
         _logger = logger;
     }
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="PermissionController" /> class
-    /// </summary>
-    /// <param name="permissionBusiness">The business logic interface for handling Permission operations.</param>
-    /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public PermissionController(IPermissionBusiness permissionBusiness, ILogger<PermissionController> logger)
-    {
-        _permissionBusiness = permissionBusiness;
-        _logger = logger;
-    }
 
     /// <summary>
     ///     Get All Permissions

@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers;
 using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers;
-
 [ApiController]
 [Route("organizations/{organizationId}/projects/{projectId}/labels")]
 public class SensitivityLabelController : ControllerBase
@@ -15,17 +13,6 @@ public class SensitivityLabelController : ControllerBase
     private readonly ILogger<SensitivityLabelController> _logger;
     private readonly ISensitivityLabelBusiness _sensitivityLabelBusiness;
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="SensitivityLabelController" /> class
-    /// </summary>
-    /// <param name="sensitivityLabelBusiness">The business logic interface for handling Sensitivity Label operations.</param>
-    /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public SensitivityLabelController(ISensitivityLabelBusiness sensitivityLabelBusiness,
-        ILogger<SensitivityLabelController> logger)
-    {
-        _sensitivityLabelBusiness = sensitivityLabelBusiness;
-        _logger = logger;
-    }
     /// <summary>
     ///     Initializes a new instance of the <see cref="SensitivityLabelController" /> class
     /// </summary>

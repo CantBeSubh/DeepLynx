@@ -311,12 +311,11 @@ public class ProjectBusinessTests : IntegrationTestBase
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST",
-                OrganizationId = oid
+                Abbreviation = "TST"
             };
             
             // Act
-            var result = await _projectBusiness.CreateProject(uid, dto);
+            var result = await _projectBusiness.CreateProject(uid, oid, dto);
            
             // Assert
             Assert.True(result.Id > 0);
@@ -324,7 +323,7 @@ public class ProjectBusinessTests : IntegrationTestBase
             Assert.Equal(dto.Name, result.Name);
             Assert.Equal(dto.Description, result.Description);
             Assert.Equal(dto.Abbreviation, result.Abbreviation);
-            Assert.Equal(dto.OrganizationId, result.OrganizationId);
+            Assert.Equal(oid, result.OrganizationId);
             Assert.Equal(uid, result.LastUpdatedBy);
 
         // Ensure that the project create event was logged

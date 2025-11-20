@@ -152,36 +152,6 @@ public class ProjectBusiness : IProjectBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         ValidationHelper.ValidateModel(dto);
 
-        long orgId;
-
-        if (dto.OrganizationId.HasValue)
-        {
-            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId.Value);
-
-            orgId = dto.OrganizationId.Value;
-        }
-        else
-        {
-            var defaultOrg = await _context.Organizations
-                .Where(o => o.DefaultOrg && !o.IsArchived).FirstOrDefaultAsync();
-
-            if (defaultOrg != null)
-            {
-                orgId = defaultOrg.Id;
-            }
-            else
-            {
-                var orgRequestDto = new CreateOrganizationRequestDto
-                {
-                    Name = "INL",
-                    Description = "Default Organization"
-                };
-
-                var newDefaultOrg = await _organizationBusiness.CreateOrganization(currentUserId, orgRequestDto, true);
-                orgId = newDefaultOrg.Id;
-            }
-        }
-
         var project = new Project
         {
             Name = dto.Name,
