@@ -207,7 +207,7 @@ namespace deeplynx.tests
         #region CreateDataSource Tests
 
         [Fact]
-        public async Task CreateDataSource_ValidDto_CreatesDataSource()
+        public async Task CreateDataSource_ValidDto_ReturnsCorrectValues()
         {
             // Arrange
             var config = new JsonObject
@@ -241,6 +241,7 @@ namespace deeplynx.tests
             Assert.Equal(pid, result.ProjectId);
             Assert.NotNull(result.Config);
             Assert.Equal("postgresql", result.Config["driver"]?.ToString());
+            Assert.Equal(uid, result.LastUpdatedBy);
 
             // Verify it was actually saved to database
             var savedDataSource = await Context.DataSources.FindAsync(result.Id);
@@ -400,14 +401,25 @@ namespace deeplynx.tests
                 Description = "Updated Description"
             };
 
+            var beforeUpdate = DateTime.UtcNow;
+            
             // Act
             var result = await _dataSourceBusiness.UpdateDataSource(uid, pid, did, updateDto);
-
-            // Assert
+            
+            //Assert
             Assert.NotNull(result);
             Assert.Equal(did, result.Id);
             Assert.Equal("Updated Description", result.Description);
-
+            Assert.Equal(pid, result.ProjectId);
+            Assert.Equal(uid, result.LastUpdatedBy);
+            Assert.True(result.LastUpdatedAt >= beforeUpdate);
+            Assert.Equal("Customer CRM Database", result.Name);
+            Assert.Equal("CRM_DB", result.Abbreviation);
+            Assert.Equal("SQL Server", result.Type);
+            Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", result.BaseUri);
+            Assert.NotNull(result.Config);
+            Assert.False(result.IsArchived);
+            
             // Verify it was actually updated in database
             var updatedDataSource = await Context.DataSources.FindAsync(did);
             Assert.NotNull(updatedDataSource);
@@ -574,6 +586,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveDataSource_ValidDataSource_ArchivesSuccessfully()
         {
+            var now =  DateTime.UtcNow;
             // Act
             var result = await _dataSourceBusiness.ArchiveDataSource(uid, pid, did);
 
@@ -585,7 +598,16 @@ namespace deeplynx.tests
             // Verify it was actually archived in database
             var archivedDataSource = await Context.DataSources.FindAsync(did);
             Assert.NotNull(archivedDataSource);
-            Assert.True(archivedDataSource.IsArchived);
+            Assert.Equal(did, archivedDataSource.Id);
+            Assert.Equal("Customer CRM Database", archivedDataSource.Name);
+            Assert.Equal("Primary customer relationship management database", archivedDataSource.Description);
+            Assert.Equal("CRM_DB", archivedDataSource.Abbreviation);
+            Assert.Equal("SQL Server", archivedDataSource.Type);
+            Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", archivedDataSource.BaseUri);
+            Assert.Equal(pid, archivedDataSource.ProjectId);
+            Assert.NotNull(archivedDataSource.Config);
+            Assert.True(archivedDataSource.LastUpdatedAt >= now);
+            Assert.Equal(uid, archivedDataSource.LastUpdatedBy);
             // Ensure that data source soft delete event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
@@ -830,6 +852,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveDataSource_ValidArchivedDataSource_UnarchivesSuccessfully()
         {
+            var now = DateTime.UtcNow;
             // Act
             var result = await _dataSourceBusiness.UnarchiveDataSource(uid, pid, did3);
 
@@ -840,6 +863,16 @@ namespace deeplynx.tests
             var reloaded = await Context.DataSources.FindAsync(did3);
             Assert.NotNull(reloaded);
             Assert.False(reloaded.IsArchived);
+            Assert.Equal(uid, reloaded.LastUpdatedBy);
+            Assert.True(reloaded.LastUpdatedAt >= now);
+            Assert.Equal("Customer CRM Database", reloaded.Name);
+            Assert.Equal("Primary customer relationship management database", reloaded.Description);
+            Assert.Equal("CRM_DB", reloaded.Abbreviation);
+            Assert.Equal("SQL Server", reloaded.Type);
+            Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", reloaded.BaseUri);
+            Assert.NotNull(reloaded.Config);
+            Assert.Equal(pid, reloaded.ProjectId);
+            Assert.Equal(did3, reloaded.Id);
         }
 
         [Fact]

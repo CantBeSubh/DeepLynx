@@ -374,6 +374,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_ValidData_CreatesRecord()
     {
         // Arrange
+          
+        var now = DateTime.UtcNow;
         var dto = new CreateRecordRequestDto
         {
             Name = "New Test Record",
@@ -398,6 +400,8 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("original-123", result.OriginalId);
         Assert.Equal(cid, result.ClassId);
         Assert.Equal("png", result.FileType);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify record was actually created in database
         var createdRecord = await Context.Records.FindAsync(result.Id);
@@ -567,6 +571,7 @@ public class RecordBusinessTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         Assert.Equal(2, result.Count());
+        Assert.True(result.All(r=> r.LastUpdatedBy == uid && !r.IsArchived && r.DataSourceId == did && r.ProjectId == pid));
         Assert.Contains(result, r => r.Name == "Bulk Record 1");
         Assert.Contains(result, r => r.Name == "Bulk Record 2");
 
@@ -867,6 +872,8 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task ArchiveRecord_Success_RecordIsArchived()
     {
+        //Arrange
+        var originalRecord = await Context.Records.FindAsync(rid);
         // Act
         var archived = await _recordBusiness.ArchiveRecord(uid, pid, rid);
         Assert.True(archived);
@@ -877,11 +884,16 @@ public class RecordBusinessTests : IntegrationTestBase
         // Assert
         var archivedRecord = await Context.Records.FindAsync(rid);
         Assert.NotNull(archivedRecord);
-        Assert.Equal(rid, archivedRecord.Id);
+        Assert.Equal(originalRecord?.Id, archivedRecord.Id);
         Assert.True(archivedRecord.IsArchived);
-        Assert.Equal(pid, archivedRecord.ProjectId);
+        Assert.Equal(originalRecord?.ProjectId, archivedRecord.ProjectId);
+        Assert.True(originalRecord?.LastUpdatedAt < archivedRecord.LastUpdatedAt);
+        Assert.Equal(originalRecord.Name, archivedRecord.Name);
+        Assert.Equal(originalRecord.Description, archivedRecord.Description);
+        Assert.Equal(originalRecord.DataSourceId, archivedRecord.DataSourceId);
+        Assert.Equal(originalRecord.FileType, archivedRecord.FileType);
+        Assert.Equal(originalRecord.Uri, archivedRecord.Uri);
         Assert.Equal(uid, archivedRecord.LastUpdatedBy);
-        
     }
     
     [Fact]
@@ -1081,12 +1093,18 @@ public class RecordBusinessTests : IntegrationTestBase
         Context.ChangeTracker.Clear();
 
         // Assert
-        Assert.True(result);
-        var reloaded = await Context.Records.FindAsync(rid);
-        Assert.NotNull(reloaded);
-        Assert.Equal("Test Record", reloaded.Name);
-        Assert.Equal(uid, reloaded.LastUpdatedBy);
-        Assert.False(reloaded.IsArchived); 
+        var unarchivedRecord = await Context.Records.FindAsync(rid);
+        Assert.NotNull(unarchivedRecord);
+        Assert.Equal(record?.Id, unarchivedRecord.Id);
+        Assert.False(unarchivedRecord.IsArchived);
+        Assert.Equal(record?.ProjectId, unarchivedRecord.ProjectId);
+        Assert.True(record?.LastUpdatedAt < unarchivedRecord.LastUpdatedAt);
+        Assert.Equal(record.Name, unarchivedRecord.Name);
+        Assert.Equal(record.Description, unarchivedRecord.Description);
+        Assert.Equal(record.DataSourceId, unarchivedRecord.DataSourceId);
+        Assert.Equal(record.FileType, unarchivedRecord.FileType);
+        Assert.Equal(record.Uri, unarchivedRecord.Uri);
+        Assert.Equal(uid, unarchivedRecord.LastUpdatedBy);
         
         // Ensure that the record unarchive event was logged
         var eventList = await Context.Events.ToListAsync();

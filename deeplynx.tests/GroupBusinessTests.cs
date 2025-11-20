@@ -140,6 +140,7 @@ namespace deeplynx.tests
             Assert.Equal(dto.Description, result.Description);
             Assert.Equal(oid, result.OrganizationId);
             Assert.False(result.IsArchived);
+            Assert.Equal(uid, result.LastUpdatedBy);
             
             // verify group was actually created in database
             var createdGroup = await Context.Groups.FindAsync(result.Id);
@@ -264,8 +265,12 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(gid, result.Id);
-            Assert.Equal("Updated Group", result.Name);
-            Assert.Equal("Updated description", result.Description);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.Equal(oid, result.OrganizationId);
+            Assert.Equal(uid, result.LastUpdatedBy);
+            Assert.False(result.IsArchived);
+            
             
             // Verify it was actually saved to DB
             var savedGroup = await Context.Groups.FindAsync(gid);
@@ -367,7 +372,11 @@ namespace deeplynx.tests
             // Verify it was actually saved to DB
             var savedGroup = await Context.Groups.FindAsync(gid);
             Assert.NotNull(savedGroup);
+            Assert.Equal(gid, savedGroup.Id);
             Assert.True(savedGroup.IsArchived);
+            Assert.Equal("Test Group", savedGroup.Name);
+            Assert.Equal("Test group for unit tests", savedGroup.Description);
+            Assert.Equal(oid, savedGroup.OrganizationId);
             
             // Ensure that the Group archive event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -425,6 +434,10 @@ namespace deeplynx.tests
             var savedGroup = await Context.Groups.FindAsync(gid2);
             Assert.NotNull(savedGroup);
             Assert.False(savedGroup.IsArchived);
+            Assert.Equal(gid2, savedGroup.Id);
+            Assert.Equal("Archived Group", savedGroup.Name);
+            Assert.Equal("Archived group for tests", savedGroup.Description);
+            Assert.Equal(oid, savedGroup.OrganizationId);
             
             // Ensure that the Group unarchive event was logged
             var eventList = await Context.Events.ToListAsync();

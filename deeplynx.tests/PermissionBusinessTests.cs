@@ -224,6 +224,8 @@ namespace deeplynx.tests
                 Action = "test",
                 LabelId = lid
             };
+            
+            var now =  DateTime.UtcNow;
 
             // Act
             var result = await _permissionBusiness.CreatePermission(uid, dto, pid, null);
@@ -231,10 +233,16 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(result);
             Assert.True(result.Id > 0);
-            Assert.Equal("New Project Permission", result.Name);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Action, result.Action);
+            Assert.Null(result.Resource);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.Null(result.OrganizationId);
             Assert.Equal(pid, result.ProjectId);
             Assert.Equal(lid, result.LabelId);
             Assert.False(result.IsDefault);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
             // Verify it was actually saved to DB
             var savedPermission = await Context.Permissions.FindAsync(result.Id);
@@ -264,6 +272,8 @@ namespace deeplynx.tests
                 Action = "test",
                 LabelId = lid
             };
+            
+            var now =  DateTime.UtcNow;
 
             // Act
             var result = await _permissionBusiness.CreatePermission(uid, dto, null, oid);
@@ -271,10 +281,16 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(result);
             Assert.True(result.Id > 0);
-            Assert.Equal("New Org Permission", result.Name);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Action, result.Action);
+            Assert.Null(result.Resource);
+            Assert.Equal(dto.Description, result.Description);
             Assert.Equal(oid, result.OrganizationId);
+            Assert.Null(result.ProjectId);
             Assert.Equal(lid, result.LabelId);
             Assert.False(result.IsDefault);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
             // Verify it was actually saved to DB
             var savedPermission = await Context.Permissions.FindAsync(result.Id);
@@ -415,8 +431,10 @@ namespace deeplynx.tests
             {
                 Name = "Updated Permission",
                 Description = "Now with a description",
-                Action = "write"
+                Action = "test action"
             };
+            
+            var now = DateTime.UtcNow;
 
             // Act
             var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
@@ -424,9 +442,16 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(permid1, result.Id);
-            Assert.Equal("Updated Permission", result.Name);
-            Assert.Equal("Now with a description", result.Description);
-            Assert.Equal("write", result.Action);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.Equal(dto.Action, result.Action);
+            Assert.Null(result.Resource);
+            Assert.Null(result.OrganizationId);
+            Assert.Null(result.ProjectId);
+            Assert.Equal(lid, result.LabelId);
+            Assert.False(result.IsDefault);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
             // Verify it was actually saved to DB
             var savedPermission = await Context.Permissions.FindAsync(permid1);
@@ -584,9 +609,12 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchivePermission_Succeeds_IfNotArchived()
         {
+            // Arrange
+            var now = DateTime.Now;
+            
             // Act
             var result = await _permissionBusiness.ArchivePermission(uid, permid1);
-
+            
             // Assert
             Assert.True(result);
 
@@ -594,7 +622,19 @@ namespace deeplynx.tests
             var savedPermission = await Context.Permissions.FindAsync(permid1);
             Assert.NotNull(savedPermission);
             Assert.True(savedPermission.IsArchived);
-
+            
+            //Verify other fields were preserved
+            Assert.Equal("Basic Permission", savedPermission.Name);
+            Assert.Null(savedPermission.Description);
+            Assert.Equal("read", savedPermission.Action);
+            Assert.Equal(lid, savedPermission.LabelId);
+            Assert.Null(savedPermission.Resource);
+            Assert.Null(savedPermission.ProjectId);
+            Assert.Null(savedPermission.OrganizationId);
+            Assert.False(savedPermission.IsDefault);
+            Assert.True(savedPermission.LastUpdatedAt >= now);
+            Assert.Equal(uid, savedPermission.LastUpdatedBy);
+            
             // Ensure that the Permission archive event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
@@ -647,6 +687,9 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchivePermission_Succeeds_IfArchived()
         {
+            // Arrange
+            var now = DateTime.UtcNow;
+            
             // Act
             var result = await _permissionBusiness.UnarchivePermission(uid, permid2);
 
@@ -657,6 +700,19 @@ namespace deeplynx.tests
             var savedPermission = await Context.Permissions.FindAsync(permid2);
             Assert.NotNull(savedPermission);
             Assert.False(savedPermission.IsArchived);
+            
+            //Verify other fields were unchanged
+            Assert.True(savedPermission.Id > 0);
+            Assert.Equal("Archived Permission", savedPermission.Name);
+            Assert.Null(savedPermission.Description);
+            Assert.Equal("write", savedPermission.Action);
+            Assert.Null(savedPermission.Resource);
+            Assert.Null(savedPermission.OrganizationId);
+            Assert.Null(savedPermission.ProjectId);
+            Assert.Equal(lid, savedPermission.LabelId);
+            Assert.False(savedPermission.IsDefault);
+            Assert.True(savedPermission.LastUpdatedAt >= now);
+            Assert.Equal(uid, savedPermission.LastUpdatedBy);
 
             // Ensure that the Permission unarchive event was logged
             var eventList = await Context.Events.ToListAsync();

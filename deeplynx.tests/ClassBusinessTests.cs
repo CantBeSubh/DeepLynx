@@ -66,7 +66,7 @@ namespace deeplynx.tests
         #region CreateClass Tests
 
         [Fact]
-        public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
+        public async Task CreateClass_Success_ReturnsCorrectValues()
         {
             // Arrange
             var now = DateTime.UtcNow;
@@ -85,8 +85,10 @@ namespace deeplynx.tests
             Assert.True(result.LastUpdatedAt >= now);
             Assert.Equal(dto.Name, result.Name);
             Assert.Equal(dto.Description, result.Description);
+            Assert.Equal(dto.Uuid, result.Uuid);
             Assert.Equal(pid, result.ProjectId);
             Assert.Equal(uid, result.LastUpdatedBy);
+            Assert.False(result.IsArchived);
             
 
             // Ensure the create event is logged
@@ -349,21 +351,21 @@ namespace deeplynx.tests
         #region UpdateClass Tests
 
         [Fact]
-        public async Task UpdateClass_Success_ReturnsModifiedAt()
+        public async Task UpdateClass_Success_ReturnsCorrectValues()
         {
+            var now = DateTime.UtcNow;
             // Arrange
             var testClass = new Class
             {
                 Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Original Description",
                 ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                Uuid = "test-uuid",
+                LastUpdatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
-
-            // Add a small delay to ensure ModifiedAt is after CreatedAt
-            await Task.Delay(50);
 
             var dto = new UpdateClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
 
@@ -373,7 +375,12 @@ namespace deeplynx.tests
 
             // Assert
             Assert.NotEqual(DateTime.MinValue, updatedResult.LastUpdatedAt);
+            Assert.True(updatedResult.LastUpdatedAt >= now);
+            Assert.Equal(dto.Name, updatedResult.Name);
             Assert.Equal("Updated Description", updatedResult.Description);
+            Assert.Equal(pid, updatedResult.ProjectId);
+            Assert.Equal(testClass.Uuid, updatedResult.Uuid);
+            Assert.False(updatedResult.IsArchived);
 
             // Ensure that an event was logged for the update
             var eventList = await Context.Events.ToListAsync();
@@ -462,6 +469,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveClass_Success_WhenExists()
         {
+            var now =  DateTime.UtcNow;
             // Arrange
             var beforeArchive = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
@@ -469,6 +477,9 @@ namespace deeplynx.tests
             {
                 Name = $"Class to Archive {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
+                Description = "Archive Description",
+                Uuid = "test-uuid",
+                LastUpdatedBy = null,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
@@ -486,9 +497,14 @@ namespace deeplynx.tests
 
             var archivedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(archivedClass);
-            Assert.True(archivedClass.IsArchived);
-            Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
+            Assert.True(archivedClass.Id > 0);
+            Assert.True(archivedClass.LastUpdatedAt >= now);
+            Assert.Equal(testClass.Name, archivedClass.Name);
+            Assert.Equal(testClass.Description, archivedClass.Description);
+            Assert.Equal(testClass.Uuid, archivedClass.Uuid);
+            Assert.Equal(pid, archivedClass.ProjectId);
             Assert.Equal(uid, archivedClass.LastUpdatedBy);
+            Assert.True(archivedClass.IsArchived);
 
             // Ensure that class soft delete event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -829,11 +845,14 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveClass_SuccessfullyUnarchivesClassAndReturnsTrue()
         {
+            var now = DateTimeOffset.UtcNow;
             // Arrange
             var testClass = new Class
             {
                 Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
+                Uuid = "test_uuid",
+                LastUpdatedBy = null,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 IsArchived = true
 
@@ -847,11 +866,17 @@ namespace deeplynx.tests
             //this forces EF to sync to db on next query
             Context.ChangeTracker.Clear();
 
-            var updated = await Context.Classes.FindAsync(testClass.Id);
+            var unarchived = await Context.Classes.FindAsync(testClass.Id);
             // Assert
             Assert.True(result);
-            Assert.False(updated?.IsArchived);
-            Assert.Equal(uid, updated?.LastUpdatedBy);
+            Assert.True(unarchived?.Id > 0);
+            Assert.True(unarchived?.LastUpdatedAt >= now);
+            Assert.Equal(testClass.Name, unarchived?.Name);
+            Assert.Equal(testClass.Description, unarchived?.Description);
+            Assert.Equal(testClass.Uuid, unarchived?.Uuid);
+            Assert.Equal(pid, unarchived?.ProjectId);
+            Assert.Equal(uid, unarchived?.LastUpdatedBy);
+            Assert.False(unarchived?.IsArchived);
         }
 
         [Fact]
