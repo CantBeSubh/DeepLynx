@@ -49,8 +49,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <returns>A list of data sources within the given project.</returns>
     public async Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-
         var dataSources = await _context.DataSources
             .Where(d => d.ProjectId == projectId).ToListAsync();
 
@@ -117,7 +115,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
     public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var dataSource = await _context.DataSources
             .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
             .FirstOrDefaultAsync();
@@ -154,7 +151,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
     public async Task<DataSourceResponseDto> GetDefaultDataSource(long projectId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dataSource = await _context.DataSources
             .Where(d => d.ProjectId == projectId && d.Default == true && !d.IsArchived)
             .FirstOrDefaultAsync();
@@ -190,7 +186,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long projectId,
         CreateDataSourceRequestDto dto, bool makeDefault = false)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
 
@@ -260,7 +255,6 @@ public class DataSourceBusiness : IDataSourceBusiness
         long dataSourceId,
         UpdateDataSourceRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
         if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
@@ -316,7 +310,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
     public async Task<bool> DeleteDataSource(long projectId, long dataSourceId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
         if (dataSource == null || dataSource.ProjectId != projectId)
@@ -338,7 +331,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
     public async Task<bool> ArchiveDataSource(long currentUserId, long projectId, long dataSourceId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
         if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
@@ -375,7 +367,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
     public async Task<bool> UnarchiveDataSource(long currentUserId, long projectId, long dataSourceId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
         if (dataSource == null || dataSource.ProjectId != projectId || !dataSource.IsArchived)
@@ -415,7 +406,6 @@ public class DataSourceBusiness : IDataSourceBusiness
         long projectId,
         long dataSourceId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
         if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
