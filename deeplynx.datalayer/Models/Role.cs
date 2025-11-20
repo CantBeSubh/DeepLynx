@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("roles", Schema = "deeplynx")]
-[Index("Id", Name = "idx_roles_id")]
-[Index("OrganizationId", Name = "idx_roles_organization_id")]
-[Index("ProjectId", Name = "idx_roles_project_id")]
-
 public partial class Role
 {
     [Key]

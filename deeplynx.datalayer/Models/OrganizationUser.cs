@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
-[PrimaryKey("OrganizationId", "UserId")]
 [Table("organization_users", Schema = "deeplynx")]
-[Index("OrganizationId", Name = "idx_organization_users_organization_id")]
-[Index("UserId", Name = "idx_organization_users_user_id")]
-[Index("OrganizationId", "UserId", Name = "unique_organization_user_ids", IsUnique = true)]
 public partial class OrganizationUser
 {
     [Key]
