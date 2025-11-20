@@ -1,7 +1,4 @@
-using System.Linq.Expressions;
-using deeplynx.datalayer.Models;
 using deeplynx.models;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.interfaces;
 
@@ -17,8 +14,6 @@ public interface IUserBusiness
     Task<DataOverviewDto> GetUserOverview(long userId);
     Task<bool> UnarchiveUser(long userId);
     Task<bool> SetSysAdmin(long authorizerId, long candidateId);
-    Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(
-        long[] projectId);
     Task<UserResponseDto> GetUserBySsoId(string ssoId);
     Task<UserResponseDto> GetUserByEmail(string email);
 }

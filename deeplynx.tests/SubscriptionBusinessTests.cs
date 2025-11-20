@@ -141,6 +141,7 @@ namespace deeplynx.tests
     
             var lastSubscription = result.Last();
             Assert.Equal(uid, lastSubscription.UserId);
+            Assert.Equal(uid, firstSubscription.LastUpdatedBy);
             Assert.Equal(pid, lastSubscription.ProjectId);
             Assert.Equal(aid, lastSubscription.ActionId);
             Assert.Equal("update", lastSubscription.Operation);
@@ -424,6 +425,7 @@ namespace deeplynx.tests
                 .ToListAsync();
     
             Assert.Equal(2, subscriptionList.Count);
+            Assert.True(subscriptionList.All(s=> s.LastUpdatedBy == uid));
         }
         
         #endregion
@@ -482,12 +484,15 @@ namespace deeplynx.tests
                     subscriptions[1].Id,
                     5 // Include non-existing ID
                 }));
+            
+            Context.ChangeTracker.Clear();
     
             var subscriptionList = await Context.Subscriptions
                 .Where(s => !s.IsArchived)
                 .ToListAsync();
     
             Assert.Equal(2, subscriptionList.Count);
+            Assert.True(subscriptionList.All(s=> s.LastUpdatedBy == uid));
         }
         
         #endregion

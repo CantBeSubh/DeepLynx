@@ -14,14 +14,18 @@ namespace deeplynx.interfaces
         Task<RecordResponseDto> CompleteUpload(long currentUserId, long projectId, long datasourceId,
             TimeseriesUploadCompleteRequestDto request);
 
-        Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath, string fileType);
-        
-        Task AppendTimeseriesTable(long dataSourceId, long projectId, IFormFile file, string tableName);
+        Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath,
+            string fileType);
 
-        Task<RecordResponseDto> QueryTimeseries(long currentUserId, TimeseriesQueryRequestDto request, long projectId, long datasourceId, string fileType);
+        Task AppendTimeseriesTable(long projectId, long dataSourceId, IFormFile file, string tableName);
 
-        Task<RecordResponseDto> InterpolateRows(long currentUserId, long projectId, long datasourceId, string rowNumber, string tableName, string fileType);
+        Task<RecordResponseDto> QueryTimeseries(long currentUserId, TimeseriesQueryRequestDto request, long projectId,
+            long datasourceId, string fileType);
 
-        Task<RecordResponseDto> ExportTimeseriesTable(long currentUserId, long projectId, long datasourceId, string tableName, string fileType);
+        Task<RecordResponseDto> InterpolateRows(long currentUserId, long projectId, long datasourceId, string rowNumber,
+            string tableName, string fileType);
+
+        Task<RecordResponseDto> ExportTimeseriesTable(long currentUserId, long projectId, long datasourceId,
+            string tableName, string fileType);
     }
 }
