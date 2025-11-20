@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("classes", Schema = "deeplynx")]
-[Index("Id", Name = "idx_classes_id")]
-[Index("Name", Name = "idx_classes_name")]
-[Index("ProjectId", Name = "idx_classes_project_id")]
-[Index("Uuid", Name = "idx_classes_uuid")]
-[Index("ProjectId", "Name", Name = "unique_class_name", IsUnique = true)]
 public partial class Class
 {
     [Key]
@@ -29,6 +21,9 @@ public partial class Class
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+        
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
@@ -42,6 +37,10 @@ public partial class Class
     [ForeignKey("ProjectId")]
     [InverseProperty("Classes")]
     public virtual Project Project { get; set; } = null!;
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Classes")]
+    public virtual Organization Organization { get; set; } = null!;
 
     [InverseProperty("Class")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
@@ -54,5 +53,4 @@ public partial class Class
 
     [InverseProperty("LastUpdatedClasses")]
     public virtual User? LastUpdatedByUser { get; set; }
-
 }
