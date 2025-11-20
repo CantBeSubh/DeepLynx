@@ -1,19 +1,17 @@
-using Microsoft.EntityFrameworkCore;
-using deeplynx.models;
-using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
-using Microsoft.AspNetCore.SignalR;
-using deeplynx.helpers;
+using deeplynx.interfaces;
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
 public class UserBusiness : IUserBusiness
 {
-    private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
+    private readonly DeeplynxContext _context;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="UserBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="UserBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context used for the user operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -24,7 +22,7 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Retrieves all users
+    ///     Retrieves all users
     /// </summary>
     /// <param name="projectId">Optional ID for project</param>
     /// <param name="organizationId">Optional ID for organization</param>
@@ -34,22 +32,18 @@ public class UserBusiness : IUserBusiness
         var users = _context.Users.Where(p => !p.IsArchived);
 
         if (projectId != null)
-        {
             users = users.Where(u =>
                 u.ProjectMembers.Any(p => p.ProjectId == projectId && p.UserId == u.Id) ||
                 u.Groups.Any(g => g.ProjectMembers.Any(pm => pm.ProjectId == projectId && pm.GroupId == g.Id))
             );
-        }
 
         if (organizationId != null)
-        {
             users = users.Where(u =>
                 u.OrganizationUsers.Any(ou => ou.OrganizationId == organizationId && ou.UserId == u.Id) ||
                 u.Groups.Any(g => g.OrganizationId == organizationId)
             );
-        }
 
-        return users.Select(p => new UserResponseDto()
+        return users.Select(p => new UserResponseDto
         {
             Id = p.Id,
             Name = p.Name,
@@ -57,12 +51,12 @@ public class UserBusiness : IUserBusiness
             Email = p.Email,
             IsSysAdmin = p.IsSysAdmin,
             IsArchived = p.IsArchived,
-            IsActive = p.IsActive,
+            IsActive = p.IsActive
         });
     }
 
     /// <summary>
-    /// Retrieves a specific user by ID
+    ///     Retrieves a specific user by ID
     /// </summary>
     /// <param name="userId">The ID by which to retrieve the user</param>
     /// <returns>The given user to return</returns>
@@ -73,12 +67,9 @@ public class UserBusiness : IUserBusiness
             .Where(p => p.Id == userId && !p.IsArchived)
             .FirstOrDefaultAsync();
 
-        if (user == null)
-        {
-            throw new KeyNotFoundException($"User with id {userId} not found");
-        }
+        if (user == null) throw new KeyNotFoundException($"User with id {userId} not found");
 
-        return new UserResponseDto()
+        return new UserResponseDto
         {
             Id = user.Id,
             Name = user.Name,
@@ -86,12 +77,12 @@ public class UserBusiness : IUserBusiness
             Email = user.Email,
             IsSysAdmin = user.IsSysAdmin,
             IsArchived = user.IsArchived,
-            IsActive = user.IsActive,
+            IsActive = user.IsActive
         };
     }
 
     /// <summary>
-    /// Retrieves the local dev user
+    ///     Retrieves the local dev user
     /// </summary>
     /// <returns>Information for the local dev user</returns>
     /// <exception cref="InvalidOperationException">Returned if DISABLE_BACKEND_AUTHENTICATION != true</exception>
@@ -100,20 +91,16 @@ public class UserBusiness : IUserBusiness
     {
         var auth_disabled = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
         if (auth_disabled != "true")
-        {
-            throw new InvalidOperationException("Local Dev User cannot be used unless backend authentication is disabled");
-        }
+            throw new InvalidOperationException(
+                "Local Dev User cannot be used unless backend authentication is disabled");
 
         var user = await _context.Users
             .Where(p => p.Email == "developer@localhost")
             .FirstOrDefaultAsync();
 
-        if (user == null)
-        {
-            throw new KeyNotFoundException($"Local Dev User not found");
-        }
+        if (user == null) throw new KeyNotFoundException("Local Dev User not found");
 
-        return new UserResponseDto()
+        return new UserResponseDto
         {
             Id = user.Id,
             Name = user.Name,
@@ -121,12 +108,12 @@ public class UserBusiness : IUserBusiness
             Email = user.Email,
             IsSysAdmin = user.IsSysAdmin,
             IsArchived = user.IsArchived,
-            IsActive = user.IsActive,
+            IsActive = user.IsActive
         };
     }
 
     /// <summary>
-    /// Creates a new user based on the data transfer object supplied.
+    ///     Creates a new user based on the data transfer object supplied.
     /// </summary>
     /// <param name="dto">A data transfer object with details on the new user to be created.</param>
     /// <returns>The new user which was just created.</returns>
@@ -134,10 +121,7 @@ public class UserBusiness : IUserBusiness
     {
         // TODO: adjusting is_sys_admin is currently disabled. Enable once route permission protections are in place
         var otherUserHasEmail = await _context.Users.AnyAsync(u => u.Email.ToLower() == dto.Email.ToLower());
-        if (otherUserHasEmail)
-        {
-            throw new ArgumentException("User with email already exists");
-        }
+        if (otherUserHasEmail) throw new ArgumentException("User with email already exists");
 
         var user = new User
         {
@@ -145,13 +129,13 @@ public class UserBusiness : IUserBusiness
             Email = dto.Email,
             Username = dto.Username,
             IsActive = dto.IsActive ?? false,
-            IsArchived = dto.IsArchived ?? false,
+            IsArchived = dto.IsArchived ?? false
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        return new UserResponseDto()
+        return new UserResponseDto
         {
             Id = user.Id,
             Name = user.Name,
@@ -159,12 +143,12 @@ public class UserBusiness : IUserBusiness
             Email = user.Email,
             IsSysAdmin = user.IsSysAdmin,
             IsArchived = user.IsArchived,
-            IsActive = user.IsActive,
+            IsActive = user.IsActive
         };
     }
 
     /// <summary>
-    /// Updates an existing user by ID
+    ///     Updates an existing user by ID
     /// </summary>
     /// <param name="userId">The ID of the user to update</param>
     /// <param name="dto">A data transfer object with details on the user to be updated.</param>
@@ -187,7 +171,7 @@ public class UserBusiness : IUserBusiness
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
 
-        return new UserResponseDto()
+        return new UserResponseDto
         {
             Id = user.Id,
             Name = user.Name,
@@ -195,12 +179,12 @@ public class UserBusiness : IUserBusiness
             Email = user.Email,
             IsSysAdmin = user.IsSysAdmin,
             IsArchived = user.IsArchived,
-            IsActive = user.IsActive,
+            IsActive = user.IsActive
         };
     }
 
     /// <summary>
-    /// Delete a user by id.
+    ///     Delete a user by id.
     /// </summary>
     /// <param name="userId">ID of the user to delete.</param>
     /// <returns>Boolean true on successful deletion.</returns>
@@ -218,7 +202,7 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Archive a user by id.
+    ///     Archive a user by id.
     /// </summary>
     /// <param name="userId">ID of the user to archive.</param>
     /// <returns>Boolean true on successful archival.</returns>
@@ -240,7 +224,7 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Unarchive a user by id.
+    ///     Unarchive a user by id.
     /// </summary>
     /// <param name="userId">ID of the user to unarchive.</param>
     /// <returns>Boolean true when successfully unarchived.</returns>
@@ -262,7 +246,7 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Set a user to sysAdmin. Only works if the user granting admin privilege is also a sysAdmin.
+    ///     Set a user to sysAdmin. Only works if the user granting admin privilege is also a sysAdmin.
     /// </summary>
     /// <param name="authorizerId">ID of the user who is granting admin privileges</param>
     /// <param name="candidateId">ID of the user who is being granted admin privileges</param>
@@ -290,9 +274,10 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Retrieves data overview counts for a user
+    ///     Retrieves data overview counts for a user
     /// </summary>
-    /// /// <param name="userId">user id</param>
+    /// ///
+    /// <param name="userId">user id</param>
     /// <returns>Data overview object</returns>
     public async Task<DataOverviewDto> GetUserOverview(long userId)
     {
@@ -322,43 +307,7 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Retrieves current records for projects, ordered by last_updated_at first 
-    /// </summary>
-    /// <param name="projectId">An array of project ids</param>
-    /// <returns>An array of records</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectIds)
-    {
-        var records = _context.HistoricalRecords
-            .Where(p => projectIds.Contains(p.ProjectId))
-            .Where(r => !r.IsArchived)
-            .GroupBy(r => r.RecordId)
-            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
-            .ToList();
-
-        return records
-            .Select(r => new HistoricalRecordResponseDto()
-            {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                Description = r.Description,
-                LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                LastUpdatedAt = r.LastUpdatedAt
-            });
-    }
-
-    /// <summary>
-    /// Retrieves a user by their SSO ID (Okta ID)
+    ///     Retrieves a user by their SSO ID (Okta ID)
     /// </summary>
     /// <param name="ssoId">The SSO ID (subject claim from JWT token)</param>
     /// <returns>User response DTO if found, null otherwise</returns>
@@ -382,7 +331,7 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Retrieves a user by their email address
+    ///     Retrieves a user by their email address
     /// </summary>
     /// <param name="email">The email address to search for</param>
     /// <returns>User response DTO if found, null otherwise</returns>
@@ -405,5 +354,4 @@ public class UserBusiness : IUserBusiness
             IsActive = user.IsActive
         };
     }
-
 }

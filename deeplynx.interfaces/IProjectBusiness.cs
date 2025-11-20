@@ -1,4 +1,3 @@
-using deeplynx.datalayer.Models;
 using deeplynx.models;
 
 namespace deeplynx.interfaces;
@@ -17,7 +16,4 @@ public interface IProjectBusiness
     Task<bool> AddMemberToProject(long projectId, long? roleId, long? userId, long? groupId);
     Task<bool> UpdateProjectMemberRole(long projectId, long roleId, long? userId, long? groupId);
     Task<bool> RemoveMemberFromProject(long projectId, long? userId, long? groupId);
-
-    // TODO: move this to query business
-    Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(long[] projects, bool hideArchived);
 }

@@ -5,7 +5,6 @@ using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -37,12 +36,10 @@ public class QueryBusiness : IQueryBusiness
     /// ///
     /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> QueryBuilder(CustomQueryDtos.CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> QueryBuilder(
+        CustomQueryDtos.CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
     {
-        if (request == null)
-        {
-            throw new ArgumentException("Custom query request dto cannot be null");
-        }
+        if (request == null) throw new ArgumentException("Custom query request dto cannot be null");
 
         try
         {
@@ -76,16 +73,13 @@ public class QueryBusiness : IQueryBusiness
 
             // Build individual conditions
             if (request?.Length > 0)
-            {
-                for (int i = 0; i < request.Length; i++)
+                for (var i = 0; i < request.Length; i++)
                 {
                     var query = request[i];
-                    if (String.IsNullOrWhiteSpace(query.Value) && (query.Operator != "KEY_VALUE"))
-                    {
+                    if (string.IsNullOrWhiteSpace(query.Value) && query.Operator != "KEY_VALUE")
                         throw new ArgumentException("Value cannot be null or empty.");
-                    }
-                    string condition = "";
-                    string paramName = $"param{i}";
+                    var condition = "";
+                    var paramName = $"param{i}";
 
                     // Build the individual condition
                     if (query.Operator == "KEY_VALUE")
@@ -99,14 +93,10 @@ public class QueryBusiness : IQueryBusiness
                         var jsonbColumns = new[] { "properties", "tags" };
 
                         if (jsonbColumns.Contains(query.Filter.ToLower()))
-                        {
                             // For JSONB columns, convert to text and search
                             condition = $"jsonb_pretty(hr.{query.Filter}) ILIKE @{paramName}";
-                        }
                         else
-                        {
                             condition = $"hr.{query.Filter} ILIKE @{paramName}";
-                        }
                         parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
                     }
                     else if (query.Operator == "=")
@@ -123,81 +113,63 @@ public class QueryBusiness : IQueryBusiness
                         else
                         {
                             condition = $"hr.{query.Filter} = @{paramName}";
-        
+
                             if (int.TryParse(query.Value, out var intVal))
-                            {
                                 parameters.Add(new NpgsqlParameter(paramName, intVal));
-                            }
                             else if (DateTime.TryParse(query.Value, out var dateVal))
-                            {
                                 parameters.Add(new NpgsqlParameter(paramName, dateVal));
-                            }
                             else
-                            {
                                 parameters.Add(new NpgsqlParameter(paramName, query.Value));
-                            }
                         }
                     }
                     else if (query.Operator == ">")
                     {
                         condition = $"hr.{query.Filter} > @{paramName}";
-                        
+
                         if (DateTime.TryParse(query.Value, out var dateVal))
-                        {
                             parameters.Add(new NpgsqlParameter(paramName, dateVal));
-                        }
                         else
-                        {
                             parameters.Add(new NpgsqlParameter(paramName, query.Value));
-                        }
                     }
                     else if (query.Operator == "<")
                     {
                         condition = $"hr.{query.Filter} < @{paramName}";
-                        
+
                         if (DateTime.TryParse(query.Value, out var dateVal))
-                        {
                             parameters.Add(new NpgsqlParameter(paramName, dateVal));
-                        }
                         else
-                        {
                             parameters.Add(new NpgsqlParameter(paramName, query.Value));
-                        }
                     }
                     else
                     {
-                        throw new ArgumentException($"Invalid operator in query.");
+                        throw new ArgumentException("Invalid operator in query.");
                     }
 
-                    if (!string.IsNullOrEmpty(condition))
-                    {
-                        conditions.Add(condition);
-                    }
+                    if (!string.IsNullOrEmpty(condition)) conditions.Add(condition);
                 }
-            }
 
             if (conditions.Any())
             {
                 sql += " AND (";
-                
-                for (int i = 0; i < conditions.Count; i++)
+
+                for (var i = 0; i < conditions.Count; i++)
                 {
                     if (i > 0)
                     {
                         var connector = request[i].Connector?.ToUpper() == "OR" ? " OR " : " AND ";
                         sql += connector;
                     }
-                    
+
                     sql += conditions[i];
                 }
-                
+
                 sql += ")";
             }
 
             if (!string.IsNullOrWhiteSpace(textSearch))
             {
                 // Split query into words and add :* to each for prefix matching
-                var processedQuery = string.Join(" & ", 
+                var processedQuery = string.Join(" & ",
                     textSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                         .Select(word => word.Trim() + ":*"));
                 var processedQueryParam = new NpgsqlParameter("processedQuery", processedQuery);
@@ -259,15 +231,18 @@ public class QueryBusiness : IQueryBusiness
         }
         catch (PostgresException ex) when (ex.SqlState == "42703") // undefined_column
         {
-            throw new ArgumentException($"Invalid column name in query. Please check your filter fields against the historical_records table structure.", ex);
+            throw new ArgumentException(
+                "Invalid column name in query. Please check your filter fields against the historical_records table structure.",
+                ex);
         }
         catch (PostgresException ex) when (ex.SqlState == "42601") // syntax_error
         {
-            throw new ArgumentException($"Invalid query syntax. Please check your operators and values.", ex);
+            throw new ArgumentException("Invalid query syntax. Please check your operators and values.", ex);
         }
-        catch (PostgresException ex) when (ex.SqlState == "22P02") 
+        catch (PostgresException ex) when (ex.SqlState == "22P02")
         {
-            throw new ArgumentException($"Invalid data type in query. Please check that your values match the expected column data types.", ex);
+            throw new ArgumentException(
+                "Invalid data type in query. Please check that your values match the expected column data types.", ex);
         }
         catch (JsonException ex)
         {
@@ -278,7 +253,7 @@ public class QueryBusiness : IQueryBusiness
             throw new ArgumentException($"Error executing query: {ex.Message}", ex);
         }
     }
-    
+
     /// <summary>
     ///     Full text records search
     /// </summary>
@@ -289,12 +264,12 @@ public class QueryBusiness : IQueryBusiness
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
-        
+
         // Process query for full-text search (prefix matching)
-        var processedQuery = string.Join(" & ", 
+        var processedQuery = string.Join(" & ",
             userQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                     .Select(word => word.Trim() + ":*"));
-        
+                .Select(word => word.Trim() + ":*"));
+
         var sql = @"
             SELECT DISTINCT ON (hr.record_id)
             hr.*,
@@ -341,9 +316,9 @@ public class QueryBusiness : IQueryBusiness
         {
             Value = projectIds
         };
-        
+
         var results = _context.HistoricalRecords.FromSqlRaw(sql, param1, param2, param3);
-        
+
         return await results
             .Select(r => new HistoricalRecordResponseDto
             {
@@ -366,7 +341,7 @@ public class QueryBusiness : IQueryBusiness
                 LastUpdatedAt = r.LastUpdatedAt
             }).ToListAsync();
     }
-    
+
     /// <summary>
     ///     Retrieves all classes for specific projects.
     /// </summary>
@@ -460,7 +435,7 @@ public class QueryBusiness : IQueryBusiness
 
 
     /// <summary>
-    /// Save search for user
+    ///     Save search for user
     /// </summary>
     /// <param name="userId">The ID of the user</param>
     /// <param name="textSearch">Full text search string</param>
@@ -474,13 +449,13 @@ public class QueryBusiness : IQueryBusiness
         if (filters == null)
             throw new ArgumentNullException(nameof(filters), "Query filters cannot be null");
         // Create an object that wraps both the textSearch and filters array
-        var searchData = new CustomQueryDtos.CustomQueryResponseDto()
+        var searchData = new CustomQueryDtos.CustomQueryResponseDto
         {
             textSearch = textSearch,
             Filter = filters
         };
-    
-        string queryBuilt = JsonSerializer.Serialize(searchData);
+
+        var queryBuilt = JsonSerializer.Serialize(searchData);
         var savedSearch = new SavedSearch
         {
             Name = alias,
@@ -492,9 +467,9 @@ public class QueryBusiness : IQueryBusiness
         await _context.SaveChangesAsync();
         return true;
     }
-    
+
     /// <summary>
-    /// Get saved searches
+    ///     Get saved searches
     /// </summary>
     /// <param name="userId">The ID of the user</param>
     /// <returns>List of saved searches for the user</returns>
@@ -508,13 +483,12 @@ public class QueryBusiness : IQueryBusiness
 
         foreach (var search in savedSearches)
         {
-            
             // Deserialize the JSON string back to the original structure
             var searchData = JsonSerializer.Deserialize<CustomQueryDtos.CustomQueryResponseDto>(search.Search);
-        
+
             Console.WriteLine($"Filters count: {searchData?.Filter?.Length ?? 0}");
-        
-            result.Add(new CustomQueryDtos.CustomQueryResponseDto()
+
+            result.Add(new CustomQueryDtos.CustomQueryResponseDto
             {
                 textSearch = searchData?.textSearch,
                 Filter = searchData?.Filter
@@ -522,5 +496,81 @@ public class QueryBusiness : IQueryBusiness
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     Retrieves current records for projects, ordered by last_updated_at first
+    /// </summary>
+    /// <param name="projectIds">An array of project ids</param>
+    /// <returns>An array of records</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectIds)
+    {
+        var records = _context.HistoricalRecords
+            .Where(p => projectIds.Contains(p.ProjectId))
+            .Where(r => !r.IsArchived)
+            .GroupBy(r => r.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
+            .ToList();
+
+        return records
+            .Select(r => new HistoricalRecordResponseDto
+            {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                Description = r.Description,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+
+
+    /// <summary>
+    ///     Retrieves all records for multiple projects.
+    /// </summary>
+    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns>A list of records based on the applied filters.</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
+        long[] projects, bool hideArchived)
+    {
+        var recordQuery = _context.HistoricalRecords
+            .Where(r => projects.Contains(r.ProjectId));
+
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
+
+        var records = await recordQuery
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
+            .ToListAsync();
+
+        return records
+            .Select(r => new HistoricalRecordResponseDto
+            {
+                Id = r.RecordId,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                LastUpdatedAt = r.LastUpdatedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
+                Tags = r.Tags
+            });
     }
 }

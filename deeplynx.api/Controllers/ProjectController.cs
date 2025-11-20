@@ -31,7 +31,6 @@ public class ProjectController : ControllerBase
     /// <param name="organizationId">ID of the organization to list projects from</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>A list of projects</returns>
-    /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
     [HttpGet(Name = "api_get_all_projects")]
     public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects(
         long organizationId,
@@ -250,33 +249,6 @@ public class ProjectController : ControllerBase
         catch (Exception exc)
         {
             var message = $"An error occurred while retrieving project {projectId} stats: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Retrieves all records for multiple projects.
-    /// </summary>
-    /// <param name="organizationId">ID of the organization to which the projects belong</param>
-    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
-    /// <returns>List of record response DTOs</returns>
-    // TODO: move to QueryController
-    [HttpGet("MultiProjectRecords", Name = "api_multiproject_records")]
-    public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetMultiProjectRecords(
-        long organizationId,
-        [FromQuery] long[] projects,
-        [FromQuery] bool hideArchived = true)
-    {
-        try
-        {
-            var records = await _projectBusiness.GetMultiProjectRecords(projects, hideArchived);
-            return Ok(records);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while listing records: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

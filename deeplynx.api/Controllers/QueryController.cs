@@ -206,4 +206,54 @@ public class QueryController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+
+
+    /// <summary>
+    ///     Get recent records
+    /// </summary>
+    /// <param name="projectIds">Array of project ids</param>
+    /// <returns>List of record response DTOs sorted by most recent</returns>
+    [HttpGet("recent", Name = "api_get_recent_records")]
+    public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords(
+        [FromQuery] long[] projectIds)
+    {
+        try
+        {
+            var records = await _queryBusiness.GetRecentlyAddedRecords(projectIds);
+            return Ok(records);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing historical records: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+
+    /// <summary>
+    ///     Retrieves all records for multiple projects.
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to which the projects belong</param>
+    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns>List of record response DTOs</returns>
+    [HttpGet("multiproject", Name = "api_multiproject_records")]
+    public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetMultiProjectRecords(
+        long organizationId,
+        [FromQuery] long[] projects,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var records = await _queryBusiness.GetMultiProjectRecords(projects, hideArchived);
+            return Ok(records);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing records: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 }
