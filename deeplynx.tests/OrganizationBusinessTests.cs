@@ -198,24 +198,30 @@ public class OrganizationBusinessTests : IntegrationTestBase
 
     #region CreateOrganization Tests
 
-    [Fact]
-    public async Task CreateOrganization_Success_ReturnsOrganization()
-    {
-        // Arrange
-        var dto = new CreateOrganizationRequestDto
+        [Fact]
+        public async Task CreateOrganization_Success_ReturnsCorrectValues()
         {
-            Name = "New Test Organization",
-            Description = "New Test Organization Description"
-        };
+            // Arrange
+            var dto = new CreateOrganizationRequestDto
+            {
+                Name = "New Test Organization",
+                Description = "New Test Organization Description",
+            };
+            
+            var now =  DateTime.UtcNow;
+            
+            // Act
+            var result = await _organizationBusiness.CreateOrganization(uid, dto);
 
-        // Act
-        var result = await _organizationBusiness.CreateOrganization(uid, dto);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(dto.Name, result.Name);
-        Assert.Equal(dto.Description, result.Description);
-        Assert.False(result.IsArchived);
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Id > 0);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.False(result.DefaultOrg);
+            Assert.False(result.IsArchived);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
         // verify org was actually created in database
         var createdOrg = await Context.Organizations.FindAsync(result.Id);
@@ -453,24 +459,30 @@ public class OrganizationBusinessTests : IntegrationTestBase
 
     #region UpdateOrganization Tests
 
-    [Fact]
-    public async Task UpdateOrganization_Success_ReturnsOrganization()
-    {
-        // Arrange
-        var dto = new UpdateOrganizationRequestDto
+        [Fact]
+        public async Task UpdateOrganization_Success_ReturnsOrganization()
         {
-            Name = "Updated Organization",
-            Description = "Updated description"
-        };
+            // Arrange
+            var dto = new UpdateOrganizationRequestDto
+            {
+                Name = "Updated Organization",
+                Description = "Updated description"
+            };
+            
+            var now = DateTime.UtcNow;
 
         // Act
         var result = await _organizationBusiness.UpdateOrganization(uid, oid, dto);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(oid, result.Id);
-        Assert.Equal("Updated Organization", result.Name);
-        Assert.Equal("Updated description", result.Description);
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(oid, result.Id);
+            Assert.Equal("Updated Organization", result.Name);
+            Assert.Equal("Updated description", result.Description);
+            Assert.False(result.DefaultOrg);
+            Assert.False(result.IsArchived);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually saved to DB
         var savedOrg = await Context.Organizations.FindAsync(oid);
@@ -660,19 +672,27 @@ public class OrganizationBusinessTests : IntegrationTestBase
 
     #region ArchiveOrganization Tests
 
-    [Fact]
-    public async Task ArchiveOrganization_Succeeds_IfNotArchived()
-    {
-        // Act
-        var result = await _organizationBusiness.ArchiveOrganization(uid, oid);
+        [Fact]
+        public async Task ArchiveOrganization_Succeeds_IfNotArchived()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            
+            // Act
+            var result = await _organizationBusiness.ArchiveOrganization(uid, oid);
 
         // Assert
         Assert.True(result);
 
-        // Verify it was actually saved to DB
-        var savedOrg = await Context.Organizations.FindAsync(oid);
-        Assert.NotNull(savedOrg);
-        Assert.True(savedOrg.IsArchived);
+            // Verify it was actually saved to DB
+            var savedOrg = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(savedOrg);
+            Assert.True(savedOrg.IsArchived);
+            Assert.Equal("Test Organization",  savedOrg.Name);
+            Assert.Equal("Test org for unit tests", savedOrg.Description);
+            Assert.True(savedOrg.LastUpdatedAt >= now);
+            Assert.False(savedOrg.DefaultOrg);
+            Assert.Equal(uid, savedOrg.LastUpdatedBy);
 
         // Ensure that the Organization archive event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -717,19 +737,26 @@ public class OrganizationBusinessTests : IntegrationTestBase
 
     #region UnarchiveOrganization Tests
 
-    [Fact]
-    public async Task UnarchiveOrganization_Succeeds_IfArchived()
-    {
-        // Act
-        var result = await _organizationBusiness.UnarchiveOrganization(uid, oid2);
+        [Fact]
+        public async Task UnarchiveOrganization_Succeeds_IfArchived()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            
+            // Act
+            var result = await _organizationBusiness.UnarchiveOrganization(uid, oid2);
 
-        // Assert
-        Assert.True(result);
-
-        // Verify it was actually saved to DB
-        var savedOrg = await Context.Organizations.FindAsync(oid2);
-        Assert.NotNull(savedOrg);
-        Assert.False(savedOrg.IsArchived);
+            // Assert
+            Assert.True(result);
+            
+            // Verify it was actually saved to DB
+            var savedOrg = await Context.Organizations.FindAsync(oid2);
+            Assert.Equal("Archived Organization", savedOrg?.Name);
+            Assert.Equal("Archived org for tests", savedOrg?.Description);
+            Assert.False(savedOrg?.DefaultOrg);
+            Assert.False(savedOrg?.IsArchived);
+            Assert.True(savedOrg?.LastUpdatedAt >= now);
+            Assert.Equal(uid, savedOrg.LastUpdatedBy);
 
         // Ensure that the Organization unarchive event was logged
         var eventList = await Context.Events.ToListAsync();

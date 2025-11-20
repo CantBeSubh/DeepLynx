@@ -302,27 +302,30 @@ public class ProjectBusinessTests : IntegrationTestBase
 
     #region CreateProject Tests
 
-    [Fact]
-    public async Task CreateProject_Success_ReturnsIdAndCreatedAt()
-    {
-        // Arrange
-        var now = DateTime.UtcNow;
-        var dto = new CreateProjectRequestDto
+        [Fact]
+        public async Task CreateProject_Success_ReturnsCorrectFields()
         {
-            Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-            Description = "Test Description",
-            Abbreviation = "TST"
-        };
-
-        // Act
-        var result = await _projectBusiness.CreateProject(uid, oid, dto);
-
-        // Assert
-        Assert.True(result.Id > 0);
-        Assert.True(result.LastUpdatedAt >= now);
-        Assert.Equal(dto.Name, result.Name);
-        Assert.Equal(dto.Description, result.Description);
-        Assert.Equal(dto.Abbreviation, result.Abbreviation);
+            // Arrange
+            var now = DateTime.UtcNow;
+            var dto = new CreateProjectRequestDto
+            {
+                Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description",
+                Abbreviation = "TST",
+                OrganizationId = oid
+            };
+            
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+           
+            // Assert
+            Assert.True(result.Id > 0);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.Equal(dto.Abbreviation, result.Abbreviation);
+            Assert.Equal(dto.OrganizationId, result.OrganizationId);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
         // Ensure that the project create event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -687,12 +690,12 @@ public class ProjectBusinessTests : IntegrationTestBase
 
     #region UpdateProject Tests
 
-    [Fact]
-    public async Task UpdateProject_Success_ReturnsModifiedAt()
-    {
-        // Arrange
-        var originalProj = await Context.Projects.FindAsync(pid);
-        var originalUpdatedAt = originalProj.LastUpdatedAt;
+        [Fact]
+        public async Task UpdateProject_Success_ReturnsCorrectValues()
+        {
+            // Arrange
+            var originalProj = await Context.Projects.FindAsync(pid);
+            var originalUpdatedAt = originalProj.LastUpdatedAt;
 
         var dto = new UpdateProjectRequestDto
         {
@@ -701,14 +704,17 @@ public class ProjectBusinessTests : IntegrationTestBase
             Abbreviation = "UPD"
         };
 
-        // Act
-        var updatedResult = await _projectBusiness.UpdateProject(uid, pid, dto);
-
-        // Assert
-        Assert.True(originalUpdatedAt <= updatedResult.LastUpdatedAt);
-        Assert.Equal(dto.Name, updatedResult.Name);
-        Assert.Equal(dto.Description, updatedResult.Description);
-        Assert.Equal(dto.Abbreviation, updatedResult.Abbreviation);
+            // Act
+            var updatedResult = await _projectBusiness.UpdateProject(uid, pid, dto);
+            
+            // Assert
+            Assert.True(originalProj.Id == updatedResult.Id);
+            Assert.True(originalUpdatedAt <= updatedResult.LastUpdatedAt);
+            Assert.Equal(originalProj.Name, updatedResult.Name);
+            Assert.Equal(originalProj.Description, updatedResult.Description);
+            Assert.Equal(originalProj.Abbreviation, updatedResult.Abbreviation);
+            Assert.Equal(originalProj.OrganizationId, updatedResult.OrganizationId);
+            Assert.Equal(uid, updatedResult.LastUpdatedBy);
 
         // Ensure that Project Update Event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -791,13 +797,24 @@ public class ProjectBusinessTests : IntegrationTestBase
         // Assert
         Assert.True(archivedResult);
 
-        // Force EF to sync with database
-        Context.ChangeTracker.Clear();
-
-        var archivedProject = await Context.Projects.FindAsync(pid);
-        Assert.NotNull(archivedProject);
-        Assert.True(archivedProject.IsArchived);
-        Assert.True(originalUpdatedAt <= archivedProject.LastUpdatedAt);
+            // Force EF to sync with database
+            Context.ChangeTracker.Clear();
+            
+            // verify saved in db
+            var archivedProject = await Context.Projects.FindAsync(pid);
+            Assert.NotNull(archivedProject);
+            Assert.True(archivedProject.IsArchived);
+            
+            //verify other fields preserved
+            Assert.True(originalProject.Id == archivedProject.Id);
+            Assert.True(originalUpdatedAt <= archivedProject.LastUpdatedAt);
+            Assert.Equal(originalProject.Name, archivedProject.Name);
+            Assert.Equal(originalProject.Description, archivedProject.Description);
+            Assert.Equal(originalProject.Abbreviation, archivedProject.Abbreviation);
+            Assert.Equal(originalProject.OrganizationId, archivedProject.OrganizationId);
+            Assert.Equal(uid, archivedProject.LastUpdatedBy);
+            Assert.Equal(originalProject.Config, archivedProject.Config);
+            
 
         // Ensure that project soft delete event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -832,23 +849,43 @@ public class ProjectBusinessTests : IntegrationTestBase
 
     #region UnarchiveProject Tests
 
-    [Fact]
-    public async Task UnarchiveProject_Success_WhenArchived()
-    {
-        // Act
-        var unarchivedResult = await _projectBusiness.UnarchiveProject(uid, pid4); //pid4 is archived
+        [Fact]
+        public async Task UnarchiveProject_Success_WhenArchived()
+        {
+            // Arrange
+            var originalProject = await Context.Projects.FindAsync(pid4);
+            var originalUpdatedAt = originalProject.LastUpdatedAt;
+            
+            // Act
+            var unarchivedResult = await _projectBusiness.UnarchiveProject(uid, pid4); //pid4 is archived
 
         // Assert
         Assert.True(unarchivedResult);
 
-        // Force EF to sync with database
-        Context.ChangeTracker.Clear();
-
-        var unarchivedProject = await Context.Projects.FindAsync(pid4);
-        Assert.NotNull(unarchivedProject);
-        Assert.False(unarchivedProject.IsArchived);
-        Assert.Equal(uid, unarchivedProject.LastUpdatedBy);
-    }
+            // Force EF to sync with database
+            Context.ChangeTracker.Clear();
+            
+            // Verify archived false in DB
+            var unarchivedProject = await Context.Projects.FindAsync(pid4);
+            Assert.NotNull(unarchivedProject);
+            Assert.False(unarchivedProject.IsArchived);
+            Assert.Equal(uid, unarchivedProject.LastUpdatedBy);
+            
+            // verify saved in db
+            var archivedProject = await Context.Projects.FindAsync(pid4);
+            Assert.NotNull(archivedProject);
+            Assert.False(archivedProject.IsArchived);
+            
+            //verify other fields preserved
+            Assert.True(originalProject.Id == archivedProject.Id);
+            Assert.True(originalUpdatedAt <= archivedProject.LastUpdatedAt);
+            Assert.Equal(originalProject.Name, archivedProject.Name);
+            Assert.Equal(originalProject.Description, archivedProject.Description);
+            Assert.Equal(originalProject.Abbreviation, archivedProject.Abbreviation);
+            Assert.Equal(originalProject.OrganizationId, archivedProject.OrganizationId);
+            Assert.Equal(uid, archivedProject.LastUpdatedBy);
+            Assert.Equal(originalProject.Config, archivedProject.Config);
+        }
 
     [Fact]
     public async Task UnarchiveProject_Fails_IfNotFound()

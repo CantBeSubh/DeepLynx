@@ -422,13 +422,11 @@ public class RoleBusiness : IRoleBusiness
         {
             try
             {
-                //Todo: update archive procedure to include lastUpdatedBy
-
                 // run the archive role procedure, which archives this role and
                 // removes this role from anyone holding it in any projects
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_role({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    roleId, lastUpdatedAt
+                    "CALL deeplynx.archive_role({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE, {2}::INTEGER)",
+                    roleId, lastUpdatedAt, currentUserId
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure

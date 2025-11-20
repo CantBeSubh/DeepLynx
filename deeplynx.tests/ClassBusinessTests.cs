@@ -103,29 +103,31 @@ public class ClassBusinessTests : IntegrationTestBase
 
     #region CreateClass Tests
 
-    [Fact]
-    public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
-    {
-        // Arrange
-        var now = DateTime.UtcNow;
-        var dto = new CreateClassRequestDto
+        [Fact]
+        public async Task CreateClass_Success_ReturnsCorrectValues()
         {
-            Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-            Description = "Test Description",
-            Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
-        };
+            // Arrange
+            var now = DateTime.UtcNow;
+            var dto = new CreateClassRequestDto
+            {
+                Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description",
+                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+            };
 
         // Act
         var result = await _classBusiness.CreateClass(uid, pid, dto);
 
-        // Assert
-        Assert.True(result.Id > 0);
-        Assert.True(result.LastUpdatedAt >= now);
-        Assert.Equal(dto.Name, result.Name);
-        Assert.Equal(dto.Description, result.Description);
-        Assert.Equal(pid, result.ProjectId);
-        Assert.Equal(uid, result.LastUpdatedBy);
-
+            // Assert
+            Assert.True(result.Id > 0);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.Equal(dto.Uuid, result.Uuid);
+            Assert.Equal(pid, result.ProjectId);
+            Assert.Equal(uid, result.LastUpdatedBy);
+            Assert.False(result.IsArchived);
+            
 
         // Ensure the create event is logged
         var eventList = await Context.Events.ToListAsync();
@@ -606,22 +608,22 @@ public class ClassBusinessTests : IntegrationTestBase
 
     #region UpdateClass Tests
 
-    [Fact]
-    public async Task UpdateClass_Success_ReturnsModifiedAt()
-    {
-        // Arrange
-        var testClass = new Class
+        [Fact]
+        public async Task UpdateClass_Success_ReturnsCorrectValues()
         {
-            Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-            Description = "Original Description",
-            ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-        Context.Classes.Add(testClass);
-        await Context.SaveChangesAsync();
-
-        // Add a small delay to ensure ModifiedAt is after CreatedAt
-        await Task.Delay(50);
+            var now = DateTime.UtcNow;
+            // Arrange
+            var testClass = new Class
+            {
+                Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Original Description",
+                ProjectId = pid,
+                Uuid = "test-uuid",
+                LastUpdatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
 
         var dto = new UpdateClassRequestDto
         {
@@ -633,9 +635,14 @@ public class ClassBusinessTests : IntegrationTestBase
         var updatedResult = await _classBusiness.UpdateClass(uid, pid, testClass.Id, dto);
 
 
-        // Assert
-        Assert.NotEqual(DateTime.MinValue, updatedResult.LastUpdatedAt);
-        Assert.Equal("Updated Description", updatedResult.Description);
+            // Assert
+            Assert.NotEqual(DateTime.MinValue, updatedResult.LastUpdatedAt);
+            Assert.True(updatedResult.LastUpdatedAt >= now);
+            Assert.Equal(dto.Name, updatedResult.Name);
+            Assert.Equal("Updated Description", updatedResult.Description);
+            Assert.Equal(pid, updatedResult.ProjectId);
+            Assert.Equal(testClass.Uuid, updatedResult.Uuid);
+            Assert.False(updatedResult.IsArchived);
 
         // Ensure that an event was logged for the update
         var eventList = await Context.Events.ToListAsync();
@@ -722,20 +729,24 @@ public class ClassBusinessTests : IntegrationTestBase
 
     #region ArchiveClass Tests
 
-    [Fact]
-    public async Task ArchiveClass_Success_WhenExists()
-    {
-        // Arrange
-        var beforeArchive = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-
-        var testClass = new Class
+        [Fact]
+        public async Task ArchiveClass_Success_WhenExists()
         {
-            Name = $"Class to Archive {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-            ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-        Context.Classes.Add(testClass);
-        await Context.SaveChangesAsync();
+            var now =  DateTime.UtcNow;
+            // Arrange
+            var beforeArchive = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+            var testClass = new Class
+            {
+                Name = $"Class to Archive {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                Description = "Archive Description",
+                Uuid = "test-uuid",
+                LastUpdatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
 
         // Act
         var archivedResult = await _classBusiness.ArchiveClass(uid, pid, testClass.Id);
@@ -747,11 +758,16 @@ public class ClassBusinessTests : IntegrationTestBase
         //this forces EF to sync to db on next query
         Context.ChangeTracker.Clear();
 
-        var archivedClass = await Context.Classes.FindAsync(testClass.Id);
-        Assert.NotNull(archivedClass);
-        Assert.True(archivedClass.IsArchived);
-        Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
-        Assert.Equal(uid, archivedClass.LastUpdatedBy);
+            var archivedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(archivedClass);
+            Assert.True(archivedClass.Id > 0);
+            Assert.True(archivedClass.LastUpdatedAt >= now);
+            Assert.Equal(testClass.Name, archivedClass.Name);
+            Assert.Equal(testClass.Description, archivedClass.Description);
+            Assert.Equal(testClass.Uuid, archivedClass.Uuid);
+            Assert.Equal(pid, archivedClass.ProjectId);
+            Assert.Equal(uid, archivedClass.LastUpdatedBy);
+            Assert.True(archivedClass.IsArchived);
 
         // Ensure that class soft delete event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -1088,21 +1104,24 @@ public class ClassBusinessTests : IntegrationTestBase
 
     #endregion
 
-    #region UnarchiveClass Tests
-
-    [Fact]
-    public async Task UnarchiveClass_SuccessfullyUnarchivesClassAndReturnsTrue()
-    {
-        // Arrange
-        var testClass = new Class
+        #region UnarchiveClass Tests
+        [Fact]
+        public async Task UnarchiveClass_SuccessfullyUnarchivesClassAndReturnsTrue()
         {
-            Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-            ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = true
-        };
-        Context.Classes.Add(testClass);
-        await Context.SaveChangesAsync();
+            var now = DateTimeOffset.UtcNow;
+            // Arrange
+            var testClass = new Class
+            {
+                Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                Uuid = "test_uuid",
+                LastUpdatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = true
+
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
 
         // Act
         var result = await _classBusiness.UnarchiveClass(uid, pid, testClass.Id);
@@ -1110,12 +1129,18 @@ public class ClassBusinessTests : IntegrationTestBase
         //this forces EF to sync to db on next query
         Context.ChangeTracker.Clear();
 
-        var updated = await Context.Classes.FindAsync(testClass.Id);
-        // Assert
-        Assert.True(result);
-        Assert.False(updated?.IsArchived);
-        Assert.Equal(uid, updated?.LastUpdatedBy);
-    }
+            var unarchived = await Context.Classes.FindAsync(testClass.Id);
+            // Assert
+            Assert.True(result);
+            Assert.True(unarchived?.Id > 0);
+            Assert.True(unarchived?.LastUpdatedAt >= now);
+            Assert.Equal(testClass.Name, unarchived?.Name);
+            Assert.Equal(testClass.Description, unarchived?.Description);
+            Assert.Equal(testClass.Uuid, unarchived?.Uuid);
+            Assert.Equal(pid, unarchived?.ProjectId);
+            Assert.Equal(uid, unarchived?.LastUpdatedBy);
+            Assert.False(unarchived?.IsArchived);
+        }
 
     [Fact]
     public async Task UnarchiveClass_Throws_IfClassNotFound()

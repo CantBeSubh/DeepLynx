@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("relationships", Schema = "deeplynx")]
-[Index("DestinationId", Name = "idx_relationships_destination_id")]
-[Index("Id", Name = "idx_relationships_id")]
-[Index("Name", Name = "idx_relationships_name")]
-[Index("OriginId", Name = "idx_relationships_origin_id")]
-[Index("ProjectId", Name = "idx_relationships_project_id")]
-[Index("Uuid", Name = "idx_relationships_uuid")]
-[Index("ProjectId", "Name", Name = "unique_relationship_name", IsUnique = true)]
 public partial class Relationship
 {
     [Key]
@@ -37,6 +27,9 @@ public partial class Relationship
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
@@ -61,6 +54,10 @@ public partial class Relationship
     [ForeignKey("ProjectId")]
     [InverseProperty("Relationships")]
     public virtual Project Project { get; set; } = null!;
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Relationships")]
+    public virtual Organization Organization { get; set; } = null!;
     
     [InverseProperty("LastUpdatedRelationships")]
     public virtual User? LastUpdatedByUser { get; set; }

@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("historical_records", Schema = "deeplynx")]
-[Index("ClassName", Name = "idx_historical_records_class_name")]
-[Index("Id", Name = "idx_historical_records_id")]
-[Index("LastUpdatedAt", Name = "idx_historical_records_last_updated_at")]
-[Index("RecordId", Name = "idx_historical_records_record_id")]
 public partial class HistoricalRecord
 {
     [Key]
@@ -46,6 +39,9 @@ public partial class HistoricalRecord
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     [Column("project_name")]
     public string ProjectName { get; set; } = null!;
@@ -74,4 +70,12 @@ public partial class HistoricalRecord
     [ForeignKey("RecordId")]
     [InverseProperty("HistoricalRecords")]
     public virtual Record Record { get; set; } = null!;
+    
+    [ForeignKey("ProjectId")]
+    [InverseProperty("HistoricalRecords")]
+    public virtual Project Project { get; set; } = null!;
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("HistoricalRecords")]
+    public virtual Organization Organization { get; set; } = null!;
 }

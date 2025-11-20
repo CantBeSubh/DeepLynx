@@ -1,18 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("historical_edges", Schema = "deeplynx")]
-[Index("DestinationId", Name = "idx_historical_edges_destination_id")]
-[Index("EdgeId", Name = "idx_historical_edges_edge_id")]
-[Index("Id", Name = "idx_historical_edges_id")]
-[Index("LastUpdatedAt", Name = "idx_historical_edges_last_updated_at")]
-[Index("OriginId", Name = "idx_historical_edges_origin_id")]
-[Index("RelationshipName", Name = "idx_historical_edges_relationship_name")]
 public partial class HistoricalEdge
 {
     [Key]
@@ -39,6 +30,9 @@ public partial class HistoricalEdge
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     [Column("last_updated_by")]
     public long? LastUpdatedBy { get; set; }
@@ -58,6 +52,14 @@ public partial class HistoricalEdge
     [ForeignKey("EdgeId")]
     [InverseProperty("HistoricalEdges")]
     public virtual Edge Edge { get; set; } = null!;
+    
+    [ForeignKey("ProjectId")]
+    [InverseProperty("HistoricalEdges")]
+    public virtual Project Project { get; set; } = null!;
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("HistoricalEdges")]
+    public virtual Organization Organization { get; set; } = null!;
     
     [InverseProperty("LastUpdatedHistoricalEdges")]
     public virtual User? LastUpdatedByUser { get; set; }

@@ -350,23 +350,28 @@ public class TagBusinessTests : IntegrationTestBase
         Assert.Empty(eventList);
     }
 
-    [Fact]
-    public async Task CreateTag_ValidDto_CreatesTag()
-    {
-        // Arrange
-        var dto = new CreateTagRequestDto
+        [Fact]
+        public async Task CreateTag_ValidDto_CreatesTag()
         {
-            Name = "Tag One"
-        };
+            // Arrange
+            var now = DateTime.UtcNow;
+            var dto = new CreateTagRequestDto
+            {
+                Name = "Tag One"
+            };
 
-        // Act
-        var result = await _tagBusiness.CreateTag(uid, pid, dto);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.True(result.Id > 0);
-        Assert.Equal("Tag One", result.Name);
-        Assert.Equal(pid, result.ProjectId);
+            // Act
+            var result = await _tagBusiness.CreateTag(uid, pid, dto);
+            
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Id > 0);
+            Assert.Equal("Tag One", result.Name);
+            Assert.Equal(pid, result.ProjectId);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
+            Assert.False(result.IsArchived);
+            
 
         // Verify it was actually saved to database
         var savedTag = await Context.Tags.FindAsync(result.Id);
@@ -466,23 +471,27 @@ public class TagBusinessTests : IntegrationTestBase
 
     #region UpdateTag Tests
 
-    [Fact]
-    public async Task UpdateTag_ValidUpdate_UpdatesTag()
-    {
-        // Arrange
-        var dto = new UpdateTagRequestDto
+        [Fact]
+        public async Task UpdateTag_ValidUpdate_UpdatesTag()
         {
-            Name = "Updated Test Tag"
-        };
+            // Arrange
+            var now = DateTime.UtcNow;
+            var dto = new UpdateTagRequestDto
+            {
+                Name = "Updated Test Tag"
+            };
 
         // Act
         var result = await _tagBusiness.UpdateTag(uid, pid, tid, dto);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(tid, result.Id);
-        Assert.Equal("Updated Test Tag", result.Name);
-        Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(tid, result.Id);
+            Assert.Equal("Updated Test Tag", result.Name);
+            Assert.False(result.IsArchived);
+            Assert.Equal(pid, result.ProjectId);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually updated in database
         var updatedTag = await Context.Tags.FindAsync(tid);
@@ -641,19 +650,26 @@ public class TagBusinessTests : IntegrationTestBase
 
     #region ArchiveTag Tests
 
-    [Fact]
-    public async Task ArchiveTag_ValidTag_ArchivesSuccessfully()
-    {
-        // Act
-        var result = await _tagBusiness.ArchiveTag(uid, pid, tid);
+        [Fact]
+        public async Task ArchiveTag_ValidTag_ArchivesSuccessfully()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            // Act
+            var result = await _tagBusiness.ArchiveTag(uid, pid, tid);
 
         // Assert
         Assert.True(result);
 
-        // Verify it was actually archived in database
-        var archivedTag = await Context.Tags.FindAsync(tid);
-        Assert.NotNull(archivedTag);
-        Assert.True(archivedTag.IsArchived);
+            // Verify it was actually archived in database
+            var archivedTag = await Context.Tags.FindAsync(tid);
+            Assert.NotNull(archivedTag);
+            Assert.True(archivedTag.IsArchived);
+            Assert.Equal(tid, archivedTag.Id);
+            Assert.Equal("Analytics", archivedTag.Name);
+            Assert.Equal(pid, archivedTag.ProjectId);
+            Assert.True(archivedTag.LastUpdatedAt >= now);
+            Assert.Equal(uid, archivedTag.LastUpdatedBy);
 
         // Ensure that the tag delete event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -813,18 +829,26 @@ public class TagBusinessTests : IntegrationTestBase
 
     #region UnarchiveTag Tests
 
-    [Fact]
-    public async Task UnarchiveTag_ValidArchivedTag_UnarchivesSuccessfully()
-    {
-        // Act
-        var result = await _tagBusiness.UnarchiveTag(uid, pid, tid3);
+        [Fact]
+        public async Task UnarchiveTag_ValidArchivedTag_UnarchivesSuccessfully()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;    
+            
+            // Act
+            var result = await _tagBusiness.UnarchiveTag(uid, pid, tid3);
 
-        Assert.True(result);
-        Context.ChangeTracker.Clear();
-        var refreshed = await Context.Tags.FindAsync(tid3);
-        Assert.NotNull(refreshed);
-        Assert.False(refreshed.IsArchived);
-    }
+            Assert.True(result);
+            
+            var refreshed = await Context.Tags.FindAsync(tid3);
+            Assert.NotNull(refreshed);
+            Assert.False(refreshed.IsArchived);
+            Assert.Equal(tid3, refreshed.Id);
+            Assert.Equal("Analytics 3", refreshed.Name);
+            Assert.Equal(pid, refreshed.ProjectId);
+            Assert.True(refreshed.LastUpdatedAt >= now);
+            Assert.Equal(uid, refreshed.LastUpdatedBy);
+        }
 
     [Fact]
     public async Task UnarchiveTag_NonExistentTag_ThrowsKeyNotFoundException()
