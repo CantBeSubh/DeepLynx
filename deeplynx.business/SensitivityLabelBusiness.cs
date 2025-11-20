@@ -1,20 +1,20 @@
-using Microsoft.EntityFrameworkCore;
-using deeplynx.models;
-using deeplynx.interfaces;
+using System.Text.Json;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
-using System.Text.Json;
+using deeplynx.interfaces;
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
 public class SensitivityLabelBusiness : ISensitivityLabelBusiness
 {
-    private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
+    private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SensitivityLabelBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="SensitivityLabelBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for sensitivity label operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -27,7 +27,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     }
 
     /// <summary>
-    /// Get all sensitivity labels for a given project and/or organization
+    ///     Get all sensitivity labels for a given project and/or organization
     /// </summary>
     /// <param name="projectId">ID of the project across which to search</param>
     /// <param name="organizationId">ID of the organization across which to search</param>
@@ -49,11 +49,11 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value, hideArchived);
             labelQuery = labelQuery.Where(x => x.OrganizationId == organizationId);
         }
-        
+
         if (hideArchived)
             labelQuery = labelQuery.Where(l => !l.IsArchived);
-        
-        return await labelQuery.Select(l => new SensitivityLabelResponseDto()
+
+        return await labelQuery.Select(l => new SensitivityLabelResponseDto
             {
                 Id = l.Id,
                 Name = l.Name,
@@ -62,13 +62,13 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
                 LastUpdatedBy = l.LastUpdatedBy,
                 ProjectId = l.ProjectId,
                 OrganizationId = l.OrganizationId,
-                IsArchived = l.IsArchived,
+                IsArchived = l.IsArchived
             })
             .ToListAsync();
     }
 
     /// <summary>
-    /// Get a sensitivity label by ID
+    ///     Get a sensitivity label by ID
     /// </summary>
     /// <param name="labelId">ID of the label to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to search archived labels</param>
@@ -77,10 +77,10 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     public async Task<SensitivityLabelResponseDto> GetSensitivityLabel(long labelId, bool hideArchived = true)
     {
         var label = await _context.SensitivityLabels.FirstOrDefaultAsync(l => l.Id == labelId);
-        
+
         if (label == null)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found");
-        
+
         if (hideArchived && label.IsArchived)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} is archived");
 
@@ -93,74 +93,12 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             LastUpdatedBy = label.LastUpdatedBy,
             IsArchived = label.IsArchived,
             ProjectId = label.ProjectId,
-            OrganizationId = label.OrganizationId,
+            OrganizationId = label.OrganizationId
         };
     }
 
     /// <summary>
-    /// Create a new sensitivity label
-    /// </summary>
-    /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="dto">Data Transfer Object containing new label information</param>
-    /// <param name="projectId">ID of the project to which the label belongs</param>
-    /// <param name="organizationId">ID of the organization to which the label belongs</param>
-    /// <returns>The newly created label</returns>
-    /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
-    public async Task<SensitivityLabelResponseDto> CreateSensitivityLabel(
-       long currentUserId, CreateSensitivityLabelRequestDto dto, long? projectId, long? organizationId)
-    {
-        // ensure one and only one of projectID or organizationID is supplied
-        if (!projectId.HasValue && !organizationId.HasValue)
-            throw new ArgumentException("One of Project ID or Organization ID must be provided");
-        if (projectId.HasValue && organizationId.HasValue)
-            throw new ArgumentException("Please provide only one of Project ID or Organization ID, not both");
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        if (organizationId.HasValue)
-            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
-        
-        ValidationHelper.ValidateModel(dto);
-        var label = new SensitivityLabel
-        {
-            Name = dto.Name,
-            Description = dto.Description,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = currentUserId,
-            ProjectId = projectId,
-            OrganizationId = organizationId,
-        };
-        
-        _context.SensitivityLabels.Add(label);
-        await _context.SaveChangesAsync();
-        
-        // Log create SensitivityLabel event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
-            Operation = "create",
-            EntityType = "sensitivity_label",
-            EntityId = label.Id,
-            EntityName = label.Name,
-            Properties = JsonSerializer.Serialize(new { label.Name }),
-        });
-
-        return new SensitivityLabelResponseDto
-        {
-            Id = label.Id,
-            Name = label.Name,
-            Description = label.Description,
-            LastUpdatedAt = label.LastUpdatedAt,
-            LastUpdatedBy = label.LastUpdatedBy,
-            IsArchived = label.IsArchived,
-            ProjectId = label.ProjectId,
-            OrganizationId = label.OrganizationId,
-        };
-    }
-
-    /// <summary>
-    /// Update sensitivity label information
+    ///     Update sensitivity label information
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of the label to be updated</param>
@@ -173,15 +111,15 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         var label = await _context.SensitivityLabels.FindAsync(labelId);
         if (label == null || label.IsArchived)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found");
-        
+
         label.Name = dto.Name ?? label.Name;
         label.Description = dto.Description ?? label.Description;
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         label.LastUpdatedBy = currentUserId;
-        
+
         _context.SensitivityLabels.Update(label);
         await _context.SaveChangesAsync();
-        
+
         // Log update SensitivityLabel event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -191,7 +129,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
-            Properties = JsonSerializer.Serialize(new { label.Name }),
+            Properties = JsonSerializer.Serialize(new { label.Name })
         });
 
         return new SensitivityLabelResponseDto
@@ -203,12 +141,12 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             LastUpdatedBy = label.LastUpdatedBy,
             IsArchived = label.IsArchived,
             ProjectId = label.ProjectId,
-            OrganizationId = label.OrganizationId,
+            OrganizationId = label.OrganizationId
         };
     }
 
     /// <summary>
-    /// Archive a sensitivity label by ID.
+    ///     Archive a sensitivity label by ID.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to archive</param>
@@ -224,7 +162,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         label.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
-        
+
         // Log archive SensitivityLabel event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -234,14 +172,14 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
-            Properties = JsonSerializer.Serialize(new { label.Name }),
+            Properties = JsonSerializer.Serialize(new { label.Name })
         });
-        
+
         return true;
     }
-    
+
     /// <summary>
-    /// Unarchive a sensitivity label by ID
+    ///     Unarchive a sensitivity label by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to unarchive</param>
@@ -257,7 +195,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         label.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         label.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
-        
+
         // Log unarchive SensitivityLabel event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -267,14 +205,14 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
-            Properties = JsonSerializer.Serialize(new { label.Name }),
+            Properties = JsonSerializer.Serialize(new { label.Name })
         });
-        
+
         return true;
     }
-    
+
     /// <summary>
-    /// Delete a sensitivity label by ID
+    ///     Delete a sensitivity label by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="labelId">ID of label to delete</param>
@@ -288,7 +226,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
 
         _context.SensitivityLabels.Remove(label);
         await _context.SaveChangesAsync();
-        
+
         // Log delete SensitivityLabel event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -298,9 +236,74 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             EntityType = "sensitivity_label",
             EntityId = label.Id,
             EntityName = label.Name,
-            Properties = JsonSerializer.Serialize(new { label.Name }),
+            Properties = JsonSerializer.Serialize(new { label.Name })
         });
-        
+
         return true;
+    }
+
+    /// <summary>
+    ///     Create a new sensitivity label
+    /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="dto">Data Transfer Object containing new label information</param>
+    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
+    /// <returns>The newly created label</returns>
+    /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
+    public async Task<SensitivityLabelResponseDto> CreateSensitivityLabel(
+        long currentUserId, CreateSensitivityLabelRequestDto dto, long? projectId, long organizationId)
+    {
+        ValidationHelper.ValidateModel(dto);
+
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
+
+        if (projectId.HasValue)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
+
+            // We can also check here for proper project/org connection
+            var project = await _context.Projects.FindAsync(projectId.Value);
+            if (project?.OrganizationId != organizationId)
+                throw new ArgumentException(
+                    $"Project {projectId.Value} does not belong to organization {organizationId}");
+        }
+
+        var label = new SensitivityLabel
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = currentUserId,
+            ProjectId = projectId,
+            OrganizationId = organizationId
+        };
+
+        _context.SensitivityLabels.Add(label);
+        await _context.SaveChangesAsync();
+
+        // Log create SensitivityLabel event
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        {
+            OrganizationId = organizationId,
+            ProjectId = projectId,
+            Operation = "create",
+            EntityType = "sensitivity_label",
+            EntityId = label.Id,
+            EntityName = label.Name,
+            Properties = JsonSerializer.Serialize(new { label.Name })
+        });
+
+        return new SensitivityLabelResponseDto
+        {
+            Id = label.Id,
+            Name = label.Name,
+            Description = label.Description,
+            LastUpdatedAt = label.LastUpdatedAt,
+            LastUpdatedBy = label.LastUpdatedBy,
+            IsArchived = label.IsArchived,
+            ProjectId = label.ProjectId,
+            OrganizationId = label.OrganizationId
+        };
     }
 }
