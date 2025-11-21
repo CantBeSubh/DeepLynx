@@ -23,12 +23,12 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
     /// <param name="organizationId">The ID of the organization to which the subscription belongs (required)</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <param name="projectId">Optional ID of the project to which the subscription belongs</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of subscriptions</returns>
     /// TODO: CACHE ALL SUBSCRIPTIONS TO MAKE THE NOTIFICATION SERVICE MORE EFFICIENT
-    public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long currentUserId, long organizationId, bool hideArchived,
-        long? projectId)
+    public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long currentUserId, long organizationId, long? projectId,
+        bool hideArchived)
     {
         // Validate organization exists
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
@@ -81,12 +81,16 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
     /// <param name="subscriptionId">The ID of the subscription</param>
     /// <param name="organizationId">The ID of the organization to which the subscription belongs (required)</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <param name="projectId">Optional ID of the project to which the subscription belongs</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A subscription</returns>
     /// <exception cref="KeyNotFoundException">Returned if subscription is not found or is archived</exception>
-    public async Task<SubscriptionResponseDto> GetSubscription(long currentUserId, long subscriptionId, long organizationId, bool hideArchived,
-       long? projectId)
+    public async Task<SubscriptionResponseDto> GetSubscription(
+        long currentUserId, 
+        long subscriptionId, 
+        long organizationId, 
+        long? projectId, 
+        bool hideArchived)
     {
         // Validate existence of the scope
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
@@ -146,12 +150,12 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="dtos">List of subscription creation requests</param>
     /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
+    /// <param name="dtos">List of subscription creation requests</param>
     /// <returns>A list of created subscriptions</returns>
     public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long organizationId,
-        List<CreateSubscriptionRequestDto> dtos,
-        long? projectId)
+        long? projectId,
+        List<CreateSubscriptionRequestDto>? dtos)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -221,14 +225,14 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="dtos">List of subscription update requests</param>
     /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
+    /// <param name="dtos">List of subscription update requests</param>
     /// <returns>A list of updated subscriptions</returns>
     public async Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
         long currentUserId,
         long organizationId,
-        List<UpdateSubscriptionRequestDto> dtos,
-        long? projectId)
+        long? projectId,
+        List<UpdateSubscriptionRequestDto>? dtos)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -323,11 +327,11 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="subscriptionIds">The ID of the subscriptions to be deleted</param>
     /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
+    /// <param name="subscriptionIds">The ID of the subscriptions to be deleted</param>
     /// <returns>True if successful</returns>
-    public async Task<bool> BulkDeleteSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds,
-        long? projectId)
+    public async Task<bool> BulkDeleteSubscriptions(long currentUserId, long organizationId, long? projectId,
+        List<long> subscriptionIds)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -376,11 +380,11 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="subscriptionIds">The ID of the subscriptions to be archived</param>
     /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
+    /// <param name="subscriptionIds">The ID of the subscriptions to be archived</param>
     /// <returns>True if successful</returns>
-    public async Task<bool> BulkArchiveSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds,
-        long? projectId)
+    public async Task<bool> BulkArchiveSubscriptions(long currentUserId, long organizationId, long? projectId,
+        List<long> subscriptionIds)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
@@ -435,11 +439,11 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="subscriptionIds">The ID of the subscriptions to be unarchived</param>
     /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
+    /// <param name="subscriptionIds">The ID of the subscriptions to be unarchived</param>
     /// <returns>True if successful</returns>
-    public async Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long organizationId, List<long> subscriptionIds,
-        long? projectId)
+    public async Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long organizationId, long? projectId,
+        List<long>? subscriptionIds)
     {
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         
