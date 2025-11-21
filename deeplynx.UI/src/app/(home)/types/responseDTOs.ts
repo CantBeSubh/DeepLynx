@@ -264,3 +264,16 @@ export type EdgeResponseDto = {
   lastUpdatedBy?: number;
   isArchived: boolean;
 };
+
+export type RelationshipResponseDto = {
+  id: number;
+  name: string;
+  description?: string;
+  uuid?: string;
+  projectId: number;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+  isArchived: boolean;
+  originId?: number;
+  destinationId?: number;
+};

@@ -204,3 +204,19 @@ export type UpdateRecordRequestDto = {
   object_storage_id?: number;
   file_type?: string;
 };
+
+export type CreateRelationshipRequestDto = {
+  name: string;
+  description?: string;
+  uuid?: string;
+  origin_id?: number;
+  destination_id?: number;
+};
+
+export type UpdateRelationshipRequestDto = {
+  name?: string;
+  description?: string;
+  uuid?: string;
+  origin_id?: number;
+  destination_id?: number;
+};
