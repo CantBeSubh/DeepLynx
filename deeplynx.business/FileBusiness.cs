@@ -43,6 +43,7 @@ public class FileBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
+    /// <param name="organizationId">ID of the Organization to which the project belongs</param>
     /// <param name="dataSourceId">Id of the data source to which the file belongs</param>
     /// <param name="objectStorageId">Id of the object storage method to use</param>
     /// <param name="file">file to upload</param>
@@ -55,7 +56,6 @@ public class FileBusiness
         IFormFile file)
     {
         long realDataSourceId;
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (file == null || file.Length == 0) throw new ArgumentException("File is required and cannot be empty.");
         if (dataSourceId.HasValue)
         {
@@ -122,19 +122,21 @@ public class FileBusiness
     ///     Relaces a file but uses the same guid for the file name
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="recordId">Id of record that contains the info of the file to replace</param>
     /// <param name="file">file to update to</param>
-    public async Task<RecordResponseDto> UpdateFile(long currentUserId, long projectId, long recordId, IFormFile file)
+    public async Task<RecordResponseDto> UpdateFile(long currentUserId, long organizationId, long projectId,
+        long recordId, IFormFile file)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);
         if (file == null || file.Length == 0) throw new ArgumentException("File is required and cannot be empty.");
 
         if (record.ObjectStorageId == null) throw new KeyNotFoundException("Record needs an object storage id");
 
         var objectStorage =
-            await _objectStorageBusiness.GetObjectStorage(null, projectId, record.ObjectStorageId.Value, true);
+            await _objectStorageBusiness.GetObjectStorage(organizationId, projectId, record.ObjectStorageId.Value,
+                true);
 
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
 
@@ -156,15 +158,16 @@ public class FileBusiness
     /// <summary>
     ///     Downloads file
     /// </summary>
+    /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="recordId">Id of record that contains the info of the file to download</param>
-    public async Task<FileStreamResult> DownloadFile(long projectId, long recordId)
+    public async Task<FileStreamResult> DownloadFile(long organizationId, long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);
         if (record.ObjectStorageId == null) throw new KeyNotFoundException("Record needs an object storage id");
         var objectStorage =
-            await _objectStorageBusiness.GetObjectStorage(null, projectId, record.ObjectStorageId.Value, true);
+            await _objectStorageBusiness.GetObjectStorage(organizationId, projectId, record.ObjectStorageId.Value,
+                true);
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
         return await fileBusiness.DownloadFile(record);
     }
@@ -172,16 +175,17 @@ public class FileBusiness
     /// <summary>
     ///     Deletes a file
     /// </summary>
+    /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">Id of the project to which the file belongs</param>
     /// <param name="recordId">Id of record that contains the info of the file to delete</param>
-    public async Task<bool> DeleteFile(long projectId, long recordId)
+    public async Task<bool> DeleteFile(long organizationId, long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);
         if (record == null) throw new KeyNotFoundException("Record not found");
         if (record.ObjectStorageId == null) throw new KeyNotFoundException("Record needs an object storage id");
         var objectStorage =
-            await _objectStorageBusiness.GetObjectStorage(null, projectId, record.ObjectStorageId.Value, true);
+            await _objectStorageBusiness.GetObjectStorage(organizationId, projectId, record.ObjectStorageId.Value,
+                true);
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
         await fileBusiness.DeleteFile(record);
         return await _recordBusiness.DeleteRecord(projectId, recordId);
