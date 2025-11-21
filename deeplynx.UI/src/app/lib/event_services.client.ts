@@ -1,5 +1,4 @@
 'use client';
-
 import api from './api';
 import { EventResponseDto, PaginatedEventsResponseDto } from "../(home)/types/responseDTOs"
 
@@ -19,10 +18,12 @@ export type EventFilterParams = {
 };
 
 export const getAllEventsPaginated = async (
+    organizationId: number,
+    projectId: number,
     params?: EventFilterParams
 ): Promise<PaginatedEventsResponseDto> => {
     try {
-        const res = await api.get(`/events/QueryEvents`, {
+        const res = await api.get(`/organizations/${organizationId}/projects/${projectId}/events/query`, {
             params: {
                 pageNumber: params?.pageNumber || 1,
                 pageSize: params?.pageSize || 10,
@@ -37,10 +38,12 @@ export const getAllEventsPaginated = async (
 };
 
 export const getAllEventsByUserPaginated = async (
+    organizationId: number,
+    projectId: number,
     params?: EventFilterParams
 ): Promise<PaginatedEventsResponseDto> => {
     try {
-        const res = await api.get(`/events/QueryEventsByUser`, {
+        const res = await api.get(`/organizations/${organizationId}/projects/${projectId}/events/by-user`, {
             params: {
                 pageNumber: params?.pageNumber || 1,
                 pageSize: params?.pageSize || 10,
@@ -55,10 +58,12 @@ export const getAllEventsByUserPaginated = async (
 };
 
 export const getAllEvents = async (
+    organizationId: number,
+    projectId: number,
     params?: Omit<EventFilterParams, 'pageNumber' | 'pageSize'>
 ): Promise<EventResponseDto[]> => {
     try {
-        const res = await api.get(`/events/GetAllEvents`, {
+        const res = await api.get(`/organizations/${organizationId}/projects/${projectId}/events`, {
             params,
         });
         return res.data;

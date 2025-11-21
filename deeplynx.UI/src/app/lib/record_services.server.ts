@@ -1,7 +1,8 @@
 // src/app/lib/record_services.server.ts
 import "server-only";
-import { RecordRow } from "../(home)/types/types";
-import { UpdateRecordPayload } from "../(home)/types/types";
+import { RecordResponseDto } from "../(home)/types/responseDTOs";
+import { UpdateRecordRequestDto } from "../(home)/types/requestDTOs";
+
 const BASE = process.env.BACKEND_BASE_URL!;
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
 
@@ -19,40 +20,75 @@ async function asJson<T>(res: Response): Promise<T> {
 
 /** ===== Server-safe calls (no browser cookies; safe in build/prerender) ===== */
 
-export async function getAllRecordsServer<T = RecordRow[]>(
-  projectId: string | number
-): Promise<T> {
+export async function getAllRecordsServer(
+  organizationId: number,
+  projectId: number,
+  dataSourceId?: number,
+  fileType?: string,
+  hideArchived: boolean = true
+): Promise<RecordResponseDto[]> {
+  const params = new URLSearchParams();
+  if (dataSourceId !== undefined) params.append('dataSourceId', String(dataSourceId));
+  if (fileType) params.append('fileType', fileType);
+  params.append('hideArchived', String(hideArchived));
+
   const res = await fetch(
-    `${BASE}/projects/${projectId}/records/GetAllRecords`,
+    `${BASE}/organizations/${organizationId}/projects/${projectId}/records?${params.toString()}`,
     {
       headers: authHeaders(),
       cache: "no-store",
     }
   );
-  return asJson<T>(res);
+  return asJson<RecordResponseDto[]>(res);
 }
 
-export async function getRecordServer<T = RecordRow>(
-  projectId: string | number,
-  recordId: string | number
-): Promise<T> {
+export async function getRecordServer(
+  organizationId: number,
+  projectId: number,
+  recordId: number,
+  hideArchived: boolean = true
+): Promise<RecordResponseDto> {
+  const params = new URLSearchParams();
+  params.append('hideArchived', String(hideArchived));
+
   const res = await fetch(
-    `${BASE}/projects/${projectId}/records/historical/GetHistoricalRecord/${recordId}`,
+    `${BASE}/organizations/${organizationId}/projects/${projectId}/records/${recordId}?${params.toString()}`,
     {
       headers: authHeaders(),
       cache: "no-store",
     }
   );
-  return asJson<T>(res);
+  return asJson<RecordResponseDto>(res);
 }
 
-export async function updateRecordServer<T = RecordRow>(
-  projectId: string | number,
-  recordId: string | number,
-  updateData: UpdateRecordPayload
-): Promise<T> {
+export async function getRecordsByTagsServer(
+  organizationId: number,
+  projectId: number,
+  tagIds: number[],
+  hideArchived: boolean = true
+): Promise<RecordResponseDto[]> {
+  const params = new URLSearchParams();
+  tagIds.forEach((tagId) => params.append("tagIds", tagId.toString()));
+  params.append("hideArchived", hideArchived.toString());
+
   const res = await fetch(
-    `${BASE}/projects/${projectId}/records/UpdateRecord/${recordId}`,
+    `${BASE}/organizations/${organizationId}/projects/${projectId}/records/by-tags?${params.toString()}`,
+    {
+      headers: authHeaders(),
+      cache: "no-store",
+    }
+  );
+  return asJson<RecordResponseDto[]>(res);
+}
+
+export async function updateRecordServer(
+  organizationId: number,
+  projectId: number,
+  recordId: number,
+  updateData: UpdateRecordRequestDto
+): Promise<RecordResponseDto> {
+  const res = await fetch(
+    `${BASE}/organizations/${organizationId}/projects/${projectId}/records/${recordId}`,
     {
       method: "PUT",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
@@ -60,5 +96,41 @@ export async function updateRecordServer<T = RecordRow>(
       cache: "no-store",
     }
   );
-  return asJson<T>(res);
+  return asJson<RecordResponseDto>(res);
+}
+
+export async function deleteRecordServer(
+  organizationId: number,
+  projectId: number,
+  recordId: number
+): Promise<{ message: string }> {
+  const res = await fetch(
+    `${BASE}/organizations/${organizationId}/projects/${projectId}/records/${recordId}`,
+    {
+      method: "DELETE",
+      headers: authHeaders(),
+      cache: "no-store",
+    }
+  );
+  return asJson<{ message: string }>(res);
+}
+
+export async function archiveRecordServer(
+  organizationId: number,
+  projectId: number,
+  recordId: number,
+  archive: boolean
+): Promise<{ message: string }> {
+  const params = new URLSearchParams();
+  params.append('archive', String(archive));
+
+  const res = await fetch(
+    `${BASE}/organizations/${organizationId}/projects/${projectId}/records/${recordId}?${params.toString()}`,
+    {
+      method: "PATCH",
+      headers: authHeaders(),
+      cache: "no-store",
+    }
+  );
+  return asJson<{ message: string }>(res);
 }

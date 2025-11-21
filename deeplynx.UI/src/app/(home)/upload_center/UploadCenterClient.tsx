@@ -52,6 +52,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [isLoadingObjectStorage, setIsLoadingObjectStorage] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
+
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
       setFilesMetadata((prev) => ({ ...prev, [fileIndex]: metadata }));
@@ -126,6 +127,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
         const metadata = filesMetadata[0];
 
         await uploadFile({
+          organizationId: organization?.organizationId as number,
           projectId,
           dataSourceId,
           objectStorageId,
@@ -139,6 +141,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
           const metadata = filesMetadata[index];
 
           return uploadFile({
+            organizationId: organization?.organizationId as number,
             projectId,
             dataSourceId,
             objectStorageId,
@@ -187,7 +190,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
 
     (async () => {
       try {
-        const dataSource = await getAllDataSources(Number(projectId));
+        const dataSource = await getAllDataSources(organization?.organizationId as number, Number(projectId));
         setDataSources(dataSource);
         if (dataSource.length === 1) {
           setDataSourceId(String(dataSource[0].id));
@@ -200,11 +203,10 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       }
 
       try {
-        const objectStorage = await getAllObjectStorages(projectId);
-        const storageData = objectStorage?.data ?? objectStorage;
-        setObjectstorage(storageData);
-        if (storageData.length === 1) {
-          setObjectstorageId(String(storageData[0].id));
+        const objectStorage = await getAllObjectStorages(organization?.organizationId as number, Number(projectId));
+        setObjectstorage(objectStorage);
+        if (objectStorage.length === 1) {
+          setObjectstorageId(String(objectStorage[0].id));
         }
         setIsLoadingObjectStorage(false);
       } catch (error) {
@@ -227,7 +229,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     setIsLoadingProjects(true);
 
     try {
-      const data = await getAllProjects(organization.organizationId, true);
+      const data = await getAllProjects(organization.organizationId as number, true);
       setProjects(data);
       if (data.length === 1) {
         setProjectId(String(data[0].id));
