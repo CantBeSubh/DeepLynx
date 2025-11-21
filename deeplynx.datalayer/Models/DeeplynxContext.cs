@@ -68,13 +68,13 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Action>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("actions_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_actions_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_actions_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_actions_project_id");
 
@@ -91,13 +91,14 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName(null);
 
             entity.HasOne(d => d.Project).WithMany(p => p.Actions).HasConstraintName("actions_project_id_fkey");
-            entity.HasOne(d => d.Organization).WithMany(o => o.Actions).HasConstraintName("actions_organization_id_fkey");
+            entity.HasOne(d => d.Organization).WithMany(o => o.Actions)
+                .HasConstraintName("actions_organization_id_fkey");
         });
 
         modelBuilder.Entity<ApiKey>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("api_keys_pkey");
-            
+
             entity.HasIndex(e => e.ApplicationId)
                 .HasDatabaseName("idx_api_keys_application_id");
 
@@ -114,22 +115,22 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Class>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("classes_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_classes_id");
-    
+
             entity.HasIndex(e => e.Name)
                 .HasDatabaseName("idx_classes_name");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_classes_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_classes_project_id");
-    
+
             entity.HasIndex(e => e.Uuid)
                 .HasDatabaseName("idx_classes_uuid");
-    
+
             entity.HasIndex(e => new { e.ProjectId, e.Name })
                 .HasDatabaseName("unique_class_name")
                 .IsUnique();
@@ -139,26 +140,45 @@ public partial class DeeplynxContext : DbContext
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
+            entity.HasIndex(e => new { e.OrganizationId, e.Name })
+                .HasDatabaseName("unique_organization_class_name")
+                .IsUnique()
+                .HasFilter("project_id IS NULL");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ProjectId, e.Name })
+                .HasDatabaseName("unique_project_class_name")
+                .IsUnique()
+                .HasFilter("project_id IS NOT NULL");
+
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_classes_last_updated_by");
+            
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedClasses)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-            entity.HasOne(d => d.Project).WithMany(p => p.Classes).HasConstraintName("classes_project_id_fkey");
-            entity.HasOne(d => d.Organization).WithMany(o => o.Classes).HasConstraintName("classes_organization_id_fkey");
+            
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Classes)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("classes_project_id_fkey");
+            
+            entity.HasOne(d => d.Organization)
+                .WithMany(o => o.Classes)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("classes_organization_id_fkey");
         });
 
         modelBuilder.Entity<DataSource>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("data_sources_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_data_sources_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_data_sources_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_data_sources_project_id");
 
@@ -172,35 +192,37 @@ public partial class DeeplynxContext : DbContext
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-            entity.HasOne(d => d.Project).WithMany(p => p.DataSources).HasConstraintName("data_sources_project_id_fkey");
-            entity.HasOne(d => d.Organization).WithMany(o => o.DataSources).HasConstraintName("data_sources_organization_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.DataSources)
+                .HasConstraintName("data_sources_project_id_fkey");
+            entity.HasOne(d => d.Organization).WithMany(o => o.DataSources)
+                .HasConstraintName("data_sources_organization_id_fkey");
         });
 
         modelBuilder.Entity<Edge>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("edges_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_edges_id");
-    
+
             entity.HasIndex(e => e.DataSourceId)
                 .HasDatabaseName("idx_edges_data_source_id");
-    
+
             entity.HasIndex(e => e.DestinationId)
                 .HasDatabaseName("idx_edges_destination_id");
-    
+
             entity.HasIndex(e => e.OriginId)
                 .HasDatabaseName("idx_edges_origin_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_edges_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_edges_project_id");
-    
+
             entity.HasIndex(e => e.RelationshipId)
                 .HasDatabaseName("idx_edges_relationship_id");
-    
+
             // Composite unique index - ensures no duplicate edges in a project
             entity.HasIndex(e => new { e.ProjectId, e.OriginId, e.DestinationId })
                 .HasDatabaseName("unique_edge_record_ids")
@@ -241,16 +263,16 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Event>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("events_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_events_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_events_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_events_project_id");
-    
+
             entity.HasIndex(e => e.DataSourceId)
                 .HasDatabaseName("idx_events_data_source_id");
 
@@ -289,10 +311,10 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Group>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("groups_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_groups_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_groups_organization_id");
 
@@ -333,28 +355,28 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<HistoricalEdge>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("historical_edges_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_historical_edges_id");
-            
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_historical_edges_organization_id");
 
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_historical_edges_project_id");
-    
+
             entity.HasIndex(e => e.EdgeId)
                 .HasDatabaseName("idx_historical_edges_edge_id");
-    
+
             entity.HasIndex(e => e.OriginId)
                 .HasDatabaseName("idx_historical_edges_origin_id");
-    
+
             entity.HasIndex(e => e.DestinationId)
                 .HasDatabaseName("idx_historical_edges_destination_id");
-    
+
             entity.HasIndex(e => e.RelationshipName)
                 .HasDatabaseName("idx_historical_edges_relationship_name");
-    
+
             entity.HasIndex(e => e.LastUpdatedAt)
                 .HasDatabaseName("idx_historical_edges_last_updated_at");
 
@@ -372,8 +394,9 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName(null);
             entity.Property(e => e.ProjectName).HasDefaultValueSql("''::text");
 
-            entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges).HasConstraintName("historical_edges_edge_id_fkey");
-            
+            entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges)
+                .HasConstraintName("historical_edges_edge_id_fkey");
+
             entity.HasOne(d => d.Project)
                 .WithMany(p => p.HistoricalEdges)
                 .HasConstraintName("historical_edges_project_id_fkey");
@@ -386,22 +409,22 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<HistoricalRecord>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("historical_records_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_historical_records_id");
-            
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_historical_records_organization_id");
 
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_historical_records_project_id");
-    
+
             entity.HasIndex(e => e.RecordId)
                 .HasDatabaseName("idx_historical_records_record_id");
-    
+
             entity.HasIndex(e => e.ClassName)
                 .HasDatabaseName("idx_historical_records_class_name");
-    
+
             entity.HasIndex(e => e.LastUpdatedAt)
                 .HasDatabaseName("idx_historical_records_last_updated_at");
 
@@ -412,8 +435,9 @@ public partial class DeeplynxContext : DbContext
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
-            entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords).HasConstraintName("historical_records_record_id_fkey");
-            
+            entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords)
+                .HasConstraintName("historical_records_record_id_fkey");
+
             entity.HasOne(d => d.Organization)
                 .WithMany(o => o.HistoricalRecords)
                 .HasConstraintName("historical_records_organization_id_fkey");
@@ -426,13 +450,13 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<OauthApplication>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("oauth_applications_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_oauth_applications_id");
-    
+
             entity.HasIndex(e => e.ClientId)
                 .HasDatabaseName("idx_oauth_applications_client_id");
-            
+
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
@@ -447,16 +471,16 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<OauthToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("oauth_tokens_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_oauth_tokens_id");
-    
+
             entity.HasIndex(e => e.ApplicationId)
                 .HasDatabaseName("idx_oauth_tokens_application_id");
-    
+
             entity.HasIndex(e => e.UserId)
                 .HasDatabaseName("idx_oauth_tokens_user_id");
-            
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Revoked).HasDefaultValue(false);
 
@@ -471,13 +495,13 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<ObjectStorage>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("object_storage_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_object_storages_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_object_storages_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_object_storages_project_id");
 
@@ -486,11 +510,11 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_object_storages_last_updated_by");
-            
+
             // entity.ToTable( e => e.HasCheckConstraint(
             //     "ck_object_storages_ProjectXorOrg", 
             //     "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"));
-            
+
             // Add filtered unique indexes
             entity.HasIndex(e => new { e.OrganizationId, e.Name })
                 .HasDatabaseName("unique_organization_object_storage_name")
@@ -526,10 +550,10 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Organization>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("organization_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_organizations_id");
-    
+
             entity.HasIndex(e => e.Name)
                 .HasDatabaseName("unique_organization_name")
                 .IsUnique();
@@ -551,21 +575,22 @@ public partial class DeeplynxContext : DbContext
         {
             // Composite PK
             entity.HasKey(e => new { e.OrganizationId, e.UserId }).HasName("organization_user_pkey");
-            
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_organization_users_organization_id");
-    
+
             entity.HasIndex(e => e.UserId)
                 .HasDatabaseName("idx_organization_users_user_id");
-    
+
             // Think this may be redundant as it's enforced by PK
             entity.HasIndex(e => new { e.OrganizationId, e.UserId })
                 .HasDatabaseName("unique_organization_user_ids")
                 .IsUnique();
-            
+
             entity.Property(e => e.IsOrgAdmin).HasDefaultValue(false);
 
-            entity.HasOne(d => d.Organization).WithMany(p => p.OrganizationUsers).HasConstraintName("organization_users_organization_id_fkey");
+            entity.HasOne(d => d.Organization).WithMany(p => p.OrganizationUsers)
+                .HasConstraintName("organization_users_organization_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.OrganizationUsers)
                 .HasConstraintName("organization_users_user_id_fkey");
@@ -575,28 +600,28 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Permission>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("permission_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_permissions_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_permissions_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_permissions_project_id");
-    
+
             entity.HasIndex(e => e.LabelId)
                 .HasDatabaseName("idx_permissions_label_id");
-    
+
             entity.HasIndex(e => e.Action)
                 .HasDatabaseName("idx_permissions_action");
-    
+
             entity.HasIndex(e => e.Resource)
                 .HasDatabaseName("idx_permissions_resource");
-    
+
             entity.HasIndex(e => e.IsDefault)
                 .HasDatabaseName("idx_permissions_is_default");
-            
+
             // Label-based permissions
             // Organization-level (no project)
             entity.HasIndex(e => new { e.OrganizationId, e.LabelId, e.Action })
@@ -622,7 +647,7 @@ public partial class DeeplynxContext : DbContext
                 .HasDatabaseName("permissions_unique_project_resource_action")
                 .IsUnique()
                 .HasFilter("project_id IS NOT NULL");
-            
+
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
@@ -651,10 +676,10 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Project>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("projects_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_projects_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_projects_organization_id");
 
@@ -684,22 +709,22 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<ProjectMember>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("project_members_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_project_members_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_project_members_project_id");
-    
+
             entity.HasIndex(e => e.UserId)
                 .HasDatabaseName("idx_project_members_user_id");
-    
+
             entity.HasIndex(e => e.GroupId)
                 .HasDatabaseName("idx_project_members_group_id");
-    
+
             entity.HasIndex(e => e.RoleId)
                 .HasDatabaseName("idx_project_members_role_id");
-    
+
             // Composite unique index - prevents duplicate project memberships
             entity.HasIndex(e => new { e.ProjectId, e.GroupId, e.RoleId, e.UserId })
                 .HasDatabaseName("unique_project_member_ids")
@@ -725,31 +750,31 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Record>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("records_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_records_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_records_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_records_project_id");
-    
+
             entity.HasIndex(e => e.ClassId)
                 .HasDatabaseName("idx_records_class_id");
-    
+
             entity.HasIndex(e => e.DataSourceId)
                 .HasDatabaseName("idx_records_data_source_id");
-    
+
             entity.HasIndex(e => e.ObjectStorageId)
                 .HasDatabaseName("idx_records_object_storage_id");
-    
+
             entity.HasIndex(e => e.Name)
                 .HasDatabaseName("idx_records_name");
-    
+
             entity.HasIndex(e => e.OriginalId)
                 .HasDatabaseName("idx_records_original_id");
-    
+
             // Composite unique index - prevents duplicate original IDs within same project/data source
             entity.HasIndex(e => new { e.ProjectId, e.DataSourceId, e.OriginalId })
                 .HasDatabaseName("unique_record_original_id")
@@ -780,8 +805,9 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName("records_object_storage_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Records).HasConstraintName("records_project_id_fkey");
-            
-            entity.HasOne(d => d.Organization).WithMany(p => p.Records).HasConstraintName("records_organization_id_fkey");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.Records)
+                .HasConstraintName("records_organization_id_fkey");
 
             entity.HasMany(d => d.Labels).WithMany(p => p.Records)
                 .UsingEntity<Dictionary<string, object>>(
@@ -825,28 +851,28 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Relationship>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("relationships_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_relationships_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_relationships_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_relationships_project_id");
-    
+
             entity.HasIndex(e => e.OriginId)
                 .HasDatabaseName("idx_relationships_origin_id");
-    
+
             entity.HasIndex(e => e.DestinationId)
                 .HasDatabaseName("idx_relationships_destination_id");
-    
+
             entity.HasIndex(e => e.Name)
                 .HasDatabaseName("idx_relationships_name");
-    
+
             entity.HasIndex(e => e.Uuid)
                 .HasDatabaseName("idx_relationships_uuid");
-    
+
             // Composite unique index - relationship names are unique within a project
             entity.HasIndex(e => new { e.ProjectId, e.Name })
                 .HasDatabaseName("unique_relationship_name")
@@ -873,16 +899,18 @@ public partial class DeeplynxContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("relationships_origin_id_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.Relationships).HasConstraintName("relationships_project_id_fkey");
-            
-            entity.HasOne(d => d.Organization).WithMany(p => p.Relationships).HasConstraintName("relationships_organization_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.Relationships)
+                .HasConstraintName("relationships_project_id_fkey");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.Relationships)
+                .HasConstraintName("relationships_organization_id_fkey");
         });
 
         // Org-level entity \\
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("roles_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_roles_id");
 
@@ -947,25 +975,25 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<SensitivityLabel>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("sensitivity_labels_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_sensitivity_labels_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_sensitivity_labels_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_sensitivity_labels_project_id");
-    
+
             entity.HasIndex(e => e.Name)
                 .HasDatabaseName("idx_sensitivity_labels_name");
-            
+
             // Filtered unique indexes
             entity.HasIndex(e => new { e.OrganizationId, e.Name })
                 .HasDatabaseName("unique_organization_sensitivity_label_name")
                 .IsUnique()
                 .HasFilter("project_id IS NULL");
-    
+
             entity.HasIndex(e => new { e.OrganizationId, e.ProjectId, e.Name })
                 .HasDatabaseName("unique_project_sensitivity_label_name")
                 .IsUnique()
@@ -995,40 +1023,41 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Subscription>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_subscriptions_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_subscriptions_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_subscriptions_project_id");
-    
+
             entity.HasIndex(e => e.UserId)
                 .HasDatabaseName("idx_subscriptions_user_id");
-    
+
             entity.HasIndex(e => e.ActionId)
                 .HasDatabaseName("idx_subscriptions_action_id");
-    
+
             entity.HasIndex(e => e.DataSourceId)
                 .HasDatabaseName("idx_subscriptions_data_source_id");
-    
+
             entity.HasIndex(e => e.EntityType)
                 .HasDatabaseName("idx_subscriptions_entity_type");
-            
+
             entity.HasIndex(e => e.LastUpdatedBy)
                 .HasDatabaseName("idx_subscriptions_last_updated_by");
-    
+
             // Composite unique index - prevents duplicate subscriptions
-            entity.HasIndex(e => new { e.UserId, e.ActionId, e.Operation, e.ProjectId, e.DataSourceId, e.EntityType, e.EntityId })
+            entity.HasIndex(e => new
+                    { e.UserId, e.ActionId, e.Operation, e.ProjectId, e.DataSourceId, e.EntityType, e.EntityId })
                 .HasDatabaseName("idx_unique_subscription")
                 .IsUnique();
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
-            
+
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedSubscriptions)
                 .HasForeignKey(d => d.LastUpdatedBy)
@@ -1042,9 +1071,11 @@ public partial class DeeplynxContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("subscriptions_dataSource_id_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.Subscriptions).HasConstraintName("subscriptions_project_id_fkey");
-            
-            entity.HasOne(d => d.Organization).WithMany(p => p.Subscriptions).HasConstraintName("subscriptions_organization_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.Subscriptions)
+                .HasConstraintName("subscriptions_project_id_fkey");
+
+            entity.HasOne(d => d.Organization).WithMany(p => p.Subscriptions)
+                .HasConstraintName("subscriptions_organization_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.Subscriptions).HasConstraintName("subscriptions_user_id_fkey");
         });
@@ -1052,22 +1083,22 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Tag>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("tags_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_tags_id");
-    
+
             entity.HasIndex(e => e.OrganizationId)
                 .HasDatabaseName("idx_tags_organization_id");
-    
+
             entity.HasIndex(e => e.ProjectId)
                 .HasDatabaseName("idx_tags_project_id");
-    
+
             entity.HasIndex(e => e.Name)
                 .HasDatabaseName("idx_tags_name");
-    
+
             entity.HasIndex(e => e.LastUpdatedBy)
                 .HasDatabaseName("idx_tags_last_updated_by");
-    
+
             // Composite unique index - tag names are unique within a project
             entity.HasIndex(e => new { e.ProjectId, e.Name })
                 .HasDatabaseName("unique_tag_name")
@@ -1087,21 +1118,21 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName(null);
 
             entity.HasOne(d => d.Project).WithMany(p => p.Tags).HasConstraintName("tags_project_id_fkey");
-            
+
             entity.HasOne(d => d.Organization).WithMany(p => p.Tags).HasConstraintName("tags_organization_id_fkey");
         });
 
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");
-            
+
             entity.HasIndex(e => e.Id)
                 .HasDatabaseName("idx_users_id");
-    
+
             entity.HasIndex(e => e.Email)
                 .HasDatabaseName("idx_users_email")
                 .IsUnique();
-    
+
             entity.HasIndex(e => e.SsoId)
                 .HasDatabaseName("idx_users_sso_id");
 
