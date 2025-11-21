@@ -47,7 +47,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>A list of data sources within the given project.</returns>
-    public async Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
+    public async Task<List<DataSourceResponseDto>> GetAllDataSources(long? projectId, bool hideArchived)
     {
         var dataSources = await _context.DataSources
             .Where(d => d.ProjectId == projectId).ToListAsync();
@@ -82,7 +82,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<List<DataSourceResponseDto>> GetAllDataSourcesMultiProject(long[] projectIds, bool hideArchived)
     {
         var dataSources = await _context.DataSources
-            .Where(d => projectIds.Contains(d.ProjectId)).ToListAsync();
+        .Where(d => d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)).ToListAsync();
 
         if (hideArchived) dataSources = dataSources.Where(d => !d.IsArchived).ToList();
 
@@ -113,7 +113,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>The data source in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
-    public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
+    public async Task<DataSourceResponseDto> GetDataSource(long? projectId, long datasourceId, bool hideArchived)
     {
         var dataSource = await _context.DataSources
             .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
@@ -149,7 +149,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <returns>The data source in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
-    public async Task<DataSourceResponseDto> GetDefaultDataSource(long projectId)
+    public async Task<DataSourceResponseDto> GetDefaultDataSource(long? projectId)
     {
         var dataSource = await _context.DataSources
             .Where(d => d.ProjectId == projectId && d.Default == true && !d.IsArchived)
@@ -183,7 +183,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dto">The data transfer object containing data source details</param>
     /// <returns>The created data source.</returns>
-    public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long projectId,
+    public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long? projectId,
         CreateDataSourceRequestDto dto, bool makeDefault = false)
     {
         if (dto == null)
@@ -251,7 +251,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
     public async Task<DataSourceResponseDto> UpdateDataSource(
         long currentUserId,
-        long projectId,
+        long? projectId,
         long dataSourceId,
         UpdateDataSourceRequestDto dto)
     {
@@ -308,7 +308,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="dataSourceId">The ID of the data source to delete</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
-    public async Task<bool> DeleteDataSource(long projectId, long dataSourceId)
+    public async Task<bool> DeleteDataSource(long? projectId, long dataSourceId)
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
@@ -329,7 +329,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="dataSourceId">The ID of the data source to archive</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-    public async Task<bool> ArchiveDataSource(long currentUserId, long projectId, long dataSourceId)
+    public async Task<bool> ArchiveDataSource(long currentUserId, long? projectId, long dataSourceId)
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
@@ -365,7 +365,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="dataSourceId">The ID of the data source to unarchive</param>
     /// <returns>Boolean true on successful unarchive action.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-    public async Task<bool> UnarchiveDataSource(long currentUserId, long projectId, long dataSourceId)
+    public async Task<bool> UnarchiveDataSource(long currentUserId, long? projectId, long dataSourceId)
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
@@ -403,7 +403,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
     public async Task<DataSourceResponseDto> SetDefaultDataSource(
         long currentUserId,
-        long projectId,
+        long? projectId,
         long dataSourceId)
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
@@ -450,7 +450,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         };
     }
 
-    private async Task MakePreviousDefaultsFalse(long currentUserId, long projectId, long defaultDataSourceId)
+    private async Task MakePreviousDefaultsFalse(long currentUserId, long? projectId, long defaultDataSourceId)
     {
         var previousDefaults =
             await _context.DataSources
