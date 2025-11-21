@@ -257,7 +257,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetAllObjectStorages_Success_ReturnsAllObjectStoragesInOrganization()
     {
         // Act
-        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(organizationId, null, true);
+        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(
+            organizationId, null, true);
 
         var actual = Context.ObjectStorages.ToList();
         // Assert
@@ -272,7 +273,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetAllObjectStorages_Success_CanFilterOutArchived()
     {
         // Act
-        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(null, pid, true);
+        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(
+            organizationId, pid, true);
 
         // Assert
         Assert.Equal(2, objectStorages.Count);
@@ -284,7 +286,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetAllObjectStorages_Success_CanContainArchived()
     {
         // Act
-        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(null, pid, false);
+        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(
+            organizationId, pid, false);
 
         // Assert
         Assert.Equal(3, objectStorages.Count);
@@ -297,7 +300,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.GetAllObjectStorages(null, pid2 + 1000, true));
+            _objectStorageBusiness.GetAllObjectStorages(organizationId, pid2 + 1000, true));
     }
 
     [Fact]
@@ -316,7 +319,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetObjectStorage_Success_ReturnsNameAndTypeInProject()
     {
         // Act
-        var objectStorage = await _objectStorageBusiness.GetObjectStorage(null, pid, os1, true);
+        var objectStorage = await _objectStorageBusiness.GetObjectStorage(
+            organizationId, pid, os1, true);
 
         // Assert
         Assert.NotNull(objectStorage);
@@ -328,7 +332,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetObjectStorage_Success_ReturnsNameAndTypeInOrganization()
     {
         // Act
-        var objectStorage = await _objectStorageBusiness.GetObjectStorage(organizationId, null, os6, true);
+        var objectStorage = await _objectStorageBusiness.GetObjectStorage(
+            organizationId, null, os6, true);
 
         // Assert
         Assert.NotNull(objectStorage);
@@ -340,7 +345,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetObjectStorage_Success_CanIncludeArchived()
     {
         // Act
-        var objectStorage = await _objectStorageBusiness.GetObjectStorage(null, pid, archivedOs, false);
+        var objectStorage = await _objectStorageBusiness.GetObjectStorage(
+            organizationId, pid, archivedOs, false);
 
         // Assert
         Assert.NotNull(objectStorage);
@@ -353,7 +359,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.GetObjectStorage(null, pid, archivedOs, true));
+            _objectStorageBusiness.GetObjectStorage(organizationId, pid, archivedOs, true));
         Assert.Contains($"Object storage with id {archivedOs} in project {pid} not found", exception.Message);
     }
 
@@ -373,7 +379,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetDefaultObjectStorage_Success_ReturnsDefaultObject()
     {
         // Act
-        var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(null, pid);
+        var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(
+            organizationId, pid);
 
         // Assert
         Assert.NotNull(defaultObjectStorage);
@@ -384,7 +391,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetDefaultObjectStorage_Success_ReturnsDefaultObjectInOrganization()
     {
         // Act
-        var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(organizationId, null);
+        var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(
+            organizationId, null);
 
         // Assert
         Assert.NotNull(defaultObjectStorage);
@@ -397,7 +405,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _objectStorageBusiness.GetDefaultObjectStorage(null, pid2));
+                _objectStorageBusiness.GetDefaultObjectStorage(organizationId, pid2));
         Assert.Contains($"Default object storage for project {pid2} not found", exception.Message);
     }
 
@@ -422,7 +430,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _objectStorageBusiness.GetDefaultObjectStorage(null, pid2));
+                _objectStorageBusiness.GetDefaultObjectStorage(organizationId, pid2));
         Assert.Contains($"Default object storage for project {pid2} not found", exception.Message);
     }
 
@@ -443,8 +451,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var objectStorageResponse =
-            await _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto, true);
+        var objectStorageResponse = await _objectStorageBusiness.CreateObjectStorage(
+            uid, organizationId, pid, dto);
 
         // Assert
         Assert.Equal(dto.Name, objectStorageResponse.Name);
@@ -468,8 +476,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         var now =  DateTime.UtcNow;
 
         // Act
-        var objectStorageResponse =
-            await _objectStorageBusiness.CreateObjectStorage(uid, organizationId, null, dto, true);
+        var objectStorageResponse = await _objectStorageBusiness.CreateObjectStorage(
+                uid, organizationId, null, dto);
 
         // Assert
         Assert.NotNull(objectStorageResponse);
@@ -518,9 +526,11 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
 
         // Act
         var objectStorageResponse =
-            await _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto, true);
-        var objectStorageResponse2 = await _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto2);
-        var objectStorageResponse3 = await _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto3);
+            await _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto);
+        var objectStorageResponse2 = await _objectStorageBusiness.CreateObjectStorage(
+            uid, organizationId, pid, dto2);
+        var objectStorageResponse3 = await _objectStorageBusiness.CreateObjectStorage(
+            uid, organizationId, pid, dto3);
 
 
         // Assert
@@ -545,7 +555,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto, true));
+            _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto));
         Assert.Contains("Request does not contain recognized config", exception.Message);
     }
 
@@ -562,7 +572,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto, true));
+            _objectStorageBusiness.CreateObjectStorage(uid, organizationId, pid, dto));
     }
 
     #endregion
@@ -578,7 +588,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
             Name = "Updated Name"
         };
         // Act
-        var updatedObjectStorage = await _objectStorageBusiness.UpdateObjectStorage(uid, null, pid, os1, updateDto);
+        var updatedObjectStorage = await _objectStorageBusiness.UpdateObjectStorage(
+            uid, organizationId, pid, os1, updateDto);
 
         // Assert
         Assert.Equal(updateDto.Name, updatedObjectStorage.Name);
@@ -621,7 +632,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.UpdateObjectStorage(uid, null, pid, os1 + 1000, updateDto));
+            _objectStorageBusiness.UpdateObjectStorage(uid, organizationId, pid, os1 + 1000, updateDto));
         Assert.Contains($"Object storage with id {os1 + 1000} not found", exception.Message);
     }
 
@@ -650,7 +661,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.UpdateObjectStorage(uid, null, pid, archivedOs, updateDto));
+            _objectStorageBusiness.UpdateObjectStorage(uid, organizationId, pid, archivedOs, updateDto));
         Assert.Contains($"Object storage with id {archivedOs} not found", exception.Message);
     }
 
@@ -662,7 +673,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task Delete_Success_RemovesObjectStorage()
     {
         // Act
-        var deleted = await _objectStorageBusiness.DeleteObjectStorage(null, pid, os2);
+        var deleted = await _objectStorageBusiness.DeleteObjectStorage(
+            uid, organizationId, pid, os2);
 
         // Assert
         Assert.True(deleted);
@@ -675,7 +687,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task Delete_Success_RemovesObjectStorageInOrganization()
     {
         // Act
-        var deleted = await _objectStorageBusiness.DeleteObjectStorage(organizationId, null, os7);
+        var deleted = await _objectStorageBusiness.DeleteObjectStorage(
+            uid, organizationId, null, os7);
 
         // Assert
         Assert.True(deleted);
@@ -689,7 +702,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.DeleteObjectStorage(null, pid, os1 + 1000));
+            _objectStorageBusiness.DeleteObjectStorage(uid, organizationId, pid, os1 + 1000));
         Assert.Contains($"Object storage with id {os1 + 1000} not found", exception.Message);
     }
 
@@ -699,7 +712,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _objectStorageBusiness.DeleteObjectStorage(null, pid, os1));
+                _objectStorageBusiness.DeleteObjectStorage(uid, organizationId, pid, os1));
         Assert.Contains("Default object storage cannot be deleted. Please assign new default storage before deleting.",
             exception.Message);
     }
@@ -709,7 +722,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _objectStorageBusiness.DeleteObjectStorage(organizationId, pid, os1));
+            _objectStorageBusiness.DeleteObjectStorage(uid, organizationId, pid, os1));
     }
 
     #endregion
@@ -723,7 +736,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         var now =  DateTime.UtcNow;
         
         // Act
-        var archived = await _objectStorageBusiness.ArchiveObjectStorage(uid, null, pid, os2);
+        var archived = await _objectStorageBusiness.ArchiveObjectStorage(
+            uid, organizationId, pid, os2);
 
         // Assert
         Assert.True(archived);
@@ -762,7 +776,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.ArchiveObjectStorage(uid, null, pid, os1 + 1000));
+            _objectStorageBusiness.ArchiveObjectStorage(uid, organizationId, pid, os1 + 1000));
         Assert.Contains($"Object storage with id {os1 + 1000} not found", exception.Message);
     }
 
@@ -771,7 +785,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _objectStorageBusiness.ArchiveObjectStorage(uid, null, pid, os1));
+            _objectStorageBusiness.ArchiveObjectStorage(uid, organizationId, pid, os1));
         Assert.Contains(
             "Default object storage cannot be archived. Please assign new default storage before archiving.",
             exception.Message);
@@ -790,7 +804,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _objectStorageBusiness.ArchiveObjectStorage(uid, null, pid, archivedOs));
+            _objectStorageBusiness.ArchiveObjectStorage(uid, organizationId, pid, archivedOs));
         Assert.Contains($"Object storage with id {archivedOs} is already archived", exception.Message);
     }
 
@@ -805,7 +819,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         var now =  DateTime.UtcNow;
         
         // Act
-        var unarchived = await _objectStorageBusiness.UnarchiveObjectStorage(uid, null, pid, archivedOs);
+        var unarchived = await _objectStorageBusiness.UnarchiveObjectStorage(
+            uid, organizationId, pid, archivedOs);
 
         // Assert
         Assert.True(unarchived);
@@ -843,7 +858,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.UnarchiveObjectStorage(uid, null, pid, archivedOs + 1000));
+            _objectStorageBusiness.UnarchiveObjectStorage(uid, organizationId, pid, archivedOs + 1000));
         Assert.Contains($"Object storage with id {archivedOs + 1000} not found", exception.Message);
     }
 
@@ -852,7 +867,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _objectStorageBusiness.UnarchiveObjectStorage(uid, null, pid, os1));
+            _objectStorageBusiness.UnarchiveObjectStorage(uid, organizationId, pid, os1));
         Assert.Contains($"Object storage with id {os1} is not archived already", exception.Message);
     }
 
@@ -864,7 +879,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task ChangeDefault_Success_ChangesDefault()
     {
         // Act
-        var newDefaultObjectStorage = await _objectStorageBusiness.SetDefaultObjectStorage(uid, null, pid, os2);
+        var newDefaultObjectStorage = await _objectStorageBusiness.SetDefaultObjectStorage(
+            uid, organizationId, pid, os2);
 
         // Assert
         Assert.NotNull(newDefaultObjectStorage);
@@ -902,7 +918,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _objectStorageBusiness.SetDefaultObjectStorage(uid, null, pid, os1 + 1000));
+            _objectStorageBusiness.SetDefaultObjectStorage(uid, organizationId, pid, os1 + 1000));
         Assert.Contains($"Object storage with id {os1 + 1000} not found", exception.Message);
     }
 
