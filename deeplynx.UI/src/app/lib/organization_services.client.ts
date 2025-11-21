@@ -113,7 +113,7 @@ export const deleteOrganization = async (
  */
 export const archiveOrganization = async (
     organizationId: number,
-    archive: boolean
+    archive: boolean = true
 ): Promise<{ message: string }> => {
     try {
         const res = await api.patch(

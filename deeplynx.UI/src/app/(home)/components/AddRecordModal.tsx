@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
 import { ProjectResponseDto } from "../types/responseDTOs";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { CreateRecordRequestDto } from "../types/requestDTOs";
 type JsonValue = Record<string, unknown>;
 
 type Props = {
@@ -181,6 +182,13 @@ const AddRecordModal: React.FC<Props> = ({
       properties: props, // now guaranteed to be a single object
       class_id: classId,
     };
+    const dto: CreateRecordRequestDto = {
+      name,
+      description,
+      original_id: abbreviation,
+      properties: JSON.stringify(props),
+      class_id: classId,
+    }
 
     if (objectStorageIdNum !== undefined)
       payload.object_storage_id = objectStorageIdNum;
@@ -191,7 +199,7 @@ const AddRecordModal: React.FC<Props> = ({
       payload.sensitivity_labels = sensitivity_labels;
 
     try {
-      await createRecord(organization!.organizationId as number, selectedProjectId, selectedDataSourceId, {});
+      await createRecord(organization!.organizationId as number, selectedProjectId, selectedDataSourceId, dto);
       toast.success(t.translations.RECORD_CREATED_SECCESSFULLY);
       resetForm();
       onClose();
@@ -217,7 +225,7 @@ const AddRecordModal: React.FC<Props> = ({
         setDsLoading(true);
         setDsError(null);
         setSelectedDataSourceId(undefined);
-        const list = await getAllDataSources(selectedProjectId);
+        const list = await getAllDataSources(organization?.organizationId as number, selectedProjectId);
         if (!cancelled) setDataSources(list ?? []);
       } catch (err: unknown) {
         const fallback = t.translations.FAILED_TO_LOAD_DATA_SOURCE;

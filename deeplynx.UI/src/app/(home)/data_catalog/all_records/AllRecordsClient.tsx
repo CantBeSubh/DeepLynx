@@ -7,7 +7,6 @@ import SearchBar from "@/app/(home)/components/SearchBar";
 import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
-import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
 
 import GridView from "../../components/GridView";
 import ListView from "../../components/ListView";
@@ -121,11 +120,11 @@ export default function DataCatalogClient({
         return;
       }
 
-      const data = await getAllRecordsForMultipleProjects(idsNum, true, {
-        signal,
-      });
-      setTableData(data);
-      setViewMode("list");
+      // const data = await getAllRecordsForMultipleProjects(idsNum, true, {
+      //   signal,
+      // });
+      // setTableData(data);
+      // setViewMode("list");
     },
     [effectiveProjectIds]
   );
@@ -157,8 +156,8 @@ export default function DataCatalogClient({
         selectedNums.length === projects.length
           ? results
           : results.filter((r: FileViewerTableRow) =>
-              selectedNums.includes(Number(r.projectId))
-            );
+            selectedNums.includes(Number(r.projectId))
+          );
 
       setTableData(scoped);
       setActiveFilters((prev) => [...prev, newFilter]);
@@ -314,8 +313,8 @@ export default function DataCatalogClient({
 
   const handleSubmit = async () => {
     try {
-      const data = await fullTextSearch(searchTerm, selectedProjects);
-      if (data) setTableData(data);
+      // const data = await fullTextSearch(searchTerm, selectedProjects);
+      // if (data) setTableData(data);
     } catch (error) {
       console.error("Failed to send query", error);
     }
@@ -384,9 +383,8 @@ export default function DataCatalogClient({
             </div>
 
             <button
-              className={`btn btn-sm ${
-                viewMode === "list" ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
               onClick={() => setViewMode("list")}
               title="List view"
             >
@@ -394,9 +392,8 @@ export default function DataCatalogClient({
             </button>
 
             <button
-              className={`btn btn-sm ${
-                viewMode === "table" ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
               onClick={() => setViewMode("table")}
               title="Table view"
             >
@@ -419,9 +416,8 @@ export default function DataCatalogClient({
                     {visibleCols.length - 1}/{ALL_COLUMNS.length - 1}
                   </span>
                   <ChevronDownIcon
-                    className={`h-4 w-4 transition-transform ${
-                      open ? "rotate-180" : ""
-                    }`}
+                    className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
 

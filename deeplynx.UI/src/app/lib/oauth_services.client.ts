@@ -116,7 +116,7 @@ export const deleteOauthApplication = async (
  */
 export const archiveOauthApplication = async (
     applicationId: number,
-    archive: boolean
+    archive: boolean = true
 ): Promise<{ message: string }> => {
     try {
         const res = await api.patch(
