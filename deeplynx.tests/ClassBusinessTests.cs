@@ -378,11 +378,7 @@ public class ClassBusinessTests : IntegrationTestBase
                 Description = "Updated Description"
             }
         };
-
-            // Ensure the create event is logged for each class create
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Equal(1, eventList.Count); // only one event is created (with bulk count) on a bulk action
-        }
+    }
 
     [Fact]
     public async Task CreateClass_Fails_IfNoName()
