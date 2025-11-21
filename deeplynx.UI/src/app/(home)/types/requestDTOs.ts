@@ -232,3 +232,10 @@ export type CreateTokenDto = {
   apiSecret: string;
   expirationMinutes?: number;
 };
+
+export type CreateTagRequestDto = {
+  name: string;
+}
+export type UpdateTagRequestDto = {
+  name?: string;
+}
