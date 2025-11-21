@@ -1,7 +1,5 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -416,93 +414,5 @@ public class QueryBusiness : IQueryBusiness
                 IsArchived = r.IsArchived,
                 Tags = r.Tags
             });
-    }
-
-    /// <summary>
-    ///     Retrieves all classes for specific projects.
-    /// </summary>
-    /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
-    /// <returns>A list of data sources within the given project.</returns>
-    public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
-    {
-        var classes = await _context.Classes
-            .Where(c => projectIds.Contains(c.ProjectId)).ToListAsync();
-
-        if (hideArchived) classes = classes.Where(c => !c.IsArchived).ToList();
-
-        return classes
-            .Select(c => new ClassResponseDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                Uuid = c.Uuid,
-                ProjectId = c.ProjectId,
-                LastUpdatedAt = c.LastUpdatedAt,
-                LastUpdatedBy = c.LastUpdatedBy,
-                IsArchived = c.IsArchived
-            }).ToList();
-    }
-
-    /// <summary>
-    ///     Retrieves all data sources for a specific project.
-    /// </summary>
-    /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
-    /// <returns>A list of data sources within the given project.</returns>
-    public async Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived)
-    {
-        foreach (var projectId in projectIds)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
-
-        var dataSources = await _context.DataSources
-            .Where(d => projectIds.Contains(d.ProjectId)).ToListAsync();
-
-        if (hideArchived) dataSources = dataSources.Where(d => !d.IsArchived).ToList();
-
-        return dataSources
-            .Select(d => new DataSourceResponseDto
-            {
-                Id = d.Id,
-                Name = d.Name,
-                Description = d.Description,
-                Default = d.Default,
-                Abbreviation = d.Abbreviation,
-                Type = d.Type,
-                BaseUri = d.BaseUri,
-                // return empty object for config if null
-                Config = JsonNode.Parse(d.Config ?? "{}") as JsonObject,
-                ProjectId = d.ProjectId,
-                LastUpdatedAt = d.LastUpdatedAt,
-                LastUpdatedBy = d.LastUpdatedBy,
-                IsArchived = d.IsArchived
-            }).ToList();
-    }
-
-    /// <summary>
-    ///     Retrieves all tags for a specified project.
-    /// </summary>
-    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
-    /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived)
-    {
-        foreach (var projectId in projectIds)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
-        var tagQuery = _context.Tags
-            .Where(t => projectIds.Contains(t.ProjectId));
-
-        if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
-
-        return await tagQuery.Select(t => new TagResponseDto
-            {
-                Id = t.Id,
-                Name = t.Name,
-                ProjectId = t.ProjectId,
-                LastUpdatedBy = t.LastUpdatedBy,
-                LastUpdatedAt = t.LastUpdatedAt
-            })
-            .ToListAsync();
     }
 }

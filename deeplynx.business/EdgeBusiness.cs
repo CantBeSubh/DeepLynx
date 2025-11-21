@@ -41,7 +41,6 @@ public class EdgeBusiness : IEdgeBusiness
         long? dataSourceId,
         bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var edgeQuery = _context.Edges
             .Where(e => e.ProjectId == projectId);
 
@@ -69,6 +68,7 @@ public class EdgeBusiness : IEdgeBusiness
     ///     OR Retrieves an edge by its id
     /// </summary>
     /// <param name="projectId">The project of the edge to retrieve</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The id whereby to fetch the edge</param>
     /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
@@ -77,16 +77,18 @@ public class EdgeBusiness : IEdgeBusiness
     /// <exception cref="KeyNotFoundException">Returned if edge not found or is archived</exception>
     public async Task<EdgeResponseDto> GetEdge(
         long projectId,
+        long organizationId,
         long? edgeId,
         long? originId,
         long? destinationId,
         bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        var edge = await FindEdge(organizationId, edgeId, originId, destinationId);
 
         if (edge == null) throw new KeyNotFoundException($"Edge with id {edgeId} not found");
+
+        if (edge.ProjectId != projectId)
+            throw new KeyNotFoundException($"Edge with id {edgeId} not found in project {projectId}");
 
         if (hideArchived && edge.IsArchived) throw new KeyNotFoundException($"Edge with id {edgeId} is archived");
 
@@ -110,12 +112,14 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dto">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<EdgeResponseDto> CreateEdge(
         long currentUserId,
         long projectId,
         long dataSourceId,
+        long organizationId,
         CreateEdgeRequestDto dto)
     {
         if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
@@ -142,7 +146,8 @@ public class EdgeBusiness : IEdgeBusiness
             DataSourceId = dataSourceId,
             RelationshipId = dto.RelationshipId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = currentUserId
+            LastUpdatedBy = currentUserId,
+            OrganizationId = organizationId
         };
 
         _context.Edges.Add(edge);
@@ -155,6 +160,7 @@ public class EdgeBusiness : IEdgeBusiness
             EntityType = "edge",
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
+            OrganizationId = organizationId,
             Properties = JsonSerializer.Serialize(new
             {
                 origin = edge.OriginId,
@@ -181,12 +187,14 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edges">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long currentUserId,
         long projectId,
         long dataSourceId,
+        long organizationId,
         List<CreateEdgeRequestDto> edges)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
@@ -194,7 +202,7 @@ public class EdgeBusiness : IEdgeBusiness
 
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
         var sql = @"
-            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, last_updated_by, is_archived)
+            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, last_updated_by, is_archived, organization_id)
             VALUES {0}
             ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE SET
                 relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),
@@ -209,7 +217,8 @@ public class EdgeBusiness : IEdgeBusiness
             new("@projectId", projectId),
             new("@dataSourceId", dataSourceId),
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new("@lastUpdatedBy", currentUserId)
+            new("@lastUpdatedBy", currentUserId),
+            new("@organizationId", organizationId)
         };
 
         // establish "dynamic" parameters (new for each dto in the list)
@@ -238,7 +247,7 @@ public class EdgeBusiness : IEdgeBusiness
 
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", edges.Select((dto, i) =>
-            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now, @lastUpdatedBy, false)"));
+            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now, @lastUpdatedBy, false, @organizationId)"));
 
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -257,6 +266,7 @@ public class EdgeBusiness : IEdgeBusiness
                 EntityType = "edge",
                 EntityId = newEdge.Id,
                 DataSourceId = newEdge.DataSourceId,
+                OrganizationId = organizationId,
                 Properties = "{}" // TODO: Determine the extent of data edge properties need
             });
         
@@ -270,6 +280,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dto">The edge request data transfer object containing updated edge details.</param>
     /// <param name="edgeId">The ID of the edge to update</param>
     /// <param name="originId">The origin ID of the edge to update if edgeID is not present.</param>
@@ -279,14 +290,16 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<EdgeResponseDto> UpdateEdge(
         long currentUserId,
         long projectId,
+        long organizationId,
         UpdateEdgeRequestDto dto,
         long? edgeId,
         long? originId,
-        long? destinationId)
+        long? destinationId
+    )
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        var edge = await FindEdge(organizationId, edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.IsArchived)
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
 
@@ -330,6 +343,7 @@ public class EdgeBusiness : IEdgeBusiness
     ///     Deletes a specific edge by its ID or origin/destination.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to delete</param>
     /// <param name="originId">The origin ID of the edge to delete if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
@@ -337,13 +351,14 @@ public class EdgeBusiness : IEdgeBusiness
     /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<long> DeleteEdge(
         long projectId,
+        long organizationId,
         long? edgeId,
         long? originId,
         long? destinationId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        var edge = await FindEdge(organizationId, edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId)
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
 
@@ -358,6 +373,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to archive</param>
     /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
@@ -366,13 +382,13 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<long> ArchiveEdge(
         long currentUserId,
         long projectId,
+        long organizationId,
         long? edgeId,
         long? originId,
         long? destinationId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        var edge = await FindEdge(organizationId, edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.IsArchived)
             throw new KeyNotFoundException("Edge may have been moved, archived or deleted.");
 
@@ -399,6 +415,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to unarchive</param>
     /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge to unarchive if edgeID is not present.</param>
@@ -407,13 +424,14 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<long> UnarchiveEdge(
         long currentUserId,
         long projectId,
+        long organizationId,
         long? edgeId,
         long? originId,
         long? destinationId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        var edge = await FindEdge(organizationId, edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || !edge.IsArchived)
             throw new KeyNotFoundException("Edge to unarchive not found or is not archived.");
 
@@ -437,12 +455,14 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     ///     Private method to facilitate boilerplate code for finding edges by ID or origin/destination
     /// </summary>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The id whereby to fetch the edge</param>
     /// <param name="originId">The origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">The destination ID by which to fetch the edge if no ID</param>
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     private async Task<Edge> FindEdge(
+        long organizationId,
         long? edgeId,
         long? originId,
         long? destinationId
@@ -456,12 +476,11 @@ public class EdgeBusiness : IEdgeBusiness
         // search for edge either by id or origin + destination
         if (edgeId != null)
             edge = await _context.Edges
-                .Where(e => e.Id == edgeId)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(e => e.Id == edgeId && e.OrganizationId == organizationId);
         else
             edge = await _context.Edges
-                .Where(e => e.OriginId == originId && e.DestinationId == destinationId)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(e =>
+                    e.OriginId == originId && e.DestinationId == destinationId && e.OrganizationId == organizationId);
 
         // throw an error if edge not found
         if (edge == null)
@@ -473,19 +492,5 @@ public class EdgeBusiness : IEdgeBusiness
         }
 
         return edge;
-    }
-
-    /// <summary>
-    ///     Determine if datasource exists
-    /// </summary>
-    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if datasource does not exist</returns>
-    private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
-    {
-        var datasource = hideArchived
-            ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
-            : _context.DataSources.Any(p => p.Id == datasourceId);
-        if (!datasource) throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
     }
 }

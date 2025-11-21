@@ -109,7 +109,8 @@ public class EdgeBusinessTests : IntegrationTestBase
         {
             Name = "DataSource 1",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.DataSources.Add(dataSource);
         await Context.SaveChangesAsync();
@@ -119,7 +120,8 @@ public class EdgeBusinessTests : IntegrationTestBase
         {
             Name = "DataSource 2",
             ProjectId = pid2,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.DataSources.Add(dataSource2);
         await Context.SaveChangesAsync();
@@ -129,7 +131,8 @@ public class EdgeBusinessTests : IntegrationTestBase
         {
             Name = "Class 1",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();
@@ -143,7 +146,8 @@ public class EdgeBusinessTests : IntegrationTestBase
             Name = "Origin",
             Description = "Origin Description",
             OriginalId = "orig",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Records.Add(originRecord);
 
@@ -155,7 +159,8 @@ public class EdgeBusinessTests : IntegrationTestBase
             Name = "Origin 2",
             Description = "Origin Description 2",
             OriginalId = "orig2",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Records.Add(originRecord2);
 
@@ -168,7 +173,8 @@ public class EdgeBusinessTests : IntegrationTestBase
             Name = "Destination 1",
             Description = "Destination Description 1",
             OriginalId = "dest1",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Records.Add(destinationRecord);
 
@@ -181,7 +187,8 @@ public class EdgeBusinessTests : IntegrationTestBase
             Name = "Destination 2",
             Description = "Destination Description 2",
             OriginalId = "dest2",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Records.Add(destinationRecord2);
 
@@ -194,7 +201,8 @@ public class EdgeBusinessTests : IntegrationTestBase
             Name = "Destination 3",
             Description = "Destination Description 3",
             OriginalId = "dest3",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Records.Add(destinationRecord3);
 
@@ -204,7 +212,8 @@ public class EdgeBusinessTests : IntegrationTestBase
             ProjectId = pid,
             OriginId = testClass.Id,
             DestinationId = testClass.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Relationships.Add(relationship);
 
@@ -218,31 +227,32 @@ public class EdgeBusinessTests : IntegrationTestBase
         relationshipId = relationship.Id;
     }
 
-        #region CreateEdge Tests
-        [Fact]
-        public async Task CreateEdge_Success_ReturnsCorrectValues()
+    #region CreateEdge Tests
+
+    [Fact]
+    public async Task CreateEdge_Success_ReturnsCorrectValues()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var dto = new CreateEdgeRequestDto
         {
-            // Arrange
-            var now = DateTime.UtcNow;
-            var dto = new CreateEdgeRequestDto
-            {
-                OriginId = (int)originRecordId,
-                DestinationId = (int)destinationRecordId,
-                RelationshipId = (int)relationshipId
-            };
+            OriginId = (int)originRecordId,
+            DestinationId = (int)destinationRecordId,
+            RelationshipId = (int)relationshipId
+        };
 
         // Act
-        var result = await _edgeBusiness.CreateEdge(uid1, pid, dsid, dto);
+        var result = await _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto);
 
-            // Assert
-            Assert.True(result.Id > 0);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(relationshipId, result.RelationshipId);
-            Assert.Equal(originRecordId, result.OriginId);
-            Assert.Equal(destinationRecordId, result.DestinationId);
-            Assert.Equal(pid, result.ProjectId);
-            Assert.Equal(dsid, result.DataSourceId);
-            Assert.Equal(uid1, result.LastUpdatedBy);
+        // Assert
+        Assert.True(result.Id > 0);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(relationshipId, result.RelationshipId);
+        Assert.Equal(originRecordId, result.OriginId);
+        Assert.Equal(destinationRecordId, result.DestinationId);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.Equal(dsid, result.DataSourceId);
+        Assert.Equal(uid1, result.LastUpdatedBy);
 
         // Ensure that edge create event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -267,7 +277,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             RelationshipId = (int)relationshipId
         };
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -284,7 +294,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = 0, // Invalid destination
             RelationshipId = (int)relationshipId
         };
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -300,7 +310,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = (int)originRecordId,
             RelationshipId = (int)relationshipId
         };
-        await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, dto));
+        await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -319,7 +329,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid + 99, dsid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid + 99, dsid, oid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -338,7 +348,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid + 99, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid + 99, oid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -362,7 +372,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -396,7 +406,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _edgeBusiness.BulkCreateEdges(uid1, pid, dsid, edges);
+        var result = await _edgeBusiness.BulkCreateEdges(uid1, pid, dsid, oid, edges);
 
         // Assert
         Assert.Equal(2, result.Count);
@@ -411,7 +421,8 @@ public class EdgeBusinessTests : IntegrationTestBase
     public async Task BulkCreateEdges_Fails_IfNullDto()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _edgeBusiness.BulkCreateEdges(uid1, pid, dsid, null));
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            _edgeBusiness.BulkCreateEdges(uid1, pid, dsid, oid, null));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -426,9 +437,9 @@ public class EdgeBusinessTests : IntegrationTestBase
     public async Task GetAllEdges_ReturnsOnlyForProject()
     {
         // Arrange
-        await _edgeBusiness.CreateEdge(uid1, pid, dsid,
+        await _edgeBusiness.CreateEdge(uid1, pid, dsid, oid,
             new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
-        await _edgeBusiness.CreateEdge(uid1, pid2, dsid2,
+        await _edgeBusiness.CreateEdge(uid1, pid2, dsid2, oid,
             new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
 
         // Act
@@ -448,6 +459,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -458,6 +470,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId2,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null,
             IsArchived = true
@@ -489,6 +502,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -496,7 +510,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var result = await _edgeBusiness.GetEdge(pid, testEdge.Id, null, null, true);
+        var result = await _edgeBusiness.GetEdge(pid, oid, testEdge.Id, null, null, true);
 
         // Assert
         Assert.Equal(testEdge.Id, result.Id);
@@ -514,6 +528,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -521,7 +536,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var result = await _edgeBusiness.GetEdge(pid, null, originRecordId, destinationRecordId, true);
+        var result = await _edgeBusiness.GetEdge(pid, oid, null, originRecordId, destinationRecordId, true);
 
         // Assert
         Assert.Equal(testEdge.Id, result.Id);
@@ -539,6 +554,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -547,7 +563,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.GetEdge(pid + 999, testEdge.Id, null, null, true));
+            _edgeBusiness.GetEdge(pid + 999, oid, testEdge.Id, null, null, true));
     }
 
     [Fact]
@@ -560,6 +576,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null,
             IsArchived = true
@@ -568,15 +585,17 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdge(pid, testEdge.Id, null, null, true));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _edgeBusiness.GetEdge(pid, oid, testEdge.Id, null, null, true));
     }
 
     [Fact]
     public async Task GetEdge_Fails_IfMissingIds()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _edgeBusiness.GetEdge(pid, null, null, null, true));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _edgeBusiness.GetEdge(pid, oid, null, null, null, true));
         Assert.Contains("Please supply either an edgeID or an originID and destinationID", exception.Message);
     }
 
@@ -584,30 +603,32 @@ public class EdgeBusinessTests : IntegrationTestBase
 
     #region UpdateEdge Tests
 
-        [Fact]
-        public async Task UpdateEdge_Success_ReturnsCorrectvalues()
+    [Fact]
+    public async Task UpdateEdge_Success_ReturnsCorrectvalues()
+    {
+        // Arrange
+        var testEdge = new Edge
         {
-            // Arrange
-            var testEdge = new Edge
-            {
-                OriginId = originRecordId,
-                DestinationId = destinationRecordId,
-                DataSourceId = dsid,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-            Context.Edges.Add(testEdge);
-            await Context.SaveChangesAsync();
-            
-            // Store the original timestamp for comparison
-            var originalLastUpdatedAt = testEdge.LastUpdatedAt;
+            OriginId = originRecordId,
+            DestinationId = destinationRecordId,
+            DataSourceId = dsid,
+            ProjectId = pid,
+            OrganizationId = oid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
+
+        // Store the original timestamp for comparison
+        var originalLastUpdatedAt = testEdge.LastUpdatedAt;
 
         // Create another destination record for update
         var newDestinationRecord = new Record
         {
             ProjectId = pid,
             DataSourceId = dsid,
+            OrganizationId = oid,
             Properties = "{\"test\": \"Updated destination_value\"}",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Name = "New Destination",
@@ -625,18 +646,18 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var updatedResult = await _edgeBusiness.UpdateEdge(uid1, pid, dto, testEdge.Id, null, null);
+        var updatedResult = await _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, testEdge.Id, null, null);
 
-            // Assert
-            Assert.NotNull(updatedResult);
-            Assert.False(updatedResult.IsArchived);
-            Assert.Equal(relationshipId, updatedResult.RelationshipId);
-            Assert.Equal(originRecordId, updatedResult.OriginId);
-            Assert.Equal(destinationRecordId2, updatedResult.DestinationId);
-            Assert.Equal(pid, updatedResult.ProjectId);
-            Assert.Equal(dsid, updatedResult.DataSourceId);
-            Assert.True(updatedResult.LastUpdatedAt >= originalLastUpdatedAt);
-            Assert.Equal(uid1, updatedResult.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(updatedResult);
+        Assert.False(updatedResult.IsArchived);
+        Assert.Equal(relationshipId, updatedResult.RelationshipId);
+        Assert.Equal(originRecordId, updatedResult.OriginId);
+        Assert.Equal(destinationRecordId2, updatedResult.DestinationId);
+        Assert.Equal(pid, updatedResult.ProjectId);
+        Assert.Equal(dsid, updatedResult.DataSourceId);
+        Assert.True(updatedResult.LastUpdatedAt >= originalLastUpdatedAt);
+        Assert.Equal(uid1, updatedResult.LastUpdatedBy);
 
         // Ensure that update edge event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -649,26 +670,28 @@ public class EdgeBusinessTests : IntegrationTestBase
         Assert.Equal("update", actualEvent.Operation);
     }
 
-        [Fact]
-        public async Task UpdateEdge_Fails_WhenSameOriginAndDestinationId()
+    [Fact]
+    public async Task UpdateEdge_Fails_WhenSameOriginAndDestinationId()
+    {
+        var testEdge = new Edge
         {
-            var testEdge = new Edge
-            {
-                OriginId = originRecordId,
-                DestinationId = destinationRecordId,
-                DataSourceId = dsid,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-            Context.Edges.Add(testEdge);
-            await Context.SaveChangesAsync();
+            OriginId = originRecordId,
+            DestinationId = destinationRecordId,
+            DataSourceId = dsid,
+            ProjectId = pid,
+            OrganizationId = oid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
 
         // Create another destination record for update
         var newDestinationRecord = new Record
         {
             ProjectId = pid,
             DataSourceId = dsid,
+            OrganizationId = oid,
             Properties = "{\"test\": \"Updated destination_value\"}",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Name = "New Destination",
@@ -685,7 +708,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             RelationshipId = (int)relationshipId
         };
         await Assert.ThrowsAsync<ValidationException>(() =>
-            _edgeBusiness.UpdateEdge(uid1, pid, dto, testEdge.Id, null, null));
+            _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, testEdge.Id, null, null));
         // Ensure that update edge event was logged
         var eventList = await Context.Events.ToListAsync();
         Assert.Empty(eventList);
@@ -701,19 +724,21 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
         Context.Edges.Add(testEdge);
         await Context.SaveChangesAsync();
-        var oid = testEdge.OriginId;
-        var did = testEdge.DestinationId;
+        var edgeOriginId = testEdge.OriginId;
+        var edgeDestinationId = testEdge.DestinationId;
 
         // Create another destination record for update
         var newDestinationRecord = new Record
         {
             ProjectId = pid,
             DataSourceId = dsid,
+            OrganizationId = oid,
             Properties = "{\"test\": \"Updated destination_value\"}",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Name = "New Destination",
@@ -729,29 +754,29 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _edgeBusiness.UpdateEdge(uid1, pid, dto, testEdge.Id, null, null);
+        var result = await _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, testEdge.Id, null, null);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal((int)relationshipId, result.RelationshipId);
-        Assert.Equal(oid, result.OriginId);
-        Assert.Equal(did, result.DestinationId);
+        Assert.Equal(edgeOriginId, result.OriginId);
+        Assert.Equal(edgeDestinationId, result.DestinationId);
         Assert.NotEqual(DateTime.MinValue, result.LastUpdatedAt);
 
         // Verify edge was actually updated in database
         var updatedEdge = await Context.Edges.FindAsync(testEdge.Id);
         Assert.NotNull(updatedEdge);
         Assert.Equal((int)relationshipId, updatedEdge.RelationshipId);
-        Assert.Equal(oid, updatedEdge.OriginId);
-        Assert.Equal(did, updatedEdge.DestinationId);
+        Assert.Equal(edgeOriginId, updatedEdge.OriginId);
+        Assert.Equal(edgeDestinationId, updatedEdge.DestinationId);
         Assert.NotEqual(DateTime.MinValue, updatedEdge.LastUpdatedAt);
 
         // Verify that get function gets updated version
-        var getResult = await _edgeBusiness.GetEdge(pid, testEdge.Id, oid, did, true);
+        var getResult = await _edgeBusiness.GetEdge(pid, oid, testEdge.Id, edgeOriginId, edgeDestinationId, true);
         Assert.NotNull(getResult);
         Assert.Equal((int)relationshipId, getResult.RelationshipId);
-        Assert.Equal(oid, getResult.OriginId);
-        Assert.Equal(did, getResult.DestinationId);
+        Assert.Equal(edgeOriginId, getResult.OriginId);
+        Assert.Equal(edgeDestinationId, getResult.DestinationId);
         Assert.NotEqual(DateTime.MinValue, getResult.LastUpdatedAt);
 
         // Ensure that update edge event was logged
@@ -777,7 +802,8 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UpdateEdge(uid1, pid, dto, 99, null, null));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, 99, null, null));
 
         // Ensure that update edge event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -788,40 +814,41 @@ public class EdgeBusinessTests : IntegrationTestBase
 
     #region ArchiveEdge Tests
 
-        [Fact]
-        public async Task ArchiveEdge_Success_WhenExists()
+    [Fact]
+    public async Task ArchiveEdge_Success_WhenExists()
+    {
+        // Arrange
+        var beforeArchive = DateTime.UtcNow;
+        var testEdge = new Edge
         {
-            // Arrange
-            var beforeArchive = DateTime.UtcNow;
-            var testEdge = new Edge
-            {
-                OriginId = originRecordId,
-                DestinationId = destinationRecordId,
-                DataSourceId = dsid,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-            Context.Edges.Add(testEdge);
-            await Context.SaveChangesAsync();
-            
-            var now = DateTime.UtcNow;
-            // Act
-            var archivedResult = await _edgeBusiness.ArchiveEdge(uid1, pid, testEdge.Id, null, null);
+            OriginId = originRecordId,
+            DestinationId = destinationRecordId,
+            DataSourceId = dsid,
+            ProjectId = pid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
+            OrganizationId = oid
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        // Act
+        var archivedResult = await _edgeBusiness.ArchiveEdge(uid1, pid, oid, testEdge.Id, null, null);
 
         var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
 
-            // Assert
-            Assert.NotNull(archivedEdge);
-            Assert.Null(archivedEdge.RelationshipId);
-            Assert.Equal(testEdge.Id, archivedResult);
-            Assert.True(archivedEdge?.IsArchived);
-            Assert.Equal(originRecordId, archivedEdge?.OriginId);
-            Assert.Equal(destinationRecordId, archivedEdge?.DestinationId);
-            Assert.Equal(pid, archivedEdge?.ProjectId);
-            Assert.Equal(dsid, archivedEdge?.DataSourceId);
-            Assert.True(archivedEdge?.LastUpdatedAt >= now);
-            Assert.Equal(uid1, archivedEdge.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(archivedEdge);
+        Assert.Null(archivedEdge.RelationshipId);
+        Assert.Equal(testEdge.Id, archivedResult);
+        Assert.True(archivedEdge?.IsArchived);
+        Assert.Equal(originRecordId, archivedEdge?.OriginId);
+        Assert.Equal(destinationRecordId, archivedEdge?.DestinationId);
+        Assert.Equal(pid, archivedEdge?.ProjectId);
+        Assert.Equal(dsid, archivedEdge?.DataSourceId);
+        Assert.True(archivedEdge?.LastUpdatedAt >= now);
+        Assert.Equal(uid1, archivedEdge.LastUpdatedBy);
 
         // Ensure that soft delete edge event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -838,7 +865,8 @@ public class EdgeBusinessTests : IntegrationTestBase
     public async Task ArchiveEdge_Fails_IfNotFound()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.ArchiveEdge(uid1, pid, 999, null, null));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _edgeBusiness.ArchiveEdge(uid1, pid, oid, 999, null, null));
 
         // Ensure that create edge event is NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -856,6 +884,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -885,46 +914,48 @@ public class EdgeBusinessTests : IntegrationTestBase
 
     #region UnarchiveEdge Tests
 
-        [Fact]
-        public async Task UnarchiveEdge_Success_WhenArchived()
+    [Fact]
+    public async Task UnarchiveEdge_Success_WhenArchived()
+    {
+        // Arrange
+        var testEdge = new Edge
         {
-            // Arrange
-            var testEdge = new Edge
-            {
-                OriginId = originRecordId,
-                DestinationId = destinationRecordId,
-                DataSourceId = dsid,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null,
-                IsArchived = true
-            };
-            Context.Edges.Add(testEdge);
-            await Context.SaveChangesAsync();
-            var now = DateTime.UtcNow;
-            // Act
-            var unarchivedResult = await _edgeBusiness.UnarchiveEdge(uid1, pid, testEdge.Id, null, null);
-            Assert.Equal(testEdge.Id, unarchivedResult);
+            OriginId = originRecordId,
+            DestinationId = destinationRecordId,
+            DataSourceId = dsid,
+            ProjectId = pid,
+            OrganizationId = oid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
+            IsArchived = true
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
+        var now = DateTime.UtcNow;
+        // Act
+        var unarchivedResult = await _edgeBusiness.UnarchiveEdge(uid1, pid, oid, testEdge.Id, null, null);
+        Assert.Equal(testEdge.Id, unarchivedResult);
 
         var unarchivedEdge = await Context.Edges.FindAsync(testEdge.Id);
 
-            // Assert
-            Assert.NotNull(unarchivedEdge);
-            Assert.Null(unarchivedEdge.RelationshipId);
-            Assert.False(unarchivedEdge.IsArchived);
-            Assert.Equal(originRecordId, unarchivedEdge.OriginId);
-            Assert.Equal(destinationRecordId, unarchivedEdge.DestinationId);
-            Assert.Equal(pid, unarchivedEdge.ProjectId);
-            Assert.Equal(dsid, unarchivedEdge.DataSourceId);
-            Assert.True(unarchivedEdge.LastUpdatedAt >= now);
-            Assert.Equal(uid1, unarchivedEdge.LastUpdatedBy);
-        }
+        // Assert
+        Assert.NotNull(unarchivedEdge);
+        Assert.Null(unarchivedEdge.RelationshipId);
+        Assert.False(unarchivedEdge.IsArchived);
+        Assert.Equal(originRecordId, unarchivedEdge.OriginId);
+        Assert.Equal(destinationRecordId, unarchivedEdge.DestinationId);
+        Assert.Equal(pid, unarchivedEdge.ProjectId);
+        Assert.Equal(dsid, unarchivedEdge.DataSourceId);
+        Assert.True(unarchivedEdge.LastUpdatedAt >= now);
+        Assert.Equal(uid1, unarchivedEdge.LastUpdatedBy);
+    }
 
     [Fact]
     public async Task UnarchiveEdge_Fails_IfNotFound()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UnarchiveEdge(uid1, pid, 999, null, null));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _edgeBusiness.UnarchiveEdge(uid1, pid, oid, 999, null, null));
 
         // Ensure that create edge event is NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -941,6 +972,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -949,7 +981,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.UnarchiveEdge(uid1, pid, activeEdge.Id, null, null));
+            _edgeBusiness.UnarchiveEdge(uid1, pid, oid, activeEdge.Id, null, null));
 
         // Ensure that create edge event is NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -970,6 +1002,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -977,7 +1010,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var deletedResult = await _edgeBusiness.DeleteEdge(pid, testEdge.Id, null, null);
+        var deletedResult = await _edgeBusiness.DeleteEdge(pid, oid, testEdge.Id, null, null);
 
         // Assert
         Assert.Equal(testEdge.Id, deletedResult);
@@ -989,7 +1022,7 @@ public class EdgeBusinessTests : IntegrationTestBase
     public async Task DeleteEdge_Fails_IfNotFound()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.DeleteEdge(pid, 999, null, null));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.DeleteEdge(pid, oid, 999, null, null));
     }
 
     #endregion
@@ -1059,6 +1092,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid1
         };
@@ -1083,6 +1117,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid1
         };
@@ -1112,6 +1147,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };
@@ -1142,6 +1178,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = destinationRecordId,
             DataSourceId = dsid,
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null
         };

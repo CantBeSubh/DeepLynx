@@ -1,25 +1,23 @@
+using System.Text.Json;
 using System.Text.Json.Nodes;
-using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
-using deeplynx.helpers.json;
+using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace deeplynx.business;
 
 public class RecordBusiness : IRecordBusiness
 {
+    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="RecordBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -32,7 +30,7 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Retrieves all records for a specific project and datasource.
+    ///     Retrieves all records for a specific project and datasource.
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
@@ -46,15 +44,9 @@ public class RecordBusiness : IRecordBusiness
         var recordQuery = _context.Records
             .Where(r => r.ProjectId == projectId);
 
-        if (hideArchived)
-        {
-            recordQuery = recordQuery.Where(r => !r.IsArchived);
-        }
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
 
-        if (dataSourceId.HasValue)
-        {
-            recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
-        }
+        if (dataSourceId.HasValue) recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
 
         if (!string.IsNullOrWhiteSpace(fileType))
         {
@@ -67,7 +59,7 @@ public class RecordBusiness : IRecordBusiness
             .ToListAsync();
 
         return records
-            .Select(r => new RecordResponseDto()
+            .Select(r => new RecordResponseDto
             {
                 Id = r.Id,
                 Description = r.Description,
@@ -82,7 +74,7 @@ public class RecordBusiness : IRecordBusiness
                 LastUpdatedAt = r.LastUpdatedAt,
                 IsArchived = r.IsArchived,
                 FileType = r.FileType,
-                Tags = r.Tags.Select(t => new RecordTagDto()
+                Tags = r.Tags.Select(t => new RecordTagDto
                 {
                     Id = t.Id,
                     Name = t.Name
@@ -91,7 +83,7 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Get all records that contain all given tags
+    ///     Get all records that contain all given tags
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="tagIds">List of tag IDs - returned records must contain every given ID</param>
@@ -104,10 +96,7 @@ public class RecordBusiness : IRecordBusiness
         var recordQuery = _context.Records
             .Where(r => r.ProjectId == projectId);
 
-        if (hideArchived)
-        {
-            recordQuery = recordQuery.Where(r => !r.IsArchived);
-        }
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
 
         // Only return records that contain ALL given IDs
         recordQuery = recordQuery.Where(r =>
@@ -116,7 +105,7 @@ public class RecordBusiness : IRecordBusiness
         var records = await recordQuery.Include(r => r.Tags).ToListAsync();
 
         return records
-            .Select(r => new RecordResponseDto()
+            .Select(r => new RecordResponseDto
             {
                 Id = r.Id,
                 Description = r.Description,
@@ -131,7 +120,7 @@ public class RecordBusiness : IRecordBusiness
                 LastUpdatedAt = r.LastUpdatedAt,
                 IsArchived = r.IsArchived,
                 FileType = r.FileType,
-                Tags = r.Tags.Select(t => new RecordTagDto()
+                Tags = r.Tags.Select(t => new RecordTagDto
                 {
                     Id = t.Id,
                     Name = t.Name
@@ -140,7 +129,7 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Retrieves a specific record by its ID
+    ///     Retrieves a specific record by its ID
     /// </summary>
     /// <param name="projectId">The project of the record to retrieve</param>
     /// <param name="recordId">The ID of the record to retrieve</param>
@@ -157,15 +146,9 @@ public class RecordBusiness : IRecordBusiness
             .Include(r => r.Tags)
             .FirstOrDefaultAsync();
 
-        if (record == null)
-        {
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-        }
+        if (record == null) throw new KeyNotFoundException($"Record with id {recordId} not found");
 
-        if (hideArchived && record.IsArchived)
-        {
-            throw new KeyNotFoundException($"Record with id {recordId} is archived");
-        }
+        if (hideArchived && record.IsArchived) throw new KeyNotFoundException($"Record with id {recordId} is archived");
 
         return new RecordResponseDto
         {
@@ -183,7 +166,7 @@ public class RecordBusiness : IRecordBusiness
             LastUpdatedAt = record.LastUpdatedAt,
             IsArchived = record.IsArchived,
             FileType = record.FileType,
-            Tags = record.Tags.Select(t => new RecordTagDto()
+            Tags = record.Tags.Select(t => new RecordTagDto
             {
                 Id = t.Id,
                 Name = t.Name
@@ -192,16 +175,195 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Create a new record
+    ///     Delete a metadata record.
+    /// </summary>
+    /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="recordId">The record in question</param>
+    /// <returns>Boolean indicating record was deleted</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
+    /// TODO: return warning that historical data will be entirely wiped with this action
+    public async Task<bool> DeleteRecord(long projectId, long recordId)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        var record = await _context.Records.FindAsync(recordId);
+
+        if (record == null || record.ProjectId != projectId)
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+
+        _context.Records.Remove(record);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+
+    /// <summary>
+    ///     Attaches a tag to a record
+    /// </summary>
+    /// <param name="projectId">Project ID for the record and tag</param>
+    /// <param name="recordId">The ID of the record</param>
+    /// <param name="tagId">The ID of the tag</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
+    /// <exception cref="Exception">Thrown if the tag is already attached to the record</exception>
+    public async Task<bool> AttachTag(long projectId, long recordId, long tagId)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+
+        // include tags in record return and find record
+        var recordQueryable = _context.Records.Include(r => r.Tags);
+        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
+        if (record == null || record.ProjectId != projectId || record.IsArchived)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
+
+        // find tag
+        var tag = await _context.Tags.FindAsync(tagId);
+        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
+
+        // ensure the tag is not already attached to the record
+        _context.Records.Include(r => r.Tags);
+        if (record.Tags.Any(t => t.Id == tagId))
+            throw new Exception($"Tag with id {tagId} is already attached to record {recordId}");
+
+        record.Tags.Add(tag);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>
+    ///     Unattach a tag from a record
+    /// </summary>
+    /// <param name="projectId">Project ID for the record and tag</param>
+    /// <param name="recordId">The ID of the record</param>
+    /// <param name="tagId">The ID of the tag</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
+    public async Task<bool> UnattachTag(long projectId, long recordId, long tagId)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+
+        // include tags in record return and find record
+        var recordQueryable = _context.Records.Include(r => r.Tags);
+        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
+        if (record == null || record.ProjectId != projectId || record.IsArchived)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
+
+        // find tag
+        var tag = await _context.Tags.FindAsync(tagId);
+        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
+
+        record.Tags.Remove(tag);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>
+    ///     Bulk attach tags and records
+    /// </summary>
+    /// <param name="dtos">A list of record_id/tag_id pairs to be inserted</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="Exception">Thrown if tags unable to be attached</exception>
+    public async Task<bool> BulkAttachTags(List<RecordTagLinkDto> dtos)
+    {
+        // Bulk insert into record_tags
+        var sql = @"INSERT INTO deeplynx.record_tags (record_id, tag_id) VALUES {0} ON CONFLICT DO NOTHING;";
+
+        // establish parameters
+        var parameters = new List<NpgsqlParameter>();
+        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@record{i}_id", dto.RecordId),
+            new NpgsqlParameter($"@tag{i}_id", dto.TagId)
+        }));
+
+        // stringify params and comma separate them
+        var valueTuples = string.Join(", ", dtos.Select((dto, i) => $"(@record{i}_id, @tag{i}_id)"));
+
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+
+        await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
+
+        return true;
+    }
+
+    // </summary>
+    /// <param name="projectId">The project ID to search within</param>
+    /// <param name="originalIds">List of original IDs to validate</param>
+    /// <returns>List of records that were found</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if one or more original IDs not found</exception>
+    /// <exception cref="ArgumentException">Thrown if originalIds list is null or empty</exception>
+    public async Task<List<RecordResponseDto>> GetRecordsByOriginalId(long projectId, List<string> originalIds)
+    {
+        if (originalIds == null || !originalIds.Any())
+            throw new ArgumentException("Original IDs list cannot be null or empty", nameof(originalIds));
+
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+
+        // Remove duplicates and filter out null/empty values
+        var cleanOriginalIds = originalIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        if (!cleanOriginalIds.Any())
+            throw new ArgumentException("No valid original IDs provided", nameof(originalIds));
+
+        // Query for existing records (excluding archived)
+        var existingRecords = await _context.Records
+            .Where(r => r.ProjectId == projectId
+                        && !r.IsArchived
+                        && cleanOriginalIds.Contains(r.OriginalId))
+            .Include(r => r.Tags)
+            .ToListAsync();
+
+        // Check for missing records
+        var foundOriginalIds = existingRecords.Select(r => r.OriginalId).ToHashSet();
+        var missingOriginalIds = cleanOriginalIds.Where(id => !foundOriginalIds.Contains(id)).ToList();
+
+        if (missingOriginalIds.Any())
+            throw new KeyNotFoundException(
+                $"Records not found with original IDs: {string.Join(", ", missingOriginalIds)}");
+
+        // Convert to DTOs
+        return existingRecords.Select(r => new RecordResponseDto
+        {
+            Id = r.Id,
+            Description = r.Description,
+            Uri = r.Uri,
+            Properties = r.Properties,
+            OriginalId = r.OriginalId,
+            Name = r.Name,
+            ClassId = r.ClassId,
+            DataSourceId = r.DataSourceId,
+            ProjectId = r.ProjectId,
+            LastUpdatedBy = r.LastUpdatedBy,
+            LastUpdatedAt = r.LastUpdatedAt,
+            IsArchived = r.IsArchived,
+            FileType = r.FileType,
+            Tags = r.Tags.Select(t => new RecordTagDto
+            {
+                Id = t.Id,
+                Name = t.Name
+            }).ToList()
+        }).ToList();
+    }
+
+    /// <summary>
+    ///     Create a new record
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project under which to create the record</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
     /// <param name="dto">The data transfer object containing details on the record to be created</param>
     /// <returns>The newly created metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
-    public async Task<RecordResponseDto> CreateRecord(long currentUserId, long projectId, long dataSourceId,
+    public async Task<RecordResponseDto> CreateRecord(long currentUserId, long projectId, long organizationId,
+        long dataSourceId,
         CreateRecordRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
@@ -213,15 +375,10 @@ public class RecordBusiness : IRecordBusiness
 
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
-        {
             throw new Exception(
                 $"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
-        }
 
-        if (dto.ObjectStorageId != null)
-        {
-            await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
-        }
+        if (dto.ObjectStorageId != null) await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
 
         var record = new Record
         {
@@ -236,14 +393,19 @@ public class RecordBusiness : IRecordBusiness
             ClassId = dto.ClassId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = currentUserId,
-            FileType = dto.FileType
+            FileType = dto.FileType,
+            OrganizationId = organizationId
         };
 
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
 
         // Log Record Create Event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(
+            currentUserId,
+            organizationId,
+            projectId,
+            new CreateEventRequestDto
         {
             EntityType = "record",
             EntityId = record.Id,
@@ -251,7 +413,7 @@ public class RecordBusiness : IRecordBusiness
             Operation = "create",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-        }, null, record.ProjectId);
+        });
 
         return new RecordResponseDto
         {
@@ -273,10 +435,11 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Create new records
+    ///     Create new records
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project under which to create the record</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
     /// <param name="records">The data transfer object containing details on the records to be created</param>
     /// <returns>The newly created metadata record</returns>
@@ -285,31 +448,25 @@ public class RecordBusiness : IRecordBusiness
     public async Task<List<RecordResponseDto>> BulkCreateRecords(
         long currentUserId,
         long projectId,
+        long organizationId,
         long dataSourceId,
         List<CreateRecordRequestDto> records)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
-        if (records.Count == 0)
-        {
-            throw new Exception("Unable to bulk create records: no records selected for creation");
-        }
+        if (records.Count == 0) throw new Exception("Unable to bulk create records: no records selected for creation");
 
         // Checks to see if Object Storage Ids reference an existing object storage in the project
         foreach (var dto in records)
-        {
             if (dto.ObjectStorageId != null)
-            {
                 await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
-            }
-        }
 
         // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
         var sql = @"
             INSERT INTO deeplynx.records (project_id, data_source_id, name, description, uri,
                               original_id, properties, class_id, object_storage_id, file_type,
-                              last_updated_at, is_archived, last_updated_by)
+                              last_updated_at, is_archived, last_updated_by, organization_id)
             VALUES {0}
             ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE SET
                 name = COALESCE(EXCLUDED.name, records.name),
@@ -327,10 +484,11 @@ public class RecordBusiness : IRecordBusiness
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@dataSourceId", dataSourceId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
+            new("@projectId", projectId),
+            new("@dataSourceId", dataSourceId),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@lastUpdatedBy", currentUserId),
+            new("@organizationId", organizationId)
         };
 
         // establish "dynamic" parameters (new for each dto in the list)
@@ -349,7 +507,7 @@ public class RecordBusiness : IRecordBusiness
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", records.Select((dto, i) =>
             $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-            $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @p{i}_file_type, @now, false, @lastUpdatedBy)"));
+            $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @p{i}_file_type, @now, false, @lastUpdatedBy, @organizationId)"));
 
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -373,13 +531,13 @@ public class RecordBusiness : IRecordBusiness
                       DataSourceId = record.DataSourceId,
                   });
        }
-       await _eventBusiness.BulkCreateEvents(currentUserId, events, null, projectId);
+       await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
        
        return result;
     }
 
     /// <summary>
-    /// Updates a record with new information
+    ///     Updates a record with new information
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
@@ -387,27 +545,21 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dto">The data transfer object containing details on the record to be updated</param>
     /// <returns>The newly updated metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long currentUserId, long projectId, long recordId,
+    public async Task<RecordResponseDto> UpdateRecord(long currentUserId, long projectId,
+        long recordId,
         UpdateRecordRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.IsArchived)
-        {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
-        }
 
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
-        {
             throw new Exception(
                 $"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
-        }
 
-        if (dto.ObjectStorageId != null)
-        {
-            await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
-        }
+        if (dto.ObjectStorageId != null) await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
 
         record.Uri = dto.Uri ?? record.Uri;
         record.Properties = dto.Properties != null ? dto.Properties.ToString() : record.Properties;
@@ -454,36 +606,15 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Delete a metadata record.
-    /// </summary>
-    /// <param name="projectId">The project to which the record belongs</param>
-    /// <param name="recordId">The record in question</param>
-    /// <returns>Boolean indicating record was deleted</returns>
-    /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
-    /// TODO: return warning that historical data will be entirely wiped with this action
-    public async Task<bool> DeleteRecord(long projectId, long recordId)
-    {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        var record = await _context.Records.FindAsync(recordId);
-
-        if (record == null || record.ProjectId != projectId)
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-
-        _context.Records.Remove(record);
-        await _context.SaveChangesAsync();
-
-        return true;
-    }
-
-    /// <summary>
-    /// Archive a metadata record.
+    ///     Archive a metadata record.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="recordId">The record to be archived</param>
     /// <returns>Boolean indicating record was archived</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
-    public async Task<bool> ArchiveRecord(long currentUserId, long projectId, long recordId)
+    public async Task<bool> ArchiveRecord(long currentUserId, long projectId, long organizationId, long recordId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
@@ -507,10 +638,8 @@ public class RecordBusiness : IRecordBusiness
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
-                {
                     throw new DependencyDeletionException(
                         $"unable to archive record {recordId} or its downstream dependents.");
-                }
 
                 await transaction.CommitAsync();
             }
@@ -537,14 +666,15 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Unarchive a metadata record.
+    ///     Unarchive a metadata record.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="recordId">The record to be unarchived</param>
     /// <returns>Boolean indicating record was unarchived</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to unarchive was not found.</exception>
-    public async Task<bool> UnarchiveRecord(long currentUserId, long projectId, long recordId)
+    public async Task<bool> UnarchiveRecord(long currentUserId, long projectId, long organizationId, long recordId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
@@ -568,10 +698,8 @@ public class RecordBusiness : IRecordBusiness
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
-                {
                     throw new DependencyDeletionException(
                         $"unable to unarchive record {recordId} or its downstream dependents.");
-                }
 
                 await transaction.CommitAsync();
             }
@@ -584,6 +712,7 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record soft delete event
+        // Log record soft delete event
         // await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         // {
         //     Operation = "unarchive",
@@ -593,105 +722,12 @@ public class RecordBusiness : IRecordBusiness
         //     DataSourceId = record.DataSourceId,
         //     Properties = JsonSerializer.Serialize(new {record.Name}),
         // }, null, projectId);
-        
-        return true;
-    }
-
-
-    /// <summary>
-    /// Attaches a tag to a record
-    /// </summary>
-    /// <param name="projectId">Project ID for the record and tag</param>
-    /// <param name="recordId">The ID of the record</param>
-    /// <param name="tagId">The ID of the tag</param>
-    /// <returns>True if successful</returns>
-    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
-    /// <exception cref="Exception">Thrown if the tag is already attached to the record</exception>
-    public async Task<bool> AttachTag(long projectId, long recordId, long tagId)
-    {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
-        // include tags in record return and find record
-        var recordQueryable = _context.Records.Include(r => r.Tags);
-        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
-        if (record == null || record.ProjectId != projectId || record.IsArchived)
-            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
-
-        // find tag
-        var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
-            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
-
-        // ensure the tag is not already attached to the record
-        _context.Records.Include(r => r.Tags);
-        if (record.Tags.Any(t => t.Id == tagId))
-            throw new Exception($"Tag with id {tagId} is already attached to record {recordId}");
-
-        record.Tags.Add(tag);
-        await _context.SaveChangesAsync();
-        return true;
-    }
-
-    /// <summary>
-    /// Unattach a tag from a record
-    /// </summary>
-    /// <param name="projectId">Project ID for the record and tag</param>
-    /// <param name="recordId">The ID of the record</param>
-    /// <param name="tagId">The ID of the tag</param>
-    /// <returns>True if successful</returns>
-    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
-    public async Task<bool> UnattachTag(long projectId, long recordId, long tagId)
-    {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
-        // include tags in record return and find record
-        var recordQueryable = _context.Records.Include(r => r.Tags);
-        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
-        if (record == null || record.ProjectId != projectId || record.IsArchived)
-            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
-
-        // find tag
-        var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
-            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
-
-        record.Tags.Remove(tag);
-        await _context.SaveChangesAsync();
-        return true;
-    }
-
-    /// <summary>
-    /// Bulk attach tags and records
-    /// </summary>
-    /// <param name="dtos">A list of record_id/tag_id pairs to be inserted</param>
-    /// <returns>True if successful</returns>
-    /// <exception cref="Exception">Thrown if tags unable to be attached</exception>
-    public async Task<bool> BulkAttachTags(List<RecordTagLinkDto> dtos)
-    {
-        // Bulk insert into record_tags
-        var sql = @"INSERT INTO deeplynx.record_tags (record_id, tag_id) VALUES {0} ON CONFLICT DO NOTHING;";
-
-        // establish parameters
-        var parameters = new List<NpgsqlParameter>();
-        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
-        {
-            new NpgsqlParameter($"@record{i}_id", dto.RecordId),
-            new NpgsqlParameter($"@tag{i}_id", dto.TagId)
-        }));
-
-        // stringify params and comma separate them
-        var valueTuples = string.Join(", ", dtos.Select((dto, i) => $"(@record{i}_id, @tag{i}_id)"));
-
-        // put everything together and execute the query
-        sql = string.Format(sql, valueTuples);
-
-        await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
 
         return true;
     }
 
     /// <summary>
-    /// Private method used to calculate json depth of properties (should be less than three)
+    ///     Private method used to calculate json depth of properties (should be less than three)
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
@@ -700,108 +736,23 @@ public class RecordBusiness : IRecordBusiness
         if (node is not JsonObject && node is not JsonArray)
             return 0;
 
-        int maxDepth = 0;
+        var maxDepth = 0;
         if (node is JsonObject jsonObject)
-        {
             foreach (var prop in jsonObject)
             {
-                int depth = CalculateJsonMaxDepth(prop.Value);
+                var depth = CalculateJsonMaxDepth(prop.Value);
                 if (depth > maxDepth)
                     maxDepth = depth;
             }
-        }
         else if (node is JsonArray jsonArray)
-        {
-            foreach (JsonNode? item in jsonArray)
+            foreach (var item in jsonArray)
             {
-                int depth = CalculateJsonMaxDepth(item);
+                var depth = CalculateJsonMaxDepth(item);
                 if (depth > maxDepth)
                     maxDepth = depth;
             }
-        }
 
         return maxDepth + 1;
-    }
-
-    /// <summary>
-    /// Determine if datasource exists
-    /// </summary>
-    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if datasource does not exist</returns>
-    private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
-    {
-        var datasource = hideArchived
-            ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
-            : _context.DataSources.Any(p => p.Id == datasourceId);
-        if (!datasource)
-        {
-            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
-        }
-    }
-
-    // </summary>
-    /// <param name="projectId">The project ID to search within</param>
-    /// <param name="originalIds">List of original IDs to validate</param>
-    /// <returns>List of records that were found</returns>
-    /// <exception cref="KeyNotFoundException">Thrown if one or more original IDs not found</exception>
-    /// <exception cref="ArgumentException">Thrown if originalIds list is null or empty</exception>
-    public async Task<List<RecordResponseDto>> GetRecordsByOriginalId(long projectId, List<string> originalIds)
-    {
-        if (originalIds == null || !originalIds.Any())
-            throw new ArgumentException("Original IDs list cannot be null or empty", nameof(originalIds));
-
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
-        // Remove duplicates and filter out null/empty values
-        var cleanOriginalIds = originalIds
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .Distinct()
-            .ToList();
-
-        if (!cleanOriginalIds.Any())
-            throw new ArgumentException("No valid original IDs provided", nameof(originalIds));
-
-        // Query for existing records (excluding archived)
-        var existingRecords = await _context.Records
-            .Where(r => r.ProjectId == projectId
-                        && !r.IsArchived
-                        && cleanOriginalIds.Contains(r.OriginalId))
-            .Include(r => r.Tags)
-            .ToListAsync();
-
-        // Check for missing records
-        var foundOriginalIds = existingRecords.Select(r => r.OriginalId).ToHashSet();
-        var missingOriginalIds = cleanOriginalIds.Where(id => !foundOriginalIds.Contains(id)).ToList();
-
-        if (missingOriginalIds.Any())
-        {
-            throw new KeyNotFoundException(
-                $"Records not found with original IDs: {string.Join(", ", missingOriginalIds)}");
-        }
-
-        // Convert to DTOs
-        return existingRecords.Select(r => new RecordResponseDto
-        {
-            Id = r.Id,
-            Description = r.Description,
-            Uri = r.Uri,
-            Properties = r.Properties,
-            OriginalId = r.OriginalId,
-            Name = r.Name,
-            ClassId = r.ClassId,
-            DataSourceId = r.DataSourceId,
-            ProjectId = r.ProjectId,
-            LastUpdatedBy = r.LastUpdatedBy,
-            LastUpdatedAt = r.LastUpdatedAt,
-            IsArchived = r.IsArchived,
-            FileType = r.FileType,
-            Tags = r.Tags.Select(t => new RecordTagDto
-            {
-                Id = t.Id,
-                Name = t.Name
-            }).ToList()
-        }).ToList();
     }
 
     private async Task CheckObjectStorageExists(long projectId, long objectStorageId)
@@ -809,8 +760,6 @@ public class RecordBusiness : IRecordBusiness
         var referencedObjectStorage =
             await _context.ObjectStorages.FirstOrDefaultAsync(o => o.ProjectId == projectId && o.Id == objectStorageId);
         if (referencedObjectStorage == null)
-        {
             throw new KeyNotFoundException($"Object storage with ID {objectStorageId} does not exist");
-        }
     }
 }

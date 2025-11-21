@@ -1,25 +1,24 @@
 using System.Text.Json;
-using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
-using deeplynx.models;
-using deeplynx.helpers.json;
 using deeplynx.helpers;
+using deeplynx.interfaces;
+using deeplynx.models;
 using Microsoft.AspNetCore.Http;
 
 namespace deeplynx.business;
 
 public class MetadataBusiness : IMetadataBusiness
 {
-    private readonly DeeplynxContext _context;
+    private readonly ICacheBusiness _cacheBusiness;
     private readonly IClassBusiness _classBusiness;
+    private readonly DeeplynxContext _context;
+    private readonly IEdgeBusiness _edgeBusiness;
+    private readonly IRecordBusiness _recordBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly ITagBusiness _tagBusiness;
-    private readonly IRecordBusiness _recordBusiness;
-    private readonly IEdgeBusiness _edgeBusiness;
-    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MetadataBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="MetadataBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for CRUD operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -36,7 +35,7 @@ public class MetadataBusiness : IMetadataBusiness
         ITagBusiness tagBusiness,
         IRecordBusiness recordBusiness,
         IEdgeBusiness edgeBusiness
-        )
+    )
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
@@ -46,34 +45,36 @@ public class MetadataBusiness : IMetadataBusiness
         _recordBusiness = recordBusiness;
         _edgeBusiness = edgeBusiness;
     }
-    
+
     /// <summary>
-    /// Call the parse and perform pre-processing and final returned data validation of all metadata.
+    ///     Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long currentUserId, long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long currentUserId, long projectId, long organizationId,
+        long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
 
-        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
     }
-    
+
     /// <summary>
-    /// Check file format and file properties and deserialize into our CreateMetadataRequestDto.
-    /// Call the parse and perform pre-processing and final returned data validation of all metadata.
+    ///     Check file format and file properties and deserialize into our CreateMetadataRequestDto.
+    ///     Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="file">The .json file containing the metadata contents.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
@@ -82,22 +83,22 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="ArgumentNullException">If file is null.</exception>
     /// <exception cref="ArgumentException">If file is empty or not a .json file.</exception>
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
-    public async Task<MetadataResponseDto> CreateMetadataFromFile(long currentUserId, long projectId, long dataSourceId, IFormFile file)
+    public async Task<MetadataResponseDto> CreateMetadataFromFile(long currentUserId, long projectId,
+        long organizationId, long dataSourceId, IFormFile file)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-        
+
         if (file == null)
             throw new ArgumentNullException(nameof(file), "File cannot be null.");
-    
+
         if (file.Length == 0)
             throw new ArgumentException("File cannot be empty.", nameof(file));
-        
+
         // Only support for .json as of now
         var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
         if (extension != ".json")
             throw new ArgumentException("File must be a .json file.", nameof(file));
-        
+
         // Convert file to our DTO
         CreateMetadataRequestDto metadataRequestDto;
         try
@@ -108,46 +109,45 @@ public class MetadataBusiness : IMetadataBusiness
                 {
                     PropertyNameCaseInsensitive = true
                 };
-            
+
                 metadataRequestDto = await JsonSerializer.DeserializeAsync<CreateMetadataRequestDto>(stream, options);
-            
-                if (metadataRequestDto == null)
-                {
-                    throw new JsonException("Failed to deserialize metadata from file.");
-                }
+
+                if (metadataRequestDto == null) throw new JsonException("Failed to deserialize metadata from file.");
             }
         }
         catch (Exception ex)
         {
             throw new JsonException($"Error reading JSON from file: {ex.Message}", ex);
         }
-        
-        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId);
+
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
     }
-    
+
     /// <summary>
-    /// Individually call the bulk create functions of all metadata fields and append to return object.
+    ///     Individually call the bulk create functions of all metadata fields and append to return object.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     private async Task<MetadataResponseDto> ParseMetadata(
         long currentUserId,
         CreateMetadataRequestDto metadataRequestDto,
         long dataSourceId,
-        long projectId)
+        long projectId,
+        long organizationId)
     {
         var metadataResponseDto = new MetadataResponseDto();
-        
+
         // Create the respective entity lists
         var classes = metadataRequestDto.Classes ?? new List<CreateClassRequestDto>();
         var relationships = metadataRequestDto.Relationships ?? new List<CreateRelationshipRequestDto>();
         var tags = metadataRequestDto.Tags ?? new List<CreateTagRequestDto>();
         var records = metadataRequestDto.Records ?? new List<CreateRecordRequestDto>();
         var edges = metadataRequestDto.Edges ?? new List<CreateEdgeRequestDto>();
-        
+
         // Classes
         Dictionary<string, long> classMap = new();
         if (classes.Any() || records.Any())
@@ -156,12 +156,13 @@ public class MetadataBusiness : IMetadataBusiness
             var classesToInsert = BuildClasses(classes, records);
             if (classesToInsert.Any())
             {
-                classMap = await BulkUpsertClasses(currentUserId, projectId, classesToInsert, metadataResponseDto);
+                classMap = await BulkUpsertClasses(
+                    currentUserId, organizationId, projectId, classesToInsert, metadataResponseDto);
                 // load class IDs into records objects before insert
                 UpdateRecordsWithIds(records, classMap);
             }
         }
-        
+
         // Relationships
         Dictionary<string, long> relMap = new();
         if (relationships.Any() || edges.Any())
@@ -169,9 +170,10 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional relationships and then insert
             var relationshipsToInsert = BuildRelationships(relationships, edges);
             if (relationshipsToInsert.Any())
-                relMap = await BulkUpsertRelationships(currentUserId, projectId, relationshipsToInsert, metadataResponseDto);
+                relMap = await BulkUpsertRelationships(currentUserId, projectId, relationshipsToInsert,
+                    metadataResponseDto);
         }
-        
+
         // Tags
         Dictionary<string, TagResponseDto> tagMap = new();
         if (tags.Any() || records.Any())
@@ -181,14 +183,15 @@ public class MetadataBusiness : IMetadataBusiness
             if (tagsToInsert.Any())
                 tagMap = await BulkUpsertTags(currentUserId, projectId, tagsToInsert, metadataResponseDto);
         }
-        
+
         // Records
         Dictionary<string, long> recordMap = new();
         if (records.Any())
         {
             Console.WriteLine("creating record map");
-            recordMap = await BulkUpsertRecords(currentUserId, projectId, dataSourceId, records, metadataResponseDto);
-            
+            recordMap = await BulkUpsertRecords(currentUserId, projectId, organizationId, dataSourceId, records,
+                metadataResponseDto);
+
             // Record Tags
             var recordTags = BuildRecordTags(records, tagMap, recordMap);
             if (recordTags.Any())
@@ -197,7 +200,7 @@ public class MetadataBusiness : IMetadataBusiness
                 AttachTagsToRecordDtos(metadataResponseDto, recordTags, tagMap);
             }
         }
-        
+
         // Edges
         if (edges.Any())
         {
@@ -205,14 +208,15 @@ public class MetadataBusiness : IMetadataBusiness
             CheckRecordsByOriginalId(recordMap, edges);
             // load relationship, origin and destination IDs into classes before insert
             UpdateEdgesWithIds(edges, relMap, recordMap);
-            metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, edges);
+            metadataResponseDto.Edges =
+                await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, organizationId, edges);
         }
-        
+
         return metadataResponseDto;
     }
 
     /// <summary>
-    /// Add any classes found in the records objects to a list of classes waiting to be inserted
+    ///     Add any classes found in the records objects to a list of classes waiting to be inserted
     /// </summary>
     /// <param name="classes"></param>
     /// <param name="records"></param>
@@ -223,15 +227,13 @@ public class MetadataBusiness : IMetadataBusiness
     {
         var dict = classes.ToDictionary(c => c.Name);
         foreach (var record in records)
-        {
             if (!string.IsNullOrEmpty(record.ClassName))
-                dict.TryAdd(record.ClassName, new CreateClassRequestDto{Name = record.ClassName});
-        }
+                dict.TryAdd(record.ClassName, new CreateClassRequestDto { Name = record.ClassName });
         return dict.Values.ToList();
     }
-    
+
     /// <summary>
-    /// Add any relationships found in the edges objects to a list of relationships waiting to be inserted
+    ///     Add any relationships found in the edges objects to a list of relationships waiting to be inserted
     /// </summary>
     /// <param name="relationships"></param>
     /// <param name="edges"></param>
@@ -242,15 +244,13 @@ public class MetadataBusiness : IMetadataBusiness
     {
         var dict = relationships.ToDictionary(r => r.Name);
         foreach (var edge in edges)
-        {
             if (!string.IsNullOrEmpty(edge.RelationshipName))
-                dict.TryAdd(edge.RelationshipName, new CreateRelationshipRequestDto{Name = edge.RelationshipName});
-        }
+                dict.TryAdd(edge.RelationshipName, new CreateRelationshipRequestDto { Name = edge.RelationshipName });
         return dict.Values.ToList();
     }
-    
+
     /// <summary>
-    /// Add any tags found in the records objects to a list of tags waiting to be inserted
+    ///     Add any tags found in the records objects to a list of tags waiting to be inserted
     /// </summary>
     /// <param name="tags"></param>
     /// <param name="records"></param>
@@ -264,14 +264,15 @@ public class MetadataBusiness : IMetadataBusiness
         {
             if (record.Tags == null) continue;
             foreach (var tag in record.Tags)
-                dict.TryAdd(tag, new CreateTagRequestDto{Name = tag});
+                dict.TryAdd(tag, new CreateTagRequestDto { Name = tag });
         }
+
         return dict.Values.ToList();
     }
-    
+
     /// <summary>
-    /// Throw error if records are specified by an edge but not specified by a record
-    /// TODO: eventually fetch records from DB by original ID (DL-533)
+    ///     Throw error if records are specified by an edge but not specified by a record
+    ///     TODO: eventually fetch records from DB by original ID (DL-533)
     /// </summary>
     /// <param name="recordMap"></param>
     /// <param name="edges"></param>
@@ -281,61 +282,40 @@ public class MetadataBusiness : IMetadataBusiness
         List<CreateEdgeRequestDto> edges)
     {
         // Check if recordMap is null
-        if (recordMap == null)
-        {
-            throw new ArgumentNullException(nameof(recordMap), "Record map cannot be null");
-        }
+        if (recordMap == null) throw new ArgumentNullException(nameof(recordMap), "Record map cannot be null");
 
         // Print the contents of recordMap for debugging
         Console.WriteLine("Contents of recordMap:");
-        foreach (var kvp in recordMap)
-        {
-            Console.WriteLine($"Key: {kvp.Key}, Value: {kvp.Value}");
-        }
+        foreach (var kvp in recordMap) Console.WriteLine($"Key: {kvp.Key}, Value: {kvp.Value}");
 
         var missingOriginalIds = new HashSet<string>();
 
         // Check if edges are null or empty
-        if (edges == null || !edges.Any())
-        {
-            throw new ArgumentException("Edges cannot be null or empty", nameof(edges));
-        }
+        if (edges == null || !edges.Any()) throw new ArgumentException("Edges cannot be null or empty", nameof(edges));
 
         foreach (var edge in edges)
         {
             // Check for null or empty values for OriginOid and DestinationOid
             if (string.IsNullOrEmpty(edge.OriginOid))
-            {
                 throw new ArgumentNullException("Origin ID cannot be null or empty");
-            }
 
             if (string.IsNullOrEmpty(edge.DestinationOid))
-            {
                 throw new ArgumentNullException("Destination ID cannot be null or empty");
-            }
 
             // Print the keys being checked
             Console.WriteLine($"Checking Origin ID: {edge.OriginOid}, Destination ID: {edge.DestinationOid}");
 
             // Check existence in the recordMap
-            if (!recordMap.ContainsKey(edge.OriginOid))
-            {
-                missingOriginalIds.Add(edge.OriginOid);
-            }
-            if (!recordMap.ContainsKey(edge.DestinationOid))
-            {
-                missingOriginalIds.Add(edge.DestinationOid);
-            }
+            if (!recordMap.ContainsKey(edge.OriginOid)) missingOriginalIds.Add(edge.OriginOid);
+            if (!recordMap.ContainsKey(edge.DestinationOid)) missingOriginalIds.Add(edge.DestinationOid);
         }
 
         if (missingOriginalIds.Any())
-        {
             throw new Exception($"Records not found matching Original IDs ({string.Join(", ", missingOriginalIds)})");
-        }
     }
 
     /// <summary>
-    /// Creates a list of record-tag pairs to be inserted into the linking table
+    ///     Creates a list of record-tag pairs to be inserted into the linking table
     /// </summary>
     /// <param name="records"></param>
     /// <param name="tagMap"></param>
@@ -359,7 +339,7 @@ public class MetadataBusiness : IMetadataBusiness
     }
 
     /// <summary>
-    /// Bulk upserts classes and returns a mapping of class name to ID
+    ///     Bulk upserts classes and returns a mapping of class name to ID
     /// </summary>
     /// <param name="currentUserId"></param>
     /// <param name="projectId"></param>
@@ -368,17 +348,19 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of class name to class ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertClasses(
         long currentUserId,
+        long organizationId,
         long projectId,
         List<CreateClassRequestDto> classes,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _classBusiness.BulkCreateClasses(currentUserId, projectId, classes);
+        var inserted = await _classBusiness.BulkCreateClasses(
+            currentUserId, organizationId, projectId, classes);
         metadataResponseDto.Classes = inserted;
         return inserted.ToDictionary(c => c.Name, c => c.Id);
     }
-    
+
     /// <summary>
-    /// Bulk upserts relationships and returns a mapping of relationship name to ID
+    ///     Bulk upserts relationships and returns a mapping of relationship name to ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
@@ -395,9 +377,9 @@ public class MetadataBusiness : IMetadataBusiness
         metadataResponseDto.Relationships = inserted;
         return inserted.ToDictionary(r => r.Name, r => r.Id);
     }
-    
+
     /// <summary>
-    /// Bulk upserts tags and returns a mapping of tag name to ID
+    ///     Bulk upserts tags and returns a mapping of tag name to ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
@@ -414,12 +396,13 @@ public class MetadataBusiness : IMetadataBusiness
         metadataResponseDto.Tags = inserted;
         return inserted.ToDictionary(t => t.Name, t => t);
     }
-    
+
     /// <summary>
-    /// Bulk upserts records and returns a mapping of record original ID to database ID
+    ///     Bulk upserts records and returns a mapping of record original ID to database ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId"></param>
     /// <param name="records"></param>
     /// <param name="metadataResponseDto"></param>
@@ -427,17 +410,19 @@ public class MetadataBusiness : IMetadataBusiness
     private async Task<Dictionary<string, long>> BulkUpsertRecords(
         long currentUserId,
         long projectId,
+        long organizationId,
         long dataSourceId,
         List<CreateRecordRequestDto> records,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _recordBusiness.BulkCreateRecords(currentUserId, projectId, dataSourceId, records);
+        var inserted =
+            await _recordBusiness.BulkCreateRecords(currentUserId, projectId, organizationId, dataSourceId, records);
         metadataResponseDto.Records = inserted;
         return inserted.ToDictionary(r => r.OriginalId, r => r.Id);
     }
 
     /// <summary>
-    /// Add the appropriate class IDs to any records with class names
+    ///     Add the appropriate class IDs to any records with class names
     /// </summary>
     /// <param name="records"></param>
     /// <param name="classMap"></param>
@@ -446,51 +431,40 @@ public class MetadataBusiness : IMetadataBusiness
         Dictionary<string, long> classMap)
     {
         foreach (var record in records)
-        {
-            if (!string.IsNullOrEmpty(record.ClassName) 
-                && classMap.TryGetValue(record.ClassName, out long classId))
-            {
+            if (!string.IsNullOrEmpty(record.ClassName)
+                && classMap.TryGetValue(record.ClassName, out var classId))
                 record.ClassId = classId;
-            }
-                
-        }
     }
 
     /// <summary>
-    /// Add the appropriate relationship and record IDs to any edges with relationship names or record original IDs
+    ///     Add the appropriate relationship and record IDs to any edges with relationship names or record original IDs
     /// </summary>
     /// <param name="edges"></param>
     /// <param name="relMap"></param>
     /// <param name="recordMap"></param>
     private void UpdateEdgesWithIds(
-        List<CreateEdgeRequestDto> edges, 
+        List<CreateEdgeRequestDto> edges,
         Dictionary<string, long> relMap,
         Dictionary<string, long> recordMap)
     {
         foreach (var edge in edges)
         {
             if (!string.IsNullOrEmpty(edge.RelationshipName)
-                && relMap.TryGetValue(edge.RelationshipName, out long relationshipId))
-            {
+                && relMap.TryGetValue(edge.RelationshipName, out var relationshipId))
                 edge.RelationshipId = relationshipId;
-            }
-            
+
             if (!string.IsNullOrEmpty(edge.OriginOid)
-                && recordMap.TryGetValue(edge.OriginOid, out long originId))
-            {
+                && recordMap.TryGetValue(edge.OriginOid, out var originId))
                 edge.OriginId = originId;
-            }
-                
+
             if (!string.IsNullOrEmpty(edge.DestinationOid)
-                && recordMap.TryGetValue(edge.DestinationOid, out long destinationId))
-            {
+                && recordMap.TryGetValue(edge.DestinationOid, out var destinationId))
                 edge.DestinationId = destinationId;
-            }
         }
     }
 
     /// <summary>
-    /// Adjust the returned record objects to include tags
+    ///     Adjust the returned record objects to include tags
     /// </summary>
     /// <param name="metadataResponseDto"></param>
     /// <param name="recordTags"></param>
@@ -505,7 +479,6 @@ public class MetadataBusiness : IMetadataBusiness
         var tagsById = tagMap.Values.ToDictionary(t => t.Id, t => t);
 
         foreach (var record in metadataResponseDto.Records)
-        {
             record.Tags = recordTagLookup[record.Id]
                 .Select(tagId => new RecordTagDto
                 {
@@ -513,22 +486,19 @@ public class MetadataBusiness : IMetadataBusiness
                     Name = tagsById[tagId].Name
                 })
                 .ToList();
-        }
     }
-    
+
     /// <summary>
-    /// Determine if datasource exists
+    ///     Determine if datasource exists
     /// </summary>
     /// <param name="datasourceId">The ID of the datasource we are searching for</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if datasource does not exist</returns>
     private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
     {
-        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
+        var datasource = hideArchived
+            ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
             : _context.DataSources.Any(p => p.Id == datasourceId);
-        if (!datasource)
-        {
-            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
-        }
+        if (!datasource) throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
     }
 }
