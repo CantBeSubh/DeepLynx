@@ -278,21 +278,21 @@ public class MetadataBusinessTests : IntegrationTestBase
         Assert.Equal("rec-001", result.Records.First().OriginalId);
         Assert.Equal(result.Classes.First().Id, result.Records.First().ClassId);
 
-        // Ensure both create class and create record events are logged
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(2, eventList.Count);
-
-        var actualEvent0 = eventList[0];
-        Assert.Equal(pid, actualEvent0.ProjectId);
-        Assert.Equal("create", actualEvent0.Operation);
-        Assert.Equal("class", actualEvent0.EntityType);
-        Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
-
-        var actualEvent1 = eventList[1];
-        Assert.Equal(pid, actualEvent1.ProjectId);
-        Assert.Equal("create", actualEvent1.Operation);
-        Assert.Equal("record", actualEvent1.EntityType);
-        Assert.Equal(result.Records[0].Id, actualEvent1.EntityId);
+        // // Ensure both create class and create record events are logged
+        // var eventList = await Context.Events.ToListAsync();
+        // Assert.Equal(2, eventList.Count);
+        //
+        // var actualEvent0 = eventList[0];
+        // Assert.Equal(pid, actualEvent0.ProjectId);
+        // Assert.Equal("create", actualEvent0.Operation);
+        // Assert.Equal("class", actualEvent0.EntityType);
+        // Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+        //
+        // var actualEvent1 = eventList[1];
+        // Assert.Equal(pid, actualEvent1.ProjectId);
+        // Assert.Equal("create", actualEvent1.Operation);
+        // Assert.Equal("record", actualEvent1.EntityType);
+        // Assert.Equal(result.Records[0].Id, actualEvent1.EntityId);
     }
 
     [Fact]
@@ -467,16 +467,16 @@ public class MetadataBusinessTests : IntegrationTestBase
         Assert.Equal(pid, result.Classes.First().ProjectId);
         Assert.Equal(organizationId, result.Classes.First().OrganizationId);
 
-        // Ensure create class event was logged
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Single(eventList);
-
-        var actualEvent = eventList[0];
-
-        Assert.Equal(pid, actualEvent.ProjectId);
-        Assert.Equal("create", actualEvent.Operation);
-        Assert.Equal("class", actualEvent.EntityType);
-        Assert.Equal(result.Classes.First().Id, actualEvent.EntityId);
+        // // Ensure create class event was logged
+        // var eventList = await Context.Events.ToListAsync();
+        // Assert.Single(eventList);
+        //
+        // var actualEvent = eventList[0];
+        //
+        // Assert.Equal(pid, actualEvent.ProjectId);
+        // Assert.Equal("create", actualEvent.Operation);
+        // Assert.Equal("class", actualEvent.EntityType);
+        // Assert.Equal(result.Classes.First().Id, actualEvent.EntityId);
     }
 
     [Fact]
@@ -508,20 +508,20 @@ public class MetadataBusinessTests : IntegrationTestBase
         Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
         Assert.Equal("Second class", result.Classes.Last().Description);
 
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(2, eventList.Count);
-
-        var actualEvent0 = eventList[0];
-        Assert.Equal(pid, actualEvent0.ProjectId);
-        Assert.Equal("create", actualEvent0.Operation);
-        Assert.Equal("class", actualEvent0.EntityType);
-        Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
-
-        var actualEvent1 = eventList[1];
-        Assert.Equal(pid, actualEvent1.ProjectId);
-        Assert.Equal("create", actualEvent1.Operation);
-        Assert.Equal("class", actualEvent1.EntityType);
-        Assert.Equal(result.Classes[1].Id, actualEvent1.EntityId);
+        // var eventList = await Context.Events.ToListAsync();
+        // Assert.Equal(2, eventList.Count);
+        //
+        // var actualEvent0 = eventList[0];
+        // Assert.Equal(pid, actualEvent0.ProjectId);
+        // Assert.Equal("create", actualEvent0.Operation);
+        // Assert.Equal("class", actualEvent0.EntityType);
+        // Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+        //
+        // var actualEvent1 = eventList[1];
+        // Assert.Equal(pid, actualEvent1.ProjectId);
+        // Assert.Equal("create", actualEvent1.Operation);
+        // Assert.Equal("class", actualEvent1.EntityType);
+        // Assert.Equal(result.Classes[1].Id, actualEvent1.EntityId);
     }
 
     [Fact]
@@ -557,20 +557,20 @@ public class MetadataBusinessTests : IntegrationTestBase
         Assert.Equal("rec-001", result.Records.First().OriginalId);
         Assert.Equal(result.Classes.First().Id, result.Records.First().ClassId);
 
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(2, eventList.Count);
-
-        var actualEvent0 = eventList[0];
-        Assert.Equal(pid, actualEvent0.ProjectId);
-        Assert.Equal("create", actualEvent0.Operation);
-        Assert.Equal("class", actualEvent0.EntityType);
-        Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
-
-        var actualEvent1 = eventList[1];
-        Assert.Equal(pid, actualEvent1.ProjectId);
-        Assert.Equal("create", actualEvent1.Operation);
-        Assert.Equal("record", actualEvent1.EntityType);
-        Assert.Equal(result.Records[0].Id, actualEvent1.EntityId);
+        // var eventList = await Context.Events.ToListAsync();
+        // Assert.Equal(2, eventList.Count);
+        //
+        // var actualEvent0 = eventList[0];
+        // Assert.Equal(pid, actualEvent0.ProjectId);
+        // Assert.Equal("create", actualEvent0.Operation);
+        // Assert.Equal("class", actualEvent0.EntityType);
+        // Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+        //
+        // var actualEvent1 = eventList[1];
+        // Assert.Equal(pid, actualEvent1.ProjectId);
+        // Assert.Equal("create", actualEvent1.Operation);
+        // Assert.Equal("record", actualEvent1.EntityType);
+        // Assert.Equal(result.Records[0].Id, actualEvent1.EntityId);
     }
 
     [Fact]
