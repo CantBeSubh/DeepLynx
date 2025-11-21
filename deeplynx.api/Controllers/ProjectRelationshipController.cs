@@ -13,9 +13,9 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve relationship information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/relationships")]
+[Route("projects/{projectId}/relationships")]
 [Authorize]
-[Tags("Project Management", "Class")]
+[Tags("Project Management", "Relationship")]
 public class ProjectRelationshipController : ControllerBase
 {
     private readonly ILogger<RelationshipController> _logger;
