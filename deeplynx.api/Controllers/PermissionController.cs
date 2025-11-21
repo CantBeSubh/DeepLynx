@@ -76,7 +76,7 @@ public class PermissionController : ControllerBase
     {
         try
         {
-            var permission = await _permissionBusiness.GetPermission(permissionId, hideArchived);
+            var permission = await _permissionBusiness.GetPermission(organizationId, projectId, permissionId, hideArchived);
             return Ok(permission);
         }
         catch (Exception exc)
@@ -134,7 +134,7 @@ public class PermissionController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var permission = await _permissionBusiness.UpdatePermission(currentUserId, permissionId, dto);
+            var permission = await _permissionBusiness.UpdatePermission(organizationId, projectId, currentUserId, permissionId, dto);
             return Ok(permission);
         }
         catch (Exception exc)
@@ -161,7 +161,7 @@ public class PermissionController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            await _permissionBusiness.DeletePermission(currentUserId, permissionId);
+            await _permissionBusiness.DeletePermission(organizationId, projectId, currentUserId, permissionId);
             return Ok(new { message = $"Deleted permission {permissionId}" });
         }
         catch (Exception exc)
@@ -192,11 +192,11 @@ public class PermissionController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _permissionBusiness.ArchivePermission(currentUserId, permissionId);
+                await _permissionBusiness.ArchivePermission(organizationId, projectId, currentUserId, permissionId);
                 return Ok(new { message = $"Archived permission {permissionId}" });
             }
 
-            await _permissionBusiness.UnarchivePermission(currentUserId, permissionId);
+            await _permissionBusiness.UnarchivePermission(organizationId, projectId, currentUserId, permissionId);
             return Ok(new { message = $"Unarchived permission {permissionId}" });
         }
         catch (Exception exc)

@@ -80,8 +80,8 @@ public class PermissionBusinessTests : IntegrationTestBase
         pid = project.Id;
 
         // create test label (sensitivity label)
-        var label = new SensitivityLabel { Name = "Test Label" };
-        var label2 = new SensitivityLabel { Name = "Other Label" };
+        var label = new SensitivityLabel { Name = "Test Label", OrganizationId = oid};
+        var label2 = new SensitivityLabel { Name = "Other Label", OrganizationId = oid };
         Context.SensitivityLabels.AddRange(label, label2);
         await Context.SaveChangesAsync();
         lid = label.Id;
@@ -301,7 +301,7 @@ public class PermissionBusinessTests : IntegrationTestBase
     public async Task GetPermission_Succeeds_WhenExists()
     {
         // Act
-        var result = await _permissionBusiness.GetPermission(permid1);
+        var result = await _permissionBusiness.GetPermission(oid, null, permid1);
 
         // Assert
         Assert.NotNull(result);
@@ -316,7 +316,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.GetPermission(permid4)); // deleted permission
+                _permissionBusiness.GetPermission(oid, null, permid4)); // deleted permission
 
         Assert.Contains($"Permission with id {permid4} not found", exception.Message);
     }
@@ -327,7 +327,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.GetPermission(permid2)); // archived permission
+                _permissionBusiness.GetPermission(oid, null, permid2)); // archived permission
 
         Assert.Contains($"Permission with id {permid2} is archived", exception.Message);
     }
@@ -348,24 +348,24 @@ public class PermissionBusinessTests : IntegrationTestBase
             LabelId = lid
         };
             
-            var now =  DateTime.UtcNow;
+        var now = DateTime.UtcNow;
 
         // Act
         var result = await _permissionBusiness.CreatePermission(uid, dto, pid, oid);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
-            Assert.Equal(dto.Name, result.Name);
-            Assert.Equal(dto.Action, result.Action);
-            Assert.Null(result.Resource);
-            Assert.Equal(dto.Description, result.Description);
-            Assert.Null(result.OrganizationId);
-            Assert.Equal(pid, result.ProjectId);
-            Assert.Equal(lid, result.LabelId);
-            Assert.False(result.IsDefault);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(uid, result.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Id > 0);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Action, result.Action);
+        Assert.Null(result.Resource);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.Equal(lid, result.LabelId);
+        Assert.False(result.IsDefault);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually saved to DB
         var savedPermission = await Context.Permissions.FindAsync(result.Id);
@@ -396,24 +396,24 @@ public class PermissionBusinessTests : IntegrationTestBase
             LabelId = lid
         };
             
-            var now =  DateTime.UtcNow;
+        var now = DateTime.UtcNow;
 
         // Act
         var result = await _permissionBusiness.CreatePermission(uid, dto, null, oid);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
-            Assert.Equal(dto.Name, result.Name);
-            Assert.Equal(dto.Action, result.Action);
-            Assert.Null(result.Resource);
-            Assert.Equal(dto.Description, result.Description);
-            Assert.Equal(oid, result.OrganizationId);
-            Assert.Null(result.ProjectId);
-            Assert.Equal(lid, result.LabelId);
-            Assert.False(result.IsDefault);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(uid, result.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Id > 0);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Action, result.Action);
+        Assert.Null(result.Resource);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Null(result.ProjectId);
+        Assert.Equal(lid, result.LabelId);
+        Assert.False(result.IsDefault);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually saved to DB
         var savedPermission = await Context.Permissions.FindAsync(result.Id);
@@ -460,49 +460,6 @@ public class PermissionBusinessTests : IntegrationTestBase
         Assert.Equal("create", actualEvent.Operation);
         Assert.Equal("permission", actualEvent.EntityType);
         Assert.Equal(result.Id, actualEvent.EntityId);
-    }
-
-    [Fact]
-    public async Task CreatePermission_Fails_IfBothProjectAndOrgAreSet()
-    {
-        // Arrange
-        var dto = new CreatePermissionRequestDto
-        {
-            Name = "Dual Permission",
-            Action = "test",
-            LabelId = lid
-        };
-
-        // Act & Assert
-        var exception =
-            await Assert.ThrowsAsync<ArgumentException>(() => _permissionBusiness.CreatePermission(uid, dto, pid, oid));
-        Assert.Contains("Please provide only one of Project ID or Organization ID, not both", exception.Message);
-
-        // Ensure that no event was logged
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Empty(eventList);
-    }
-
-    [Fact]
-    public async Task CreatePermission_Fails_IfNeitherProjectNorOrgAreSet()
-    {
-        // Arrange
-        var dto = new CreatePermissionRequestDto
-        {
-            Name = "Orphaned Permission",
-            Action = "test",
-            LabelId = lid
-        };
-
-        // Act & Assert
-        var exception =
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                _permissionBusiness.CreatePermission(uid, dto, null, oid));
-        Assert.Contains("One of Project ID or Organization ID must be provided", exception.Message);
-
-        // Ensure that no event was logged
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Empty(eventList);
     }
 
     [Fact]
@@ -556,24 +513,24 @@ public class PermissionBusinessTests : IntegrationTestBase
             Action = "test action"
         };
             
-            var now = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
 
         // Act
-        var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
+        var result = await _permissionBusiness.UpdatePermission(oid, null, uid, permid1, dto);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(permid1, result.Id);
-            Assert.Equal(dto.Name, result.Name);
-            Assert.Equal(dto.Description, result.Description);
-            Assert.Equal(dto.Action, result.Action);
-            Assert.Null(result.Resource);
-            Assert.Null(result.OrganizationId);
-            Assert.Null(result.ProjectId);
-            Assert.Equal(lid, result.LabelId);
-            Assert.False(result.IsDefault);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(uid, result.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(permid1, result.Id);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.Equal(dto.Action, result.Action);
+        Assert.Null(result.Resource);
+        Assert.Null(result.OrganizationId);
+        Assert.Null(result.ProjectId);
+        Assert.Equal(lid, result.LabelId);
+        Assert.False(result.IsDefault);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually saved to DB
         var savedPermission = await Context.Permissions.FindAsync(permid1);
@@ -602,7 +559,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
+        var result = await _permissionBusiness.UpdatePermission(oid, null, uid, permid1, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -631,7 +588,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.UpdatePermission(uid, permid4, dto)); // deleted permission
+                _permissionBusiness.UpdatePermission(oid, null, uid, permid4, dto)); // deleted permission
 
         Assert.Contains($"Permission with id {permid4} not found", exception.Message);
 
@@ -650,7 +607,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
+        var result = await _permissionBusiness.UpdatePermission(oid, null, uid, permid1, dto);
 
         // Assert - Resource should not be modifiable through update
         Assert.Null(result.Resource);
@@ -680,7 +637,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _permissionBusiness.UpdatePermission(uid, permid1, dto);
+        var result = await _permissionBusiness.UpdatePermission(oid, null, uid, permid1, dto);
 
         // Assert - IsDefault should remain false for user permissions
         Assert.False(result.IsDefault);
@@ -717,7 +674,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.UpdatePermission(uid, isDefault.Id, dto)); // default permission
+                _permissionBusiness.UpdatePermission(oid, pid, uid, isDefault.Id, dto)); // default permission
 
         Assert.Contains($"Permission with id {isDefault.Id} cannot be updated", exception.Message);
 
@@ -737,31 +694,31 @@ public class PermissionBusinessTests : IntegrationTestBase
         var now = DateTime.Now;
             
         // Act
-        var result = await _permissionBusiness.ArchivePermission(uid, permid1);
+        var result = await _permissionBusiness.ArchivePermission(oid, null, uid, permid1);
             
         // Assert
         Assert.True(result);
 
-            // Verify it was actually saved to DB
-            var savedPermission = await Context.Permissions.FindAsync(permid1);
-            Assert.NotNull(savedPermission);
-            Assert.True(savedPermission.IsArchived);
-            
-            //Verify other fields were preserved
-            Assert.Equal("Basic Permission", savedPermission.Name);
-            Assert.Null(savedPermission.Description);
-            Assert.Equal("read", savedPermission.Action);
-            Assert.Equal(lid, savedPermission.LabelId);
-            Assert.Null(savedPermission.Resource);
-            Assert.Null(savedPermission.ProjectId);
-            Assert.Null(savedPermission.OrganizationId);
-            Assert.False(savedPermission.IsDefault);
-            Assert.True(savedPermission.LastUpdatedAt >= now);
-            Assert.Equal(uid, savedPermission.LastUpdatedBy);
-            
-            // Ensure that the Permission archive event was logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Single(eventList);
+        // Verify it was actually saved to DB
+        var savedPermission = await Context.Permissions.FindAsync(permid1);
+        Assert.NotNull(savedPermission);
+        Assert.True(savedPermission.IsArchived);
+        
+        //Verify other fields were preserved
+        Assert.Equal("Basic Permission", savedPermission.Name);
+        Assert.Null(savedPermission.Description);
+        Assert.Equal("read", savedPermission.Action);
+        Assert.Equal(lid, savedPermission.LabelId);
+        Assert.Null(savedPermission.Resource);
+        Assert.Null(savedPermission.ProjectId);
+        Assert.Null(savedPermission.OrganizationId);
+        Assert.False(savedPermission.IsDefault);
+        Assert.True(savedPermission.LastUpdatedAt >= now);
+        Assert.Equal(uid, savedPermission.LastUpdatedBy);
+        
+        // Ensure that the Permission archive event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Single(eventList);
 
         var actualEvent = eventList[0];
 
@@ -776,7 +733,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.ArchivePermission(uid, permid2)); // already archived
+                _permissionBusiness.ArchivePermission(oid, null, uid, permid2)); // already archived
 
         Assert.Contains($"Permission with id {permid2} not found or is already archived", exception.Message);
 
@@ -797,7 +754,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.ArchivePermission(uid, isDefault.Id)); // default permission
+                _permissionBusiness.ArchivePermission(oid, null, uid, isDefault.Id)); // default permission
 
         Assert.Contains($"Permission with id {isDefault.Id} cannot be updated", exception.Message);
 
@@ -817,28 +774,28 @@ public class PermissionBusinessTests : IntegrationTestBase
         var now = DateTime.UtcNow;
             
         // Act
-        var result = await _permissionBusiness.UnarchivePermission(uid, permid2);
+        var result = await _permissionBusiness.UnarchivePermission(oid, null, uid, permid2);
 
         // Assert
         Assert.True(result);
 
-            // Verify it was actually saved to DB
-            var savedPermission = await Context.Permissions.FindAsync(permid2);
-            Assert.NotNull(savedPermission);
-            Assert.False(savedPermission.IsArchived);
-            
-            //Verify other fields were unchanged
-            Assert.True(savedPermission.Id > 0);
-            Assert.Equal("Archived Permission", savedPermission.Name);
-            Assert.Null(savedPermission.Description);
-            Assert.Equal("write", savedPermission.Action);
-            Assert.Null(savedPermission.Resource);
-            Assert.Null(savedPermission.OrganizationId);
-            Assert.Null(savedPermission.ProjectId);
-            Assert.Equal(lid, savedPermission.LabelId);
-            Assert.False(savedPermission.IsDefault);
-            Assert.True(savedPermission.LastUpdatedAt >= now);
-            Assert.Equal(uid, savedPermission.LastUpdatedBy);
+        // Verify it was actually saved to DB
+        var savedPermission = await Context.Permissions.FindAsync(permid2);
+        Assert.NotNull(savedPermission);
+        Assert.False(savedPermission.IsArchived);
+        
+        //Verify other fields were unchanged
+        Assert.True(savedPermission.Id > 0);
+        Assert.Equal("Archived Permission", savedPermission.Name);
+        Assert.Null(savedPermission.Description);
+        Assert.Equal("write", savedPermission.Action);
+        Assert.Null(savedPermission.Resource);
+        Assert.Null(savedPermission.OrganizationId);
+        Assert.Null(savedPermission.ProjectId);
+        Assert.Equal(lid, savedPermission.LabelId);
+        Assert.False(savedPermission.IsDefault);
+        Assert.True(savedPermission.LastUpdatedAt >= now);
+        Assert.Equal(uid, savedPermission.LastUpdatedBy);
 
         // Ensure that the Permission unarchive event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -857,7 +814,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.UnarchivePermission(uid, permid1)); // not archived
+                _permissionBusiness.UnarchivePermission(oid, null, uid, permid1)); // not archived
 
         Assert.Contains($"Permission with id {permid1} not found or is not archived", exception.Message);
 
@@ -878,7 +835,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.UnarchivePermission(uid, isDefault.Id)); // default permission
+                _permissionBusiness.UnarchivePermission(oid, pid, uid, isDefault.Id)); // default permission
 
         Assert.Contains($"Permission with id {isDefault.Id} cannot be updated", exception.Message);
 
@@ -895,7 +852,7 @@ public class PermissionBusinessTests : IntegrationTestBase
     public async Task DeletePermission_Succeeds_WhenExists()
     {
         // Act
-        var result = await _permissionBusiness.DeletePermission(uid, permid1);
+        var result = await _permissionBusiness.DeletePermission(oid, null, uid, permid1);
 
         // Assert
         Assert.True(result);
@@ -921,7 +878,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.DeletePermission(uid, permid4)); // deleted permission
+                _permissionBusiness.DeletePermission(oid, null, uid, permid4)); // deleted permission
 
         Assert.Contains($"Permission with id {permid4} not found", exception.Message);
 
@@ -942,7 +899,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _permissionBusiness.DeletePermission(uid, isDefault.Id)); // default permission
+                _permissionBusiness.DeletePermission(oid, pid, uid, isDefault.Id)); // default permission
 
         Assert.Contains($"Permission with id {isDefault.Id} cannot be deleted", exception.Message);
 
@@ -952,141 +909,7 @@ public class PermissionBusinessTests : IntegrationTestBase
     }
 
     #endregion
-
-    #region LastUpdatedBy Tests
-
-    [Fact]
-    public async Task CreateObjectStorage_Success_StoresLastUpdatedByUserId()
-    {
-        // Arrange
-        var config = new JsonObject();
-        config["mountPath"] = "./test/storage/";
-        var testObjectStorage = new ObjectStorage
-        {
-            Name = "Test Object Storage",
-            ProjectId = pid,
-            Type = "filesystem",
-            Config = config.ToString(),
-            Default = false,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid
-        };
-
-        // Act
-        Context.ObjectStorages.Add(testObjectStorage);
-        await Context.SaveChangesAsync();
-
-        // Assert
-        var savedObjectStorage = await Context.ObjectStorages.FindAsync(testObjectStorage.Id);
-        Assert.NotNull(savedObjectStorage);
-        Assert.Equal(uid, savedObjectStorage.LastUpdatedBy);
-    }
-
-    [Fact]
-    public async Task CreateObjectStorage_Success_NavigationPropertyLoadsUser()
-    {
-        // Arrange
-        var config = new JsonObject();
-        config["mountPath"] = "./test/storage2/";
-        var testObjectStorage = new ObjectStorage
-        {
-            Name = "Test Object Storage 2",
-            ProjectId = pid,
-            Type = "filesystem",
-            Config = config.ToString(),
-            Default = false,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid
-        };
-
-        Context.ObjectStorages.Add(testObjectStorage);
-        await Context.SaveChangesAsync();
-
-        // Act
-        var objectStorageWithUser = await Context.ObjectStorages
-            .Include(os => os.LastUpdatedByUser)
-            .FirstAsync(os => os.Id == testObjectStorage.Id);
-
-        // Assert
-        Assert.NotNull(objectStorageWithUser.LastUpdatedByUser);
-        Assert.Equal("Test User", objectStorageWithUser.LastUpdatedByUser.Name);
-        Assert.Equal("test_user@example.com", objectStorageWithUser.LastUpdatedByUser.Email);
-        Assert.Equal(uid, objectStorageWithUser.LastUpdatedBy);
-    }
-
-    [Fact]
-    public async Task CreateObjectStorage_Success_WithNullLastUpdatedBy()
-    {
-        // Arrange
-        var config = new JsonObject();
-        config["mountPath"] = "./test/storage3/";
-        var testObjectStorage = new ObjectStorage
-        {
-            Name = "Test Object Storage 3",
-            ProjectId = pid,
-            Type = "filesystem",
-            Config = config.ToString(),
-            Default = false,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null
-        };
-
-        // Act
-        Context.ObjectStorages.Add(testObjectStorage);
-        await Context.SaveChangesAsync();
-
-        // Assert
-        var savedObjectStorage = await Context.ObjectStorages.FindAsync(testObjectStorage.Id);
-        Assert.NotNull(savedObjectStorage);
-        Assert.Null(savedObjectStorage.LastUpdatedBy);
-
-        var objectStorageWithUser = await Context.ObjectStorages
-            .Include(os => os.LastUpdatedByUser)
-            .FirstAsync(os => os.Id == testObjectStorage.Id);
-
-        Assert.Null(objectStorageWithUser.LastUpdatedByUser);
-    }
-
-    [Fact]
-    public async Task UpdateObjectStorage_Success_UpdatesLastUpdatedByUserId()
-    {
-        // Arrange
-        var config = new JsonObject();
-        config["mountPath"] = "./test/storage4/";
-        var testObjectStorage = new ObjectStorage
-        {
-            Name = "Test Object Storage 4",
-            ProjectId = pid,
-            Type = "filesystem",
-            Config = config.ToString(),
-            Default = false,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null
-        };
-        Context.ObjectStorages.Add(testObjectStorage);
-        await Context.SaveChangesAsync();
-
-        // Act
-        testObjectStorage.LastUpdatedBy = uid;
-        testObjectStorage.Name = "Updated Name";
-        testObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-
-        Context.ObjectStorages.Update(testObjectStorage);
-        await Context.SaveChangesAsync();
-
-        // Assert
-        var updatedObjectStorage = await Context.ObjectStorages
-            .Include(os => os.LastUpdatedByUser)
-            .FirstAsync(os => os.Id == testObjectStorage.Id);
-
-        Assert.Equal(uid, updatedObjectStorage.LastUpdatedBy);
-        Assert.NotNull(updatedObjectStorage.LastUpdatedByUser);
-        Assert.Equal("Test User", updatedObjectStorage.LastUpdatedByUser.Name);
-        Assert.Equal("Updated Name", updatedObjectStorage.Name);
-    }
-
-    #endregion
-
+    
     #region UniqueConstraintTests
 
     [Fact]

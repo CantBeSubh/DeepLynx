@@ -80,12 +80,16 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="hideArchived"></param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<PermissionResponseDto> GetPermission(long permissionId, bool hideArchived = true)
+    public async Task<PermissionResponseDto> GetPermission(long organizationId, long? projectId, long permissionId, bool hideArchived = true)
     {
         var permission = await _context.Permissions
-            .Where(p => p.Id == permissionId)
+            .Where(p => p.Id == permissionId && 
+                        (p.IsDefault || 
+                         (!p.IsDefault && 
+                          (!projectId.HasValue || p.ProjectId == projectId) && 
+                          p.OrganizationId == organizationId)))
             .FirstOrDefaultAsync();
-
+        
         if (permission == null)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
 
@@ -124,20 +128,7 @@ public class PermissionBusiness : IPermissionBusiness
         long? projectId, long organizationId)
     {
         ValidationHelper.ValidateModel(dto);
-
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
-            // We can also check here for proper project/org connection
-            var project = await _context.Projects.FindAsync(projectId.Value);
-            if (project?.OrganizationId != organizationId)
-                throw new ArgumentException(
-                    $"Project {projectId.Value} does not belong to organization {organizationId}");
-        }
-
+        
         // Note that the CreatePermission dto only allows for the creation of permissions
         // using labelId. Any Default permissions such as "write projects" should not
         // be manipulated by users.
@@ -150,7 +141,7 @@ public class PermissionBusiness : IPermissionBusiness
             IsDefault = false,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = currentUserId,
-            ProjectId = projectId,
+            ProjectId = projectId.HasValue ? projectId : null,
             OrganizationId = organizationId
         };
 
@@ -194,10 +185,16 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="dto">New information on the permission</param>
     /// <returns>The newly updated permission</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<PermissionResponseDto> UpdatePermission(long currentUserId, long permissionId,
+    public async Task<PermissionResponseDto> UpdatePermission(long organizationId, long? projectId, long currentUserId, long permissionId,
         UpdatePermissionRequestDto dto)
     {
-        var permission = await _context.Permissions.FindAsync(permissionId);
+        var permission = await _context.Permissions
+            .Where(p => 
+                p.Id == permissionId && 
+                (!projectId.HasValue || p.ProjectId == projectId) && 
+                p.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
+        
         // ensure that default permissions cannot be edited
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
@@ -250,10 +247,15 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="permissionId">The ID of the permission to be archived</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<bool> ArchivePermission(long currentUserId, long permissionId)
+    public async Task<bool> ArchivePermission(long organizationId, long? projectId, long currentUserId, long permissionId)
     {
-        var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that default permissions cannot be edited
+        var permission = await _context.Permissions
+            .Where(p => 
+                p.Id == permissionId && 
+                (!projectId.HasValue || p.ProjectId == projectId) && 
+                p.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
+      
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found or is already archived");
         if (permission.IsDefault)
@@ -287,10 +289,15 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="permissionId">The ID of the permission to be unarchived</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<bool> UnarchivePermission(long currentUserId, long permissionId)
+    public async Task<bool> UnarchivePermission(long organizationId, long? projectId, long currentUserId, long permissionId)
     {
-        var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that default permissions cannot be edited
+        var permission = await _context.Permissions
+            .Where(p => 
+                p.Id == permissionId && 
+                (!projectId.HasValue || p.ProjectId == projectId) && 
+                p.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
+        
         if (permission != null && permission.IsDefault)
             throw new KeyNotFoundException($"Permission with id {permissionId} cannot be updated");
         if (permission == null || !permission.IsArchived)
@@ -323,10 +330,15 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="permissionId">The ID of the permission to be deleted</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
-    public async Task<bool> DeletePermission(long currentUserId, long permissionId)
+    public async Task<bool> DeletePermission(long organizationId, long? projectId, long currentUserId, long permissionId)
     {
-        var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that default permissions cannot be edited
+        var permission = await _context.Permissions
+            .Where(p => 
+                p.Id == permissionId && 
+                (!projectId.HasValue || p.ProjectId == projectId) && 
+                p.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
+        
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
         if (permission.IsDefault)
