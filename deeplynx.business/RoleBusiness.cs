@@ -1,22 +1,22 @@
-using Microsoft.EntityFrameworkCore;
-using deeplynx.models;
-using deeplynx.interfaces;
+using System.Text.Json;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
-using System.Text.Json;
 using deeplynx.helpers.exceptions;
+using deeplynx.interfaces;
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace deeplynx.business;
 
 public class RoleBusiness : IRoleBusiness
 {
+    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RoleBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="RoleBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for role operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -29,7 +29,7 @@ public class RoleBusiness : IRoleBusiness
     }
 
     /// <summary>
-    /// Get all roles for a given organization and optionally filter by project
+    ///     Get all roles for a given organization and optionally filter by project
     /// </summary>
     /// <param name="organizationId">(Required) ID of the organization</param>
     /// <param name="projectId">(Optional) ID of the project to filter by</param>
@@ -41,9 +41,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId, hideArchived);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
-        }
 
         var roleQuery = _context.Roles
             .Where(r => r.OrganizationId == organizationId
@@ -52,9 +50,9 @@ public class RoleBusiness : IRoleBusiness
 
         if (roleQuery == null)
             throw new KeyNotFoundException(
-                $"Roles not found or do not belong to the specified organization/project context");
+                "Roles not found or do not belong to the specified organization/project context");
 
-        return await roleQuery.Select(r => new RoleResponseDto()
+        return await roleQuery.Select(r => new RoleResponseDto
             {
                 Id = r.Id,
                 Name = r.Name,
@@ -63,13 +61,13 @@ public class RoleBusiness : IRoleBusiness
                 LastUpdatedBy = r.LastUpdatedBy,
                 IsArchived = r.IsArchived,
                 ProjectId = r.ProjectId,
-                OrganizationId = r.OrganizationId,
+                OrganizationId = r.OrganizationId
             })
             .ToListAsync();
     }
 
     /// <summary>
-    /// Get a role by ID
+    ///     Get a role by ID
     /// </summary>
     /// <param name="roleId">ID of the role to retrieve</param>
     /// <param name="organizationId">(Required) ID of the organization</param>
@@ -83,9 +81,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId, hideArchived);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
-        }
 
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -108,12 +104,12 @@ public class RoleBusiness : IRoleBusiness
             LastUpdatedBy = role.LastUpdatedBy,
             IsArchived = role.IsArchived,
             ProjectId = role.ProjectId,
-            OrganizationId = role.OrganizationId,
+            OrganizationId = role.OrganizationId
         };
     }
 
     /// <summary>
-    /// Create a new role
+    ///     Create a new role
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">Data Transfer Object containing new role information</param>
@@ -135,10 +131,8 @@ public class RoleBusiness : IRoleBusiness
             // We can also check here for proper project/org connection
             var project = await _context.Projects.FindAsync(projectId.Value);
             if (project?.OrganizationId != organizationId)
-            {
                 throw new ArgumentException(
                     $"Project {projectId.Value} does not belong to organization {organizationId}");
-            }
         }
 
         var role = new Role
@@ -148,7 +142,7 @@ public class RoleBusiness : IRoleBusiness
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = currentUserId,
             ProjectId = projectId,
-            OrganizationId = organizationId,
+            OrganizationId = organizationId
         };
 
         try
@@ -177,7 +171,7 @@ public class RoleBusiness : IRoleBusiness
             EntityType = "role",
             EntityId = role.Id,
             EntityName = role.Name,
-            Properties = JsonSerializer.Serialize(new { role.Name }),
+            Properties = JsonSerializer.Serialize(new { role.Name })
         });
 
         return new RoleResponseDto
@@ -189,12 +183,12 @@ public class RoleBusiness : IRoleBusiness
             LastUpdatedBy = role.LastUpdatedBy,
             IsArchived = role.IsArchived,
             ProjectId = role.ProjectId,
-            OrganizationId = role.OrganizationId,
+            OrganizationId = role.OrganizationId
         };
     }
 
     /// <summary>
-    /// Upsert multiple roles at a time
+    ///     Upsert multiple roles at a time
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">(Required) Role organization</param>
@@ -205,10 +199,7 @@ public class RoleBusiness : IRoleBusiness
         List<CreateRoleRequestDto> roles)
     {
         // There may be a better way to handle this, but let's avoid touching DB unless we have roles supplied
-        if (roles == null || roles.Count == 0)
-        {
-            return new List<RoleResponseDto>();
-        }
+        if (roles == null || roles.Count == 0) return new List<RoleResponseDto>();
 
         // Ensure organization exists (always required)
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
@@ -220,47 +211,50 @@ public class RoleBusiness : IRoleBusiness
 
             var project = await _context.Projects.FindAsync(projectId.Value);
             if (project?.OrganizationId != organizationId)
-            {
                 throw new ArgumentException(
                     $"Project {projectId.Value} does not belong to organization {organizationId}");
-            }
         }
 
         // Bulk insert into roles; if there is a name collision, update the description if present
         // Use different SQL based on whether it's org-level or project-level role
         var sql = projectId.HasValue
             ? @"
-                INSERT INTO deeplynx.roles (project_id, organization_id, name, description, last_updated_at, last_updated_by)
+                INSERT INTO deeplynx.roles (
+                    project_id, organization_id, name, description, last_updated_at, last_updated_by)
                 VALUES {0}
                 ON CONFLICT (organization_id, project_id, name) WHERE project_id IS NOT NULL
                 DO UPDATE SET
                     description = COALESCE(EXCLUDED.description, roles.description),
-                    last_updated_at = @now
-                RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;"
+                    last_updated_at = @now,
+                    last_updated_by = @lastUpdatedBy
+                RETURNING id, project_id, organization_id, name, description, 
+                    last_updated_at, is_archived, last_updated_by;"
             : @"
-                INSERT INTO deeplynx.roles (project_id, organization_id, name, description, last_updated_at, last_updated_by)
+                INSERT INTO deeplynx.roles (
+                    project_id, organization_id, name, description, last_updated_at, last_updated_by)
                 VALUES {0}
                 ON CONFLICT (organization_id, name) WHERE project_id IS NULL
                 DO UPDATE SET
                     description = COALESCE(EXCLUDED.description, roles.description),
                     last_updated_at = @now,
-                last_updated_by = @lastUpdatedBy
-                RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;";
+                    last_updated_by = @lastUpdatedBy
+                RETURNING id, project_id, organization_id, name, description, 
+                    last_updated_at, is_archived, last_updated_by;";
 
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@projectId", projectId.HasValue ? (object)projectId.Value : DBNull.Value),
-            new NpgsqlParameter("@organizationId", organizationId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new NpgsqlParameter("@lastUpdatedBy", currentUserId)
+            new("@projectId", projectId.HasValue ? projectId.Value : DBNull.Value),
+            new("@organizationId", organizationId),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@lastUpdatedBy", currentUserId)
         };
 
         // establish "dynamic" parameters (new for each dto in the list)
         parameters.AddRange(roles.SelectMany((dto, i) => new[]
         {
             new NpgsqlParameter($"@p{i}_name", dto.Name),
-            new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value)
         }));
 
         // stringify the params and comma separate them
@@ -276,9 +270,8 @@ public class RoleBusiness : IRoleBusiness
             .ToListAsync();
 
         // for each created role Bulk log events
-        var events = new List<CreateEventRequestDto> { };
+        var events = new List<CreateEventRequestDto>();
         foreach (var item in result)
-        {
             events.Add(new CreateEventRequestDto
             {
                 OrganizationId = organizationId,
@@ -288,21 +281,17 @@ public class RoleBusiness : IRoleBusiness
                 EntityId = item.Id,
                 EntityName = item.Name,
                 DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new { item.Name }),
+                Properties = JsonSerializer.Serialize(new { item.Name })
             });
-        }
 
         // Not sure if events org scoped too, so for now only logging for projects
-        if (projectId.HasValue)
-        {
-            await _eventBusiness.BulkCreateEvents(events, projectId);
-        }
+        if (projectId.HasValue) await _eventBusiness.BulkCreateEvents(events, projectId);
 
         return result;
     }
 
     /// <summary>
-    /// Update role information
+    ///     Update role information
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of the role to be updated</param>
@@ -319,9 +308,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -368,7 +355,7 @@ public class RoleBusiness : IRoleBusiness
             EntityType = "role",
             EntityName = role.Name,
             EntityId = role.Id,
-            Properties = JsonSerializer.Serialize(new { role.Name }),
+            Properties = JsonSerializer.Serialize(new { role.Name })
         });
 
         return new RoleResponseDto
@@ -380,12 +367,12 @@ public class RoleBusiness : IRoleBusiness
             LastUpdatedBy = role.LastUpdatedBy,
             IsArchived = role.IsArchived,
             ProjectId = role.ProjectId,
-            OrganizationId = role.OrganizationId,
+            OrganizationId = role.OrganizationId
         };
     }
 
     /// <summary>
-    /// Archive a role by ID. Remove role from downstream project members
+    ///     Archive a role by ID. Remove role from downstream project members
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to archive</param>
@@ -399,9 +386,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -452,14 +437,14 @@ public class RoleBusiness : IRoleBusiness
             EntityType = "role",
             EntityId = role.Id,
             EntityName = role.Name,
-            Properties = JsonSerializer.Serialize(new { role.Name }),
+            Properties = JsonSerializer.Serialize(new { role.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// Unarchive a role by ID
+    ///     Unarchive a role by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to unarchive</param>
@@ -472,9 +457,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -502,14 +485,14 @@ public class RoleBusiness : IRoleBusiness
             EntityType = "role",
             EntityId = role.Id,
             EntityName = role.Name,
-            Properties = JsonSerializer.Serialize(new { role.Name }),
+            Properties = JsonSerializer.Serialize(new { role.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// Delete a role by ID
+    ///     Delete a role by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="roleId">ID of role to delete</param>
@@ -522,9 +505,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -549,14 +530,14 @@ public class RoleBusiness : IRoleBusiness
             EntityType = "role",
             EntityName = role.Name,
             EntityId = role.Id,
-            Properties = JsonSerializer.Serialize(new { role.Name }),
+            Properties = JsonSerializer.Serialize(new { role.Name })
         });
 
         return true;
     }
 
     /// <summary>
-    /// List all permissions for a given role
+    ///     List all permissions for a given role
     /// </summary>
     /// <param name="roleId">ID of the role across which to search permissions</param>
     /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
@@ -570,9 +551,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -586,7 +565,7 @@ public class RoleBusiness : IRoleBusiness
             throw new KeyNotFoundException(
                 $"Role with id {roleId} not found or does not belong to the specified organization/project context");
 
-        return role.Permissions.Select(p => new PermissionResponseDto()
+        return role.Permissions.Select(p => new PermissionResponseDto
         {
             Id = p.Id,
             Name = p.Name,
@@ -604,7 +583,7 @@ public class RoleBusiness : IRoleBusiness
     }
 
     /// <summary>
-    /// Add a permission to a role
+    ///     Add a permission to a role
     /// </summary>
     /// <param name="roleId">ID of the role to add permission to</param>
     /// <param name="permissionId">ID of the permission to add</param>
@@ -618,9 +597,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         // check if role exists
         var role = await _context.Roles
@@ -650,7 +627,7 @@ public class RoleBusiness : IRoleBusiness
     }
 
     /// <summary>
-    /// Remove a permission from a role
+    ///     Remove a permission from a role
     /// </summary>
     /// <param name="roleId">ID of the role to remove permission from</param>
     /// <param name="permissionId">ID of the permission to remove</param>
@@ -664,9 +641,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         // check if role exists
         var role = await _context.Roles
@@ -692,7 +667,7 @@ public class RoleBusiness : IRoleBusiness
     }
 
     /// <summary>
-    /// Set all permissions for a role (replaces existing permissions)
+    ///     Set all permissions for a role (replaces existing permissions)
     /// </summary>
     /// <param name="roleId">ID of the role to update permissions for</param>
     /// <param name="permissionIds">Array of permission IDs to assign to the role</param>
@@ -706,9 +681,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         // check if role exists
         var role = await _context.Roles
@@ -744,7 +717,7 @@ public class RoleBusiness : IRoleBusiness
     }
 
     /// <summary>
-    /// Set all permissions for a role by pattern
+    ///     Set all permissions for a role by pattern
     /// </summary>
     /// <param name="roleId">ID of the role to update permissions for</param>
     /// <param name="permissionPatterns">Dictionary of resource: action[] permission patterns</param>
@@ -758,9 +731,7 @@ public class RoleBusiness : IRoleBusiness
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
 
         // check if role exists
         var role = await _context.Roles

@@ -156,7 +156,8 @@ public class MetadataBusiness : IMetadataBusiness
             var classesToInsert = BuildClasses(classes, records);
             if (classesToInsert.Any())
             {
-                classMap = await BulkUpsertClasses(currentUserId, projectId, classesToInsert, metadataResponseDto);
+                classMap = await BulkUpsertClasses(
+                    currentUserId, organizationId, projectId, classesToInsert, metadataResponseDto);
                 // load class IDs into records objects before insert
                 UpdateRecordsWithIds(records, classMap);
             }
@@ -347,11 +348,13 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of class name to class ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertClasses(
         long currentUserId,
+        long organizationId,
         long projectId,
         List<CreateClassRequestDto> classes,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _classBusiness.BulkCreateClasses(currentUserId, projectId, classes);
+        var inserted = await _classBusiness.BulkCreateClasses(
+            currentUserId, organizationId, projectId, classes);
         metadataResponseDto.Classes = inserted;
         return inserted.ToDictionary(c => c.Name, c => c.Id);
     }

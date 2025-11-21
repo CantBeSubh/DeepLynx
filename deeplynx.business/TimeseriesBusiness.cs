@@ -64,7 +64,10 @@ public class TimeseriesBusiness(
     /// <returns>An object of the uploaded file information</returns>
     /// <exception cref="ArgumentException">If the file is null or has no data</exception>
     /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
-    public async Task<RecordResponseDto> UploadFile(long currentUserId, long projectId, long organizationId,
+    public async Task<RecordResponseDto> UploadFile(
+        long currentUserId,
+        long projectId,
+        long organizationId,
         long dataSourceId,
         IFormFile file)
     {
@@ -104,7 +107,8 @@ public class TimeseriesBusiness(
 
 
             // create record for file's db table
-            var recordClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Timeseries");
+            var recordClass = await _classBusiness.GetOrCreateClass(
+                currentUserId, organizationId, projectId, "Timeseries");
             var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
             var fileName = file.FileName;
 
@@ -287,7 +291,8 @@ public class TimeseriesBusiness(
 
             Directory.Delete(tempFolderPath, true); // Clean up the datasource folder
 
-            var recordClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Timeseries");
+            var recordClass = await _classBusiness.GetOrCreateClass(
+                currentUserId, organizationId, projectId, "Timeseries");
             var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
             var fileName = request.FileName;
 
@@ -449,7 +454,8 @@ public class TimeseriesBusiness(
         else
             throw new NotSupportedException($"file type {fileType} not supported");
 
-        var reportClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Report");
+        var reportClass = await _classBusiness.GetOrCreateClass(
+            currentUserId, organizationId, projectId, "Report");
         var timeseriesObjectStorageMethod =
             await _context.ObjectStorages.FirstOrDefaultAsync(os =>
                 os.ProjectId == projectId && os.Name == "Timeseries Default");
@@ -521,7 +527,8 @@ public class TimeseriesBusiness(
                      """
         };
 
-        var reportClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Report");
+        var reportClass = await _classBusiness.GetOrCreateClass(
+            currentUserId, organizationId, projectId, "Report");
         var timeseriesObjectStorageMethod =
             await _context.ObjectStorages.FirstOrDefaultAsync(os =>
                 os.ProjectId == projectId && os.Name == "Timeseries Default");
@@ -581,7 +588,8 @@ public class TimeseriesBusiness(
         else
             throw new NotSupportedException($"file type {fileType} not supported");
 
-        var reportClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "Report");
+        var reportClass = await _classBusiness.GetOrCreateClass(
+            currentUserId, organizationId, projectId, "Report");
         var timeseriesObjectStorageMethod =
             await _context.ObjectStorages.FirstOrDefaultAsync(os =>
                 os.ProjectId == projectId && os.Name == "Timeseries Default");

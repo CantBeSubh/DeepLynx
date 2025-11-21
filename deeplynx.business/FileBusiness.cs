@@ -96,7 +96,7 @@ public class FileBusiness
 
         var uri = await fileBusiness.UploadFile(projectId, realDataSourceId, configData, file, guid);
 
-        var fileClass = await _classBusiness.GetClassInfo(currentUserId, projectId, "File");
+        var fileClass = await _classBusiness.GetOrCreateClass(currentUserId, organizationId, projectId, "File");
         var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject

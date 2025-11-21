@@ -508,45 +508,6 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    ///     Retrieves all records for multiple projects.
-    /// </summary>
-    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
-    /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
-        long[] projects, bool hideArchived)
-    {
-        var recordQuery = _context.HistoricalRecords
-            .Where(r => Enumerable.Contains(projects, r.ProjectId));
-
-        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
-
-        var records = await recordQuery
-            .GroupBy(e => e.RecordId)
-            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
-            .ToListAsync();
-
-        return records
-            .Select(r => new HistoricalRecordResponseDto
-            {
-                Id = r.RecordId,
-                Description = r.Description,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                ProjectId = r.ProjectId,
-                LastUpdatedAt = r.LastUpdatedAt,
-                LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                Tags = r.Tags
-            });
-    }
-
-    /// <summary>
     ///     List the users and groups in a given project, along with their roles
     /// </summary>
     /// <param name="projectId"></param>
@@ -719,6 +680,45 @@ public class ProjectBusiness : IProjectBusiness
         return true;
     }
 
+    /// <summary>
+    ///     Retrieves all records for multiple projects.
+    /// </summary>
+    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns>A list of records based on the applied filters.</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
+        long[] projects, bool hideArchived)
+    {
+        var recordQuery = _context.HistoricalRecords
+            .Where(r => projects.Contains(r.ProjectId));
+
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
+
+        var records = await recordQuery
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
+            .ToListAsync();
+
+        return records
+            .Select(r => new HistoricalRecordResponseDto
+            {
+                Id = r.RecordId,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                LastUpdatedAt = r.LastUpdatedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
+                Tags = r.Tags
+            });
+    }
+
     private async Task<bool> RefreshProjectsCache()
     {
         var dbProjects = await _context.Projects.ToListAsync();
@@ -754,7 +754,8 @@ public class ProjectBusiness : IProjectBusiness
             new() { Name = "Report" },
             new() { Name = "File" }
         };
-        var cls = await _classBusiness.BulkCreateClasses(currentUserId, projectId, defaultClasses);
+        var cls = await _classBusiness.BulkCreateClasses(
+            currentUserId, organizationId, projectId, defaultClasses);
 
         // ===============================
         // CREATE DEFAULT DATA SOURCE
