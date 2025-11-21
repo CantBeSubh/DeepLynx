@@ -80,16 +80,16 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="hideArchived"></param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<PermissionResponseDto> GetPermission(long organizationId, long? projectId, long permissionId, bool hideArchived = true)
+    public async Task<PermissionResponseDto> GetPermission(long? organizationId, long? projectId, long permissionId, bool hideArchived = true)
     {
         var permission = await _context.Permissions
             .Where(p => p.Id == permissionId && 
                         (p.IsDefault || 
-                         (!p.IsDefault && 
+                         (!p.IsDefault && // For non-default permissions, check scope matches
                           (!projectId.HasValue || p.ProjectId == projectId) && 
-                          p.OrganizationId == organizationId)))
+                          (!organizationId.HasValue || p.OrganizationId == organizationId))))
             .FirstOrDefaultAsync();
-        
+    
         if (permission == null)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
 
