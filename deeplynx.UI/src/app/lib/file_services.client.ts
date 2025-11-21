@@ -4,6 +4,7 @@ import api from './api';
 import axios from 'axios';
 import { RecordResponseDto } from '../(home)/types/responseDTOs';
 
+
 const MIME_EXT: Record<string, string> = {
   'application/pdf': 'pdf',
   'application/zip': 'zip',
@@ -29,40 +30,6 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
 }
 
-/**
- * Upload a file
- * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
- * @param file - The file to upload
- * @param dataSourceId - Optional data source ID
- * @param objectStorageId - Optional object storage ID
- * @returns Promise with RecordResponseDto containing file information
- */
-export const uploadFile = async (
-  organizationId: number,
-  projectId: number,
-  file: File,
-  dataSourceId?: number,
-  objectStorageId?: number
-): Promise<RecordResponseDto> => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const res = await api.post(
-      `/organizations/${organizationId}/projects/${projectId}/files`,
-      formData,
-      {
-        params: { dataSourceId, objectStorageId },
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
-    );
-    return res.data;
-  } catch (error) {
-    console.error(`Error uploading file ${file.name}:`, error);
-    throw error;
-  }
-};
 
 /**
  * Update a file

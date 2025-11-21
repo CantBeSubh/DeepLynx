@@ -291,6 +291,7 @@ export type RecentUpload = {
 
 //file_upload_services
 export type UploadFileArgs = {
+  organizationId: number | string;
   projectId: number | string;
   dataSourceId: number | string;
   objectStorageId: number | string;
