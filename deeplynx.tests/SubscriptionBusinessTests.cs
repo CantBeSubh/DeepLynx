@@ -1,494 +1,1195 @@
-using deeplynx.datalayer.Models;
-using deeplynx.helpers;
-using deeplynx.interfaces;
-using deeplynx.models;
-using Microsoft.EntityFrameworkCore;
-using Npgsql;
-
-namespace deeplynx.business;
-
-public class SubscriptionBusiness : ISubscriptionBusiness
-{
-    private readonly DeeplynxContext _context;
-    private readonly ICacheBusiness _cacheBusiness;
-
-    public SubscriptionBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
-    {
-        _context = context;
-        _cacheBusiness = cacheBusiness;
-    }
-
-    /// <summary>
-    /// Retrieves all subscriptions with a particular currentUserId and organizationId
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
-    /// <param name="organizationId">The ID of the organization to which the subscription belongs (required)</param>
-    /// <param name="projectId">Optional ID of the project to which the subscription belongs</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
-    /// <returns>A list of subscriptions</returns>
-    /// TODO: CACHE ALL SUBSCRIPTIONS TO MAKE THE NOTIFICATION SERVICE MORE EFFICIENT
-    public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long currentUserId, long organizationId, long? projectId,
-        bool hideArchived)
-    {
-        // Validate organization exists
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-
-        var query = _context.Subscriptions
-            .Where(s => s.UserId == currentUserId && s.OrganizationId == organizationId);
-
-        // Filter by scope
-        if (projectId.HasValue)
-        {
-            query = query.Where(s => s.ProjectId == projectId.Value);
-        }
-        else
-        {
-            query = query.Where(s => s.ProjectId == null);
-        }
-
-        if (hideArchived)
-        {
-            query = query.Where(s => !s.IsArchived);
-        }
-
-        var subscriptions = await query.ToListAsync();
-
-        return subscriptions.Select(s => new SubscriptionResponseDto
-        {
-            Id = s.Id,
-            UserId = s.UserId,
-            OrganizationId = s.OrganizationId,
-            ProjectId = s.ProjectId,
-            ActionId = s.ActionId,
-            Operation = s.Operation,
-            DataSourceId = s.DataSourceId,
-            EntityType = s.EntityType,
-            EntityId = s.EntityId,
-            LastUpdatedAt = s.LastUpdatedAt,
-            LastUpdatedBy = s.LastUpdatedBy,
-            IsArchived = s.IsArchived
-        }).ToList();
-    }
-
-    /// <summary>
-    /// Retrieves a single subscription with a particular currentUserId, subscriptionId, and organizationId
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
-    /// <param name="subscriptionId">The ID of the subscription</param>
-    /// <param name="organizationId">The ID of the organization to which the subscription belongs (required)</param>
-    /// <param name="projectId">Optional ID of the project to which the subscription belongs</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
-    /// <returns>A subscription</returns>
-    /// <exception cref="KeyNotFoundException">Returned if subscription is not found or is archived</exception>
-    public async Task<SubscriptionResponseDto> GetSubscription(
-        long currentUserId, 
-        long subscriptionId, 
-        long organizationId, 
-        long? projectId, 
-        bool hideArchived)
-    {
-        // Validate existence of the scope
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-
-        var query = _context.Subscriptions
-            .Where(s => s.Id == subscriptionId && s.UserId == currentUserId && s.OrganizationId == organizationId);
-
-        if (hideArchived)
-        {
-            query = query.Where(s => !s.IsArchived);
-        }
-
-        var subscription = await query.SingleOrDefaultAsync();
-
-        if (subscription == null)
-        {
-            throw new KeyNotFoundException($"Subscription with id {subscriptionId} not found");
-        }
-
-        // Verify the subscription belongs to the specified scope
-        if (projectId.HasValue && subscription.ProjectId != projectId.Value)
-        {
-            throw new UnauthorizedAccessException(
-                $"Subscription {subscriptionId} does not belong to project {projectId.Value}");
-        }
-
-        if (!projectId.HasValue && subscription.ProjectId != null)
-        {
-            throw new UnauthorizedAccessException(
-                $"Subscription {subscriptionId} is a project-level subscription, not an organization-level subscription");
-        }
-
-        return new SubscriptionResponseDto
-        {
-            Id = subscription.Id,
-            UserId = subscription.UserId,
-            OrganizationId = subscription.OrganizationId,
-            ProjectId = subscription.ProjectId,
-            ActionId = subscription.ActionId,
-            Operation = subscription.Operation,
-            DataSourceId = subscription.DataSourceId,
-            EntityType = subscription.EntityType,
-            EntityId = subscription.EntityId,
-            LastUpdatedAt = subscription.LastUpdatedAt,
-            LastUpdatedBy = subscription.LastUpdatedBy,
-            IsArchived = subscription.IsArchived
-        };
-    }
-
-    /// <summary>
-    /// Bulk creates subscriptions that are within the same scope (organization or project)
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
-    /// <param name="dtos">List of subscription creation requests</param>
-    /// <returns>A list of created subscriptions</returns>
-    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long organizationId,
-        long? projectId,
-        List<CreateSubscriptionRequestDto>? dtos)
-    {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-
-        // Determine which unique index applies
-        var conflictColumns = projectId.HasValue
-            ? "user_id, action_id, operation, organization_id, project_id, data_source_id, entity_type, entity_id"
-            : "user_id, action_id, operation, organization_id, data_source_id, entity_type, entity_id";
-
-        var sql = $@"
-        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, organization_id, project_id, data_source_id, entity_type, entity_id, last_updated_at, is_archived)
-        VALUES {{0}}
-        ON CONFLICT ({conflictColumns}) DO NOTHING
-        RETURNING id, user_id, organization_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
-        ";
-
-        var parameters = new List<NpgsqlParameter>
-        {
-            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new ("@lastUpdatedBy", currentUserId)
-        };
-
-        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
-        {
-            new NpgsqlParameter($"@p{i}_currentUserId", currentUserId),
-            new NpgsqlParameter($"@p{i}_actionId", dto.ActionId),
-            new NpgsqlParameter($"@p{i}_operation", (object?)dto.Operation ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_organizationId", organizationId),
-            new NpgsqlParameter($"@p{i}_projectId", (object?)projectId ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_dataSourceId", (object?)dto.DataSourceId ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_entityType", (object?)dto.EntityType ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_entityId", (object?)dto.EntityId ?? DBNull.Value)
-        }));
-
-        var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_currentUserId, @p{i}_actionId, @p{i}_operation, @p{i}_organizationId, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, false)"));
-
-        sql = string.Format(sql, valueTuples);
-
-        var result = await _context.Subscriptions
-            .FromSqlRaw(sql, parameters.ToArray())
-            .ToListAsync();
-
-        return result.Select(s => new SubscriptionResponseDto
-        {
-            Id = s.Id,
-            UserId = s.UserId,
-            ProjectId = s.ProjectId,
-            OrganizationId = s.OrganizationId,
-            ActionId = s.ActionId,
-            Operation = s.Operation,
-            DataSourceId = s.DataSourceId,
-            EntityType = s.EntityType,
-            EntityId = s.EntityId,
-            LastUpdatedAt = s.LastUpdatedAt,
-            LastUpdatedBy = s.LastUpdatedBy,
-            IsArchived = s.IsArchived
-        }).ToList();
-    }
-
-    /// <summary>
-    /// Bulk updates subscriptions
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
-    /// <param name="dtos">List of subscription update requests</param>
-    /// <returns>A list of updated subscriptions</returns>
-    public async Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
-        long currentUserId,
-        long organizationId,
-        long? projectId,
-        List<UpdateSubscriptionRequestDto>? dtos)
-    {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-
-        string scopeCondition = projectId.HasValue
-            ? "AND subs.organization_id = @organizationId AND subs.project_id = @projectId"
-            : "AND subs.organization_id = @organizationId AND subs.project_id IS NULL";
-
-        var sql = $@"
-        UPDATE deeplynx.subscriptions AS subs
-        SET 
-            action_id = data.action_id,
-            operation = data.operation,
-            data_source_id = data.data_source_id,
-            entity_type = data.entity_type,
-            entity_id = data.entity_id,
-            last_updated_at = @now
-        FROM (VALUES {{0}}) AS data (id, action_id, operation, data_source_id, entity_type, entity_id)
-        WHERE 
-            subs.id = data.id 
-            AND subs.user_id = @currentUserId 
-            {scopeCondition}
-        RETURNING subs.id, subs.user_id, subs.organization_id, subs.project_id, subs.action_id, subs.operation, 
-            subs.data_source_id, subs.entity_type, subs.entity_id, 
-            subs.last_updated_at, subs.is_archived, subs.last_updated_by;
-        ";
-
-        var parameters = new List<NpgsqlParameter>
-        {
-            new("@currentUserId", currentUserId),
-            new("@organizationId", organizationId),
-            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
-        };
-
-        if (projectId.HasValue)
-        {
-            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
-        }
-
-        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
-        {
-            new NpgsqlParameter($"@p{i}_id", dto.Id),
-            new NpgsqlParameter($"@p{i}_actionId", (object?)dto.ActionId ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_operation", (object?)dto.Operation ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_dataSourceId", (object?)dto.DataSourceId ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_entityType", (object?)dto.EntityType ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_entityId", (object?)dto.EntityId ?? DBNull.Value)
-        }));
-
-        var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_id, @p{i}_actionId, @p{i}_operation, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId)"));
-
-        sql = string.Format(sql, valueTuples);
-
-        var updatedSubscriptions = await _context.Subscriptions
-            .FromSqlRaw(sql, parameters.ToArray())
-            .ToListAsync();
-
-        var response = updatedSubscriptions.Select(s => new SubscriptionResponseDto
-        {
-            Id = s.Id,
-            UserId = s.UserId,
-            ProjectId = s.ProjectId,
-            OrganizationId = s.OrganizationId,
-            ActionId = s.ActionId,
-            Operation = s.Operation,
-            DataSourceId = s.DataSourceId,
-            EntityType = s.EntityType,
-            EntityId = s.EntityId,
-            LastUpdatedAt = s.LastUpdatedAt,
-            LastUpdatedBy = s.LastUpdatedBy,
-            IsArchived = s.IsArchived
-        }).ToList();
-        
-        if (response.Count != dtos.Count)
-        {
-            throw new InvalidOperationException(
-                $"Some subscriptions were not updated. This may be because they do not exist, " +
-                $"do not belong to user {currentUserId}, or do not belong to the specified " +
-                $"{(projectId.HasValue ? "project" : "organization")}.");
-        }
-        
-        return response;
-    }
-
-    /// <summary>
-    /// Bulk deletes subscriptions
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
-    /// <param name="subscriptionIds">The ID of the subscriptions to be deleted</param>
-    /// <returns>True if successful</returns>
-    public async Task<bool> BulkDeleteSubscriptions(long currentUserId, long organizationId, long? projectId,
-        List<long> subscriptionIds)
-    {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-
-        // Build the WHERE clause based on scope
-        string scopeCondition = projectId.HasValue
-            ? "AND organization_id = @organizationId AND project_id = @projectId"
-            : "AND organization_id = @organizationId AND project_id IS NULL";
-
-        var sql = $@"
-        DELETE FROM deeplynx.subscriptions
-        WHERE 
-            user_id = @currentUserId 
-            {scopeCondition}
-            AND id = ANY(@subscriptionIds);
-    ";
-
-        var parameters = new List<NpgsqlParameter>
-        {
-            new NpgsqlParameter("@currentUserId", currentUserId),
-            new NpgsqlParameter("@organizationId", organizationId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray())
-        };
-
-        if (projectId.HasValue)
-        {
-            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
-        }
-
-        var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
-
-        if (result != subscriptionIds.Count)
-        {
-            throw new InvalidOperationException("Some subscriptions were not deleted because they do not exist.");
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Bulk archives subscriptions
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
-    /// <param name="subscriptionIds">The ID of the subscriptions to be archived</param>
-    /// <returns>True if successful</returns>
-    public async Task<bool> BulkArchiveSubscriptions(long currentUserId, long organizationId, long? projectId,
-        List<long> subscriptionIds)
-    {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-
-        // Build the WHERE clause based on scope
-        string scopeCondition = projectId.HasValue
-            ? "AND organization_id = @organizationId AND project_id = @projectId"
-            : "AND organization_id = @organizationId AND project_id IS NULL";
-
-        var sql = $@"
-        UPDATE deeplynx.subscriptions
-        SET 
-            is_archived = true, 
-            last_updated_at = @now,
-            last_updated_by = @currentUserId 
-            
-        WHERE 
-            user_id = @currentUserId 
-            {scopeCondition}
-            AND id = ANY(@subscriptionIds);
-    ";
-
-        var parameters = new List<NpgsqlParameter>
-        {
-            new NpgsqlParameter("@currentUserId", currentUserId),
-            new NpgsqlParameter("@organizationId", organizationId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray()),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
-        };
-
-        if (projectId.HasValue)
-        {
-            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
-        }
-
-        var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
-
-        if (result != subscriptionIds.Count)
-        {
-            throw new InvalidOperationException("Some subscriptions were not archived because they do not exist.");
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Bulk unarchives subscriptions
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscriptions belong (required)</param>
-    /// <param name="projectId">Optional ID of the project to which the subscriptions belong</param>
-    /// <param name="subscriptionIds">The ID of the subscriptions to be unarchived</param>
-    /// <returns>True if successful</returns>
-    public async Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long organizationId, long? projectId,
-        List<long>? subscriptionIds)
-    {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-        
-        // Build the WHERE clause based on scope
-        string scopeCondition = projectId.HasValue
-            ? "AND organization_id = @organizationId AND project_id = @projectId"
-            : "AND organization_id = @organizationId AND project_id IS NULL";
-
-        var sql = $@"
-    UPDATE deeplynx.subscriptions
-    SET 
-        is_archived = false, 
-        last_updated_at = @now,
-        last_updated_by = @userId
-        WHERE 
-            user_id = @currentUserId 
-            {scopeCondition}
-            AND id = ANY(@subscriptionIds);
-    ";
-
-        var parameters = new List<NpgsqlParameter>
-        {
-            new NpgsqlParameter("@currentUserId", currentUserId),
-            new NpgsqlParameter("@organizationId", organizationId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray()),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
-        };
-
-        if (projectId.HasValue)
-        {
-            parameters.Add(new NpgsqlParameter("@projectId", projectId.Value));
-        }
-
-        var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
-
-        if (result != subscriptionIds.Count)
-        {
-            throw new InvalidOperationException("Some subscriptions were not unarchived because they do not exist.");
-        }
-
-        return true;
-    }
-}
+// using System.ComponentModel.DataAnnotations;
+// using deeplynx.business;
+// using deeplynx.datalayer.Models;
+// using deeplynx.models;
+// using Microsoft.EntityFrameworkCore;
+// using Action = deeplynx.datalayer.Models.Action;
+//
+// namespace deeplynx.tests
+// {
+//     [Collection("Test Suite Collection")]
+//     public class SubscriptionBusinessTests : IntegrationTestBase
+//     {
+//         private SubscriptionBusiness _subscriptionBusiness = null!;
+//         
+//         public long aid;    // Action ID
+//         public long did;    // Datasource ID
+//         public long pid;    // Project ID
+//         public long oid;    // Organization ID
+//         public long uid;    // User ID
+//         private readonly DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+//         
+//         public SubscriptionBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
+//         
+//         public override async Task InitializeAsync()
+//         {
+//             await base.InitializeAsync();
+//             _subscriptionBusiness = new SubscriptionBusiness(Context, _cacheBusiness);
+//             await _cacheBusiness.SetAsync("projects", (List<ProjectResponseDto>?)null, TimeSpan.FromSeconds(1));
+//         }
+//
+//         #region GetAllSubscriptions Tests
+//   
+//         [Fact]
+//         public async Task GetAllSubscriptions_Success_OrganizationLevel()
+//         {
+//             // Arrange
+//             var subscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = null,
+//                 ActionId = aid,
+//                 Operation = "create",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             Context.Subscriptions.Add(subscription);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.GetAllSubscriptions(uid, oid, null, false);
+//     
+//             // Assert
+//             Assert.Single(result);
+//     
+//             var actualSubscription = result.First();
+//             Assert.Equal(uid, actualSubscription.UserId);
+//             Assert.Equal(oid, actualSubscription.OrganizationId);
+//             Assert.Null(actualSubscription.ProjectId);
+//             Assert.Equal(aid, actualSubscription.ActionId);
+//             Assert.Equal("create", actualSubscription.Operation);
+//             Assert.Equal(did, actualSubscription.DataSourceId);
+//             Assert.Equal("record", actualSubscription.EntityType);
+//             Assert.Equal(1, actualSubscription.EntityId);
+//         }
+//
+//         [Fact]
+//         public async Task GetAllSubscriptions_Success_ProjectLevel()
+//         {
+//             // Arrange
+//             var subscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "create",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             Context.Subscriptions.Add(subscription);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.GetAllSubscriptions(uid, oid, pid, false);
+//     
+//             // Assert
+//             Assert.Single(result);
+//     
+//             var actualSubscription = result.First();
+//             Assert.Equal(uid, actualSubscription.UserId);
+//             Assert.Equal(oid, actualSubscription.OrganizationId);
+//             Assert.Equal(pid, actualSubscription.ProjectId);
+//             Assert.Equal(aid, actualSubscription.ActionId);
+//             Assert.Equal("create", actualSubscription.Operation);
+//             Assert.Equal(did, actualSubscription.DataSourceId);
+//             Assert.Equal("record", actualSubscription.EntityType);
+//             Assert.Equal(1, actualSubscription.EntityId);
+//         }
+//
+//         [Fact]
+//         public async Task GetAllSubscriptions_FiltersCorrectly_ByScope()
+//         {
+//             // Arrange - Create both organization and project level subscriptions
+//             var orgSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = null,
+//                 ActionId = aid,
+//                 Operation = "create",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             var projectSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "delete",
+//                 DataSourceId = did,
+//                 EntityType = "edge",
+//                 EntityId = 2
+//             };
+//             Context.Subscriptions.AddRange(orgSubscription, projectSubscription);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act - Get organization level subscriptions
+//             var orgResult = await _subscriptionBusiness.GetAllSubscriptions(uid, oid, null, false);
+//             
+//             // Assert
+//             Assert.Single(orgResult);
+//             Assert.Null(orgResult.First().ProjectId);
+//             
+//             // Act - Get project level subscriptions
+//             var projectResult = await _subscriptionBusiness.GetAllSubscriptions(uid, oid, pid, false);
+//             
+//             // Assert
+//             Assert.Single(projectResult);
+//             Assert.Equal(pid, projectResult.First().ProjectId);
+//         }
+//         
+//         [Fact]
+//         public async Task GetSubscription_Success_OrganizationLevel()
+//         {
+//             // Arrange
+//             var subscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = null,
+//                 ActionId = aid,
+//                 Operation = "delete",
+//                 DataSourceId = null,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             Context.Subscriptions.Add(subscription);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.GetSubscription(uid, subscription.Id, oid, null, false);
+//     
+//             // Assert
+//             Assert.NotNull(result);
+//             Assert.Equal(uid, result.UserId);
+//             Assert.Equal(oid, result.OrganizationId);
+//             Assert.Null(result.ProjectId);
+//             Assert.Equal(aid, result.ActionId);
+//             Assert.Equal("delete", result.Operation);
+//             Assert.Equal("record", result.EntityType);
+//             Assert.Equal(1, result.EntityId);
+//         }
+//
+//         [Fact]
+//         public async Task GetSubscription_Success_ProjectLevel()
+//         {
+//             // Arrange
+//             var subscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "delete",
+//                 DataSourceId = null,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             Context.Subscriptions.Add(subscription);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.GetSubscription(uid, subscription.Id, oid, pid, false);
+//     
+//             // Assert
+//             Assert.NotNull(result);
+//             Assert.Equal(uid, result.UserId);
+//             Assert.Equal(oid, result.OrganizationId);
+//             Assert.Equal(pid, result.ProjectId);
+//             Assert.Equal(aid, result.ActionId);
+//             Assert.Equal("delete", result.Operation);
+//             Assert.Equal("record", result.EntityType);
+//             Assert.Equal(1, result.EntityId);
+//         }
+//
+//         [Fact]
+//         public async Task GetSubscription_ThrowsUnauthorized_WhenScopeMismatch()
+//         {
+//             // Arrange - Create a project-level subscription
+//             var subscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "delete",
+//                 DataSourceId = null,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             Context.Subscriptions.Add(subscription);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act & Assert - Try to access as organization-level
+//             await Assert.ThrowsAsync<UnauthorizedAccessException>(
+//                 () => _subscriptionBusiness.GetSubscription(uid, subscription.Id, oid, null, false));
+//         }
+//         
+//         #endregion
+//         
+//         #region BulkCreateSubscriptions Tests
+//         
+//         [Fact]
+//         public async Task BulkCreateSubscriptions_Success_OrganizationLevel()
+//         {
+//             // Arrange
+//             var dtos = new List<CreateSubscriptionRequestDto>
+//             {
+//                 new()
+//                 {
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                 },
+//                 new()
+//                 {
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 3,
+//                 },
+//             };
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkCreateSubscriptions(uid, oid, null, dtos);
+//     
+//             // Assert
+//             Assert.Equal(2, result.Count);
+//     
+//             var firstSubscription = result.First();
+//             Assert.Equal(uid, firstSubscription.UserId);
+//             Assert.Equal(oid, firstSubscription.OrganizationId);
+//             Assert.Null(firstSubscription.ProjectId);
+//             Assert.Equal(aid, firstSubscription.ActionId);
+//             Assert.Equal("delete", firstSubscription.Operation);
+//             Assert.Equal("record", firstSubscription.EntityType);
+//             Assert.Equal(1, firstSubscription.EntityId);
+//     
+//             var lastSubscription = result.Last();
+//             Assert.Equal(uid, lastSubscription.UserId);
+//             Assert.Equal(oid, lastSubscription.OrganizationId);
+//             Assert.Null(lastSubscription.ProjectId);
+//             Assert.Equal(aid, lastSubscription.ActionId);
+//             Assert.Equal("update", lastSubscription.Operation);
+//             Assert.Equal(did, lastSubscription.DataSourceId);
+//             Assert.Equal("record", lastSubscription.EntityType);
+//             Assert.Equal(3, lastSubscription.EntityId);
+//         }
+//
+//         [Fact]
+//         public async Task BulkCreateSubscriptions_Success_ProjectLevel()
+//         {
+//             // Arrange
+//             var dtos = new List<CreateSubscriptionRequestDto>
+//             {
+//                 new()
+//                 {
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                 },
+//                 new()
+//                 {
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 3,
+//                 },
+//             };
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkCreateSubscriptions(uid, oid, pid, dtos);
+//     
+//             // Assert
+//             Assert.Equal(2, result.Count);
+//     
+//             var firstSubscription = result.First();
+//             Assert.Equal(uid, firstSubscription.UserId);
+//             Assert.Equal(oid, firstSubscription.OrganizationId);
+//             Assert.Equal(pid, firstSubscription.ProjectId);
+//             Assert.Equal(aid, firstSubscription.ActionId);
+//             Assert.Equal("delete", firstSubscription.Operation);
+//             Assert.Equal("record", firstSubscription.EntityType);
+//             Assert.Equal(1, firstSubscription.EntityId);
+//     
+//             var lastSubscription = result.Last();
+//             Assert.Equal(uid, lastSubscription.UserId);
+//             Assert.Equal(oid, lastSubscription.OrganizationId);
+//             Assert.Equal(pid, lastSubscription.ProjectId);
+//             Assert.Equal(aid, lastSubscription.ActionId);
+//             Assert.Equal("update", lastSubscription.Operation);
+//             Assert.Equal(did, lastSubscription.DataSourceId);
+//             Assert.Equal("record", lastSubscription.EntityType);
+//             Assert.Equal(3, lastSubscription.EntityId);
+//         }
+//
+//         [Fact]
+//         public async Task BulkCreateSubscriptions_HandlesConflicts_OrganizationLevel()
+//         {
+//             // Arrange - Create existing subscription
+//             var existing = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = null,
+//                 ActionId = aid,
+//                 Operation = "delete",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             Context.Subscriptions.Add(existing);
+//             await Context.SaveChangesAsync();
+//
+//             var dtos = new List<CreateSubscriptionRequestDto>
+//             {
+//                 new()
+//                 {
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1, // Duplicate
+//                 },
+//                 new()
+//                 {
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 3, // New
+//                 },
+//             };
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkCreateSubscriptions(uid, oid, null, dtos);
+//     
+//             // Assert - Only the new one should be created due to ON CONFLICT DO NOTHING
+//             Assert.Single(result);
+//             Assert.Equal(3, result.First().EntityId);
+//         }
+//         
+//         #endregion
+//         
+//         #region BulkUpdateSubscriptions Tests
+//         
+//         [Fact]
+//         public async Task BulkUpdateSubscriptions_Success_OrganizationLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             var dtos = new List<UpdateSubscriptionRequestDto>
+//             {
+//                 new()
+//                 {
+//                     Id = subscriptions[0].Id,
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "data_source",
+//                     EntityId = 2
+//                 },
+//                 new()
+//                 {
+//                     Id = subscriptions[1].Id,
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "edge",
+//                     EntityId = 2
+//                 }
+//             };
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkUpdateSubscriptions(uid, oid, null, dtos);
+//     
+//             // Assert
+//             Assert.Equal(2, result.Count);
+//             Assert.All(result, s => 
+//             {
+//                 Assert.Equal("delete", s.Operation);
+//                 Assert.Equal(oid, s.OrganizationId);
+//                 Assert.Null(s.ProjectId);
+//             });
+//         }
+//
+//         [Fact]
+//         public async Task BulkUpdateSubscriptions_Success_ProjectLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             var dtos = new List<UpdateSubscriptionRequestDto>
+//             {
+//                 new()
+//                 {
+//                     Id = subscriptions[0].Id,
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "data_source",
+//                     EntityId = 2
+//                 },
+//                 new()
+//                 {
+//                     Id = subscriptions[1].Id,
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "edge",
+//                     EntityId = 2
+//                 }
+//             };
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkUpdateSubscriptions(uid, oid, pid, dtos);
+//     
+//             // Assert
+//             Assert.Equal(2, result.Count);
+//             Assert.All(result, s => 
+//             {
+//                 Assert.Equal("delete", s.Operation);
+//                 Assert.Equal(oid, s.OrganizationId);
+//                 Assert.Equal(pid, s.ProjectId);
+//             });
+//         }
+//
+//         [Fact]
+//         public async Task BulkUpdateSubscriptions_Fails_WhenScopeMismatch()
+//         {
+//             // Arrange - Create organization-level subscription
+//             var subscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = null,
+//                 ActionId = aid,
+//                 Operation = "create",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             Context.Subscriptions.Add(subscription);
+//             await Context.SaveChangesAsync();
+//     
+//             var dtos = new List<UpdateSubscriptionRequestDto>
+//             {
+//                 new()
+//                 {
+//                     Id = subscription.Id,
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "edge",
+//                     EntityId = 2
+//                 }
+//             };
+//     
+//             // Act & Assert - Try to update as project-level
+//             await Assert.ThrowsAsync<InvalidOperationException>(
+//                 () => _subscriptionBusiness.BulkUpdateSubscriptions(uid, oid, pid, dtos));
+//         }
+//         
+//         #endregion
+//         
+//         #region BulkDeleteSubscriptions Tests
+//         
+//         [Fact]
+//         public async Task BulkDeleteSubscriptions_Success_OrganizationLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "delete",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act & Assert - Delete 2/3 with one non-existing ID
+//             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+//                 () => _subscriptionBusiness.BulkDeleteSubscriptions(uid, oid, null, new List<long>
+//                 {
+//                     subscriptions[0].Id, 
+//                     subscriptions[1].Id, 
+//                     99999
+//                 }));
+//             
+//             Assert.Contains("Some subscriptions were not deleted because they do not exist.", exception.Message);
+//     
+//             var subscriptionList = await Context.Subscriptions
+//                 .Where(s => s.OrganizationId == oid && s.ProjectId == null)
+//                 .ToListAsync();
+//             Assert.Single(subscriptionList);
+//         }
+//
+//         [Fact]
+//         public async Task BulkDeleteSubscriptions_Success_ProjectLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 2
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkDeleteSubscriptions(uid, oid, pid, 
+//                 new List<long> { subscriptions[0].Id, subscriptions[1].Id });
+//             
+//             // Assert
+//             Assert.True(result);
+//     
+//             var subscriptionList = await Context.Subscriptions
+//                 .Where(s => s.ProjectId == pid)
+//                 .ToListAsync();
+//             Assert.Empty(subscriptionList);
+//         }
+//
+//         [Fact]
+//         public async Task BulkDeleteSubscriptions_DoesNotDelete_WrongScope()
+//         {
+//             // Arrange - Create both org and project level subscriptions
+//             var orgSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = null,
+//                 ActionId = aid,
+//                 Operation = "create",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 1
+//             };
+//             var projectSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "delete",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 2
+//             };
+//             Context.Subscriptions.AddRange(orgSubscription, projectSubscription);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act & Assert - Try to delete org subscription using project scope
+//             await Assert.ThrowsAsync<InvalidOperationException>(
+//                 () => _subscriptionBusiness.BulkDeleteSubscriptions(uid, oid, pid,
+//                     new List<long> { orgSubscription.Id }));
+//             
+//             // Verify org subscription still exists
+//             var orgSub = await Context.Subscriptions.FindAsync(orgSubscription.Id);
+//             Assert.NotNull(orgSub);
+//         }
+//         
+//         #endregion
+//         
+//         #region BulkArchiveSubscriptions Tests
+//         
+//         [Fact]
+//         public async Task BulkArchiveSubscriptions_Success_OrganizationLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                     LastUpdatedBy = uid, 
+//                     LastUpdatedAt = now  
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                     LastUpdatedBy = uid, 
+//                     LastUpdatedAt = now  
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkArchiveSubscriptions(uid, oid, null,
+//                 new List<long> { subscriptions[0].Id, subscriptions[1].Id });
+//     
+//             // Assert
+//             Assert.True(result);
+//     
+//             var subscriptionList = await Context.Subscriptions
+//                 .Where(s => s.IsArchived && s.OrganizationId == oid && s.ProjectId == null)
+//                 .ToListAsync();
+//     
+//             Assert.Equal(2, subscriptionList.Count);
+//         }
+//
+//         [Fact]
+//         public async Task BulkArchiveSubscriptions_Success_ProjectLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                     LastUpdatedBy = uid, 
+//                     LastUpdatedAt = now  
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 2,
+//                     LastUpdatedBy = uid, 
+//                     LastUpdatedAt = now  
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkArchiveSubscriptions(uid, oid, pid,
+//                 new List<long> { subscriptions[0].Id, subscriptions[1].Id });
+//     
+//             // Assert
+//             Assert.True(result);
+//     
+//             var subscriptionList = await Context.Subscriptions
+//                 .Where(s => s.IsArchived && s.ProjectId == pid)
+//                 .ToListAsync();
+//     
+//             Assert.Equal(2, subscriptionList.Count);
+//         }
+//         
+//         #endregion
+//         
+//         #region BulkUnarchiveSubscriptions Tests
+//         
+//         [Fact]
+//         public async Task BulkUnarchiveSubscriptions_Success_OrganizationLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                     IsArchived = true
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 2,
+//                     IsArchived = true
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkUnarchiveSubscriptions(uid, oid, null,
+//                 new List<long> { subscriptions[0].Id, subscriptions[1].Id });
+//     
+//             // Assert
+//             Assert.True(result);
+//     
+//             var subscriptionList = await Context.Subscriptions
+//                 .Where(s => !s.IsArchived && s.OrganizationId == oid && s.ProjectId == null)
+//                 .ToListAsync();
+//     
+//             Assert.Equal(2, subscriptionList.Count);
+//         }
+//
+//         [Fact]
+//         public async Task BulkUnarchiveSubscriptions_Success_ProjectLevel()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                     IsArchived = true
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = pid,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 2,
+//                     IsArchived = true
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act
+//             var result = await _subscriptionBusiness.BulkUnarchiveSubscriptions(uid, oid, pid,
+//                 new List<long> { subscriptions[0].Id, subscriptions[1].Id });
+//     
+//             // Assert
+//             Assert.True(result);
+//     
+//             var subscriptionList = await Context.Subscriptions
+//                 .Where(s => !s.IsArchived && s.ProjectId == pid)
+//                 .ToListAsync();
+//     
+//             Assert.Equal(2, subscriptionList.Count);
+//         }
+//
+//         [Fact]
+//         public async Task BulkUnarchiveSubscriptions_Fails_WithNonExistingId()
+//         {
+//             // Arrange
+//             var subscriptions = new List<Subscription>
+//             {
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "create",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 1,
+//                     IsArchived = true
+//                 },
+//                 new()
+//                 {
+//                     UserId = uid,
+//                     OrganizationId = oid,
+//                     ProjectId = null,
+//                     ActionId = aid,
+//                     Operation = "update",
+//                     DataSourceId = did,
+//                     EntityType = "record",
+//                     EntityId = 2,
+//                     IsArchived = true
+//                 }
+//             };
+//             Context.Subscriptions.AddRange(subscriptions);
+//             await Context.SaveChangesAsync();
+//     
+//             // Act & Assert
+//             await Assert.ThrowsAsync<InvalidOperationException>(
+//                 () => _subscriptionBusiness.BulkUnarchiveSubscriptions(uid, oid, null, new List<long>
+//                 {
+//                     subscriptions[0].Id, 
+//                     subscriptions[1].Id,
+//                     99999 // Non-existing ID
+//                 }));
+//     
+//             var subscriptionList = await Context.Subscriptions
+//                 .Where(s => !s.IsArchived)
+//                 .ToListAsync();
+//     
+//             Assert.Equal(2, subscriptionList.Count);
+//         }
+//         
+//         #endregion
+//         
+//         #region SubscriptionResponseDto Tests
+//
+//         [Fact]
+//         public void SubscriptionResponseDto_AllProperties_CanBeSetAndRetrieved()
+//         {
+//             // Arrange
+//             var now = DateTime.UtcNow;
+//             var dto = new SubscriptionResponseDto
+//             {
+//                 Id = 1,
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = 100,
+//                 Operation = "create",
+//                 DataSourceId = 200,
+//                 EntityType = "record",
+//                 EntityId = 300,
+//                 LastUpdatedAt = now,
+//                 LastUpdatedBy = uid,
+//                 IsArchived = false
+//             };
+//
+//             // Assert
+//             Assert.Equal(1, dto.Id);
+//             Assert.Equal(uid, dto.UserId);
+//             Assert.Equal(oid, dto.OrganizationId);
+//             Assert.Equal(pid, dto.ProjectId);
+//             Assert.Equal(100, dto.ActionId);
+//             Assert.Equal("create", dto.Operation);
+//             Assert.Equal(200, dto.DataSourceId);
+//             Assert.Equal("record", dto.EntityType);
+//             Assert.Equal(300, dto.EntityId);
+//             Assert.Equal(now, dto.LastUpdatedAt);
+//             Assert.Equal(uid, dto.LastUpdatedBy);
+//             Assert.False(dto.IsArchived);
+//         }
+//
+//         #endregion
+//
+//         #region LastUpdatedBy Tests
+//
+//         [Fact]
+//         public async Task CreateSubscription_Success_StoresLastUpdatedByUserId()
+//         {
+//             // Arrange
+//             var testSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "create",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 100,
+//                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+//                 LastUpdatedBy = uid
+//             };
+//             
+//             // Act
+//             Context.Subscriptions.Add(testSubscription);
+//             await Context.SaveChangesAsync();
+//
+//             // Assert
+//             var savedSubscription = await Context.Subscriptions.FindAsync(testSubscription.Id);
+//             Assert.NotNull(savedSubscription);
+//             Assert.Equal(uid, savedSubscription.LastUpdatedBy);
+//         }
+//
+//         [Fact]
+//         public async Task CreateSubscription_Success_NavigationPropertyLoadsUser()
+//         {
+//             // Arrange
+//             var testSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "update",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 101,
+//                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+//                 LastUpdatedBy = uid
+//             };
+//             
+//             Context.Subscriptions.Add(testSubscription);
+//             await Context.SaveChangesAsync();
+//
+//             // Act
+//             var subscriptionWithUser = await Context.Subscriptions
+//                 .Include(s => s.LastUpdatedByUser)
+//                 .FirstAsync(s => s.Id == testSubscription.Id);
+//             
+//             // Assert
+//             Assert.NotNull(subscriptionWithUser.LastUpdatedByUser);
+//             Assert.Equal("test_user", subscriptionWithUser.LastUpdatedByUser.Name);
+//             Assert.Equal("Fake@gmail.com", subscriptionWithUser.LastUpdatedByUser.Email);
+//             Assert.Equal(uid, subscriptionWithUser.LastUpdatedBy);
+//         }
+//
+//         [Fact]
+//         public async Task CreateSubscription_Success_WithNullLastUpdatedBy()
+//         {
+//             // Arrange
+//             var testSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "delete",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 102,
+//                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+//                 LastUpdatedBy = null
+//             };
+//             
+//             // Act
+//             Context.Subscriptions.Add(testSubscription);
+//             await Context.SaveChangesAsync();
+//
+//             // Assert
+//             var savedSubscription = await Context.Subscriptions.FindAsync(testSubscription.Id);
+//             Assert.NotNull(savedSubscription);
+//             Assert.Null(savedSubscription.LastUpdatedBy);
+//             
+//             var subscriptionWithUser = await Context.Subscriptions
+//                 .Include(s => s.LastUpdatedByUser)
+//                 .FirstAsync(s => s.Id == testSubscription.Id);
+//             
+//             Assert.Null(subscriptionWithUser.LastUpdatedByUser);
+//         }
+//
+//         [Fact]
+//         public async Task UpdateSubscription_Success_UpdatesLastUpdatedByUserId()
+//         {
+//             // Arrange
+//             var testSubscription = new Subscription
+//             {
+//                 UserId = uid,
+//                 OrganizationId = oid,
+//                 ProjectId = pid,
+//                 ActionId = aid,
+//                 Operation = "create",
+//                 DataSourceId = did,
+//                 EntityType = "record",
+//                 EntityId = 103,
+//                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+//                 LastUpdatedBy = null
+//             };
+//             Context.Subscriptions.Add(testSubscription);
+//             await Context.SaveChangesAsync();
+//
+//             // Act
+//             testSubscription.LastUpdatedBy = uid;
+//             testSubscription.Operation = "update";
+//             testSubscription.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+//             
+//             Context.Subscriptions.Update(testSubscription);
+//             await Context.SaveChangesAsync();
+//
+//             // Assert
+//             var updatedSubscription = await Context.Subscriptions
+//                 .Include(s => s.LastUpdatedByUser)
+//                 .FirstAsync(s => s.Id == testSubscription.Id);
+//             
+//             Assert.Equal(uid, updatedSubscription.LastUpdatedBy);
+//             Assert.NotNull(updatedSubscription.LastUpdatedByUser);
+//             Assert.Equal("test_user", updatedSubscription.LastUpdatedByUser.Name);
+//             Assert.Equal("update", updatedSubscription.Operation);
+//         }
+//
+//         #endregion
+//
+//         protected override async Task SeedTestDataAsync()
+//         {
+//             await base.SeedTestDataAsync();
+//             
+//             var user = new User 
+//             { 
+//                 Name = "test_user", 
+//                 Email = "Fake@gmail.com",
+//                 Password = "test_password",
+//                 IsArchived = false
+//             };
+//             Context.Users.Add(user);
+//             await Context.SaveChangesAsync();
+//             uid = user.Id;
+//             
+//             var organization = new Organization { Name = "Test Organization" };
+//             Context.Organizations.Add(organization);
+//             await Context.SaveChangesAsync();
+//             oid = organization.Id;
+//             
+//             var project = new Project {
+//                 Name = "Project 1", 
+//                 LastUpdatedBy = uid,
+//                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+//                 OrganizationId = oid
+//             };
+//             Context.Projects.Add(project);
+//             await Context.SaveChangesAsync();
+//             pid = project.Id;
+//             
+//             // Add action
+//             var action = new Action
+//             {
+//                 Name = "Action1",
+//                 ProjectId = pid,
+//                 LastUpdatedBy = uid,
+//                 LastUpdatedAt = now
+//             };
+//             Context.Actions.Add(action);
+//             await Context.SaveChangesAsync();
+//             aid = action.Id;
+//             
+//             // Add datasource
+//             var dataSource = new DataSource
+//             {
+//                 Name = "DataSource2",
+//                 ProjectId = pid,
+//                 LastUpdatedBy = uid,
+//                 LastUpdatedAt = now
+//             };
+//             Context.DataSources.Add(dataSource);
+//             await Context.SaveChangesAsync();
+//             did = dataSource.Id;
+//         }
+//     }
+// }
