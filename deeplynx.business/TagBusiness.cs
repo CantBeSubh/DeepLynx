@@ -1,23 +1,22 @@
 using System.ComponentModel.DataAnnotations;
-using deeplynx.interfaces;
+using System.Text.Json;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
+using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using deeplynx.helpers;
-using deeplynx.helpers.exceptions;
-using System.Text.Json;
 
 namespace deeplynx.business;
 
 public class TagBusiness : ITagBusiness
 {
+    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TagBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="TagBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for tag operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
@@ -30,7 +29,7 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Retrieves all tags for a specified project.
+    ///     Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <param name="organizationId">The ID of the organization whose tags are to be retrieved.</param>
@@ -38,15 +37,6 @@ public class TagBusiness : ITagBusiness
     /// <returns>A list of tags belonging to the project.</returns>
     public async Task<List<TagResponseDto>> GetAllTags(long organizationId, long? projectId, bool hideArchived)
     {
-        // Ensure organization exists
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId, hideArchived);
-
-        //If given projectId, filter to project-level tags
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-        }
-
         var tagQuery = _context.Tags
             .Where(t => t.OrganizationId == organizationId
                 && (!hideArchived || !t.IsArchived)
@@ -68,7 +58,32 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Retrieves a specific tag by its ID for a specified project.
+    ///     Retrieves all tags for a specified project.
+    /// </summary>
+    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
+    /// <param name="organizationId">The IDs of the organization whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
+    /// <returns>A list of tags belonging to the project.</returns>
+    public async Task<List<TagResponseDto>> GetAllTagsMultiProject(long organizationId, long[] projectIds, bool hideArchived)
+    {
+        var tagQuery = _context.Tags
+            .Where(t => t.ProjectId != null && projectIds.Contains(t.ProjectId.Value));
+
+        if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
+
+        return await tagQuery.Select(t => new TagResponseDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            ProjectId = t.ProjectId,
+            LastUpdatedBy = t.LastUpdatedBy,
+            LastUpdatedAt = t.LastUpdatedAt
+        })
+            .ToListAsync();
+    }
+
+    /// <summary>
+    ///     Retrieves a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
@@ -78,13 +93,6 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Returned if tag not found or is archived</exception>
     public async Task<TagResponseDto> GetTag(long organizationId, long? projectId, long tagId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
-        }
-
         var tag = await _context.Tags
             .Where(t => t.Id == tagId
                 && t.OrganizationId == organizationId
@@ -92,10 +100,9 @@ public class TagBusiness : ITagBusiness
                 && (!projectId.HasValue || t.ProjectId == projectId.Value))
             .FirstOrDefaultAsync();
 
-        if (tag == null)
-        {
-            throw new KeyNotFoundException($"Tag with id {tagId} not found or does not belong to the specified organization/project context");
-        }
+        if (tag == null) throw new KeyNotFoundException($"Tag with id {tagId} not found");
+
+        if (hideArchived && tag.IsArchived) throw new KeyNotFoundException($"Tag with id {tagId} is archived");
 
         return new TagResponseDto
         {
@@ -110,8 +117,8 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Asynchronously creates a new tag for a specified project.
-    /// Note: Will error out with foreign key constraint violation if project is not found.
+    ///     Asynchronously creates a new tag for a specified project.
+    ///     Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -122,30 +129,13 @@ public class TagBusiness : ITagBusiness
     {
         ValidationHelper.ValidateModel(dto);
 
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
-            var project = await _context.Projects.FindAsync(projectId.Value);
-            if (project?.OrganizationId != organizationId)
-            {
-                throw new ArgumentException($"Project {projectId.Value} does not belong to the organization {organizationId}");
-            }
-        }
-
         var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == dto.Name);
         if (existingTag != null)
-        {
             throw new Exception($"Tag for project {projectId} with name {dto.Name} already exists");
-        }
 
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(dto.Name))
-        {
             throw new ValidationException("Name is required and cannot be empty or whitespace");
-        }
 
         var tag = new Tag
         {
@@ -182,7 +172,7 @@ public class TagBusiness : ITagBusiness
             EntityId = tag.Id,
             EntityName = tag.Name,
             Properties = JsonSerializer.Serialize(new { tag.Name }),
-            DataSourceId = null,
+            DataSourceId = null
         });
 
         return new TagResponseDto // Return validated response DTO back to user.
@@ -197,8 +187,8 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Asynchronously creates new tags for a specified project.
-    /// Note: Will error out with foreign key constraint violation if project is not found.
+    ///     Asynchronously creates new tags for a specified project.
+    ///     Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -216,6 +206,7 @@ public class TagBusiness : ITagBusiness
             return new List<TagResponseDto>();
         }
 
+        //Not handled by middleware for bulk operations are not accessible via routing
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         if (projectId.HasValue)
@@ -277,7 +268,6 @@ public class TagBusiness : ITagBusiness
         // log tag create event for each tag created
         var events = new List<CreateEventRequestDto> { };
         foreach (var item in result)
-        {
             events.Add(new CreateEventRequestDto
             {
                 OrganizationId = organizationId,
@@ -287,19 +277,16 @@ public class TagBusiness : ITagBusiness
                 EntityId = item.Id,
                 EntityName = item.Name,
                 Properties = JsonSerializer.Serialize(new { item.Name }),
-                DataSourceId = null,
+                DataSourceId = null
             });
-        }
-        if (projectId.HasValue)
-        {
-            await _eventBusiness.BulkCreateEvents(projectId.Value, events);
-        }
+
+        await _eventBusiness.BulkCreateEvents(events, projectId);
 
         return result;
     }
 
     /// <summary>
-    /// Updates an existing tag for a specified project.
+    ///     Updates an existing tag for a specified project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -311,12 +298,6 @@ public class TagBusiness : ITagBusiness
     public async Task<TagResponseDto> UpdateTag(long organizationId, long currentUserId, long? projectId, long tagId, UpdateTagRequestDto tagRequestDto)
     {
         ValidationHelper.ValidateModel(tagRequestDto);
-
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        }
 
         var tag = await _context.Tags
             .Where(t => t.Id == tagId
@@ -330,9 +311,7 @@ public class TagBusiness : ITagBusiness
 
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
-        {
             throw new ArgumentException("Name is required and cannot be empty.");
-        }
 
         tag.Name = tagRequestDto.Name ?? tag.Name;
         tag.LastUpdatedBy = currentUserId;
@@ -381,7 +360,7 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Deletes a specific tag by its ID for a specified project.
+    ///     Deletes a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
@@ -389,12 +368,6 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<bool> DeleteTag(long organizationId, long? projectId, long tagId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
         var tag = await _context.Tags
             .Where(t => t.Id == tagId
                         && t.OrganizationId == organizationId
@@ -408,7 +381,7 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Archives a specific tag by its ID for a specified project.
+    ///     Archives a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -417,12 +390,6 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<bool> ArchiveTag(long organizationId, long currentUserId, long? projectId, long tagId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
         var tag = await _context.Tags
             .Where(t => t.Id == tagId
                         && t.OrganizationId == organizationId
@@ -455,7 +422,7 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Unarchives a specific tag by its ID for a specified project.
+    ///     Unarchives a specific tag by its ID for a specified project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
@@ -468,12 +435,6 @@ public class TagBusiness : ITagBusiness
         long? projectId,
         long tagId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
         var tag = await _context.Tags
             .Where(t => t.Id == tagId
                         && t.OrganizationId == organizationId
@@ -505,8 +466,8 @@ public class TagBusiness : ITagBusiness
     }
 
     /// <summary>
-    /// Validates that all provided tag names exist in the database for the specified project.
-    /// Used by MetadataBusiness to enforce tagsMutable settings.
+    ///     Validates that all provided tag names exist in the database for the specified project.
+    ///     Used by MetadataBusiness to enforce tagsMutable settings.
     /// </summary>
     /// <param name="projectId">The project ID to search within</param>
     /// <param name="organizationId">The ID of the organization to which the tag belongs.</param>
@@ -516,13 +477,6 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="ArgumentException">Thrown if tagNames list is null or empty</exception>
     public async Task<List<TagResponseDto>> GetTagsByName(long organizationId, long? projectId, List<string> tagNames)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-        }
-
         if (tagNames == null || !tagNames.Any())
             throw new ArgumentException("Tag names list cannot be null or empty", nameof(tagNames));
 
@@ -555,11 +509,8 @@ public class TagBusiness : ITagBusiness
         var missingTagNames = cleanTagNames.Where(name => !foundTagNames.Contains(name)).ToList();
 
         if (missingTagNames.Any())
-        {
             throw new KeyNotFoundException(
                 $"Tags not found with names: {string.Join(", ", missingTagNames)}");
-        }
-
         return existingTags.Select(t => new TagResponseDto
         {
             Id = t.Id,

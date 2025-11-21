@@ -1,262 +1,250 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers
+namespace deeplynx.api.Controllers;
+
+[ApiController]
+[Route("organizations")]
+public class OrganizationController : ControllerBase
 {
-    [ApiController]
-    [Route("organizations")]
-    public class OrganizationController : ControllerBase
+    private readonly ILogger<OrganizationController> _logger;
+    private readonly IOrganizationBusiness _organizationBusiness;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="OrganizationController" /> class
+    /// </summary>
+    /// <param name="organizationBusiness">The business logic interface for handling Organization operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public OrganizationController(IOrganizationBusiness organizationBusiness,
+        ILogger<OrganizationController> logger)
     {
-        private readonly IOrganizationBusiness _organizationBusiness;
-        private readonly ILogger<OrganizationController> _logger;
+        _organizationBusiness = organizationBusiness;
+        _logger = logger;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="OrganizationController"/> class
-        /// </summary>
-        /// <param name="organizationBusiness">The business logic interface for handling Organization operations.</param>
-        /// <param name="logger">Error/Info logging interface for database log table.</param>
-        public OrganizationController(IOrganizationBusiness organizationBusiness,
-            ILogger<OrganizationController> logger)
+    /// <summary>
+    ///     List all organizations
+    /// </summary>
+    /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
+    /// <returns></returns>
+    [HttpGet(Name = "api_get_all_organizations")]
+    public async Task<ActionResult<IEnumerable<OrganizationResponseDto>>> GetAllOrganizations(
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            _organizationBusiness = organizationBusiness;
-            _logger = logger;
+            var organizations = await _organizationBusiness
+                .GetAllOrganizations(hideArchived);
+            return Ok(organizations);
         }
-
-        /// <summary>
-        /// List all organizations
-        /// </summary>
-        /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
-        /// <returns></returns>
-        [HttpGet("GetAllOrganizations", Name = "api_get_all_organizations")]
-        public async Task<ActionResult<IEnumerable<OrganizationResponseDto>>> GetAllOrganizations(
-            [FromQuery] bool hideArchived = true)
+        catch (Exception exc)
         {
-            try
-            {
-                var organizations = await _organizationBusiness
-                    .GetAllOrganizations(hideArchived);
-                return Ok(organizations);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while listing organizations: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while listing organizations: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Fetch Organization by ID
-        /// </summary>
-        /// <param name="organizationId">ID of organization</param>
-        /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
-        /// <returns></returns>
-        [HttpGet("GetOrganization/{organizationId}", Name = "api_get_organization")]
-        public async Task<ActionResult<OrganizationResponseDto>> GetOrganization(
-            long organizationId, [FromQuery] bool hideArchived = true)
+    /// <summary>
+    ///     Fetch Organization by ID
+    /// </summary>
+    /// <param name="organizationId">ID of organization</param>
+    /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
+    /// <returns></returns>
+    [HttpGet("{organizationId}", Name = "api_get_organization")]
+    public async Task<ActionResult<OrganizationResponseDto>> GetOrganization(
+        long organizationId, [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            try
-            {
-                var organization = await _organizationBusiness.GetOrganization(organizationId, hideArchived);
-                return Ok(organization);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while retrieving organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var organization = await _organizationBusiness.GetOrganization(organizationId, hideArchived);
+            return Ok(organization);
         }
-
-        /// <summary>
-        /// Create an Organization
-        /// </summary>
-        /// <param name="dto">Data structure of organization to create</param>
-        /// <returns></returns>
-        [HttpPost("CreateOrganization", Name = "api_create_organization")]
-        public async Task<ActionResult<OrganizationResponseDto>> CreateOrganization(
-            [FromBody] CreateOrganizationRequestDto dto)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var organization = await _organizationBusiness.CreateOrganization(currentUserId, dto);
-                return Ok(organization);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while creating organization: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while retrieving organization {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Update an Organization
-        /// </summary>
-        /// <param name="organizationId">ID of the organization</param>
-        /// <param name="dto">Fields to update</param>
-        /// <returns></returns>
-        [HttpPut("UpdateOrganization/{organizationId}", Name = "api_update_organization")]
-        public async Task<ActionResult<OrganizationResponseDto>> UpdateOrganization(
-            long organizationId,
-            [FromBody] UpdateOrganizationRequestDto dto)
+    /// <summary>
+    ///     Create an Organization
+    /// </summary>
+    /// <param name="dto">Data structure of organization to create</param>
+    /// <returns></returns>
+    [HttpPost(Name = "api_create_organization")]
+    public async Task<ActionResult<OrganizationResponseDto>> CreateOrganization(
+        [FromBody] CreateOrganizationRequestDto dto)
+    {
+        try
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var organization = await _organizationBusiness.UpdateOrganization(currentUserId, organizationId, dto);
-                return Ok(organization);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while updating organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var currentUserId = UserContextStorage.UserId;
+            var organization = await _organizationBusiness.CreateOrganization(currentUserId, dto);
+            return Ok(organization);
         }
-
-        /// <summary>
-        /// Delete an organization
-        /// </summary>
-        /// <param name="organizationId">ID of the organization to hard delete</param>
-        /// <returns></returns>
-        [HttpDelete("DeleteOrganization/{organizationId}", Name = "api_delete_organization")]
-        public async Task<ActionResult> DeleteOrganization(long organizationId)
+        catch (Exception exc)
         {
-            try
-            {
-                await _organizationBusiness.DeleteOrganization(organizationId);
-                return Ok(new { message = $"Deleted organization {organizationId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while creating organization: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Archive an organization
-        /// </summary>
-        /// <param name="organizationId">ID of the organization</param>
-        /// <returns></returns>
-        [HttpDelete("ArchiveOrganization/{organizationId}", Name = "api_archive_organization")]
-        public async Task<ActionResult> ArchiveOrganization(long organizationId)
+    /// <summary>
+    ///     Update an Organization
+    /// </summary>
+    /// <param name="organizationId">ID of the organization</param>
+    /// <param name="dto">Fields to update</param>
+    /// <returns></returns>
+    [HttpPut("{organizationId}", Name = "api_update_organization")]
+    public async Task<ActionResult<OrganizationResponseDto>> UpdateOrganization(
+        long organizationId,
+        [FromBody] UpdateOrganizationRequestDto dto)
+    {
+        try
         {
-            try
+            var currentUserId = UserContextStorage.UserId;
+            var organization = await _organizationBusiness.UpdateOrganization(currentUserId, organizationId, dto);
+            return Ok(organization);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while updating organization {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Delete an organization
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to hard delete</param>
+    /// <returns></returns>
+    [HttpDelete("{organizationId}", Name = "api_delete_organization")]
+    public async Task<ActionResult> DeleteOrganization(long organizationId)
+    {
+        try
+        {
+            await _organizationBusiness.DeleteOrganization(organizationId);
+            return Ok(new { message = $"Deleted organization {organizationId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while deleting organization {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive an Organization
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization</param>
+    /// <param name="archive">True to archive the organization, false to unarchive it.</param>
+    /// <returns>A message stating the organization was successfully archived or unarchived.</returns>
+    [HttpPatch("{organizationId}", Name = "api_archive_organization")]
+    public async Task<IActionResult> ArchiveOrganization(
+        long organizationId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            var userId = UserContextStorage.UserId;
+            if (archive)
             {
-                var currentUserId = UserContextStorage.UserId;
-                await _organizationBusiness.ArchiveOrganization(currentUserId, organizationId);
+                await _organizationBusiness.ArchiveOrganization(userId, organizationId);
                 return Ok(new { message = $"Archived organization {organizationId}" });
             }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while archiving organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
-        
-        /// <summary>
-        /// Unarchive an Organization
-        /// </summary>
-        /// <param name="organizationId">ID of the organization</param>
-        /// <returns></returns>
-        [HttpPut("UnarchiveOrganization/{organizationId}", Name = "api_unarchive_organization")]
-        public async Task<ActionResult> UnarchiveOrganization(long organizationId)
-        {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                await _organizationBusiness.UnarchiveOrganization(currentUserId, organizationId);
-                return Ok(new { message = $"Unarchived organization {organizationId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while unarchiving organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
 
-        /// <summary>
-        /// Add User to Organization
-        /// </summary>
-        /// <param name="organizationId">ID of the organization</param>
-        /// <param name="userId">ID of the user to be added</param>
-        /// <param name="isAdmin"></param>
-        /// <returns></returns>
-        [HttpPost("AddUserToOrganization", Name = "api_add_user_to_organization")]
-        public async Task<ActionResult> AddUserToOrganization(
-            [FromQuery] long organizationId, 
-            [FromQuery] long userId,
-            [FromQuery] bool isAdmin = false)
-        {
-            try
-            {
-                await _organizationBusiness.AddUserToOrganization(organizationId, userId, isAdmin);
-                return Ok(new { message = $"Added user {userId} to organization {organizationId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while adding user {userId} to organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            await _organizationBusiness.UnarchiveOrganization(userId, organizationId);
+            return Ok(new { message = $"Unarchived organization {organizationId}" });
         }
-        
-        /// <summary>
-        /// Set Admin Status for Organization User
-        /// </summary>
-        /// <param name="organizationId">ID of the organization</param>
-        /// <param name="userId">ID of the user</param>
-        /// <param name="isAdmin">isAdmin status</param>
-        /// <returns></returns>
-        [HttpPut("SetOrganizationAdminStatus", Name = "api_update_organization_admin_status")]
-        public async Task<ActionResult> SetOrganizationAdminStatus(
-            [FromQuery] long organizationId, 
-            [FromQuery] long userId,
-            [FromQuery] bool isAdmin)
+        catch (Exception exc)
         {
-            try
-            {
-                await _organizationBusiness.SetOrganizationAdminStatus(organizationId, userId, isAdmin);
-                return Ok(new { message = $"Adjusted admin status for user {userId} in organization {organizationId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while setting admin status for user {userId} in organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} organization {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
-        
-        /// <summary>
-        /// Remove user from organization
-        /// </summary>
-        /// <param name="organizationId">ID of the organization to remove from</param>
-        /// <param name="userId">ID of user to be removed</param>
-        /// <returns></returns>
-        [HttpDelete("RemoveUserFromOrganization", Name = "api_remove_user_from_organization")]
-        public async Task<ActionResult> RemoveUserFromOrganization(
-            [FromQuery] long organizationId, 
-            [FromQuery] long userId)
+    }
+
+    /// <summary>
+    ///     Add User to Organization
+    /// </summary>
+    /// <param name="organizationId">ID of the organization</param>
+    /// <param name="userId">ID of the user to be added</param>
+    /// <param name="isAdmin"></param>
+    /// <returns></returns>
+    [HttpPost("{organizationId}/user", Name = "api_add_user_to_organization")]
+    public async Task<ActionResult> AddUserToOrganization(
+        long organizationId,
+        [FromQuery] long userId,
+        [FromQuery] bool isAdmin = false)
+    {
+        try
         {
-            try
-            {
-                await _organizationBusiness.RemoveUserFromOrganization(organizationId, userId);
-                return Ok(new { message = $"Removed user {userId} from organization {organizationId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while removing user {userId} from organization {organizationId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            await _organizationBusiness.AddUserToOrganization(organizationId, userId, isAdmin);
+            return Ok(new { message = $"Added user {userId} to organization {organizationId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while adding user {userId} to organization {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Set Admin Status for Organization User
+    /// </summary>
+    /// <param name="organizationId">ID of the organization</param>
+    /// <param name="userId">ID of the user</param>
+    /// <param name="isAdmin">isAdmin status</param>
+    /// <returns></returns>
+    [HttpPut("{organizationId}/admin", Name = "api_update_organization_admin_status")]
+    public async Task<ActionResult> SetOrganizationAdminStatus(
+        long organizationId,
+        [FromQuery] long userId,
+        [FromQuery] bool isAdmin)
+    {
+        try
+        {
+            await _organizationBusiness.SetOrganizationAdminStatus(organizationId, userId, isAdmin);
+            return Ok(new { message = $"Adjusted admin status for user {userId} in organization {organizationId}" });
+        }
+        catch (Exception exc)
+        {
+            var message =
+                $"An error occurred while setting admin status for user {userId} in organization {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Remove user from organization
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to remove from</param>
+    /// <param name="userId">ID of user to be removed</param>
+    /// <returns></returns>
+    [HttpDelete("{organizationId}/user", Name = "api_remove_user_from_organization")]
+    public async Task<ActionResult> RemoveUserFromOrganization(
+        long organizationId,
+        [FromQuery] long userId)
+    {
+        try
+        {
+            await _organizationBusiness.RemoveUserFromOrganization(organizationId, userId);
+            return Ok(new { message = $"Removed user {userId} from organization {organizationId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while removing user {userId} from organization {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 }

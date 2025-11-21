@@ -1,227 +1,269 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers
+namespace deeplynx.api.Controllers;
+
+/// <summary>
+///     Controller for managing classes.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints to create, update, delete, and retrieve class information.
+/// </remarks>
+[ApiController]
+[Route("organizations/{organizationId}/projects/{projectId}/classes")]
+[Authorize]
+public class ClassController : ControllerBase
 {
-    
+    private readonly IClassBusiness _classBusiness;
+    private readonly ILogger<ClassController> _logger;
+
     /// <summary>
-    /// Controller for managing classes.
+    ///     Initializes a new instance of the <see cref="ClassController" /> class
     /// </summary>
-    /// <remarks>
-    /// This controller provides endpoints to create, update, delete, and retrieve class information.
-    /// </remarks>
-    [ApiController]
-    [Route("projects/{projectId}/classes")]
-    [Authorize]
-    public class ClassController : ControllerBase
+    /// <param name="classBusiness">The business logic interface for handling class operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public ClassController(IClassBusiness classBusiness, ILogger<ClassController> logger)
     {
-        private readonly IClassBusiness _classBusiness;
-        private readonly ILogger<ClassController> _logger;
+        _classBusiness = classBusiness;
+        _logger = logger;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ClassController"/> class
-        /// </summary>
-        /// <param name="classBusiness">The business logic interface for handling class operations.</param>
-        /// <param name="logger">Error/Info logging interface for database log table.</param>
-        public ClassController(IClassBusiness classBusiness, ILogger<ClassController> logger)
+    /// <summary>
+    ///     Get All Classes
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
+    /// <returns>List of class response DTOs</returns>
+    [HttpGet(Name = "api_get_all_classes")]
+    public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
+        long organizationId,
+        long projectId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            _classBusiness = classBusiness;
-            _logger = logger;
+            var classes = await _classBusiness.GetAllClasses(
+                organizationId, [projectId], hideArchived);
+            return Ok(classes);
         }
-        /// <summary>
-        /// Get all classes
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the class belongs</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
-        /// <returns>List of class response DTOs</returns>
-        [HttpGet("GetAllClasses", Name = "api_get_all_classes")]
-        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
-            long projectId, 
-            [FromQuery] bool hideArchived = true)
+        catch (Exception exc)
         {
-            try
-            {
-                var classes = await _classBusiness.GetAllClasses(projectId, hideArchived);
-                return Ok(classes);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while fetching all classes.: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An unexpected error occurred while fetching all classes.: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
-        }
-        /// <summary>
-        /// Get a class
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the class belongs</param>
-        /// <param name="classId">The ID of the class to retrieve</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
-        /// <returns>Class response DTO</returns>
-        [HttpGet("GetClass/{classId}", Name = "api_get_a_class")]
-        public async Task<ActionResult<ClassResponseDto>> GetClass(
-            long projectId, 
-            long classId, 
-            [FromQuery] bool hideArchived = true)
+    /// <summary>
+    ///     Get a Class
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="classId">The ID of the class to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
+    /// <returns>Class response DTO</returns>
+    [HttpGet("{classId}", Name = "api_get_a_class")]
+    public async Task<ActionResult<ClassResponseDto>> GetClass(
+        long organizationId,
+        long projectId,
+        long classId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            try
-            {
-                var classes = await _classBusiness.GetClass(projectId, classId, hideArchived);
-                return Ok(classes);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while fetching this class {classId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var classes = await _classBusiness.GetClass(
+                organizationId, projectId, classId, hideArchived);
+            return Ok(classes);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An unexpected error occurred while fetching this class {classId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
+    /// <summary>
+    ///     Get All Classes (Multi Project)
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
+    /// <param name="projectId">The ID of the project whose classes are to be retrieved</param>
+    /// <param name="projectIds">The IDs of the projects whose classes are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
+    /// <returns>A list of classes for the given project.</returns>
+    [HttpGet("multiproject", Name = "api_get_all_classes_multi_project")]
+    public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClassMultiProject(
+        long organizationId,
+        long projectId,
+        [FromQuery] long[] projectIds,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var classes = await _classBusiness.GetAllClasses(
+                organizationId, projectIds, hideArchived);
+            return Ok(classes);
         }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing all classes: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
+    /// <summary>
+    ///     Create a Class
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="dto">The request DTO for classes</param>
+    /// <returns>Class response DTOs</returns>
+    [HttpPost(Name = "api_create_a_class")]
+    public async Task<ActionResult<ClassResponseDto>> CreateClass(
+        long organizationId,
+        long projectId,
+        [FromBody] CreateClassRequestDto dto)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            var newClass = await _classBusiness.CreateClass(
+                currentUserId, organizationId, projectId, dto);
+            return Ok(newClass);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An unexpected error occurred while creating this class.: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
-        /// <summary>
-        /// Create a class
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the class belongs</param>
-        /// <param name="dto">The request DTO for classes</param>
-        /// <returns>Class response DTOs</returns>
-        [HttpPost("CreateClass", Name = "api_create_a_class")]
-        public async Task<ActionResult<ClassResponseDto>> CreateClass(long projectId,
-            [FromBody] CreateClassRequestDto dto)
+    /// <summary>
+    ///     Bulk Create Classes
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="classes">List of request DTOs for classes</param>
+    /// <returns>Bulk class response DTOs</returns>
+    [HttpPost("bulk", Name = "api_create_many_classes")]
+    public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
+        long organizationId,
+        long projectId,
+        [FromBody] List<CreateClassRequestDto> classes)
+    {
+        try
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var newClass = await _classBusiness.CreateClass(currentUserId, projectId, dto);
-                return Ok(newClass);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while creating this class.: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var currentUserId = UserContextStorage.UserId;
+            var newClasses = await _classBusiness.BulkCreateClasses(
+                currentUserId, organizationId, projectId, classes);
+            return Ok(newClasses);
         }
-        
-        /// <summary>
-        /// Create many classes
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the class belongs</param>
-        /// <param name="classes">List of request DTOs for classes</param>
-        /// <returns>Bulk class response DTOs</returns>
-        [HttpPost("BulkCreateClasses", Name = "api_create_many_classes")]
-        public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
-            long projectId,
-            [FromBody] List<CreateClassRequestDto> classes)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var newClasses = await _classBusiness.BulkCreateClasses(currentUserId, projectId, classes);
-                return Ok(newClasses);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while creating these classes: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An unexpected error occurred while creating these classes: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
-        
-        /// <summary>
-        /// Update a class
-        /// </summary>
-        /// <param name="projectId">The ID of the project to which the class belongs</param>
-        /// /// <param name="classId">The ID of the class to update</param>
-        /// <param name="dto">The request DTO for the class</param>
-        /// <returns>Class response DTO</returns>
-        [HttpPut("UpdateClass/{classId}", Name = "api_update_a_class")]
-        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] UpdateClassRequestDto dto)
-        {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var updatedClass = await _classBusiness.UpdateClass(currentUserId, projectId, classId, dto);
-                return Ok(updatedClass);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while updating this class {classId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
+    }
 
-        /// <summary>
-        /// Delete a class
-        /// </summary>
-        /// <param name="classId">The ID of the class to delete.</param>
-        /// <param name="projectId">The ID of the project to which the class belongs.</param>
-        /// <returns>A message stating the class was successfully deleted.</returns>
-        [HttpDelete("DeleteClass/{classId}", Name = "api_delete_a_class")]
-        public async Task<IActionResult> DeleteClass(long projectId, long classId)
+    /// <summary>
+    ///     Update a Class
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// ///
+    /// <param name="classId">The ID of the class to update</param>
+    /// <param name="dto">The request DTO for the class</param>
+    /// <returns>Class response DTO</returns>
+    [HttpPut("{classId}", Name = "api_update_a_class")]
+    public async Task<ActionResult<ClassResponseDto>> UpdateClass(
+        long organizationId,
+        long projectId,
+        long classId,
+        [FromBody] UpdateClassRequestDto dto)
+    {
+        try
         {
-            try
-            {
-                await _classBusiness.DeleteClass(projectId, classId);
-                return Ok(new { message = $"Deleted class {classId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting class {classId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var currentUserId = UserContextStorage.UserId;
+            var updatedClass = await _classBusiness.UpdateClass(
+                currentUserId, organizationId, projectId, classId, dto);
+            return Ok(updatedClass);
         }
-        
-        /// <summary>
-        /// Archive a class
-        /// </summary>
-        /// <param name="classId">The ID of the class to archive.</param>
-        /// <param name="projectId">The ID of the project to which the class belongs.</param>
-        /// <returns>A message stating the class was successfully archived.</returns>
-        [HttpDelete("ArchiveClass/{classId}", Name = "api_archive_a_class")]
-        public async Task<IActionResult> ArchiveClass(long projectId, long classId)
+        catch (Exception exc)
         {
-            try
+            var message = $"An unexpected error occurred while updating this class {classId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Delete a Class
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="classId">The ID of the class to delete.</param>
+    /// <returns>A message stating the class was successfully deleted.</returns>
+    [HttpDelete("{classId}", Name = "api_delete_a_class")]
+    public async Task<IActionResult> DeleteClass(
+        long organizationId,
+        long projectId,
+        long classId)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            await _classBusiness.DeleteClass(
+                currentUserId, organizationId, projectId, classId);
+            return Ok(new { message = $"Deleted class {classId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while deleting class {classId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive a Class
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="classId">The ID of the class to archive or unarchive.</param>
+    /// <param name="archive">True to archive the class, false to unarchive it.</param>
+    /// <returns>A message stating the class was successfully archived or unarchived.</returns>
+    [HttpPatch("{classId}", Name = "api_archive_class")]
+    public async Task<IActionResult> ArchiveClass(
+        long organizationId,
+        long projectId,
+        long classId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            var userId = UserContextStorage.UserId;
+            if (archive)
             {
-                var currentUserId = UserContextStorage.UserId;
-                await _classBusiness.ArchiveClass(currentUserId, projectId, classId);
+                await _classBusiness.ArchiveClass(userId, organizationId, projectId, classId);
                 return Ok(new { message = $"Archived class {classId}" });
             }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while archiving class {classId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+
+            await _classBusiness.UnarchiveClass(userId, organizationId, projectId, classId);
+            return Ok(new { message = $"Unarchived class {classId}" });
         }
-        
-        /// <summary>
-        /// Unarchive a class
-        /// </summary>
-        /// <param name="classId">The ID of the class to unarchive.</param>
-        /// <param name="projectId">The ID of the project to which the class belongs.</param>
-        /// <returns>A message stating the class was successfully unarchived.</returns>
-        [HttpPut("UnarchiveClass/{classId}", Name = "api_unarchive_a_class")]
-        public async Task<IActionResult> UnarchiveClass(long projectId, long classId)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                await _classBusiness.UnarchiveClass(currentUserId, projectId, classId);
-                return Ok(new { message = $"Unarchived class {classId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while unarchiving class {classId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} class {classId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 }

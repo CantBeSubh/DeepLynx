@@ -1,19 +1,15 @@
 using deeplynx.business;
 using deeplynx.datalayer.Models;
-using deeplynx.tests;
 using DotNetEnv;
+using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
-using Microsoft.EntityFrameworkCore;
 
 // Fixture to allow setting up and breaking down what is needed for each test suite
 public class TestSuiteFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgresContainer;
     private readonly RedisContainer _redisContainer;
-    public string PostgresConnectionString { get; private set; }
-    public string RedisConnectionString { get; private set; }
-    public DeeplynxContext Context { get; private set; }
 
     public TestSuiteFixture()
     {
@@ -25,6 +21,10 @@ public class TestSuiteFixture : IAsyncLifetime
             .WithImage("redis:7-alpine")
             .Build();
     }
+
+    public string PostgresConnectionString { get; private set; }
+    public string RedisConnectionString { get; private set; }
+    public DeeplynxContext Context { get; private set; }
 
     // Runs at the beginning of every test suite
     public async Task InitializeAsync()
@@ -79,7 +79,6 @@ public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
 [Collection("Test Suite Collection")]
 public class IntegrationTestBase : IAsyncLifetime
 {
-    protected DeeplynxContext Context { get; private set; }
     private readonly TestSuiteFixture _fixture;
     protected CacheBusiness _cacheBusiness;
 
@@ -91,6 +90,8 @@ public class IntegrationTestBase : IAsyncLifetime
             .Options);
         _cacheBusiness = CacheBusiness.Instance;
     }
+
+    protected DeeplynxContext Context { get; }
 
     // Runs before every test in the test suite
     public virtual async Task InitializeAsync()
@@ -107,7 +108,7 @@ public class IntegrationTestBase : IAsyncLifetime
     }
 
     /// <summary>
-    /// Clean database between tests
+    ///     Clean database between tests
     /// </summary>
     protected async Task CleanDatabaseAsync()
     {
@@ -133,6 +134,10 @@ public class IntegrationTestBase : IAsyncLifetime
 
         var oauthApplications = await Context.OauthApplications.ToListAsync();
         Context.OauthApplications.RemoveRange(oauthApplications);
+        await Context.SaveChangesAsync();
+
+        var savedSearches = await Context.SavedSearches.ToListAsync();
+        Context.SavedSearches.RemoveRange(savedSearches);
         await Context.SaveChangesAsync();
 
         var permissions = await Context.Permissions.ToListAsync();

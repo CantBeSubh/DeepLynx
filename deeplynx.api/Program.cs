@@ -66,9 +66,9 @@ try
                     "http://*.cluster.local",
                     "https://*.svc.cluster.local",
                     "http://*.svc.cluster.local",
-                    "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
+                    "https://deeplynx.*.inl.gov", // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
                     "https://deeplynx.inl.gov",
-                    "https://deeplynx-*.*.inl.gov")  // Matches "deeplynx-thing.domain" namespaces like deeplynx-test.dev
+                    "https://deeplynx-*.*.inl.gov") // Matches "deeplynx-thing.domain" namespaces like deeplynx-test.dev
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -98,10 +98,7 @@ try
             options =>
             {
                 options.Authority = issuer;
-                if (localDevelopment == "true")
-                {
-                    options.RequireHttpsMetadata = false;
-                }
+                if (localDevelopment == "true") options.RequireHttpsMetadata = false;
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -137,7 +134,7 @@ try
         options => options.UseNpgsql(connectionString),
         ServiceLifetime.Transient
     );
-    
+
     builder.Services.AddSignalR(); // Used for event system pub/sub and notifications
 
     // Register Cache Service as a singleton
@@ -179,7 +176,7 @@ try
     builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
     builder.Services.AddTransient<ITokenBusiness, TokenBusiness>();
     builder.Services.AddTransient<IOauthApplicationBusiness, OauthApplicationBusiness>();
-    
+
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -204,7 +201,9 @@ try
     builder.Services.AddTransient<ISysAdminService, SysAdminService>();
     builder.Services.AddTransient<IOauthHandshakeBusiness, OauthHandshakeBusiness>();
     builder.Services.AddTransient<IOrganizationService, OrganizationService>();
-    
+    builder.Services.AddTransient<ISavedSearchBusiness, SavedSearchBusiness>();
+    builder.Services.AddTransient<IGraphBusiness, GraphBusiness>();
+
     builder.Services.AddOpenApi(options =>
     {
         options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
@@ -216,6 +215,19 @@ try
 
             document.Tags = new HashSet<OpenApiTag>
             {
+                // parent tags
+                new()
+                {
+                    Name = "Project Management",
+                    Description =
+                        "Handles project-level operations including classes, records, edges, and relationships"
+                },
+                new()
+                {
+                    Name = "Organization Management",
+                    Description = "Handles organization-level operations including classes, users, groups, and projects"
+                },
+                // child tags
                 new()
                 {
                     Name = "Token",
@@ -284,7 +296,8 @@ try
                 new()
                 {
                     Name = "OauthHandshake",
-                    Description = "Facilitates the Oauth2 Handshake between Nexus and external apps, with Nexus acting as an Oauth2 provider."
+                    Description =
+                        "Facilitates the Oauth2 Handshake between Nexus and external apps, with Nexus acting as an Oauth2 provider."
                 },
                 new()
                 {
@@ -331,6 +344,11 @@ try
                 },
                 new()
                 {
+                    Name = "SavedSearch",
+                    Description = "Handles operations related to saving queries for future re-use"
+                },
+                new()
+                {
                     Name = "SensitivityLabel",
                     Description = "Handles operations related to Sensitivity Label management"
                 },
@@ -356,7 +374,7 @@ try
                     Name = "User",
                     Description =
                         "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
-                },
+                }
             };
         });
     });
@@ -365,41 +383,39 @@ try
    ║      Apply Migrations      ║
    ╚════════════════════════════╝ */
     await MigrationRunner.ApplyMigrations(connectionString);
-    
+
 /* ╔════════════════════════════╗
    ║      App Configurations    ║
    ╚════════════════════════════╝ */
     var app = builder.Build();
-    
+
 /* ╔════════════════════════════╗
    ║      App Base Path         ║
    ╚════════════════════════════╝ */
     PathString basePath = "/api/v1";
     app.UsePathBase(basePath);
-    
+
     app.UseStaticFiles();
     app.UseRouting();
-    app.UseCors("AllowAll"); 
+    app.UseCors("AllowAll");
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
     app.UseMiddleware<AuthMiddleware>(); //Organization and project RBAC
-    
+
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
-    {
         app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
-    }
 
- /* ╔════════════════════════════╗
+    /* ╔════════════════════════════╗
     ║   Scalar Configuration     ║
     ╚════════════════════════════╝ */
     // Always using scalar:
     //if (app.Environment.IsDevelopment()) { ...
     app.UseOpenApi();
     app.MapOpenApi();
-    
+
     var customcss = File.ReadAllText("moon.css");
     var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK");
 
@@ -424,8 +440,9 @@ try
       </header>
     </div>";
 
-    app.MapScalarApiReference( options => {
-        options.WithDarkMode(true)
+    app.MapScalarApiReference(options =>
+    {
+        options.WithDarkMode()
             .WithBaseServerUrl(basePath.ToString())
             .WithTheme(ScalarTheme.Kepler)
             .WithTitle("DeepLynx Nexus API")
@@ -435,7 +452,7 @@ try
         if (!string.IsNullOrEmpty(hostedLink))
         {
             var hostedLinkWithApi = string.Concat(hostedLink + "/api/v1");
-            options.Servers = new List<ScalarServer> { new ScalarServer(hostedLinkWithApi) };
+            options.Servers = new List<ScalarServer> { new(hostedLinkWithApi) };
         }
     });
 

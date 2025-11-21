@@ -141,52 +141,25 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     ///     Creates a new project based on the data transfer object supplied.
     /// </summary>
-    /// <param name="currentUserId">Name of user creating the project</param>
+    /// <param name="userId">Name of user creating the project</param>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(long currentUserId, CreateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(
+        long userId, long organizationId, CreateProjectRequestDto dto)
     {
-        await ExistenceHelper.EnsureUserExistsAsync(_context, currentUserId);
+        await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         ValidationHelper.ValidateModel(dto);
-
-        long orgId;
-
-        if (dto.OrganizationId.HasValue)
-        {
-            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId.Value);
-
-            orgId = dto.OrganizationId.Value;
-        }
-        else
-        {
-            var defaultOrg = await _context.Organizations
-                .Where(o => o.DefaultOrg && !o.IsArchived).FirstOrDefaultAsync();
-
-            if (defaultOrg != null)
-            {
-                orgId = defaultOrg.Id;
-            }
-            else
-            {
-                var orgRequestDto = new CreateOrganizationRequestDto
-                {
-                    Name = "INL",
-                    Description = "Default Organization"
-                };
-
-                var newDefaultOrg = await _organizationBusiness.CreateOrganization(currentUserId, orgRequestDto, true);
-                orgId = newDefaultOrg.Id;
-            }
-        }
 
         var project = new Project
         {
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
-            OrganizationId = orgId,
+            OrganizationId = organizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = currentUserId
+            LastUpdatedBy = userId
         };
 
         _context.Projects.Add(project);
@@ -220,7 +193,7 @@ public class ProjectBusiness : IProjectBusiness
         if (cachedProjectList.Count != _context.Projects.Count()) await RefreshProjectsCache();
 
         // Log create Project event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
         {
             OrganizationId = project.OrganizationId,
             ProjectId = projectId,
@@ -232,7 +205,7 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name })
         });
 
-        await SetProjectDefaults(currentUserId, project.OrganizationId, projectId);
+        await SetProjectDefaults(userId, project.OrganizationId, projectId);
 
         return projectResponseDto;
     }
@@ -535,45 +508,6 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    ///     Retrieves all records for multiple projects.
-    /// </summary>
-    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
-    /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
-        long[] projects, bool hideArchived)
-    {
-        var recordQuery = _context.HistoricalRecords
-            .Where(r => Enumerable.Contains(projects, r.ProjectId));
-
-        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
-
-        var records = await recordQuery
-            .GroupBy(e => e.RecordId)
-            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
-            .ToListAsync();
-
-        return records
-            .Select(r => new HistoricalRecordResponseDto
-            {
-                Id = r.RecordId,
-                Description = r.Description,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                ProjectId = r.ProjectId,
-                LastUpdatedAt = r.LastUpdatedAt,
-                LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                Tags = r.Tags
-            });
-    }
-
-    /// <summary>
     ///     List the users and groups in a given project, along with their roles
     /// </summary>
     /// <param name="projectId"></param>
@@ -746,6 +680,45 @@ public class ProjectBusiness : IProjectBusiness
         return true;
     }
 
+    /// <summary>
+    ///     Retrieves all records for multiple projects.
+    /// </summary>
+    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns>A list of records based on the applied filters.</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
+        long[] projects, bool hideArchived)
+    {
+        var recordQuery = _context.HistoricalRecords
+            .Where(r => projects.Contains(r.ProjectId));
+
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
+
+        var records = await recordQuery
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
+            .ToListAsync();
+
+        return records
+            .Select(r => new HistoricalRecordResponseDto
+            {
+                Id = r.RecordId,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                LastUpdatedAt = r.LastUpdatedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
+                Tags = r.Tags
+            });
+    }
+
     private async Task<bool> RefreshProjectsCache()
     {
         var dbProjects = await _context.Projects.ToListAsync();
@@ -781,7 +754,8 @@ public class ProjectBusiness : IProjectBusiness
             new() { Name = "Report" },
             new() { Name = "File" }
         };
-        var cls = await _classBusiness.BulkCreateClasses(currentUserId, projectId, defaultClasses);
+        var cls = await _classBusiness.BulkCreateClasses(
+            currentUserId, organizationId, projectId, defaultClasses);
 
         // ===============================
         // CREATE DEFAULT DATA SOURCE

@@ -224,7 +224,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("ProjectId")
+                    b.Property<long>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
+                    b.Property<long?>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -246,8 +250,19 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Uuid" }, "idx_classes_uuid");
 
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_class_name")
-                        .IsUnique();
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_organization_class_name")
+                        .HasFilter("project_id IS NULL");
+
+                    b.HasIndex("ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_class_name");
+
+                    b.HasIndex("OrganizationId", "ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_project_class_name")
+                        .HasFilter("project_id IS NOT NULL");
 
                     b.ToTable("classes", "deeplynx");
                 });
@@ -1887,7 +1902,6 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Classes")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("classes_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
@@ -2266,6 +2280,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Role", "Role")
                         .WithMany("ProjectMembers")
                         .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("project_members_role_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
@@ -2410,6 +2425,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
                         .WithMany("SavedSearches")
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("saved_searches_user_id_fkey");
 
                     b.Navigation("User");

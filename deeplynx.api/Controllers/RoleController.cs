@@ -1,327 +1,314 @@
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers
+namespace deeplynx.api.Controllers;
+
+/// <summary>
+///     Controller for managing roles.
+/// </summary>
+/// <remarks>
+///     This controller provides endpoints to create, update, delete, and retrieve role information.
+/// </remarks>
+[ApiController]
+[Route("organizations/{organizationId}/projects/{projectId}/roles")]
+public class RoleController : ControllerBase
 {
-    [ApiController]
-    [Route("roles")]
-    public class RoleController : ControllerBase
+    private readonly ILogger<RoleController> _logger;
+    private readonly IRoleBusiness _roleBusiness;
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="RoleController" /> class
+    /// </summary>
+    /// <param name="roleBusiness">The business logic interface for handling Role operations.</param>
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public RoleController(IRoleBusiness roleBusiness, ILogger<RoleController> logger)
     {
-        private readonly IRoleBusiness _roleBusiness;
-        private readonly ILogger<RoleController> _logger;
+        _roleBusiness = roleBusiness;
+        _logger = logger;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RoleController"/> class
-        /// </summary>
-        /// <param name="roleBusiness">The business logic interface for handling Role operations.</param>
-        /// <param name="logger">Error/Info logging interface for database log table.</param>
-        public RoleController(IRoleBusiness roleBusiness, ILogger<RoleController> logger)
+    /// <summary>
+    ///     Get All Roles
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project whose roles are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived roles from the result (Default true)</param>
+    /// <returns>A list of roles for the given organization/project.</returns>
+    [HttpGet(Name = "api_get_all_roles")]
+    public async Task<ActionResult<IEnumerable<RoleResponseDto>>> GetAllRoles(
+        long organizationId,
+        long projectId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            _roleBusiness = roleBusiness;
-            _logger = logger;
+            var roles = await _roleBusiness.GetAllRoles(organizationId, projectId, hideArchived);
+            return Ok(roles);
         }
-
-        /// <summary>
-        /// List Roles
-        /// </summary>
-        /// <param name="organizationId">(Required) ID of the organization across which to search</param>
-        /// <param name="projectId">(Optional) ID of the project across which to search</param>
-        /// <param name="hideArchived">Flag indicating whether to hide or show archived roles</param>
-        /// <returns></returns>
-        [HttpGet("GetAllRoles", Name = "api_get_all_roles")]
-        public async Task<ActionResult<IEnumerable<RoleResponseDto>>> GetAllRoles(
-            [FromQuery] long organizationId, 
-            [FromQuery] long? projectId = null,
-            [FromQuery] bool hideArchived = true)
+        catch (Exception exc)
         {
-            try
-            {
-                var roles = await _roleBusiness.GetAllRoles(organizationId, projectId, hideArchived);
-                return Ok(roles);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while listing roles: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while listing roles: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Fetch Role by ID
-        /// </summary>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <param name="roleId">(Optional) ID of role</param>
-        /// <param name="hideArchived">Flag indicating whether to hide or show archived roles</param>
-        /// <returns></returns>
-        [HttpGet("GetRole/{roleId}", Name = "api_get_role")]
-        public async Task<ActionResult<RoleResponseDto>> GetRole(
-            [FromQuery] long organizationId, 
-            [FromQuery] long? projectId,
-            long roleId, 
-            [FromQuery] bool hideArchived = true)
+    /// <summary>
+    ///     Get a Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived roles from the result (Default true)</param>
+    /// <returns>The role associated with the given ID</returns>
+    [HttpGet("{roleId}", Name = "api_get_role")]
+    public async Task<ActionResult<RoleResponseDto>> GetRole(
+        long organizationId,
+        long projectId,
+        long roleId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
         {
-            try
-            {
-                var role = await _roleBusiness.GetRole(roleId, organizationId, projectId, hideArchived);
-                return Ok(role);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while retrieving role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var role = await _roleBusiness.GetRole(roleId, organizationId, projectId, hideArchived);
+            return Ok(role);
         }
-
-        /// <summary>
-        /// Create a Role
-        /// </summary>
-        /// <param name="dto">Data structure of role to create</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpPost("CreateRole", Name = "api_create_role")]
-        public async Task<ActionResult<RoleResponseDto>> CreateRole(
-            [FromBody] CreateRoleRequestDto dto,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var role = await _roleBusiness.CreateRole(currentUserId, dto, organizationId, projectId);
-                return Ok(role);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while creating role: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while retrieving role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Update a Role
-        /// </summary>
-        /// <param name="roleId">ID of the role</param>
-        /// <param name="dto">Fields to update</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpPut("UpdateRole/{roleId}", Name = "api_update_role")]
-        public async Task<ActionResult<RoleResponseDto>> UpdateRole(
-            long roleId,
-            [FromBody] UpdateRoleRequestDto dto,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+    /// <summary>
+    ///     Create a Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="dto">The data transfer object containing role details</param>
+    /// <returns>The created role</returns>
+    [HttpPost(Name = "api_create_role")]
+    public async Task<ActionResult<RoleResponseDto>> CreateRole(
+        long organizationId,
+        long projectId,
+        [FromBody] CreateRoleRequestDto dto)
+    {
+        try
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                var role = await _roleBusiness.UpdateRole(currentUserId, roleId, organizationId, projectId, dto);
-                return Ok(role);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while updating role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var currentUserId = UserContextStorage.UserId;
+            var role = await _roleBusiness.CreateRole(currentUserId, dto, organizationId, projectId);
+            return Ok(role);
         }
-
-        /// <summary>
-        /// Delete a role
-        /// </summary>
-        /// <param name="roleId">ID of the role to hard delete</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpDelete("DeleteRole/{roleId}", Name = "api_delete_role")]
-        public async Task<ActionResult> DeleteRole(
-            long roleId,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+        catch (Exception exc)
         {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                await _roleBusiness.DeleteRole(currentUserId, roleId, organizationId, projectId);
-                return Ok(new { message = $"Deleted role {roleId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while creating role: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Archive a role
-        /// </summary>
-        /// <param name="roleId">ID of the role</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpDelete("ArchiveRole/{roleId}", Name = "api_archive_role")]
-        public async Task<ActionResult> ArchiveRole(
-            long roleId,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+    /// <summary>
+    ///     Update a Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role to update</param>
+    /// <param name="dto">The data transfer object containing updated role details</param>
+    /// <returns>The updated role</returns>
+    [HttpPut("{roleId}", Name = "api_update_role")]
+    public async Task<ActionResult<RoleResponseDto>> UpdateRole(
+        long organizationId,
+        long projectId,
+        long roleId,
+        [FromBody] UpdateRoleRequestDto dto)
+    {
+        try
         {
-            try
+            var currentUserId = UserContextStorage.UserId;
+            var role = await _roleBusiness.UpdateRole(currentUserId, roleId, organizationId, projectId, dto);
+            return Ok(role);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while updating role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Delete a Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role to delete</param>
+    /// <returns>A message stating the role was successfully deleted.</returns>
+    [HttpDelete("{roleId}", Name = "api_delete_role")]
+    public async Task<ActionResult> DeleteRole(
+        long organizationId,
+        long projectId,
+        long roleId)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            await _roleBusiness.DeleteRole(currentUserId, roleId, organizationId, projectId);
+            return Ok(new { message = $"Deleted role {roleId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while deleting role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Archive or Unarchive a Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role to archive or unarchive</param>
+    /// <param name="archive">True to archive the role, false to unarchive it.</param>
+    /// <returns>A message stating the role was successfully archived or unarchived.</returns>
+    [HttpPatch("{roleId}", Name = "api_archive_role")]
+    public async Task<IActionResult> ArchiveRole(
+        long organizationId,
+        long projectId,
+        long roleId,
+        [FromQuery] bool archive)
+    {
+        try
+        {
+            var userId = UserContextStorage.UserId;
+            if (archive)
             {
-                var currentUserId = UserContextStorage.UserId;
-                await _roleBusiness.ArchiveRole(currentUserId, roleId, organizationId, projectId);
+                await _roleBusiness.ArchiveRole(userId, roleId, organizationId, projectId);
                 return Ok(new { message = $"Archived role {roleId}" });
             }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while archiving role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
 
-        /// <summary>
-        /// Unarchive a Role
-        /// </summary>
-        /// <param name="roleId">ID of the role</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpPut("UnarchiveRole/{roleId}", Name = "api_unarchive_role")]
-        public async Task<ActionResult> UnarchiveRole(
-            long roleId,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
-        {
-            try
-            {
-                var currentUserId = UserContextStorage.UserId;
-                await _roleBusiness.UnarchiveRole(currentUserId, roleId, organizationId, projectId);
-                return Ok(new { message = $"Unarchived role {roleId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while unarchiving role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            await _roleBusiness.UnarchiveRole(userId, roleId, organizationId, projectId);
+            return Ok(new { message = $"Unarchived role {roleId}" });
         }
-
-        /// <summary>
-        /// List Permissions by Role
-        /// </summary>
-        /// <param name="roleId">ID of the role</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpGet("GetPermissionsByRole/{roleId}", Name = "api_get_permissions_by_role")]
-        public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetPermissionsByRole(
-            long roleId,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+        catch (Exception exc)
         {
-            try
-            {
-                var permissions = await _roleBusiness.GetPermissionsByRole(roleId, organizationId, projectId);
-                return Ok(permissions);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while retrieving permissions for role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Add permission to role
-        /// </summary>
-        /// <param name="roleId">ID of the role</param>
-        /// <param name="permissionId">ID of the permission to be added</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpPost("AddPermissionToRole", Name = "api_add_permission_to_role")]
-        public async Task<ActionResult> AddPermissionToRole(
-            [FromQuery] long roleId, 
-            [FromQuery] long permissionId,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+    /// <summary>
+    ///     Get Permissions for a Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role whose permissions to retrieve</param>
+    /// <returns>A list of permissions associated with the role</returns>
+    [HttpGet("{roleId}/permissions", Name = "api_get_permissions_by_role")]
+    public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetPermissionsByRole(
+        long organizationId,
+        long projectId,
+        long roleId)
+    {
+        try
         {
-            try
-            {
-                await _roleBusiness.AddPermissionToRole(roleId, permissionId, organizationId, projectId);
-                return Ok(new { message = $"Added permission {permissionId} to role {roleId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while adding permission {permissionId} to role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var permissions = await _roleBusiness.GetPermissionsByRole(roleId, organizationId, projectId);
+            return Ok(permissions);
         }
-
-        /// <summary>
-        /// Remove permission from role
-        /// </summary>
-        /// <param name="roleId">ID of the role to remove from</param>
-        /// <param name="permissionId">ID of permission to be removed</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpDelete("RemovePermissionFromRole", Name = "api_remove_permission_from_role")]
-        public async Task<ActionResult> RemovePermissionFromRole(
-            [FromQuery] long roleId, 
-            [FromQuery] long permissionId,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+        catch (Exception exc)
         {
-            try
-            {
-                await _roleBusiness.RemovePermissionFromRole(roleId, permissionId, organizationId, projectId);
-                return Ok(new { message = $"Removed permission {permissionId} from role {roleId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while removing permission {permissionId} from role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            var message = $"An error occurred while retrieving permissions for role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
+    }
 
-        /// <summary>
-        /// Set all permissions for a role (replaces existing permissions)
-        /// </summary>
-        /// <param name="roleId">ID of the role</param>
-        /// <param name="permissionIds">Array of permission IDs to assign to the role</param>
-        /// <param name="organizationId">(Required) ID of the organization to which the role belongs</param>
-        /// <param name="projectId">(Optional) ID of the project to which the role belongs</param>
-        /// <returns></returns>
-        [HttpPut("SetPermissionsForRole/{roleId}", Name = "api_set_permissions_for_role")]
-        public async Task<ActionResult> SetPermissionsForRole(
-            long roleId,
-            [FromBody] long[] permissionIds,
-            [FromQuery] long organizationId,
-            [FromQuery] long? projectId)
+    /// <summary>
+    ///     Add Permission to Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role</param>
+    /// <param name="permissionId">The ID of the permission to add</param>
+    /// <returns>A message stating the permission was successfully added to the role.</returns>
+    [HttpPost("{roleId}/permissions/{permissionId}", Name = "api_add_permission_to_role")]
+    public async Task<ActionResult> AddPermissionToRole(
+        long organizationId,
+        long projectId,
+        long roleId,
+        long permissionId)
+    {
+        try
         {
-            try
-            {
-                await _roleBusiness.SetPermissionsForRole(roleId, permissionIds, organizationId, projectId);
-                return Ok(new { message = $"Set permissions for role {roleId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while setting permissions for role {roleId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
+            await _roleBusiness.AddPermissionToRole(roleId, permissionId, organizationId, projectId);
+            return Ok(new { message = $"Added permission {permissionId} to role {roleId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while adding permission {permissionId} to role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Remove Permission from Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role</param>
+    /// <param name="permissionId">The ID of the permission to remove</param>
+    /// <returns>A message stating the permission was successfully removed from the role.</returns>
+    [HttpDelete("{roleId}/permissions/{permissionId}", Name = "api_remove_permission_from_role")]
+    public async Task<ActionResult> RemovePermissionFromRole(
+        long organizationId,
+        long projectId,
+        long roleId,
+        long permissionId)
+    {
+        try
+        {
+            await _roleBusiness.RemovePermissionFromRole(roleId, permissionId, organizationId, projectId);
+            return Ok(new { message = $"Removed permission {permissionId} from role {roleId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while removing permission {permissionId} from role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Set All Permissions for a Role
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the role belongs</param>
+    /// <param name="projectId">The ID of the project to which the role belongs</param>
+    /// <param name="roleId">The ID of the role</param>
+    /// <param name="permissionIds">Array of permission IDs to assign to the role (replaces existing permissions)</param>
+    /// <returns>A message stating the permissions were successfully set for the role.</returns>
+    [HttpPut("{roleId}/permissions", Name = "api_set_permissions_for_role")]
+    public async Task<ActionResult> SetPermissionsForRole(
+        long organizationId,
+        long projectId,
+        long roleId,
+        [FromBody] long[] permissionIds)
+    {
+        try
+        {
+            await _roleBusiness.SetPermissionsForRole(roleId, permissionIds, organizationId, projectId);
+            return Ok(new { message = $"Set permissions for role {roleId}" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while setting permissions for role {roleId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 }

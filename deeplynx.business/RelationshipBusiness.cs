@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace deeplynx.business;
 
-public class RelationshipBusiness: IRelationshipBusiness
+public class RelationshipBusiness : IRelationshipBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
@@ -23,14 +23,15 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="edgeBusiness">Passed in context of edge objects.</param>
     /// <param name="eventBusiness">Used to access event operations</param>
-    public RelationshipBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEdgeBusiness edgeBusiness, IEventBusiness eventBusiness)
+    public RelationshipBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEdgeBusiness edgeBusiness,
+        IEventBusiness eventBusiness)
     {
         _cacheBusiness = cacheBusiness;
         _edgeBusiness = edgeBusiness;
         _context = context;
         _eventBusiness = eventBusiness;
     }
-    
+
     /// <summary>
     /// Retrieves all relationships
     /// </summary>
@@ -58,12 +59,12 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.DestinationId
             })
             .ToListAsync();
-        
+
         if (hideArchived)
         {
             relationships = relationships.Where(r => !r.IsArchived).ToList();
         }
-        
+
         // Manual mapping to Relationship objects to match return type without getting infite loop on Origin or Destination
         return relationships.Select(r => new RelationshipResponseDto
         {
@@ -79,6 +80,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             IsArchived = r.IsArchived,
         }).ToList();
     }
+
     /// <summary>
     /// Retrieves a specific relationship by ID
     /// </summary>
@@ -100,7 +102,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
-        
+
         if (hideArchived && relationship.IsArchived)
         {
             throw new KeyNotFoundException($"Relationship with id {relationshipId} is archived");
@@ -120,7 +122,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             DestinationId = relationship.DestinationId,
         };
     }
-    
+
     /// <summary>
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
@@ -129,19 +131,21 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> CreateRelationship(long currentUserId, long projectId, CreateRelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> CreateRelationship(long currentUserId, long projectId,
+        CreateRelationshipRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         ValidationHelper.ValidateModel(dto);
-        
-        var existingRelationship = await _context.Relationships.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
+
+        var existingRelationship =
+            await _context.Relationships.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
         if (existingRelationship != null)
         {
             throw new Exception($"Relationship for project {projectId} with name {dto.Name} already exists");
         }
-        
+
         if (dto.OriginId != null)
-        { 
+        {
             var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && !c.IsArchived);
             if (originClass == null)
             {
@@ -151,13 +155,14 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         if (dto.DestinationId != null)
         {
-            var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && !c.IsArchived);
+            var destinationClass =
+                await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && !c.IsArchived);
             if (destinationClass == null)
             {
                 throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
             }
         }
-        
+
         var relationship = new Relationship
         {
             Name = dto.Name,
@@ -166,7 +171,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             OriginId = dto.OriginId,
             DestinationId = dto.DestinationId,
             ProjectId = projectId,
-            LastUpdatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = currentUserId
         };
 
@@ -186,7 +191,7 @@ public class RelationshipBusiness: IRelationshipBusiness
                 .Reference(r => r.Destination)
                 .LoadAsync();
         }
-        
+
         // log relationship create event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -195,9 +200,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityId = relationship.Id,
             EntityName = relationship.Name,
             ProjectId = relationship.ProjectId,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            Properties = JsonSerializer.Serialize(new { relationship.Name }),
         });
-        
+
         return new RelationshipResponseDto
         {
             Id = relationship.Id,
@@ -223,11 +228,11 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(
         long currentUserId,
-        long projectId, 
+        long projectId,
         List<CreateRelationshipRequestDto> relationships)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        
+
         // Bulk insert into relationships; if there is a name collision, update the description and uuid if present
         var sql = @"
           INSERT INTO deeplynx.relationships (project_id, name, description, uuid, last_updated_at, is_archived, last_updated_by)
@@ -239,7 +244,7 @@ public class RelationshipBusiness: IRelationshipBusiness
                 last_updated_by = @lastUpdatedBy
             RETURNING *;
         ";
-        
+
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
@@ -247,7 +252,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
             new NpgsqlParameter("@lastUpdatedBy", currentUserId)
         };
-        
+
         // establish "dynamic" parameters (new for each dto in the list)
         parameters.AddRange(relationships.SelectMany((dto, i) => new[]
         {
@@ -255,11 +260,11 @@ public class RelationshipBusiness: IRelationshipBusiness
             new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
             new NpgsqlParameter($"@p{i}_uuid", (object?)dto.Uuid ?? DBNull.Value),
         }));
-        
+
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", relationships.Select((dto, i) =>
             $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, @lastUpdatedBy)"));
-        
+
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
 
@@ -270,7 +275,7 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         // Bulk log events for each relationship creation
         var events = new List<CreateEventRequestDto> { };
-        
+
         foreach (var relationship in result)
         {
             events.Add(new CreateEventRequestDto
@@ -283,9 +288,9 @@ public class RelationshipBusiness: IRelationshipBusiness
                 Properties = "{}",
             });
         }
-        
-        await _eventBusiness.BulkCreateEvents(projectId, events);
-        
+
+        await _eventBusiness.BulkCreateEvents(events, projectId);
+
         return result;
     }
 
@@ -298,7 +303,8 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">The relationship request data transfer object containing updated relationship details.</param>
     /// <returns>The updated relationship response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> UpdateRelationship(long currentUserId, long projectId, long relationshipId, UpdateRelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> UpdateRelationship(long currentUserId, long projectId,
+        long relationshipId, UpdateRelationshipRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
@@ -307,28 +313,31 @@ public class RelationshipBusiness: IRelationshipBusiness
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
 
-        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.OriginId ?? relationship.OriginId) && !c.IsArchived);
+        var orignClass =
+            await _context.Classes.FirstOrDefaultAsync(c =>
+                c.Id == (dto.OriginId ?? relationship.OriginId) && !c.IsArchived);
         if (orignClass == null)
         {
             throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
         }
 
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.DestinationId ?? relationship.DestinationId) && !c.IsArchived);
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c =>
+            c.Id == (dto.DestinationId ?? relationship.DestinationId) && !c.IsArchived);
         if (destinationClass == null)
         {
             throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
         }
-        
+
         relationship.Name = dto.Name ?? relationship.Name;
         relationship.Description = dto.Description ?? relationship.Description;
         relationship.Uuid = dto.Uuid ?? relationship.Uuid;
         relationship.OriginId = dto.OriginId ?? relationship.OriginId;
         relationship.DestinationId = dto.DestinationId ?? relationship.DestinationId;
-        relationship.LastUpdatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        relationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.LastUpdatedBy = currentUserId;
         _context.Relationships.Update(relationship);
         await _context.SaveChangesAsync();
-        
+
         // log relationship update event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -337,9 +346,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityId = relationship.Id,
             EntityName = relationship.Name,
             ProjectId = relationship.ProjectId,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            Properties = JsonSerializer.Serialize(new { relationship.Name }),
         });
-        
+
         return new RelationshipResponseDto
         {
             Id = relationship.Id,
@@ -396,7 +405,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         relationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
-        
+
         // Log relationship archive event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -406,12 +415,12 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityId = relationship.Id,
             EntityName = relationship.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            Properties = JsonSerializer.Serialize(new { relationship.Name }),
         });
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Unarchive a specific relationship by ID
     /// </summary>
@@ -427,12 +436,12 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         if (relationship == null || relationship.ProjectId != projectId || !relationship.IsArchived)
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found or is not archived.");
-        
+
         relationship.IsArchived = false;
         relationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
-        
+
         // Log relationship unarchive event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
@@ -442,9 +451,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityId = relationship.Id,
             EntityName = relationship.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            Properties = JsonSerializer.Serialize(new { relationship.Name }),
         });
-        
+
         return true;
     }
 
@@ -457,7 +466,8 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <returns>List of relationships that were found</returns>
     /// <exception cref="KeyNotFoundException">Thrown if one or more relationship names not found</exception>
     /// <exception cref="ArgumentException">Thrown if relationshipNames list is null or empty</exception>
-    public async Task<List<RelationshipResponseDto>> GetRelationshipsByName(long projectId, List<string> relationshipNames)
+    public async Task<List<RelationshipResponseDto>> GetRelationshipsByName(long projectId,
+        List<string> relationshipNames)
     {
         if (relationshipNames == null || !relationshipNames.Any())
             throw new ArgumentException("Relationship names list cannot be null or empty", nameof(relationshipNames));
@@ -495,7 +505,8 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         // Check for missing relationships
         var foundRelationshipNames = existingRelationships.Select(r => r.Name).ToHashSet();
-        var missingRelationshipNames = cleanRelationshipNames.Where(name => !foundRelationshipNames.Contains(name)).ToList();
+        var missingRelationshipNames =
+            cleanRelationshipNames.Where(name => !foundRelationshipNames.Contains(name)).ToList();
 
         if (missingRelationshipNames.Any())
         {

@@ -9,7 +9,7 @@ on:
         default: 'Test'
 
   push:
-    branches: ["develop"]
+    branches: ["stable"]
 
 jobs:
   build:

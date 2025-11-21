@@ -8,7 +8,7 @@ namespace deeplynx.api.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("oauth-applications")]
+[Route("oauth/applications")]
 public class OauthApplicationController : ControllerBase
 {
     private readonly ILogger<OauthApplicationController> _logger;
@@ -32,7 +32,7 @@ public class OauthApplicationController : ControllerBase
     /// </summary>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>
     /// <returns></returns>
-    [HttpGet("GetAllOauthApplications", Name = "api_get_all_oauth_applications")]
+    [HttpGet(Name = "api_get_all_oauth_applications")]
     public async Task<ActionResult<IEnumerable<OauthApplicationResponseDto>>> GetAllOauthApplications(
         [FromQuery] bool hideArchived = true)
     {
@@ -56,7 +56,7 @@ public class OauthApplicationController : ControllerBase
     /// <param name="applicationId">ID of OAuth application</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>
     /// <returns></returns>
-    [HttpGet("GetOauthApplication/{applicationId}", Name = "api_get_oauth_application")]
+    [HttpGet("{applicationId}", Name = "api_get_oauth_application")]
     public async Task<ActionResult<OauthApplicationResponseDto>> GetOauthApplication(
         long applicationId, [FromQuery] bool hideArchived = true)
     {
@@ -78,7 +78,7 @@ public class OauthApplicationController : ControllerBase
     /// </summary>
     /// <param name="dto">Data structure of OAuth application to create</param>
     /// <returns></returns>
-    [HttpPost("CreateOauthApplication", Name = "api_create_oauth_application")]
+    [HttpPost(Name = "api_create_oauth_application")]
     public async Task<ActionResult<OauthApplicationSecureResponseDto>> CreateOauthApplication(
         [FromBody] CreateOauthApplicationRequestDto dto)
     {
@@ -103,7 +103,7 @@ public class OauthApplicationController : ControllerBase
     /// <param name="applicationId">ID of the OAuth application</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("UpdateOauthApplication/{applicationId}", Name = "api_update_oauth_application")]
+    [HttpPut("{applicationId}", Name = "api_update_oauth_application")]
     public async Task<ActionResult<OauthApplicationResponseDto>> UpdateOauthApplication(
         long applicationId,
         [FromBody] UpdateOauthApplicationRequestDto dto)
@@ -124,11 +124,11 @@ public class OauthApplicationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete an OAuth application
+    ///     Delete an OAuth Application
     /// </summary>
     /// <param name="applicationId">ID of the OAuth application to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("DeleteOauthApplication/{applicationId}", Name = "api_delete_oauth_application")]
+    [HttpDelete("{applicationId}", Name = "api_delete_oauth_application")]
     public async Task<ActionResult> DeleteOauthApplication(long applicationId)
     {
         try
@@ -147,46 +147,32 @@ public class OauthApplicationController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive an OAuth application
+    ///     Archive or Unarchive an OAuth Application
     /// </summary>
-    /// <param name="applicationId">ID of the OAuth application</param>
-    /// <returns></returns>
-    [HttpDelete("ArchiveOauthApplication/{applicationId}", Name = "api_archive_oauth_application")]
-    public async Task<ActionResult> ArchiveOauthApplication(long applicationId)
+    /// <param name="applicationId">ID of the OAuth Application to archive or unarchive</param>
+    /// <param name="archive">True to archive the application, false to unarchive it</param>
+    /// <returns>A message stating the application was successfully archived or unarchived</returns>
+    [HttpPatch("{applicationId}", Name = "api_archive_oauth_application")]
+    public async Task<IActionResult> ArchiveOauthApplication(
+        long applicationId,
+        [FromQuery] bool archive)
     {
         try
         {
-            // get user ID from the middleware context
-            var currentUserId = UserContextStorage.UserId;
-            await _oauthApplicationBusiness.ArchiveOauthApplication(applicationId, currentUserId);
-            return Ok(new { message = $"Archived OAuth application {applicationId}" });
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while archiving OAuth application {applicationId}: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
+            var userId = UserContextStorage.UserId;
+            if (archive)
+            {
+                await _oauthApplicationBusiness.ArchiveOauthApplication(applicationId, userId);
+                return Ok(new { message = $"Archived OAuth application {applicationId}" });
+            }
 
-    /// <summary>
-    ///     Unarchive an OAuth Application
-    /// </summary>
-    /// <param name="applicationId">ID of the OAuth application</param>
-    /// <returns></returns>
-    [HttpPut("UnarchiveOauthApplication/{applicationId}", Name = "api_unarchive_oauth_application")]
-    public async Task<ActionResult> UnarchiveOauthApplication(long applicationId)
-    {
-        try
-        {
-            // get user ID from the middleware context
-            var currentUserId = UserContextStorage.UserId;
-            await _oauthApplicationBusiness.UnarchiveOauthApplication(applicationId, currentUserId);
+            await _oauthApplicationBusiness.UnarchiveOauthApplication(applicationId, userId);
             return Ok(new { message = $"Unarchived OAuth application {applicationId}" });
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while unarchiving OAuth application {applicationId}: {exc}";
+            var action = archive ? "archiving" : "unarchiving";
+            var message = $"An error occurred while {action} oauth application {applicationId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

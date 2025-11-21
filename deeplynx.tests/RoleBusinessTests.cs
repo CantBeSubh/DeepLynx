@@ -53,6 +53,7 @@ namespace deeplynx.tests
         public async Task CreateRole_Succeeds_WithOrgSupplied()
         {
             // Arrange
+            var now = DateTime.UtcNow;
             var dto = new CreateRoleRequestDto
             {
                 Name = "Org Role"
@@ -71,7 +72,13 @@ namespace deeplynx.tests
             // Verify it was actually saved to DB
             var savedRole = await Context.Roles.FindAsync(result.Id);
             Assert.NotNull(savedRole);
-            Assert.Equal("Org Role", savedRole.Name);
+            Assert.Equal(dto.Name, savedRole.Name);
+            Assert.False(savedRole.IsArchived);
+            Assert.True(savedRole.LastUpdatedAt >= now);
+            Assert.Equal(uid, savedRole.LastUpdatedBy);
+            Assert.Null(savedRole.ProjectId);
+            Assert.Equal(oid, savedRole.OrganizationId);
+            Assert.Null(savedRole.Description);
             
             // Ensure that the Role create event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -246,6 +253,7 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Equal(2, result.Count);
+            Assert.All(result, r => Assert.Equal(uid, r.LastUpdatedBy));
             
             var firstRole = result[0];
             Assert.Equal("Project Role 1", firstRole.Name);
@@ -846,6 +854,9 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveRole_Succeeds_IfNotArchived()
         {
+            // Arrange
+            var originalRole = await Context.Roles.FindAsync(rid1);
+            
             // Act
             var result = await _roleBusiness.ArchiveRole(uid, rid1, oid, null);
             
@@ -859,6 +870,13 @@ namespace deeplynx.tests
             var savedRole = await Context.Roles.FindAsync(rid1);
             Assert.NotNull(savedRole);
             Assert.True(savedRole.IsArchived);
+            Assert.Equal(originalRole.Name, savedRole.Name);
+            Assert.True(originalRole.LastUpdatedAt <= savedRole.LastUpdatedAt);
+            Assert.Equal(uid, savedRole.LastUpdatedBy);
+            Assert.Equal(originalRole.ProjectId, savedRole.ProjectId);
+            Assert.Equal(originalRole.OrganizationId, savedRole.OrganizationId);
+            Assert.Equal(originalRole.Description, savedRole.Description);
+            
             
             // Ensure that the Role archive event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -944,6 +962,9 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveRole_Succeeds_IfArchived()
         {
+            // Arrange
+            var originalRole = await Context.Roles.FindAsync(rid2);
+            
             // Act
             var result = await _roleBusiness.UnarchiveRole(uid, rid2, oid, null);
     
@@ -954,6 +975,12 @@ namespace deeplynx.tests
             var savedRole = await Context.Roles.FindAsync(rid2);
             Assert.NotNull(savedRole);
             Assert.False(savedRole.IsArchived);
+            Assert.Equal(originalRole.Name, savedRole.Name);
+            Assert.True(originalRole.LastUpdatedAt <= savedRole.LastUpdatedAt);
+            Assert.Equal(uid, savedRole.LastUpdatedBy);
+            Assert.Equal(originalRole.ProjectId, savedRole.ProjectId);
+            Assert.Equal(originalRole.OrganizationId, savedRole.OrganizationId);
+            Assert.Equal(originalRole.Description, savedRole.Description);
     
             // Ensure that the Role unarchive event was logged
             var eventList = await Context.Events.ToListAsync();
