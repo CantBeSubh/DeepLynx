@@ -96,3 +96,19 @@ export type UpdateDataSourceRequestDto = {
   baseUri?: string;
   config?: string;
 };
+
+export type CreateEdgeRequestDto = {
+  origin_id?: number;
+  destination_id?: number;
+  relationship_id?: number;
+  relationship_name?: string;
+  origin_oid?: string;
+  destination_oid?: string;
+};
+
+export type UpdateEdgeRequestDto = {
+  origin_id?: number;
+  destination_id?: number;
+  name?: string;
+  relationshipId?: number;
+};

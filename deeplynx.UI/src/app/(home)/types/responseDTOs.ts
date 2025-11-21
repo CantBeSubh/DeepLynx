@@ -252,3 +252,15 @@ export type EventResponseDto =
     lastUpdatedBy?: string | null;
     lastUpdatedByUserName?: string | null;
   };
+
+export type EdgeResponseDto = {
+  id: number;
+  originId: number;
+  destinationId: number;
+  relationshipId?: number;
+  dataSourceId: number;
+  projectId: number;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+  isArchived: boolean;
+};
