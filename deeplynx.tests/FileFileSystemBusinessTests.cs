@@ -10,19 +10,21 @@ using Moq;
 namespace deeplynx.tests;
 
 [Collection("Test Suite Collection")]
-public class FileFileSystemBusinessTests: IntegrationTestBase
+public class FileFileSystemBusinessTests : IntegrationTestBase
 {
-    private FileFilesystemBusiness _fileBusiness;
-    private Mock<IRecordBusiness> _recordBusiness = null!;
-    private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
-    private Mock<IClassBusiness> _classBusiness = null!;
     private readonly string _testDirectory = Path.Combine(Path.GetTempPath(), "FileBusinessTests");
-    public long pid;
+    private Mock<IClassBusiness> _classBusiness = null!;
+    private FileFilesystemBusiness _fileBusiness;
+    private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
+    private Mock<IRecordBusiness> _recordBusiness = null!;
+    private long organizationId;
     public long os1;
     public long os2;
-    private long organizationId;
-    
-    public FileFileSystemBusinessTests(TestSuiteFixture fixture) : base(fixture) {}
+    public long pid;
+
+    public FileFileSystemBusinessTests(TestSuiteFixture fixture) : base(fixture)
+    {
+    }
 
     public override async Task InitializeAsync()
     {
@@ -30,11 +32,12 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         _recordBusiness = new Mock<IRecordBusiness>();
         _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
         _classBusiness = new Mock<IClassBusiness>();
-        _fileBusiness = new FileFilesystemBusiness(Context, _objectStorageBusiness.Object, _classBusiness.Object, _recordBusiness.Object);
+        _fileBusiness = new FileFilesystemBusiness(Context, _objectStorageBusiness.Object, _classBusiness.Object,
+            _recordBusiness.Object);
     }
-    
+
     [Fact]
-    public async Task UploadFile_ShouldSaveFileAndReturnPath() 
+    public async Task UploadFile_ShouldSaveFileAndReturnPath()
     {
         // Arrange
         var config = new ObjectStorageConfigDto { MountPath = _testDirectory };
@@ -45,15 +48,15 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         fileMock.Setup(f => f.FileName).Returns(fileName);
         fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
             .Returns((Stream stream, CancellationToken token) => ms.CopyToAsync(stream));
-    
+
         var guid = Guid.NewGuid();
-        
+
         // need the try finally for if the test fails, still want to do cleanup
         try
         {
             // Act
             var result = await _fileBusiness.UploadFile(1, 1, config, fileMock.Object, guid);
-            
+
             // Assert
             Assert.Contains(guid.ToString(), result);
             Assert.True(File.Exists(result));
@@ -62,15 +65,12 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         finally
         {
             // delete the entire test directory
-            if (Directory.Exists(_testDirectory))
-            {
-                Directory.Delete(_testDirectory, recursive: true);
-            }
+            if (Directory.Exists(_testDirectory)) Directory.Delete(_testDirectory, true);
             Assert.False(Directory.Exists(_testDirectory));
         }
     }
-    
-    
+
+
     [Fact]
     public async Task UpdateFile_ShouldReplaceExistingFile()
     {
@@ -90,13 +90,13 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         var ms = new MemoryStream(Encoding.UTF8.GetBytes(newContent));
         fileMock.Setup(f => f.FileName).Returns("new.txt");
         fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
-            .Returns((Stream stream, System.Threading.CancellationToken token) => ms.CopyToAsync(stream));
+            .Returns((Stream stream, CancellationToken token) => ms.CopyToAsync(stream));
 
         try
         {
             // Act
             var updatedPath = await _fileBusiness.UpdateFile(record, fileMock.Object);
-            
+
             // Assert
             Assert.True(File.Exists(updatedPath));
             var updatedContent = await File.ReadAllTextAsync(updatedPath);
@@ -110,7 +110,7 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         }
     }
 
-    
+
     [Fact]
     public async Task DownloadFile_ShouldReturnFileStreamResult()
     {
@@ -130,7 +130,7 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         {
             // Act
             var result = await _fileBusiness.DownloadFile(record);
-            
+
             // Assert
             Assert.NotNull(result);
             using var reader = new StreamReader(result.FileStream);
@@ -143,9 +143,9 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
                 Directory.Delete(_testDirectory, true);
         }
     }
-    
+
     [Fact]
-    public async Task DeleteFile_ShouldDeleteFileAndEmptyDirectoriesCreated() 
+    public async Task DeleteFile_ShouldDeleteFileAndEmptyDirectoriesCreated()
     {
         // Arrange
         var config = new ObjectStorageConfigDto { MountPath = _testDirectory };
@@ -156,19 +156,19 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         fileMock.Setup(f => f.FileName).Returns(fileName);
         fileMock.Setup(f => f.CopyToAsync(It.IsAny<Stream>(), default))
             .Returns((Stream stream, CancellationToken token) => ms.CopyToAsync(stream));
-    
+
         var guid = Guid.NewGuid();
-        
+
         // need the try finally for if the test fails, still want to do cleanup
         try
         {
             var result = await _fileBusiness.UploadFile(1, 1, config, fileMock.Object, guid);
-            
+
             Assert.Contains(guid.ToString(), result);
             Assert.True(File.Exists(result));
             Assert.True(Directory.Exists(_testDirectory));
 
-            var record = new RecordResponseDto()
+            var record = new RecordResponseDto
             {
                 Uri = result,
                 Name = "test.txt",
@@ -178,7 +178,7 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
 
             // Act
             var delete = await _fileBusiness.DeleteFile(record);
-            
+
             // Assert
             Assert.True(delete);
             Assert.False(File.Exists(result));
@@ -189,25 +189,22 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         finally
         {
             // delete the entire test directory
-            if (Directory.Exists(_testDirectory))
-            {
-                Directory.Delete(_testDirectory, recursive: true);
-            }
+            if (Directory.Exists(_testDirectory)) Directory.Delete(_testDirectory, true);
             Assert.False(Directory.Exists(_testDirectory));
         }
     }
-    
-    
-     protected override async Task SeedTestDataAsync()
+
+
+    protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
-        
+
         var organization = new Organization { Name = "Test Organization" };
         Context.Organizations.Add(organization);
         await Context.SaveChangesAsync();
         organizationId = organization.Id;
-        
-        var project = new Project() { Name = "Test Project 1", OrganizationId = organizationId };
+
+        var project = new Project { Name = "Test Project 1", OrganizationId = organizationId };
         Context.Projects.Add(project);
         await Context.SaveChangesAsync();
         pid = project.Id;
@@ -218,11 +215,12 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         {
             Name = "Test Object Storage 1",
             ProjectId = pid,
+            OrganizationId = organizationId,
             Type = "filesystem",
             Config = os1Config.ToString(),
             Default = true
         };
-        
+
         var os2Config = new JsonObject();
         os2Config["mountPath"] = _testDirectory;
         var objectStorage2 = new ObjectStorage
@@ -230,9 +228,10 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
             Name = "Test Object Storage 2",
             Type = "filesystem",
             ProjectId = pid,
+            OrganizationId = organizationId,
             Config = os2Config.ToString()
         };
-        
+
         Context.ObjectStorages.Add(objectStorage);
         Context.ObjectStorages.Add(objectStorage2);
         await Context.SaveChangesAsync();
