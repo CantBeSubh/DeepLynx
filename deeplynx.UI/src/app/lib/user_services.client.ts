@@ -8,15 +8,15 @@ import api from "./api";
 export async function getAllUsers(organizationId?: number | string, projectId?: number | string) {
   try {
     const params: Record<string, string | number | boolean> = {};
-    
+
     if (organizationId !== undefined) {
       params.organizationId = organizationId;
     }
-    
+
     if (projectId !== undefined) {
       params.projectId = projectId;
     }
-    
+
     const res = await api.get(`/users/GetAllUsers`, { params });
     return res.data;
   } catch (error) {
@@ -27,7 +27,7 @@ export async function getAllUsers(organizationId?: number | string, projectId?: 
 
 export async function getCurrentUser() {
   try {
-    const res = await api.get(`/users/GetCurrentUser`);
+    const res = await api.get(`/users/current`);
     return res.data;
   } catch (error) {
     console.error("API call failed getting current user:", error);

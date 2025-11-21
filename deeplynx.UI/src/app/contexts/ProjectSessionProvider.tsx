@@ -11,7 +11,7 @@ import React, {
 
 // Define shape of a project session
 export interface ProjectSession {
-  projectId: string;
+  projectId: string | number;
   projectName: string;
 }
 

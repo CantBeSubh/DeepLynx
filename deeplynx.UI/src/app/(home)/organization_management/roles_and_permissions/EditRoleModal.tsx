@@ -7,7 +7,8 @@ interface EditRoleModalProps {
   onClose: () => void;
   onSubmit: (
     roleId: number,
-    data: { name?: string | null; description?: string | null }
+    name?: string | null,
+    description?: string | null
   ) => Promise<void>;
   role: RoleResponseDto | null;
 }
@@ -39,10 +40,10 @@ const EditRoleModal = ({
     setIsSubmitting(true);
 
     try {
-      await onSubmit(role.id, {
-        name: name.trim() || null,
-        description: description.trim() || null,
-      });
+      await onSubmit(role.id,
+        name.trim() || null,
+        description.trim() || null,
+      );
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update role");

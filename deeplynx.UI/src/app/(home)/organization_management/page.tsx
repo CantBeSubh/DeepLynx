@@ -49,7 +49,7 @@ const OrganizationManagementPage = async ({
   // Fetch projects filtered by organization
   let projects: ProjectResponseDto[] = [];
   try {
-    const apiProjects = await getAllProjectsServer(organizationId, true);
+    const apiProjects = await getAllProjectsServer(organizationId as number, true);
     projects = apiProjects.map(mapToProjectResponseDtos);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);
@@ -58,32 +58,29 @@ const OrganizationManagementPage = async ({
   // Fetch groups filtered by organization
   let groups: GroupResponseDto[] = [];
   try {
-    const apiGroups = await getAllGroups(organizationId, true);
+    const apiGroups = await getAllGroups(organizationId as number, true);
     groups = apiGroups.map(mapToGroupResponseDtos);
   } catch (error) {
     console.error("getAllGroups failed:", error);
   }
 
   // Fetch roles filtered by organization
-  let roles: RoleResponseDto[] = [];
+  const roles: RoleResponseDto[] = [];
   try {
-    const apiRoles = await getAllRolesServer({
-      organizationId: Number(organizationId),
-      hideArchived: true,
-    });
-    roles = apiRoles;
+    // const apiRoles = await getAllRolesServer(organizationId as number);
+    // roles = apiRoles;
   } catch (error) {
     console.error("getAllRolesServer failed:", error);
   }
 
   // Fetch permissions filtered by organization
-  let permissions: PermissionResponseDto[] = [];
+  const permissions: PermissionResponseDto[] = [];
   try {
-    const apiPermissions = await getAllPermissionsServer({
-      organizationId: Number(organizationId),
-      hideArchived: true,
-    });
-    permissions = apiPermissions;
+    // const apiPermissions = await getAllPermissionsServer({
+    //   organizationId: Number(organizationId),
+    //   hideArchived: true,
+    // });
+    // permissions = apiPermissions;
   } catch (error) {
     console.error("getAllPermissionsServer failed:", error);
   }

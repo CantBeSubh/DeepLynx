@@ -252,3 +252,36 @@ export type EventResponseDto =
     lastUpdatedBy?: string | null;
     lastUpdatedByUserName?: string | null;
   };
+
+export type EdgeResponseDto = {
+  id: number;
+  originId: number;
+  destinationId: number;
+  relationshipId?: number;
+  dataSourceId: number;
+  projectId: number;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+  isArchived: boolean;
+};
+
+export type RelationshipResponseDto = {
+  id: number;
+  name: string;
+  description?: string;
+  uuid?: string;
+  projectId: number;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+  isArchived: boolean;
+  originId?: number;
+  destinationId?: number;
+};
+
+export type ProjectMemberResponseDto = {
+  name: string;
+  memberId?: number;
+  email: string;
+  role?: string;
+  roleId?: number;
+};

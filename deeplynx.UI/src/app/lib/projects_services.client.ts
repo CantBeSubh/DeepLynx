@@ -2,123 +2,297 @@
 "use client";
 
 import api from "./api";
-
-/** ===== Client calls (browser; cookie/session-based) ===== */
-
-// Update the getAllProjects service
+import { ProjectMemberResponseDto, ProjectResponseDto, ProjectStatResponseDto } from "../(home)/types/responseDTOs";
+import { CreateProjectRequestDto, UpdateProjectRequestDto } from "../(home)/types/requestDTOs";
+/**
+ * Get all projects for an organization
+ * @param organizationId - The ID of the organization
+ * @param hideArchived - Flag to hide archived projects (default: true)
+ * @returns Promise with array of ProjectResponseDto
+ */
 export async function getAllProjects(
-  organizationId?: number | string,
+  organizationId: number,
   hideArchived: boolean = true
-) {
-  const params: Record<string, string | number | boolean> = { hideArchived };
-  
-  if (organizationId !== undefined) {
-    params.organizationId = organizationId;
+): Promise<ProjectResponseDto[]> {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/projects`,
+      { params: { hideArchived } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error getting all projects:", error);
+    throw error;
   }
-
-  const res = await api.get("/projects/GetAllProjects", { params });
-  return res.data;
 }
 
-export async function getAllRecordsForMultipleProjects(
-  projectIds: number[] | string[],
-  hideArchived = true,
-  opts?: { signal?: AbortSignal }
-) {
-  const query =
-    projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
-    `&hideArchived=${hideArchived}`;
-
-  return api.get(`/projects/MultiProjectRecords?${query}`, {
-    signal: opts?.signal,
-  }).then(r => r.data);
+/**
+ * Get a specific project by ID
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param hideArchived - Flag to hide archived projects (default: true)
+ * @returns Promise with ProjectResponseDto
+ */
+export async function getProject(
+  organizationId: number,
+  projectId: number,
+  hideArchived: boolean = true
+): Promise<ProjectResponseDto> {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}`,
+      { params: { hideArchived } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error getting project ${projectId}:`, error);
+    throw error;
+  }
 }
 
-export async function getProject(projectId: string) {
-  const res = await api.get(`/projects/GetProject/${projectId}`);
-  return res.data;
+/**
+ * Create a new project
+ * @param organizationId - The ID of the organization
+ * @param dto - The project creation request DTO
+ * @returns Promise with ProjectResponseDto
+ */
+export async function createProject(
+  organizationId: number,
+  dto: CreateProjectRequestDto
+): Promise<ProjectResponseDto> {
+  try {
+    const res = await api.post(
+      `/organizations/${organizationId}/projects`,
+      dto,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error creating project:", error);
+    throw error;
+  }
 }
 
-export async function getProjectStats(projectId: string) {
-  const res = await api.get(`/projects/ProjectStats/${projectId}`);
-  return res.data;
+/**
+ * Update a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project to update
+ * @param dto - The project update request DTO
+ * @returns Promise with ProjectResponseDto
+ */
+export async function updateProject(
+  organizationId: number,
+  projectId: number,
+  dto: UpdateProjectRequestDto
+): Promise<ProjectResponseDto> {
+  try {
+    const res = await api.put(
+      `/organizations/${organizationId}/projects/${projectId}`,
+      dto,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error updating project ${projectId}:`, error);
+    throw error;
+  }
 }
 
-export async function createProject(data: {
-  name: string;
-  abbreviation: string | null;
-  description: string | null;
-}) {
-  const res = await api.post("/projects/CreateProject", data, {
-    headers: { "Content-Type": "application/json" },
-  });
-  return res.data;
+/**
+ * Delete a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project to delete
+ * @returns Promise with success message
+ */
+export async function deleteProject(
+  organizationId: number,
+  projectId: number
+): Promise<{ message: string }> {
+  try {
+    const res = await api.delete(
+      `/organizations/${organizationId}/projects/${projectId}`
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error deleting project ${projectId}:`, error);
+    throw error;
+  }
 }
 
+/**
+ * Archive or unarchive a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project to archive/unarchive
+ * @param archive - True to archive, false to unarchive
+ * @returns Promise with success message
+ */
+export async function archiveProject(
+  organizationId: number,
+  projectId: number,
+  archive: boolean
+): Promise<{ message: string }> {
+  try {
+    const res = await api.patch(
+      `/organizations/${organizationId}/projects/${projectId}`,
+      null,
+      { params: { archive } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error ${archive ? 'archiving' : 'unarchiving'} project ${projectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get project statistics
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @returns Promise with ProjectStatResponseDto
+ */
+export async function getProjectStats(
+  organizationId: number,
+  projectId: number
+): Promise<ProjectStatResponseDto> {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}/stats`
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error getting stats for project ${projectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get all members of a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @returns Promise with project members data
+ */
+export async function getProjectMembers(
+  organizationId: number,
+  projectId: number
+): Promise<ProjectMemberResponseDto[]> {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}/members`
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error getting members for project ${projectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Add a user or group to a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - Optional role ID
+ * @param userId - Optional user ID (required if not providing groupId)
+ * @param groupId - Optional group ID (required if not providing userId)
+ * @returns Promise with success message
+ */
+export async function addMemberToProject(
+  organizationId: number,
+  projectId: number,
+  roleId?: number,
+  userId?: number,
+  groupId?: number
+): Promise<{ message: string }> {
+  try {
+    const res = await api.post(
+      `/organizations/${organizationId}/projects/${projectId}/members`,
+      null,
+      { params: { roleId, userId, groupId } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error adding member to project ${projectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Update a member's role in a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The new role ID
+ * @param userId - Optional user ID (required if not providing groupId)
+ * @param groupId - Optional group ID (required if not providing userId)
+ * @returns Promise with success message
+ */
 export async function updateProjectMemberRole(
+  organizationId: number,
   projectId: number,
   roleId: number,
   userId?: number,
   groupId?: number
-) {
-  const params = new URLSearchParams({
-    projectId: projectId.toString(),
-    roleId: roleId.toString(),
-  });
-
-  if (userId !== undefined) {
-    params.append('userId', userId.toString());
-  }
-  if (groupId !== undefined) {
-    params.append('groupId', groupId.toString());
-  }
-
-  const res = await api.put(`/projects/UpdateProjectMemberRole?${params.toString()}`, {
-    headers: { "Content-Type": "application/json" },
-  });
-  return res.data;
-}
-export async function removeProjectMemberRole(
-  projectId: number,
-  userId?: number,
-  groupId?: number
-) {
-  const queryParams = [
-    `projectId=${projectId}`,
-    userId !== undefined ? `userId=${userId}` : null,
-    groupId !== undefined ? `groupId=${groupId}` : null,
-  ]
-    .filter(Boolean)
-    .join('&');
-
-  const res = await api.delete(
-    `/projects/RemoveMemberFromProject?${queryParams}`,
-    {
-      headers: { "Content-Type": "application/json" },
-    }
-  );
-  return res.data;
-}
-
-export async function getProjectMembers(projectId: number) {
-  const res = await api.get(`/projects/GetProjectMembers/${projectId}`);
-  return res.data;
-}
-
-export async function addMember(
-  projectId: number,
-  userId: number,
-  roleId?: number,
-  groupId?: number,
-) {
+): Promise<{ message: string }> {
   try {
-    const url = `/projects/AddMemberToProject?projectId=${projectId}&userId=${userId}` +
-                (roleId !== undefined ? `&roleId=${roleId}` : '');
-
-    const res = await api.post(url, { projectId, userId, roleId, groupId });
+    const res = await api.put(
+      `/organizations/${organizationId}/projects/${projectId}/members`,
+      null,
+      { params: { roleId, userId, groupId } }
+    );
     return res.data;
   } catch (error) {
-    console.error("API call failed:", error);
+    console.error(`Error updating member role in project ${projectId}:`, error);
     throw error;
   }
 }
+
+/**
+ * Remove a user or group from a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param userId - Optional user ID (required if not providing groupId)
+ * @param groupId - Optional group ID (required if not providing userId)
+ * @returns Promise with success message
+ */
+export async function removeMemberFromProject(
+  organizationId: number,
+  projectId: number,
+  userId?: number,
+  groupId?: number
+): Promise<{ message: string }> {
+  try {
+    const res = await api.delete(
+      `/organizations/${organizationId}/projects/${projectId}/members`,
+      { params: { userId, groupId } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error removing member from project ${projectId}:`, error);
+    throw error;
+  }
+}
+
+// /**
+//  * Get records from multiple projects
+//  * @param projectIds - Array of project IDs
+//  * @param hideArchived - Flag to hide archived records (default: true)
+//  * @param opts - Optional configuration like abort signal
+//  * @returns Promise with records data
+//  */
+// export async function getAllRecordsForMultipleProjects(
+//   projectIds: number[],
+//   hideArchived: boolean = true,
+//   opts?: { signal?: AbortSignal }
+// ): Promise<any> {
+//   try {
+//     const query =
+//       projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
+//       `&hideArchived=${hideArchived}`;
+
+//     const res = await api.get(`/projects/MultiProjectRecords?${query}`, {
+//       signal: opts?.signal,
+//     });
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error getting records for multiple projects:", error);
+//     throw error;
+//   }
+// }
