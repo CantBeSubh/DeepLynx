@@ -457,7 +457,7 @@ public class QueryBusiness : IQueryBusiness
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
 
         var dataSources = await _context.DataSources
-            .Where(d => projectIds.Contains(d.ProjectId)).ToListAsync();
+            .Where(d => d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)).ToListAsync();
 
         if (hideArchived) dataSources = dataSources.Where(d => !d.IsArchived).ToList();
 
