@@ -165,3 +165,16 @@ export type UpdatePermissionRequestDto = {
   action?: string;
   labelId?: number;
 };
+
+export type CreateProjectRequestDto = {
+  name: string;
+  description?: string;
+  abbreviation?: string;
+};
+
+export type UpdateProjectRequestDto = {
+  organizationId: number;
+  name?: string;
+  description?: string;
+  abbreviation?: string;
+};
