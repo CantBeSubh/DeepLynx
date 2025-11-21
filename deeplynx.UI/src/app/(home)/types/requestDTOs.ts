@@ -178,3 +178,29 @@ export type UpdateProjectRequestDto = {
   description?: string;
   abbreviation?: string;
 };
+
+export type CreateRecordRequestDto = {
+  name: string;
+  description: string;
+  object_storage_id?: number;
+  uri?: string;
+  properties: Record<string, any>;
+  original_id: string;
+  class_id?: number;
+  class_name?: string;
+  file_type?: string;
+  tags?: string[];
+  sensitivity_labels?: string[];
+};
+
+export type UpdateRecordRequestDto = {
+  uri?: string;
+  properties?: Record<string, any>;
+  original_id?: string;
+  name?: string;
+  class_id?: number;
+  class_name?: string;
+  description?: string;
+  object_storage_id?: number;
+  file_type?: string;
+};
