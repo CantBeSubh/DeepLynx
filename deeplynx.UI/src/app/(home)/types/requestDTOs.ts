@@ -66,3 +66,15 @@ export type CreateObjectStorageRequestDto = {
 export type UpdateObjectStorageRequestDto = {
   name: string;
 }
+
+export type CreateClassRequestDto = {
+  name: string;
+  description: string;
+  uuid?: string;
+}
+
+export type UpdateClassRequestDto = {
+  name: string;
+  description: string;
+  uuid?: string;
+}
