@@ -44,7 +44,8 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var reportRecordResponse =
-                await _timeseriesBusiness.QueryTimeseries(currentUserId, request, projectId, dataSourceId, fileType);
+                await _timeseriesBusiness.QueryTimeseries(currentUserId, request, projectId, organizationId,
+                    dataSourceId, fileType);
             return Ok(reportRecordResponse);
         }
         catch (NoResultsException nrException)
@@ -75,7 +76,7 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeSeriesUploadInfo =
-                await _timeseriesBusiness.UploadFile(currentUserId, projectId, dataSourceId, file);
+                await _timeseriesBusiness.UploadFile(currentUserId, projectId, organizationId, dataSourceId, file);
             return Ok(timeSeriesUploadInfo);
         }
         catch (Exception e)
@@ -157,7 +158,8 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.CompleteUpload(currentUserId, projectId, dataSourceId, request);
+                await _timeseriesBusiness.CompleteUpload(currentUserId, projectId, organizationId, dataSourceId,
+                    request);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
         }
         catch (Exception e)
@@ -214,7 +216,8 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.InterpolateRows(currentUserId, projectId, dataSourceId, rowNumber, tableName,
+                await _timeseriesBusiness.InterpolateRows(currentUserId, projectId, organizationId, dataSourceId,
+                    rowNumber, tableName,
                     fileType);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
         }
@@ -243,7 +246,8 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.ExportTimeseriesTable(currentUserId, projectId, dataSourceId, tableName,
+                await _timeseriesBusiness.ExportTimeseriesTable(currentUserId, projectId, organizationId, dataSourceId,
+                    tableName,
                     fileType);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
         }

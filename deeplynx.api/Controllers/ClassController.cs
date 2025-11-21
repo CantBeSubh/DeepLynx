@@ -46,7 +46,8 @@ public class ClassController : ControllerBase
     {
         try
         {
-            var classes = await _classBusiness.GetAllClasses(projectId, hideArchived);
+            var classes = await _classBusiness.GetAllClasses(
+                organizationId, [projectId], hideArchived);
             return Ok(classes);
         }
         catch (Exception exc)
@@ -74,7 +75,8 @@ public class ClassController : ControllerBase
     {
         try
         {
-            var classes = await _classBusiness.GetClass(projectId, classId, hideArchived);
+            var classes = await _classBusiness.GetClass(
+                organizationId, projectId, classId, hideArchived);
             return Ok(classes);
         }
         catch (Exception exc)
@@ -102,8 +104,8 @@ public class ClassController : ControllerBase
     {
         try
         {
-            var classes = await _classBusiness.GetAllClassesMultiProject(
-                projectIds, hideArchived);
+            var classes = await _classBusiness.GetAllClasses(
+                organizationId, projectIds, hideArchived);
             return Ok(classes);
         }
         catch (Exception exc)
@@ -130,7 +132,8 @@ public class ClassController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var newClass = await _classBusiness.CreateClass(currentUserId, projectId, dto);
+            var newClass = await _classBusiness.CreateClass(
+                currentUserId, organizationId, projectId, dto);
             return Ok(newClass);
         }
         catch (Exception exc)
@@ -157,7 +160,8 @@ public class ClassController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var newClasses = await _classBusiness.BulkCreateClasses(currentUserId, projectId, classes);
+            var newClasses = await _classBusiness.BulkCreateClasses(
+                currentUserId, organizationId, projectId, classes);
             return Ok(newClasses);
         }
         catch (Exception exc)
@@ -187,7 +191,8 @@ public class ClassController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var updatedClass = await _classBusiness.UpdateClass(currentUserId, projectId, classId, dto);
+            var updatedClass = await _classBusiness.UpdateClass(
+                currentUserId, organizationId, projectId, classId, dto);
             return Ok(updatedClass);
         }
         catch (Exception exc)
@@ -213,7 +218,9 @@ public class ClassController : ControllerBase
     {
         try
         {
-            await _classBusiness.DeleteClass(projectId, classId);
+            var currentUserId = UserContextStorage.UserId;
+            await _classBusiness.DeleteClass(
+                currentUserId, organizationId, projectId, classId);
             return Ok(new { message = $"Deleted class {classId}" });
         }
         catch (Exception exc)
@@ -244,11 +251,11 @@ public class ClassController : ControllerBase
             var userId = UserContextStorage.UserId;
             if (archive)
             {
-                await _classBusiness.ArchiveClass(userId, projectId, classId);
+                await _classBusiness.ArchiveClass(userId, organizationId, projectId, classId);
                 return Ok(new { message = $"Archived class {classId}" });
             }
 
-            await _classBusiness.UnarchiveClass(userId, projectId, classId);
+            await _classBusiness.UnarchiveClass(userId, organizationId, projectId, classId);
             return Ok(new { message = $"Unarchived class {classId}" });
         }
         catch (Exception exc)

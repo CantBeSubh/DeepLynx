@@ -215,6 +215,19 @@ try
 
             document.Tags = new HashSet<OpenApiTag>
             {
+                // parent tags
+                new()
+                {
+                    Name = "Project Management",
+                    Description =
+                        "Handles project-level operations including classes, records, edges, and relationships"
+                },
+                new()
+                {
+                    Name = "Organization Management",
+                    Description = "Handles organization-level operations including classes, users, groups, and projects"
+                },
+                // child tags
                 new()
                 {
                     Name = "Token",

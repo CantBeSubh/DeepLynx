@@ -52,7 +52,8 @@ public class FileController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var fileUploadInfo =
-                await _fileBusiness.UploadFile(currentUserId, projectId, dataSourceId, objectStorageId, file);
+                await _fileBusiness.UploadFile(currentUserId, projectId, organizationId, dataSourceId, objectStorageId,
+                    file);
             return Ok(fileUploadInfo);
         }
         catch (Exception exc)
@@ -81,7 +82,8 @@ public class FileController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var updatedFileInfo = await _fileBusiness.UpdateFile(currentUserId, projectId, recordId, file);
+            var updatedFileInfo =
+                await _fileBusiness.UpdateFile(currentUserId, organizationId, projectId, recordId, file);
             return Ok(updatedFileInfo);
         }
         catch (Exception exc)
@@ -107,7 +109,7 @@ public class FileController : ControllerBase
     {
         try
         {
-            var fileStreamResult = await _fileBusiness.DownloadFile(projectId, recordId);
+            var fileStreamResult = await _fileBusiness.DownloadFile(organizationId, projectId, recordId);
             return fileStreamResult;
         }
         catch (Exception exc)
@@ -133,7 +135,7 @@ public class FileController : ControllerBase
     {
         try
         {
-            await _fileBusiness.DeleteFile(projectId, recordId);
+            await _fileBusiness.DeleteFile(organizationId, projectId, recordId);
             return Ok(new { message = $"Deleted record {recordId} and its file" });
         }
         catch (Exception exc)

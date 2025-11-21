@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251121001553_FixHistoricalRecordsTriggers")]
+    partial class FixHistoricalRecordsTriggers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -238,7 +241,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
-                    b.Property<long?>("ProjectId")
+                    b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -267,19 +270,9 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex("Uuid")
                         .HasDatabaseName("idx_classes_uuid");
 
-                    b.HasIndex("OrganizationId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("unique_organization_class_name")
-                        .HasFilter("project_id IS NULL");
-
                     b.HasIndex("ProjectId", "Name")
                         .IsUnique()
                         .HasDatabaseName("unique_class_name");
-
-                    b.HasIndex("OrganizationId", "ProjectId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("unique_project_class_name")
-                        .HasFilter("project_id IS NOT NULL");
 
                     b.ToTable("classes", "deeplynx");
                 });
@@ -338,7 +331,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
-                    b.Property<long?>("ProjectId")
+                    b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -2057,6 +2050,7 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Classes")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("classes_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
@@ -2083,6 +2077,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("DataSources")
                         .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("data_sources_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
