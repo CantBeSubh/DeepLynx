@@ -139,3 +139,13 @@ export type CreateEventRequestDto = {
   properties: string;
   lastUpdatedBy?: string;
 };
+
+export type CreateGroupRequestDto = {
+  name: string;
+  description?: string;
+}
+
+export type UpdateGroupRequestDto = {
+  name?: string;
+  description?: string;
+}
