@@ -1051,7 +1051,8 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = mockUserId,
-                LastUpdatedAt = now
+                LastUpdatedAt = now,
+                OrganizationId = mockOrganizationId
             };
 
             // Act
@@ -1077,7 +1078,8 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = mockUserId,
-                LastUpdatedAt = now
+                LastUpdatedAt = now,
+                OrganizationId = mockOrganizationId
             };
 
             Context.Events.Add(testEvent);
@@ -1108,7 +1110,8 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = null,
-                LastUpdatedAt = now
+                LastUpdatedAt = now,
+                OrganizationId = mockOrganizationId
             };
 
             // Act
@@ -1140,7 +1143,8 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = null,
-                LastUpdatedAt = now
+                LastUpdatedAt = now,
+                OrganizationId = mockOrganizationId
             };
             Context.Events.Add(testEvent);
             await Context.SaveChangesAsync();
@@ -1214,6 +1218,7 @@ namespace deeplynx.tests
             {
                 Name = "Action1",
                 ProjectId = pid,
+                OrganizationId = mockOrganizationId,
                 LastUpdatedBy = mockUserId,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
@@ -1227,6 +1232,7 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource1",
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 },
@@ -1234,6 +1240,7 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource2",
                     ProjectId = pid2,
+                    OrganizationId = mockOrganizationId,
                     LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }

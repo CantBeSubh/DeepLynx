@@ -198,6 +198,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         {
             Name = dto.Name,
             ProjectId = projectId,
+            // OrganizationId = project.OrganizationId,
             Description = dto.Description,
             Default = makeDefault,
             BaseUri = dto.BaseUri,
