@@ -73,10 +73,7 @@ public class ObjectStorageBusiness : IObjectStorageBusiness
 
         if (projectId.HasValue)
             query = query.Where(os => os.ProjectId == projectId);
-
-        if (hideArchived)
-            query = query.Where(os => !os.IsArchived);
-
+        
         var returnedObjectStorage = await query.FirstOrDefaultAsync();
 
         if (returnedObjectStorage is null)
@@ -298,7 +295,7 @@ public class ObjectStorageBusiness : IObjectStorageBusiness
             query = query.Where(os => os.ProjectId == projectId);
 
         var returnedObjectStorage = await query.FirstOrDefaultAsync();
-        if (returnedObjectStorage is null || returnedObjectStorage.IsArchived)
+        if (returnedObjectStorage is null)
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
 
         if (returnedObjectStorage.IsArchived)
@@ -336,7 +333,7 @@ public class ObjectStorageBusiness : IObjectStorageBusiness
             query = query.Where(os => os.ProjectId == projectId);
 
         var returnedObjectStorage = await query.FirstOrDefaultAsync();
-        if (returnedObjectStorage is null || returnedObjectStorage.IsArchived)
+        if (returnedObjectStorage is null)
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
 
         if (!returnedObjectStorage.IsArchived)
@@ -368,6 +365,8 @@ public class ObjectStorageBusiness : IObjectStorageBusiness
 
         if (projectId.HasValue)
             query = query.Where(os => os.ProjectId == projectId);
+        else
+            query = query.Where(os => os.ProjectId == null);
 
         var returnedObjectStorage = await query.FirstOrDefaultAsync();
 
@@ -457,7 +456,6 @@ public class ObjectStorageBusiness : IObjectStorageBusiness
         await _context.ObjectStorages
             .Where(os => os.ProjectId == projectId && os.Id != newDefaultId)
             .ExecuteUpdateAsync(s => s.SetProperty(os => os.Default, false));
-        await _context.SaveChangesAsync();
     }
 
     private async Task ResetOrganizationDefaults(long organizationId, long newDefaultId)
@@ -466,6 +464,5 @@ public class ObjectStorageBusiness : IObjectStorageBusiness
         await _context.ObjectStorages
             .Where(os => os.OrganizationId == organizationId && os.ProjectId == null && os.Id != newDefaultId)
             .ExecuteUpdateAsync(s => s.SetProperty(os => os.Default, false));
-        await _context.SaveChangesAsync();
     }
 }
