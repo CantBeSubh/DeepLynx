@@ -68,6 +68,7 @@ public class EdgeBusiness : IEdgeBusiness
     ///     OR Retrieves an edge by its id
     /// </summary>
     /// <param name="projectId">The project of the edge to retrieve</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The id whereby to fetch the edge</param>
     /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
@@ -111,6 +112,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dto">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<EdgeResponseDto> CreateEdge(
@@ -186,6 +188,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edges">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
@@ -279,6 +282,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dto">The edge request data transfer object containing updated edge details.</param>
     /// <param name="edgeId">The ID of the edge to update</param>
     /// <param name="originId">The origin ID of the edge to update if edgeID is not present.</param>
@@ -342,6 +346,7 @@ public class EdgeBusiness : IEdgeBusiness
     ///     Deletes a specific edge by its ID or origin/destination.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to delete</param>
     /// <param name="originId">The origin ID of the edge to delete if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
@@ -371,6 +376,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to archive</param>
     /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
@@ -413,6 +419,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to unarchive</param>
     /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge to unarchive if edgeID is not present.</param>
@@ -453,6 +460,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     ///     Private method to facilitate boilerplate code for finding edges by ID or origin/destination
     /// </summary>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The id whereby to fetch the edge</param>
     /// <param name="originId">The origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">The destination ID by which to fetch the edge if no ID</param>

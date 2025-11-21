@@ -51,6 +51,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
@@ -73,6 +74,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="file">The .json file containing the metadata contents.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
@@ -128,6 +130,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     private async Task<MetadataResponseDto> ParseMetadata(
         long currentUserId,
@@ -396,6 +399,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId"></param>
     /// <param name="records"></param>
     /// <param name="metadataResponseDto"></param>

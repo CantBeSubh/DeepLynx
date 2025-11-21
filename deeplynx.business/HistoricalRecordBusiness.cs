@@ -22,6 +22,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     ///     Retrieves all Historical Records for a specific project and datasource
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="pointInTime">(Optional) Find the most current records that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
@@ -87,6 +88,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     ///     Show the historical updates of a specific record
     /// </summary>
     /// <param name="recordId">The ID of the record to list history for</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <returns>An array of record instances for the given record</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetHistoryForRecord(long recordId, long organizationId)
     {
@@ -128,6 +130,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     ///     Find an record at a given point in time
     /// </summary>
     /// <param name="recordId">The ID of the record to retrieve</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="pointInTime">(Optional) Find the most current record that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
     /// <returns>A record that matches the applied filters.</returns>
