@@ -65,7 +65,7 @@ const OrganizationManagementPage = async ({
   }
 
   // Fetch roles filtered by organization
-  let roles: RoleResponseDto[] = [];
+  const roles: RoleResponseDto[] = [];
   try {
     // const apiRoles = await getAllRolesServer(organizationId as number);
     // roles = apiRoles;
@@ -74,7 +74,7 @@ const OrganizationManagementPage = async ({
   }
 
   // Fetch permissions filtered by organization
-  let permissions: PermissionResponseDto[] = [];
+  const permissions: PermissionResponseDto[] = [];
   try {
     // const apiPermissions = await getAllPermissionsServer({
     //   organizationId: Number(organizationId),

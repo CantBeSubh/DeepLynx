@@ -20,8 +20,6 @@ export type CreateRoleRequestDto =
   {
     name: string;
     description?: string | null;
-    projectId?: number;
-    organizationId?: number;
   }
 
 export type PermissionRequestDto =
@@ -222,8 +220,8 @@ export type UpdateRelationshipRequestDto = {
 };
 
 export type UpdateRoleRequestDto = {
-  name?: string;
-  description?: string;
+  name?: string | null;
+  description?: string | null;
 };
 
 

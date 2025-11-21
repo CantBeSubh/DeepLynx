@@ -415,7 +415,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
 
   const additionalPropertiesRows = useMemo(() => {
     if (!record?.properties) return [];
-    // const parsedProperties = JSON.parse(record.properties);
+    // const parsedProperties = JSON.parse(record.properties); //TODO: fix this once business is fixed
     return Object.entries(record.properties).map(([key, value]) => ({
       label: key,
       value: typeof value === "object" ? JSON.stringify(value) : String(value),

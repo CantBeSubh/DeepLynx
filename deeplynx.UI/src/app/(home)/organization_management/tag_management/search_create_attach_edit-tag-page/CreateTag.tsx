@@ -9,6 +9,7 @@ import {
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { fullTextSearch } from "@/app/lib/query_services.client";
 import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -48,6 +49,8 @@ const CreateTag = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdTags, setCreatedTags] = useState<TagResponseDto[]>([]);
+  const { organization } = useOrganizationSession();
+
 
   const handleCreateTag = async () => {
     if (!tagName.trim()) {
@@ -64,7 +67,7 @@ const CreateTag = ({
     setError(null);
 
     try {
-      const newTag = await createTag(Number(projectId), { name: tagName });
+      const newTag = await createTag(organization?.organizationId as number, Number(projectId), { name: tagName });
       setTagName("");
       toast.success("Tag Created");
       setCreatedTags((prev) => [...prev, newTag]);
@@ -228,14 +231,15 @@ export const CreateTagRecordsList = ({
       setSearchLoading(true);
 
       try {
-        const data = await fullTextSearch(searchTerm, [projectId]);
-        const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
-          (record) => ({
-            ...record,
-            tags: parseTags(record.tags),
-          })
-        );
-        setSearchResults(resultsWithParsedTags);
+        //TODO: fix when reaady
+        // const data = await fullTextSearch(searchTerm, [projectId]);
+        // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
+        //   (record) => ({
+        //     ...record,
+        //     tags: parseTags(record.tags),
+        //   })
+        // );
+        // setSearchResults(resultsWithParsedTags);
       } catch (error) {
         console.error("Search error:", error);
         setSearchResults([]);
@@ -289,14 +293,14 @@ export const CreateTagRecordsList = ({
 
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
-
-      selectedRecordIds.forEach((recordId) => {
-        selectedTagIds.forEach((tagId) => {
-          attachPromises.push(
-            attachTagToRecord(Number(projectId), recordId, tagId)
-          );
-        });
-      });
+      //TODO: you know the drill
+      // selectedRecordIds.forEach((recordId) => {
+      //   selectedTagIds.forEach((tagId) => {
+      //     attachPromises.push(
+      //       attachTagToRecord(Number(projectId), recordId, tagId)
+      //     );
+      //   });
+      // });
 
       await Promise.all(attachPromises);
 

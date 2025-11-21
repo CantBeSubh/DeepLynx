@@ -174,7 +174,7 @@ export async function getProjectStats(
 export async function getProjectMembers(
   organizationId: number,
   projectId: number
-): Promise<ProjectMemberResponseDto> {
+): Promise<ProjectMemberResponseDto[]> {
   try {
     const res = await api.get(
       `/organizations/${organizationId}/projects/${projectId}/members`

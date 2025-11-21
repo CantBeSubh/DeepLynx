@@ -141,7 +141,7 @@ export async function archiveRole(
   organizationId: number,
   projectId: number,
   roleId: number,
-  archive: boolean
+  archive: boolean = true
 ): Promise<{ message: string }> {
   try {
     const res = await api.patch(

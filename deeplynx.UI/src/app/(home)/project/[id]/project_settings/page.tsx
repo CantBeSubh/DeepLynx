@@ -1,8 +1,9 @@
 import React from "react";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import ProjectSettingsClient from "./ProjectSettingsClient";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
+import { cookies } from "next/headers";
 function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
     id: String(p.id),
@@ -23,8 +24,25 @@ type Props = {
 export default async function Page({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
+  // Get organization from cookies
+  const cookieStore = await cookies();
+  const orgSessionCookie = cookieStore.get("organizationSession");
 
-  const ProjectResponseDtos = (await getAllProjectsServer()) as ProjectResponseDto[];
+  if (!orgSessionCookie) {
+    redirect("/select-org");
+  }
+
+  let organizationId: string | number | undefined;
+  try {
+    const orgSession = JSON.parse(orgSessionCookie.value);
+    organizationId = orgSession.organizationId;
+  } catch (e) {
+    console.error("Failed to parse organization session:", e);
+    redirect("/select-org");
+  }
+
+
+  const ProjectResponseDtos = (await getAllProjectsServer(organizationId as number)) as ProjectResponseDto[];
   const initialProjects = ProjectResponseDtos.map((p) => toProjectResponseDtos(p));
   const initialProject = initialProjects.find((p) => p.id == id);
 
