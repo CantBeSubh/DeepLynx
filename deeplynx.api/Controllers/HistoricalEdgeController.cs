@@ -81,7 +81,8 @@ public class HistoricalEdgeController : ControllerBase
     {
         try
         {
-            var edge = await _historicalEdgeBusiness.GetHistoricalEdge(edgeId, null, null, pointInTime, hideArchived);
+            var edge = await _historicalEdgeBusiness.GetHistoricalEdge(organizationId, edgeId, null, null, pointInTime,
+                hideArchived);
             return Ok(edge);
         }
         catch (Exception exc)
@@ -113,7 +114,8 @@ public class HistoricalEdgeController : ControllerBase
     {
         try
         {
-            var edge = await _historicalEdgeBusiness.GetHistoricalEdge(null, originId, destinationId, pointInTime,
+            var edge = await _historicalEdgeBusiness.GetHistoricalEdge(organizationId, null, originId, destinationId,
+                pointInTime,
                 hideArchived);
             return Ok(edge);
         }
@@ -141,7 +143,7 @@ public class HistoricalEdgeController : ControllerBase
     {
         try
         {
-            var history = await _historicalEdgeBusiness.GetHistoryForEdge(edgeId, null, null);
+            var history = await _historicalEdgeBusiness.GetHistoryForEdge(organizationId, edgeId, null, null);
             return Ok(history);
         }
         catch (Exception exc)
@@ -169,7 +171,8 @@ public class HistoricalEdgeController : ControllerBase
     {
         try
         {
-            var history = await _historicalEdgeBusiness.GetHistoryForEdge(null, originId, destinationId);
+            var history =
+                await _historicalEdgeBusiness.GetHistoryForEdge(organizationId, null, originId, destinationId);
             return Ok(history);
         }
         catch (Exception exc)

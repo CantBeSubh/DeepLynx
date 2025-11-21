@@ -141,7 +141,8 @@ public class RecordController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var record = await _recordBusiness.CreateRecord(currentUserId, projectId, dataSourceId, dto);
+            var record =
+                await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, dataSourceId, dto);
             return Ok(record);
         }
         catch (Exception exc)
@@ -170,7 +171,9 @@ public class RecordController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var newRecords = await _recordBusiness.BulkCreateRecords(currentUserId, projectId, dataSourceId, records);
+            var newRecords =
+                await _recordBusiness.BulkCreateRecords(currentUserId, projectId, organizationId, dataSourceId,
+                    records);
             return Ok(newRecords);
         }
         catch (Exception exc)
@@ -256,11 +259,11 @@ public class RecordController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _recordBusiness.ArchiveRecord(currentUserId, projectId, recordId);
+                await _recordBusiness.ArchiveRecord(currentUserId, projectId, organizationId, recordId);
                 return Ok(new { message = $"Archived record {recordId}" });
             }
 
-            await _recordBusiness.UnarchiveRecord(currentUserId, projectId, recordId);
+            await _recordBusiness.UnarchiveRecord(currentUserId, projectId, organizationId, recordId);
             return Ok(new { message = $"Unarchived record {recordId}" });
         }
         catch (Exception exc)

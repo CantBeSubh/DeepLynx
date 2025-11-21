@@ -51,7 +51,8 @@ public class HistoricalRecordController : ControllerBase
         try
         {
             var records =
-                await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, dataSourceId, pointInTime,
+                await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, organizationId, dataSourceId,
+                    pointInTime,
                     hideArchived);
             return Ok(records);
         }
@@ -82,7 +83,9 @@ public class HistoricalRecordController : ControllerBase
     {
         try
         {
-            var record = await _historicalRecordBusiness.GetHistoricalRecord(recordId, pointInTime, hideArchived);
+            var record =
+                await _historicalRecordBusiness.GetHistoricalRecord(recordId, organizationId, pointInTime,
+                    hideArchived);
             return Ok(record);
         }
         catch (Exception exc)
@@ -108,7 +111,7 @@ public class HistoricalRecordController : ControllerBase
     {
         try
         {
-            var history = await _historicalRecordBusiness.GetHistoryForRecord(recordId);
+            var history = await _historicalRecordBusiness.GetHistoryForRecord(recordId, organizationId);
             return Ok(history);
         }
         catch (Exception exc)
