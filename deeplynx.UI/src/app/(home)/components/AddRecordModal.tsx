@@ -14,6 +14,7 @@ import { DataSourceResponseDto } from "../types/responseDTOs";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
 import { ProjectResponseDto } from "../types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 type JsonValue = Record<string, unknown>;
 
 type Props = {
@@ -52,6 +53,8 @@ const AddRecordModal: React.FC<Props> = ({
   const [abbreviation, setAbbreviation] = useState("");
   const [propertiesText, setPropertiesText] = useState("");
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
+  const { organization, hasLoaded } = useOrganizationSession();
+
 
   // Optional fields
   const [objectStorageId, setObjectStorageId] = useState<string>("");
@@ -188,9 +191,7 @@ const AddRecordModal: React.FC<Props> = ({
       payload.sensitivity_labels = sensitivity_labels;
 
     try {
-      await createRecord(selectedProjectId, payload, {
-        dataSourceId: selectedDataSourceId,
-      });
+      await createRecord(organization!.organizationId as number, selectedProjectId, selectedDataSourceId, {});
       toast.success(t.translations.RECORD_CREATED_SECCESSFULLY);
       resetForm();
       onClose();

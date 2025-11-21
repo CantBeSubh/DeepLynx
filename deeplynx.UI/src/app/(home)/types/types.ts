@@ -348,3 +348,22 @@ export type PaginatedResponse<T> = {
   hasPreviousPage: boolean;
   hasNextPage: boolean;
 };
+
+export type GraphNode = {
+  id: number;
+  label: string;
+  type: string;
+};
+
+export type GraphLink = {
+  source: number;
+  target: number;
+  relationshipId?: number;
+  relationshipName?: string;
+  edgeId: number;
+};
+
+export type GraphResponse = {
+  nodes?: GraphNode[];
+  links?: GraphLink[];
+};

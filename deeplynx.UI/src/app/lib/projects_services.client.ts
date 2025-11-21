@@ -2,7 +2,7 @@
 "use client";
 
 import api from "./api";
-import { ProjectResponseDto, ProjectStatResponseDto } from "../(home)/types/responseDTOs";
+import { ProjectMemberResponseDto, ProjectResponseDto, ProjectStatResponseDto } from "../(home)/types/responseDTOs";
 import { CreateProjectRequestDto, UpdateProjectRequestDto } from "../(home)/types/requestDTOs";
 /**
  * Get all projects for an organization
@@ -174,7 +174,7 @@ export async function getProjectStats(
 export async function getProjectMembers(
   organizationId: number,
   projectId: number
-): Promise<any> {
+): Promise<ProjectMemberResponseDto> {
   try {
     const res = await api.get(
       `/organizations/${organizationId}/projects/${projectId}/members`
@@ -270,29 +270,29 @@ export async function removeMemberFromProject(
   }
 }
 
-/**
- * Get records from multiple projects
- * @param projectIds - Array of project IDs
- * @param hideArchived - Flag to hide archived records (default: true)
- * @param opts - Optional configuration like abort signal
- * @returns Promise with records data
- */
-export async function getAllRecordsForMultipleProjects(
-  projectIds: number[],
-  hideArchived: boolean = true,
-  opts?: { signal?: AbortSignal }
-): Promise<any> {
-  try {
-    const query =
-      projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
-      `&hideArchived=${hideArchived}`;
+// /**
+//  * Get records from multiple projects
+//  * @param projectIds - Array of project IDs
+//  * @param hideArchived - Flag to hide archived records (default: true)
+//  * @param opts - Optional configuration like abort signal
+//  * @returns Promise with records data
+//  */
+// export async function getAllRecordsForMultipleProjects(
+//   projectIds: number[],
+//   hideArchived: boolean = true,
+//   opts?: { signal?: AbortSignal }
+// ): Promise<any> {
+//   try {
+//     const query =
+//       projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
+//       `&hideArchived=${hideArchived}`;
 
-    const res = await api.get(`/projects/MultiProjectRecords?${query}`, {
-      signal: opts?.signal,
-    });
-    return res.data;
-  } catch (error) {
-    console.error("Error getting records for multiple projects:", error);
-    throw error;
-  }
-}
+//     const res = await api.get(`/projects/MultiProjectRecords?${query}`, {
+//       signal: opts?.signal,
+//     });
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error getting records for multiple projects:", error);
+//     throw error;
+//   }
+// }
