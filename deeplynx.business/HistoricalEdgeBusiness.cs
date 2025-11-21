@@ -78,6 +78,7 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <summary>
     ///     Show the historical updates of a specific edge
     /// </summary>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to list history for</param>
     /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
@@ -114,6 +115,7 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <summary>
     ///     Find an edge at a given point in time
     /// </summary>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The ID of the edge to retrieve</param>
     /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
@@ -175,6 +177,7 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <summary>
     ///     Private method to facilitate boilerplate code for finding edges by ID or origindestination
     /// </summary>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="edgeId">The id whereby to fetch the edge</param>
     /// <param name="originId">The origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">The destination ID by which to fetch the edge if no ID</param>

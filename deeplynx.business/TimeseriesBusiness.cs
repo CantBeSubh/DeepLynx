@@ -36,6 +36,7 @@ public class TimeseriesBusiness(
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="tableName">Timeseries table name</param>
     /// <param name="filePath">The path of the file being uploaded to DuckDB</param>
+    /// <param name="fileType">The type of file being uploaded</param>
     public async Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath,
         string fileType)
     {
@@ -57,6 +58,7 @@ public class TimeseriesBusiness(
     /// ///
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project ID</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="file">This is the entire file attached as form data in the request</param>
     /// <returns>An object of the uploaded file information</returns>
@@ -244,6 +246,7 @@ public class TimeseriesBusiness(
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId">The project ID</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="request">The request, which contains the UploadID and FileName</param>
     /// <returns>An object of the uploaded file information</returns>
@@ -363,7 +366,6 @@ public class TimeseriesBusiness(
     /// <param name="projectId"></param>
     /// <param name="file"></param>
     /// <param name="tableName"></param>
-    /// <param name="fileType"></param>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
     public async Task AppendTimeseriesTable(long projectId, long dataSourceId, IFormFile file, string tableName)
@@ -421,6 +423,7 @@ public class TimeseriesBusiness(
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId"></param>
     /// <param name="tableName"></param>
     /// <param name="fileType">The type of file to convert query to</param>
@@ -484,6 +487,7 @@ public class TimeseriesBusiness(
     /// <param name="rowNumber"></param>
     /// <param name="tableName"></param>
     /// <param name="projectId"></param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId"></param>
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns>Data</returns>
@@ -556,6 +560,7 @@ public class TimeseriesBusiness(
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="request"> The request which includes the query string</param>
     /// <param name="projectId">The project ID</param>
+    /// <param name="organizationId">The ID of the organization under which project exists</param>
     /// <param name="dataSourceId">The data source ID</param>
     /// ///
     /// <param name="fileType">The type of file to convert query to</param>
@@ -643,11 +648,11 @@ public class TimeseriesBusiness(
     ///     Runs a timeseries query to generate a csv from a DataTable
     /// </summary>
     /// <param name="recordResponse">The record response DTO</param>
-    /// <param name="request">The timeseries query request DTO</param>
-    /// <param name="resultTable">The table with time series records to be written</param>
+    /// <param name="query">The timeseries query request DTO</param>
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The data source ID</param>
     /// <param name="fileName">The name of the file to be written</param>
+    /// <param name="fileType">The type of the file being written</param>
     /// <exception cref="KeyNotFoundException">Thrown when the record cannot be found</exception>
     /// <exception cref="Exception">Thrown if the report cannot be written</exception>
     private async Task RunBackgroundJob(RecordResponseDto recordResponse, string query, long projectId,
