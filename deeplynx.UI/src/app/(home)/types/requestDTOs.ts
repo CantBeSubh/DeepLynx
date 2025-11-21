@@ -78,3 +78,21 @@ export type UpdateClassRequestDto = {
   description: string;
   uuid?: string;
 }
+
+export type CreateDataSourceRequestDto = {
+  name: string;
+  description?: string;
+  abbreviation?: string;
+  type?: string;
+  baseUri?: string;
+  config?: string;
+};
+
+export type UpdateDataSourceRequestDto = {
+  name?: string;
+  description?: string;
+  abbreviation?: string;
+  type?: string;
+  baseUri?: string;
+  config?: string;
+};
