@@ -55,7 +55,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
 
     isRefreshing.current = true;
     try {
-      const data = await getAllProjects(organization.organizationId, true);
+      const data = await getAllProjects(organization.organizationId as number, true);
       setProjects(data);
     } catch (err) {
       console.error("Failed to refresh projects:", err);

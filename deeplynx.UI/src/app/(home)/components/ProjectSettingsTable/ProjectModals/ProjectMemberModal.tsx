@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { getAllUsers } from "@/app/lib/user_services.client";
-import { addMember } from "@/app/lib/projects_services.client";
+import { addMemberToProject } from "@/app/lib/projects_services.client";
 import { getAllRoles } from "@/app/lib/role_services.client";
 import {
   RoleResponseDto,
   UserResponseDto,
 } from "@/app/(home)/types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -26,6 +27,9 @@ const AddProjectMember = ({
   const [roles, setRoles] = useState<RoleResponseDto[]>([]);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
+  const { organization, hasLoaded } = useOrganizationSession();
+
+
 
   useEffect(() => {
     if (isOpen) {
@@ -39,7 +43,7 @@ const AddProjectMember = ({
         });
 
       // Fetch roles for the specific project
-      getAllRoles({ projectId })
+      getAllRoles(organization!.organizationId as number, projectId)
         .then((response: RoleResponseDto[]) => {
           setRoles(response);
         })
@@ -64,7 +68,7 @@ const AddProjectMember = ({
       const user = users.find((u) => u.id === selectedUser);
       if (user) {
         try {
-          await addMember(projectId, selectedUser, selectedRole || undefined);
+          await addMemberToProject(projectId, selectedUser, selectedRole || undefined);
           onMemberAdded();
           onClose();
         } catch (error) {

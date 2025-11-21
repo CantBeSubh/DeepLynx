@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -13,6 +14,8 @@ import {
   EventResponseDto,
   PaginatedEventsResponseDto,
 } from "../types/responseDTOs";
+import { useOrganizationSession } from '@/app/contexts/OrganizationSessionProvider';
+import { useProjectSession } from '@/app/contexts/ProjectSessionProvider';
 
 const EventsHistoryClient = () => {
 
@@ -32,6 +35,10 @@ const EventsHistoryClient = () => {
   });
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<EventFilterParams>({ startDate: getThirtyDaysAgo(), });
+  const { organization, hasLoaded } = useOrganizationSession();
+  const { project, setProject } = useProjectSession();
+
+
 
   type FilterConfig = {
     key: string;
@@ -63,7 +70,7 @@ const EventsHistoryClient = () => {
     async (pageNumber: number, pageSize: number) => {
       setLoading(true);
       try {
-        const result: PaginatedEventsResponseDto = await getAllEventsPaginated({
+        const result: PaginatedEventsResponseDto = await getAllEventsPaginated(organization?.organizationId as number, project?.projectId as number, {
           pageNumber,
           pageSize,
           ...filters,

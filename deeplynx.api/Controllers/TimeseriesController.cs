@@ -44,7 +44,7 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var reportRecordResponse =
-                await _timeseriesBusiness.QueryTimeseries(currentUserId, request, projectId, organizationId,
+                await _timeseriesBusiness.QueryTimeseries(currentUserId, request, organizationId, projectId,
                     dataSourceId, fileType);
             return Ok(reportRecordResponse);
         }
@@ -76,7 +76,7 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeSeriesUploadInfo =
-                await _timeseriesBusiness.UploadFile(currentUserId, projectId, organizationId, dataSourceId, file);
+                await _timeseriesBusiness.UploadFile(currentUserId, organizationId, projectId, dataSourceId, file);
             return Ok(timeSeriesUploadInfo);
         }
         catch (Exception e)
@@ -101,7 +101,8 @@ public class TimeseriesController : ControllerBase
     {
         try
         {
-            var uploadId = await _timeseriesBusiness.StartUpload(projectId, dataSourceId, request.FileName);
+            var uploadId =
+                await _timeseriesBusiness.StartUpload(organizationId, projectId, dataSourceId, request.FileName);
             return Ok(new { UploadId = uploadId });
         }
         catch (Exception e)
@@ -130,7 +131,8 @@ public class TimeseriesController : ControllerBase
         try
         {
             var chunkUploadStatus =
-                await _timeseriesBusiness.UploadChunk(projectId, dataSourceId, chunk, uploadId, chunkNumber);
+                await _timeseriesBusiness.UploadChunk(organizationId, projectId, dataSourceId, chunk, uploadId,
+                    chunkNumber);
             return Ok(new { ChunkUploadStatus = chunkUploadStatus });
         }
         catch (Exception e)
@@ -158,7 +160,7 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.CompleteUpload(currentUserId, projectId, organizationId, dataSourceId,
+                await _timeseriesBusiness.CompleteUpload(currentUserId, organizationId, projectId, dataSourceId,
                     request);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
         }
@@ -186,7 +188,7 @@ public class TimeseriesController : ControllerBase
     {
         try
         {
-            await _timeseriesBusiness.AppendTimeseriesTable(projectId, dataSourceId, file, tableName);
+            await _timeseriesBusiness.AppendTimeseriesTable(organizationId, projectId, dataSourceId, file, tableName);
             return Ok("Data appended");
         }
         catch (Exception e)
@@ -216,7 +218,7 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.InterpolateRows(currentUserId, projectId, organizationId, dataSourceId,
+                await _timeseriesBusiness.InterpolateRows(currentUserId, organizationId, projectId, dataSourceId,
                     rowNumber, tableName,
                     fileType);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
@@ -246,7 +248,7 @@ public class TimeseriesController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var timeseriesUploadRecord =
-                await _timeseriesBusiness.ExportTimeseriesTable(currentUserId, projectId, organizationId, dataSourceId,
+                await _timeseriesBusiness.ExportTimeseriesTable(currentUserId, organizationId, projectId, dataSourceId,
                     tableName,
                     fileType);
             return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });

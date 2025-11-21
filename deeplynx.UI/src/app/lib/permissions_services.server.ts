@@ -5,105 +5,109 @@ import { PermissionResponseDto } from "../(home)/types/responseDTOs";
 
 /** ===== Server-safe calls ===== */
 
-export async function getAllPermissionsServer(params?: {
-  labelId?: number;
-  projectId?: number;
-  organizationId?: number;
-  hideArchived?: boolean;
-}): Promise<PermissionResponseDto[]> {
+export async function getAllPermissionsServer(
+  organizationId: number,
+  projectId: number,
+  labelId?: number,
+  hideArchived: boolean = true
+): Promise<PermissionResponseDto[]> {
   const searchParams = new URLSearchParams();
-  
-  if (params?.labelId !== undefined) {
-    searchParams.append("labelId", params.labelId.toString());
+
+  if (labelId !== undefined) {
+    searchParams.append("labelId", labelId.toString());
   }
-  if (params?.projectId !== undefined) {
-    searchParams.append("projectId", params.projectId.toString());
-  }
-  if (params?.organizationId !== undefined) {
-    searchParams.append("organizationId", params.organizationId.toString());
-  }
-  if (params?.hideArchived !== undefined) {
-    searchParams.append("hideArchived", params.hideArchived.toString());
-  }
+  searchParams.append("hideArchived", hideArchived.toString());
 
   const queryString = searchParams.toString();
-  const path = `/permissions/GetAllPermissions${queryString ? `?${queryString}` : ""}`;
-  
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions${queryString ? `?${queryString}` : ""}`;
+
   const res = await apiFetch(path);
   return asJson<PermissionResponseDto[]>(res);
 }
 
 export async function getPermissionByIdServer(
+  organizationId: number,
+  projectId: number,
   permissionId: number,
-  params?: { hideArchived?: boolean }
+  hideArchived: boolean = true
 ): Promise<PermissionResponseDto> {
   const searchParams = new URLSearchParams();
-  
-  if (params?.hideArchived !== undefined) {
-    searchParams.append("hideArchived", params.hideArchived.toString());
-  }
+  searchParams.append("hideArchived", hideArchived.toString());
 
   const queryString = searchParams.toString();
-  const path = `/permissions/GetPermission/${permissionId}${queryString ? `?${queryString}` : ""}`;
-  
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions/${permissionId}${queryString ? `?${queryString}` : ""}`;
+
   const res = await apiFetch(path);
   return asJson<PermissionResponseDto>(res);
 }
 
 export async function createPermissionServer(
+  organizationId: number,
+  projectId: number,
   body: {
     name: string;
-    description?: string | null;
+    description?: string;
     action: string;
-    labelId: number;
-    projectId?: number | null;
-    organizationId?: number | null;
-  },
-  params?: {
+    labelId?: number;
     projectId?: number;
     organizationId?: number;
   }
 ): Promise<PermissionResponseDto> {
-  const searchParams = new URLSearchParams();
-  
-  if (params?.projectId !== undefined) {
-    searchParams.append("projectId", params.projectId.toString());
-  }
-  if (params?.organizationId !== undefined) {
-    searchParams.append("organizationId", params.organizationId.toString());
-  }
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions`;
 
-  const queryString = searchParams.toString();
-  const path = `/permissions/CreatePermission${queryString ? `?${queryString}` : ""}`;
-  
   const res = await apiFetch(path, {
     method: "POST",
     body: JSON.stringify(body),
   });
-  
+
   return asJson<PermissionResponseDto>(res);
 }
 
-export async function deletePermissionServer(permissionId: number): Promise<void> {
-  const path = `/permissions/DeletePermission/${permissionId}`;
-  
-  await apiFetch(path, {
-    method: "DELETE",
-  });
-}
+export async function updatePermissionServer(
+  organizationId: number,
+  projectId: number,
+  permissionId: number,
+  body: {
+    name?: string;
+    description?: string;
+    action?: string;
+    labelId?: number;
+  }
+): Promise<PermissionResponseDto> {
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions/${permissionId}`;
 
-export async function archivePermissionServer(permissionId: number): Promise<void> {
-  const path = `/permissions/ArchivePermission/${permissionId}`;
-  
-  await apiFetch(path, {
-    method: "DELETE",
-  });
-}
-
-export async function unarchivePermissionServer(permissionId: number): Promise<void> {
-  const path = `/permissions/UnarchivePermission/${permissionId}`;
-  
-  await apiFetch(path, {
+  const res = await apiFetch(path, {
     method: "PUT",
+    body: JSON.stringify(body),
+  });
+
+  return asJson<PermissionResponseDto>(res);
+}
+
+export async function deletePermissionServer(
+  organizationId: number,
+  projectId: number,
+  permissionId: number
+): Promise<void> {
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions/${permissionId}`;
+
+  await apiFetch(path, {
+    method: "DELETE",
+  });
+}
+
+export async function archivePermissionServer(
+  organizationId: number,
+  projectId: number,
+  permissionId: number,
+  archive: boolean
+): Promise<void> {
+  const searchParams = new URLSearchParams();
+  searchParams.append("archive", archive.toString());
+
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions/${permissionId}?${searchParams.toString()}`;
+
+  await apiFetch(path, {
+    method: "PATCH",
   });
 }

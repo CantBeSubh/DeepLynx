@@ -190,14 +190,15 @@ export const AttachTagsRecordsList = ({
       setSearchLoading(true);
 
       try {
-        const data = await fullTextSearch(searchTerm, [projectId]);
-        const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
-          (record) => ({
-            ...record,
-            tags: parseTags(record.tags),
-          })
-        );
-        setSearchResults(resultsWithParsedTags);
+        //TODO: fix this 
+        // const data = await fullTextSearch(searchTerm, [projectId]);
+        // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
+        //   (record) => ({
+        //     ...record,
+        //     tags: parseTags(record.tags),
+        //   })
+        // );
+        // setSearchResults(resultsWithParsedTags);
       } catch (error) {
         console.error("Search error:", error);
         setSearchResults([]);
@@ -251,14 +252,14 @@ export const AttachTagsRecordsList = ({
 
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
-
-      selectedRecordIds.forEach((recordId) => {
-        selectedTagIds.forEach((tagId) => {
-          attachPromises.push(
-            attachTagToRecord(Number(projectId), recordId, tagId)
-          );
-        });
-      });
+      //todo: Fix
+      // selectedRecordIds.forEach((recordId) => {
+      //   selectedTagIds.forEach((tagId) => {
+      //     attachPromises.push(
+      //       attachTagToRecord(Number(projectId), recordId, tagId)
+      //     );
+      //   });
+      // });
 
       await Promise.all(attachPromises);
 
