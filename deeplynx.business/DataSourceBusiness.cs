@@ -517,4 +517,70 @@ public class DataSourceBusiness : IDataSourceBusiness
                 _context.DataSources.Update(previousDefault);
             }
     }
+
+    public async Task<List<DataSourceResponseDto>> GetAllDataSourcesForOrg(
+        long organizationId,
+        bool hideArchived,
+        CancellationToken ct = default)
+    {
+        var query = _context.DataSources
+            .AsNoTracking()
+            .Where(d => d.OrganizationId == organizationId);
+
+        if (hideArchived)
+            query = query.Where(d => !d.IsArchived);
+
+        var rows = await query.ToListAsync(ct);
+
+        return rows.Select(ToDataSourceResponseDto).ToList();
+    }
+
+    public async Task<List<DataSourceResponseDto>> GetAllDataSourcesForOrgProject(
+        long organizationId,
+        long projectId,
+        bool hideArchived,
+        CancellationToken ct = default)
+    {
+        var query = _context.DataSources
+            .AsNoTracking()
+            .Where(d => d.OrganizationId == organizationId
+                        && d.ProjectId == projectId); // project required
+
+        if (hideArchived)
+            query = query.Where(d => !d.IsArchived);
+
+        var rows = await query.ToListAsync(ct);
+
+        return rows.Select(ToDataSourceResponseDto).ToList();
+    }
+
+    private static DataSourceResponseDto ToDataSourceResponseDto(DataSource d)
+    {
+        JsonObject? configObj;
+        try
+        {
+            configObj = JsonNode.Parse(d.Config ?? "{}") as JsonObject;
+        }
+        catch
+        {
+            configObj = new JsonObject();
+        }
+
+        return new DataSourceResponseDto
+        {
+            Id = d.Id,
+            Name = d.Name,
+            Description = d.Description,
+            OrganizationId = d.OrganizationId,
+            Default = d.Default,
+            Abbreviation = d.Abbreviation,
+            Type = d.Type,
+            BaseUri = d.BaseUri,
+            Config = configObj,
+            ProjectId = d.ProjectId,
+            LastUpdatedAt = d.LastUpdatedAt,
+            LastUpdatedBy = d.LastUpdatedBy,
+            IsArchived = d.IsArchived
+        };
+    }
 }
