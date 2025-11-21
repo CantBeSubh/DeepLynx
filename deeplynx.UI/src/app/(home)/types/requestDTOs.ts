@@ -112,3 +112,30 @@ export type UpdateEdgeRequestDto = {
   name?: string;
   relationshipId?: number;
 };
+
+export type EventsQueryRequestDTO = {
+  pageNumber?: number;
+  pageSize?: number;
+  projectId?: number;
+  organizationId?: number;
+  projectName?: string;
+  lastUpdatedBy?: string;
+  operation?: string;
+  entityType?: string;
+  entityName?: string;
+  dataSourceName?: string;
+  startDate?: string;
+  endDate?: string;
+};
+
+export type CreateEventRequestDto = {
+  operation: string;
+  entityType: string;
+  entityId?: number;
+  entityName?: string;
+  projectId?: number;
+  organizationId?: number;
+  dataSourceId?: number;
+  properties: string;
+  lastUpdatedBy?: string;
+};
