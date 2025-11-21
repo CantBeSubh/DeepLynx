@@ -62,7 +62,7 @@ public class GroupController : ControllerBase
     {
         try
         {
-            var group = await _groupBusiness.GetGroup(groupId, hideArchived);
+            var group = await _groupBusiness.GetGroup(organizationId, groupId, hideArchived);
             return Ok(group);
         }
         catch (Exception exc)
@@ -86,7 +86,7 @@ public class GroupController : ControllerBase
     {
         try
         {
-            var members = await _groupBusiness.GetGroupMembers(groupId);
+            var members = await _groupBusiness.GetGroupMembers(organizationId, groupId);
             return Ok(members);
         }
         catch (Exception exc)
@@ -138,7 +138,7 @@ public class GroupController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var group = await _groupBusiness.UpdateGroup(currentUserId, groupId, dto);
+            var group = await _groupBusiness.UpdateGroup(currentUserId, organizationId, groupId, dto);
             return Ok(group);
         }
         catch (Exception exc)
@@ -163,7 +163,7 @@ public class GroupController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            await _groupBusiness.DeleteGroup(currentUserId, groupId);
+            await _groupBusiness.DeleteGroup(currentUserId, organizationId, groupId);
             return Ok(new { message = $"Deleted group {groupId}" });
         }
         catch (Exception exc)
@@ -192,11 +192,11 @@ public class GroupController : ControllerBase
             var userId = UserContextStorage.UserId;
             if (archive)
             {
-                await _groupBusiness.ArchiveGroup(userId, groupId);
+                await _groupBusiness.ArchiveGroup(userId, organizationId, groupId);
                 return Ok(new { message = $"Archived group {groupId}" });
             }
 
-            await _groupBusiness.UnarchiveGroup(userId, groupId);
+            await _groupBusiness.UnarchiveGroup(userId, organizationId, groupId);
             return Ok(new { message = $"Unarchived group {groupId}" });
         }
         catch (Exception exc)
@@ -223,7 +223,7 @@ public class GroupController : ControllerBase
     {
         try
         {
-            await _groupBusiness.AddUserToGroup(groupId, userId);
+            await _groupBusiness.AddUserToGroup(organizationId, groupId, userId);
             return Ok(new { message = $"Added user {userId} to group {groupId}" });
         }
         catch (Exception exc)
@@ -249,7 +249,7 @@ public class GroupController : ControllerBase
     {
         try
         {
-            await _groupBusiness.RemoveUserFromGroup(groupId, userId);
+            await _groupBusiness.RemoveUserFromGroup(organizationId, groupId, userId);
             return Ok(new { message = $"Removed user {userId} from group {groupId}" });
         }
         catch (Exception exc)
