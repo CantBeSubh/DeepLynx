@@ -1,33 +1,26 @@
 import api from './api';
 import { PermissionResponseDto, RoleResponseDto } from '../(home)/types/responseDTOs';
+import { CreateRoleRequestDto, UpdateRoleRequestDto } from '../(home)/types/requestDTOs';
 
 // ===== Role CRUD Operations =====
 
-export async function getAllRoles(params?: {
-  projectId?: number;
-  organizationId?: number;
-  hideArchived?: boolean;
-}): Promise<RoleResponseDto[]> {
+/**
+ * Get all roles for a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param hideArchived - Flag to hide archived roles (default: true)
+ * @returns Promise with array of RoleResponseDto
+ */
+export async function getAllRoles(
+  organizationId: number,
+  projectId: number,
+  hideArchived: boolean = true
+): Promise<RoleResponseDto[]> {
   try {
-    const searchParams = new URLSearchParams();
-    
-    if (params?.projectId !== undefined) {
-      searchParams.append("projectId", params.projectId.toString());
-    }
-    if (params?.organizationId !== undefined) {
-      searchParams.append("organizationId", params.organizationId.toString());
-    }
-    if (params?.hideArchived !== undefined) {
-      searchParams.append("hideArchived", params.hideArchived.toString());
-    }
-
-    const queryString = searchParams.toString();
-    const url = `/roles/GetAllRoles${queryString ? `?${queryString}` : ""}`;
-    
-    const res = await api.get(url, {
-      headers: { "Content-Type": "application/json" }
-    });
-
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}/roles`,
+      { params: { hideArchived } }
+    );
     return res.data;
   } catch (error) {
     console.error("Error getting all roles:", error);
@@ -35,60 +28,50 @@ export async function getAllRoles(params?: {
   }
 }
 
+/**
+ * Get a specific role by ID
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role
+ * @param hideArchived - Flag to hide archived roles (default: true)
+ * @returns Promise with RoleResponseDto
+ */
 export async function getRoleById(
+  organizationId: number,
+  projectId: number,
   roleId: number,
-  params?: { hideArchived?: boolean }
+  hideArchived: boolean = true
 ): Promise<RoleResponseDto> {
   try {
-    const searchParams = new URLSearchParams();
-    
-    if (params?.hideArchived !== undefined) {
-      searchParams.append("hideArchived", params.hideArchived.toString());
-    }
-
-    const queryString = searchParams.toString();
-    const url = `/roles/GetRole/${roleId}${queryString ? `?${queryString}` : ""}`;
-    
-    const res = await api.get(url, {
-      headers: { "Content-Type": "application/json" }
-    });
-
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}`,
+      { params: { hideArchived } }
+    );
     return res.data;
   } catch (error) {
-    console.error("Error getting role by ID:", error);
+    console.error(`Error getting role ${roleId}:`, error);
     throw error;
   }
 }
 
+/**
+ * Create a new role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param dto - The role creation request DTO
+ * @returns Promise with RoleResponseDto
+ */
 export async function createRole(
-  body: {
-    name: string;
-    description?: string | null;
-    projectId?: number | null;
-    organizationId?: number | null;
-  },
-  params?: {
-    projectId?: number;
-    organizationId?: number;
-  }
+  organizationId: number,
+  projectId: number,
+  dto: CreateRoleRequestDto
 ): Promise<RoleResponseDto> {
   try {
-    const searchParams = new URLSearchParams();
-    
-    if (params?.projectId !== undefined) {
-      searchParams.append("projectId", params.projectId.toString());
-    }
-    if (params?.organizationId !== undefined) {
-      searchParams.append("organizationId", params.organizationId.toString());
-    }
-
-    const queryString = searchParams.toString();
-    const url = `/roles/CreateRole${queryString ? `?${queryString}` : ""}`;
-    
-    const res = await api.post(url, body, {
-      headers: { "Content-Type": "application/json" }
-    });
-
+    const res = await api.post(
+      `/organizations/${organizationId}/projects/${projectId}/roles`,
+      dto,
+      { headers: { "Content-Type": "application/json" } }
+    );
     return res.data;
   } catch (error) {
     console.error("Error creating role:", error);
@@ -96,121 +79,181 @@ export async function createRole(
   }
 }
 
+/**
+ * Update a role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role to update
+ * @param dto - The role update request DTO
+ * @returns Promise with RoleResponseDto
+ */
 export async function updateRole(
+  organizationId: number,
+  projectId: number,
   roleId: number,
-  body: {
-    name?: string | null;
-    description?: string | null;
-  }
+  dto: UpdateRoleRequestDto
 ): Promise<RoleResponseDto> {
   try {
-    const res = await api.put(`/roles/UpdateRole/${roleId}`, body, {
-      headers: { "Content-Type": "application/json" }
-    });
-
+    const res = await api.put(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}`,
+      dto,
+      { headers: { "Content-Type": "application/json" } }
+    );
     return res.data;
   } catch (error) {
-    console.error("Error updating role:", error);
+    console.error(`Error updating role ${roleId}:`, error);
     throw error;
   }
 }
 
-export async function deleteRole(roleId: number): Promise<void> {
+/**
+ * Delete a role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role to delete
+ * @returns Promise with success message
+ */
+export async function deleteRole(
+  organizationId: number,
+  projectId: number,
+  roleId: number
+): Promise<{ message: string }> {
   try {
-    await api.delete(`/roles/DeleteRole/${roleId}`, {
-      headers: { "Content-Type": "application/json" }
-    });
+    const res = await api.delete(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}`
+    );
+    return res.data;
   } catch (error) {
-    console.error("Error deleting role:", error);
+    console.error(`Error deleting role ${roleId}:`, error);
     throw error;
   }
 }
 
-export async function archiveRole(roleId: number): Promise<void> {
+/**
+ * Archive or unarchive a role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role to archive/unarchive
+ * @param archive - True to archive, false to unarchive
+ * @returns Promise with success message
+ */
+export async function archiveRole(
+  organizationId: number,
+  projectId: number,
+  roleId: number,
+  archive: boolean
+): Promise<{ message: string }> {
   try {
-    await api.delete(`/roles/ArchiveRole/${roleId}`, {
-      headers: { "Content-Type": "application/json" }
-    });
+    const res = await api.patch(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}`,
+      null,
+      { params: { archive } }
+    );
+    return res.data;
   } catch (error) {
-    console.error("Error archiving role:", error);
-    throw error;
-  }
-}
-
-export async function unarchiveRole(roleId: number): Promise<void> {
-  try {
-    await api.put(`/roles/UnarchiveRole/${roleId}`, {}, {
-      headers: { "Content-Type": "application/json" }
-    });
-  } catch (error) {
-    console.error("Error unarchiving role:", error);
+    console.error(`Error ${archive ? 'archiving' : 'unarchiving'} role ${roleId}:`, error);
     throw error;
   }
 }
 
 // ===== Permission Operations =====
 
+/**
+ * Get all permissions for a role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role
+ * @returns Promise with array of PermissionResponseDto
+ */
 export async function getPermissionsByRole(
+  organizationId: number,
+  projectId: number,
   roleId: number
 ): Promise<PermissionResponseDto[]> {
   try {
-    const res = await api.get(`/roles/GetPermissionsByRole/${roleId}`, {
-      headers: { "Content-Type": "application/json" }
-    });
-
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}/permissions`
+    );
     return res.data;
   } catch (error) {
-    console.error("Error getting permissions by role:", error);
+    console.error(`Error getting permissions for role ${roleId}:`, error);
     throw error;
   }
 }
 
-export async function addPermissionToRole(params: {
-  roleId: number;
-  permissionId: number;
-}): Promise<void> {
+/**
+ * Add a permission to a role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role
+ * @param permissionId - The ID of the permission to add
+ * @returns Promise with success message
+ */
+export async function addPermissionToRole(
+  organizationId: number,
+  projectId: number,
+  roleId: number,
+  permissionId: number
+): Promise<{ message: string }> {
   try {
-    const searchParams = new URLSearchParams();
-    searchParams.append("roleId", params.roleId.toString());
-    searchParams.append("permissionId", params.permissionId.toString());
-
-    await api.post(`/roles/AddPermissionToRole?${searchParams.toString()}`, {}, {
-      headers: { "Content-Type": "application/json" }
-    });
+    const res = await api.post(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}/permissions/${permissionId}`
+    );
+    return res.data;
   } catch (error) {
-    console.error("Error adding permission to role:", error);
+    console.error(`Error adding permission ${permissionId} to role ${roleId}:`, error);
     throw error;
   }
 }
 
-export async function removePermissionFromRole(params: {
-  roleId: number;
-  permissionId: number;
-}): Promise<void> {
+/**
+ * Remove a permission from a role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role
+ * @param permissionId - The ID of the permission to remove
+ * @returns Promise with success message
+ */
+export async function removePermissionFromRole(
+  organizationId: number,
+  projectId: number,
+  roleId: number,
+  permissionId: number
+): Promise<{ message: string }> {
   try {
-    const searchParams = new URLSearchParams();
-    searchParams.append("roleId", params.roleId.toString());
-    searchParams.append("permissionId", params.permissionId.toString());
-
-    await api.delete(`/roles/RemovePermissionFromRole?${searchParams.toString()}`, {
-      headers: { "Content-Type": "application/json" }
-    });
+    const res = await api.delete(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}/permissions/${permissionId}`
+    );
+    return res.data;
   } catch (error) {
-    console.error("Error removing permission from role:", error);
+    console.error(`Error removing permission ${permissionId} from role ${roleId}:`, error);
     throw error;
   }
 }
 
+/**
+ * Set all permissions for a role (replaces existing permissions)
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role
+ * @param permissionIds - Array of permission IDs to assign to the role
+ * @returns Promise with success message
+ */
 export async function setPermissionsForRole(
+  organizationId: number,
+  projectId: number,
   roleId: number,
   permissionIds: number[]
-): Promise<void> {
+): Promise<{ message: string }> {
   try {
-    await api.put(`/roles/SetPermissionsForRole/${roleId}`, permissionIds, {
-      headers: { "Content-Type": "application/json" }
-    });
+    const res = await api.put(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}/permissions`,
+      permissionIds,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return res.data;
   } catch (error) {
-    console.error("Error setting permissions for role:", error);
+    console.error(`Error setting permissions for role ${roleId}:`, error);
     throw error;
   }
 }
