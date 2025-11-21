@@ -149,3 +149,19 @@ export type UpdateGroupRequestDto = {
   name?: string;
   description?: string;
 }
+
+export type CreatePermissionRequestDto = {
+  name: string;
+  description?: string;
+  action: string;
+  labelId?: number;
+  projectId?: number;
+  organizationId?: number;
+};
+
+export type UpdatePermissionRequestDto = {
+  name?: string;
+  description?: string;
+  action?: string;
+  labelId?: number;
+};
