@@ -46,7 +46,7 @@ public class DataSourceController : ControllerBase
     {
         try
         {
-            var dataSources = await _dataSourceBusiness.GetAllDataSources(projectId, hideArchived);
+            var dataSources = await _dataSourceBusiness.GetAllDataSources(organizationId, projectId, hideArchived);
             return Ok(dataSources);
         }
         catch (Exception exc)
@@ -75,7 +75,7 @@ public class DataSourceController : ControllerBase
         try
         {
             var dataSources = await _dataSourceBusiness.GetAllDataSourcesMultiProject(
-                projectIds, hideArchived);
+                organizationId, projectIds, hideArchived);
             return Ok(dataSources);
         }
         catch (Exception exc)
@@ -103,7 +103,8 @@ public class DataSourceController : ControllerBase
     {
         try
         {
-            var dataSource = await _dataSourceBusiness.GetDataSource(projectId, dataSourceId, hideArchived);
+            var dataSource =
+                await _dataSourceBusiness.GetDataSource(organizationId, projectId, dataSourceId, hideArchived);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -127,7 +128,7 @@ public class DataSourceController : ControllerBase
     {
         try
         {
-            var dataSource = await _dataSourceBusiness.GetDefaultDataSource(projectId);
+            var dataSource = await _dataSourceBusiness.GetDefaultDataSource(organizationId, projectId);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -154,7 +155,7 @@ public class DataSourceController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.CreateDataSource(currentUserId, projectId, dto);
+            var dataSource = await _dataSourceBusiness.CreateDataSource(currentUserId, organizationId, projectId, dto);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -183,7 +184,8 @@ public class DataSourceController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.UpdateDataSource(currentUserId, projectId, dataSourceId, dto);
+            var dataSource =
+                await _dataSourceBusiness.UpdateDataSource(currentUserId, organizationId, projectId, dataSourceId, dto);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -209,7 +211,7 @@ public class DataSourceController : ControllerBase
     {
         try
         {
-            await _dataSourceBusiness.DeleteDataSource(projectId, dataSourceId);
+            await _dataSourceBusiness.DeleteDataSource(organizationId, projectId, dataSourceId);
             return Ok(new { message = $"Deleted data source {dataSourceId}" });
         }
         catch (Exception exc)
@@ -240,11 +242,11 @@ public class DataSourceController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _dataSourceBusiness.ArchiveDataSource(currentUserId, projectId, dataSourceId);
+                await _dataSourceBusiness.ArchiveDataSource(currentUserId, organizationId, projectId, dataSourceId);
                 return Ok(new { message = $"Archived data source {dataSourceId}" });
             }
 
-            await _dataSourceBusiness.UnarchiveDataSource(currentUserId, projectId, dataSourceId);
+            await _dataSourceBusiness.UnarchiveDataSource(currentUserId, organizationId, projectId, dataSourceId);
             return Ok(new { message = $"Unarchived data source {dataSourceId}" });
         }
         catch (Exception exc)
@@ -274,7 +276,8 @@ public class DataSourceController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.SetDefaultDataSource(currentUserId, projectId, dataSourceId);
+            var dataSource =
+                await _dataSourceBusiness.SetDefaultDataSource(currentUserId, organizationId, projectId, dataSourceId);
             return Ok(dataSource);
         }
         catch (Exception exc)

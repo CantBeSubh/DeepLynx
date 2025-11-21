@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -44,10 +43,12 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <summary>
     ///     Retrieves all data sources for a specific project.
     /// </summary>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>A list of data sources within the given project.</returns>
-    public async Task<List<DataSourceResponseDto>> GetAllDataSources(long? projectId, bool hideArchived)
+    public async Task<List<DataSourceResponseDto>> GetAllDataSources(long organizationId, long? projectId,
+        bool hideArchived)
     {
         var dataSources = await _context.DataSources
             .Where(d => d.ProjectId == projectId).ToListAsync();
@@ -76,13 +77,15 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <summary>
     ///     Retrieves all data sources for multiple projects.
     /// </summary>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>A list of data sources within the given project.</returns>
-    public async Task<List<DataSourceResponseDto>> GetAllDataSourcesMultiProject(long[] projectIds, bool hideArchived)
+    public async Task<List<DataSourceResponseDto>> GetAllDataSourcesMultiProject(long organizationId, long[] projectIds,
+        bool hideArchived)
     {
         var dataSources = await _context.DataSources
-        .Where(d => d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)).ToListAsync();
+            .Where(d => d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)).ToListAsync();
 
         if (hideArchived) dataSources = dataSources.Where(d => !d.IsArchived).ToList();
 
@@ -108,12 +111,14 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <summary>
     ///     Retrieve a specific data source by its ID
     /// </summary>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="datasourceId">The ID of the data source</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>The data source in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
-    public async Task<DataSourceResponseDto> GetDataSource(long? projectId, long datasourceId, bool hideArchived)
+    public async Task<DataSourceResponseDto> GetDataSource(long organizationId, long? projectId, long datasourceId,
+        bool hideArchived)
     {
         var dataSource = await _context.DataSources
             .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
@@ -146,10 +151,11 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <summary>
     ///     Retrieve a project's default data source.
     /// </summary>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <returns>The data source in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
-    public async Task<DataSourceResponseDto> GetDefaultDataSource(long? projectId)
+    public async Task<DataSourceResponseDto> GetDefaultDataSource(long organizationId, long? projectId)
     {
         var dataSource = await _context.DataSources
             .Where(d => d.ProjectId == projectId && d.Default == true && !d.IsArchived)
@@ -180,10 +186,12 @@ public class DataSourceBusiness : IDataSourceBusiness
     ///     Asynchronously creates a new data source for a specified project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dto">The data transfer object containing data source details</param>
+    /// <param name="makeDefault">Boolean to make the data source default or not</param>
     /// <returns>The created data source.</returns>
-    public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long? projectId,
+    public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId, long? projectId,
         CreateDataSourceRequestDto dto, bool makeDefault = false)
     {
         if (dto == null)
@@ -207,7 +215,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _context.DataSources.AddAsync(dataSource);
 
         if (makeDefault)
-            await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
+            await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
 
         await _context.SaveChangesAsync();
 
@@ -244,6 +252,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     ///     Asynchronously updates an existing data source based on its ID.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the existing data source to update.</param>
     /// <param name="dto">The data transfer object containing the updated data source details</param>
@@ -251,6 +260,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
     public async Task<DataSourceResponseDto> UpdateDataSource(
         long currentUserId,
+        long organizationId,
         long? projectId,
         long dataSourceId,
         UpdateDataSourceRequestDto dto)
@@ -304,11 +314,12 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <summary>
     ///     Deletes a specific data source by its ID.
     /// </summary>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs.</param>
     /// <param name="dataSourceId">The ID of the data source to delete</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
-    public async Task<bool> DeleteDataSource(long? projectId, long dataSourceId)
+    public async Task<bool> DeleteDataSource(long organizationId, long? projectId, long dataSourceId)
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
@@ -325,11 +336,13 @@ public class DataSourceBusiness : IDataSourceBusiness
     ///     Archives a specific data source by its ID.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs.</param>
     /// <param name="dataSourceId">The ID of the data source to archive</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-    public async Task<bool> ArchiveDataSource(long currentUserId, long? projectId, long dataSourceId)
+    public async Task<bool> ArchiveDataSource(long currentUserId, long organizationId, long? projectId,
+        long dataSourceId)
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
@@ -361,11 +374,13 @@ public class DataSourceBusiness : IDataSourceBusiness
     ///     Unarchives a specific data source by its ID.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs.</param>
     /// <param name="dataSourceId">The ID of the data source to unarchive</param>
     /// <returns>Boolean true on successful unarchive action.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-    public async Task<bool> UnarchiveDataSource(long currentUserId, long? projectId, long dataSourceId)
+    public async Task<bool> UnarchiveDataSource(long currentUserId, long organizationId, long? projectId,
+        long dataSourceId)
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
@@ -397,12 +412,14 @@ public class DataSourceBusiness : IDataSourceBusiness
     ///     Sets an existing data source as default for a project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the existing data source to update.</param>
     /// <returns>The updated data source.</returns>
     /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
     public async Task<DataSourceResponseDto> SetDefaultDataSource(
         long currentUserId,
+        long organizationId,
         long? projectId,
         long dataSourceId)
     {
@@ -417,7 +434,7 @@ public class DataSourceBusiness : IDataSourceBusiness
             dataSource.LastUpdatedBy = currentUserId;
             dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-            await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
+            await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
             await _context.SaveChangesAsync();
 
             await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
@@ -450,7 +467,8 @@ public class DataSourceBusiness : IDataSourceBusiness
         };
     }
 
-    private async Task MakePreviousDefaultsFalse(long currentUserId, long? projectId, long defaultDataSourceId)
+    private async Task MakePreviousDefaultsFalse(long currentUserId, long organizationId, long? projectId,
+        long defaultDataSourceId)
     {
         var previousDefaults =
             await _context.DataSources
