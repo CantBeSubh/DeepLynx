@@ -220,3 +220,15 @@ export type UpdateRelationshipRequestDto = {
   origin_id?: number;
   destination_id?: number;
 };
+
+export type UpdateRoleRequestDto = {
+  name?: string;
+  description?: string;
+};
+
+
+export type CreateTokenDto = {
+  apiKey: string;
+  apiSecret: string;
+  expirationMinutes?: number;
+};
