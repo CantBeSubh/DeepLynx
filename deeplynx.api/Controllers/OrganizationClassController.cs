@@ -90,7 +90,6 @@ public class OrganizationClassController : ControllerBase
     ///     Create a Class
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
-    /// ]
     /// <param name="dto">The request DTO for classes</param>
     /// <returns>Class response DTOs</returns>
     [HttpPost(Name = "api_create_a_class_organization")]

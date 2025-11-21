@@ -873,10 +873,20 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.Uuid)
                 .HasDatabaseName("idx_relationships_uuid");
 
-            // Composite unique index - relationship names are unique within a project
             entity.HasIndex(e => new { e.ProjectId, e.Name })
                 .HasDatabaseName("unique_relationship_name")
                 .IsUnique();
+
+            // Composite unique index - relationship names are unique within an organization or project
+            entity.HasIndex(e => new { e.OrganizationId, e.Name })
+                .HasDatabaseName("unique_organization_relationship_name")
+                .IsUnique()
+                .HasFilter("project_id IS NULL");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ProjectId, e.Name })
+                .HasDatabaseName("unique_project_relationship_name")
+                .IsUnique()
+                .HasFilter("project_id IS NOT NULL");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
