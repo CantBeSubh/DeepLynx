@@ -277,3 +277,11 @@ export type RelationshipResponseDto = {
   originId?: number;
   destinationId?: number;
 };
+
+export type ProjectMemberResponseDto = {
+  name: string;
+  memberId?: number;
+  email: string;
+  role?: string;
+  roleId?: number;
+};
