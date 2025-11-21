@@ -97,31 +97,20 @@ namespace deeplynx.tests
         public async Task QueryAllEvents_Success_DefaultPagination()
         {
             // Act
-            var result = await _eventBusiness.QueryAllEvents(null, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, null, null);
 
             // Assert
-            Assert.Equal(10, result.TotalCount);
-            Assert.Equal(10, result.Items.Count);
+            Assert.Equal(2, result.TotalCount); // Only org-level events
+            Assert.Equal(2, result.Items.Count);
             Assert.Equal(1, result.PageNumber);
             Assert.Equal(500, result.PageSize); // Default page size
-        }
-
-        [Fact]
-        public async Task QueryAllEvents_Success_FilterByOrganizationId()
-        {
-            // Act
-            var result = await _eventBusiness.QueryAllEvents(null, mockOrganizationId, null);
-
-            // Assert
-            Assert.Equal(2, result.TotalCount);
-            Assert.All(result.Items, e => Assert.Equal(mockOrganizationId, e.OrganizationId));
         }
 
         [Fact]
         public async Task QueryAllEvents_Success_FilterByProjectId()
         {
             // Act
-            var result = await _eventBusiness.QueryAllEvents(null, null, pid);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, null);
 
             // Assert
             Assert.Equal(6, result.TotalCount);
@@ -135,7 +124,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { lastUpdatedBy = mockUserId };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Equal(3, result.TotalCount);
@@ -149,7 +138,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { operation = "create" };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Equal(2, result.TotalCount);
@@ -163,10 +152,10 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { entityType = "edge" };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
-            Assert.Equal(8, result.TotalCount);
+            Assert.Equal(4, result.TotalCount);
             Assert.All(result.Items, e => Assert.Equal("edge", e.EntityType));
         }
 
@@ -177,7 +166,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { entityName = "TestEntity" };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.All(result.Items, e => Assert.Contains("TestEntity", e.EntityName));
@@ -190,10 +179,10 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { dataSourceName = "DataSource1" };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
-            Assert.Equal(8, result.TotalCount); // 6 from pid + 1 from pid2 that shares DataSource1
+            Assert.Equal(5, result.TotalCount); // 5 events in pid with DataSource1
             Assert.All(result.Items, e => Assert.Equal("DataSource1", e.DataSourceName));
         }
 
@@ -205,7 +194,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { startDate = futureDate };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Empty(result.Items);
@@ -220,7 +209,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { endDate = pastDate };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Empty(result.Items);
@@ -240,10 +229,10 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
-            Assert.Equal(10, result.TotalCount);
+            Assert.Equal(6, result.TotalCount);
             Assert.All(result.Items, e =>
             {
                 Assert.True(e.LastUpdatedAt >= startDate);
@@ -262,7 +251,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, pid);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Single(result.Items);
@@ -283,10 +272,10 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
-            Assert.Equal(10, result.TotalCount);
+            Assert.Equal(6, result.TotalCount);
             Assert.Equal(3, result.Items.Count);
             Assert.Equal(1, result.PageNumber);
             Assert.Equal(3, result.PageSize);
@@ -303,10 +292,10 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, null);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
-            Assert.Equal(10, result.TotalCount);
+            Assert.Equal(6, result.TotalCount);
             Assert.Equal(3, result.Items.Count);
             Assert.Equal(2, result.PageNumber);
             Assert.Equal(3, result.PageSize);
@@ -324,7 +313,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(queryDto, null, pid);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Equal(4, result.TotalCount); // 4 edge events in pid
@@ -354,7 +343,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, null, mockOrganizationId, null);
+            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, null);
 
             // Assert
             Assert.Equal(8, result.TotalCount);
@@ -375,7 +364,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, null, mockOrganizationId, pid);
+            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, pid, null);
 
             // Assert
             Assert.Equal(6, result.TotalCount);
@@ -395,7 +384,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, null, mockOrganizationId, null);
+            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, null);
 
             // Assert
             Assert.Equal(10, result.TotalCount); // All events from both projects
@@ -405,7 +394,7 @@ namespace deeplynx.tests
         public async Task QueryAuthorizedEvents_ReturnsEmpty_WhenUserHasNoAccess()
         {
             // Act - User has no project memberships
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, null, mockOrganizationId, null);
+            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, null);
 
             // Assert
             Assert.Equal(2, result.Items.Count); // it will include the two organization level events
@@ -427,7 +416,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { PageNumber = 1, PageSize = 3 };
 
             // Act
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, queryDto, mockOrganizationId, null);
+            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, queryDto);
 
             // Assert
             Assert.Equal(10, result.TotalCount);
@@ -445,7 +434,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { operation = "create" };
 
             // Act
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, queryDto, mockOrganizationId, null);
+            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, queryDto);
 
             // Assert
             Assert.Equal(2, result.TotalCount);
@@ -467,7 +456,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { projectName = "Project 2" };
 
             // Act
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, queryDto, mockOrganizationId, null);
+            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, queryDto);
 
             // Assert
             Assert.Equal(2, result.TotalCount);
@@ -476,156 +465,7 @@ namespace deeplynx.tests
 
         #endregion
 
-        #region GetAllEventsBySubscriptions Tests
-
-        [Fact]
-        public async Task GetAllEventsBySubscriptions_Success_OrganizationLevel_NoFilters()
-        {
-            // Arrange - Organization-level subscription (projectId is null)
-            var subscription = new Subscription
-            {
-                UserId = mockUserId,
-                OrganizationId = mockOrganizationId,
-                ProjectId = null,
-                EntityId = null,
-                EntityType = null,
-                DataSourceId = null,
-                Operation = null,
-                ActionId = mockActionId
-            };
-            Context.Subscriptions.Add(subscription);
-            await Context.SaveChangesAsync();
-
-            // Act
-            var result = await _eventBusiness.GetAllEventsBySubscriptions(mockUserId, mockOrganizationId, null);
-
-            // Assert
-            Assert.Equal(2, result.Count); // All organization-level events
-            Assert.All(result, e => Assert.Equal(mockOrganizationId, e.OrganizationId));
-        }
-
-        [Fact]
-        public async Task GetAllEventsBySubscriptions_Success_ProjectLevel_NoFilters()
-        {
-            // Arrange - Project-level subscription
-            var subscription = new Subscription
-            {
-                UserId = mockUserId,
-                OrganizationId = mockOrganizationId,
-                ProjectId = pid,
-                EntityId = null,
-                EntityType = null,
-                DataSourceId = null,
-                Operation = null,
-                ActionId = mockActionId
-            };
-            Context.Subscriptions.Add(subscription);
-            await Context.SaveChangesAsync();
-
-            // Act
-            var result = await _eventBusiness.GetAllEventsBySubscriptions(mockUserId, mockOrganizationId, pid);
-
-            // Assert
-            Assert.Equal(6, result.Count);
-            Assert.All(result, e => Assert.Equal(pid, e.ProjectId));
-        }
-
-        [Fact]
-        public async Task GetAllEventsBySubscriptions_Success_MatchingSpecificEntity()
-        {
-            // Arrange
-            var subscription = new Subscription
-            {
-                UserId = mockUserId,
-                OrganizationId = mockOrganizationId,
-                ProjectId = pid,
-                EntityId = 1,
-                EntityType = "edge",
-                DataSourceId = mockDataSourceId,
-                Operation = "create",
-                ActionId = mockActionId
-            };
-            Context.Subscriptions.Add(subscription);
-            await Context.SaveChangesAsync();
-
-            // Act
-            var result = await _eventBusiness.GetAllEventsBySubscriptions(mockUserId, mockOrganizationId, pid);
-
-            // Assert
-            Assert.Single(result);
-            Assert.Equal("create", result[0].Operation);
-            Assert.Equal("edge", result[0].EntityType);
-            Assert.Equal(1, result[0].EntityId);
-        }
-
-        [Fact]
-        public async Task GetAllEventsBySubscriptions_Success_MatchingByOperation()
-        {
-            // Arrange
-            var subscriptions = new List<Subscription>
-            {
-                new Subscription
-                {
-                    UserId = mockUserId,
-                    OrganizationId = mockOrganizationId,
-                    ProjectId = pid,
-                    EntityId = null,
-                    EntityType = null,
-                    DataSourceId = null,
-                    Operation = "delete",
-                    ActionId = mockActionId
-                }
-            };
-            Context.Subscriptions.AddRange(subscriptions);
-            await Context.SaveChangesAsync();
-
-            // Act
-            var result = await _eventBusiness.GetAllEventsBySubscriptions(mockUserId, mockOrganizationId, pid);
-
-            // Assert
-            Assert.Equal(3, result.Count); // 3 delete events in pid
-            Assert.All(result, e => Assert.Equal("delete", e.Operation));
-        }
-
-        [Fact]
-        public async Task GetAllEventsBySubscriptions_ReturnsEmpty_NoSubscriptions()
-        {
-            // Act
-            var result = await _eventBusiness.GetAllEventsBySubscriptions(mockUserId, mockOrganizationId, pid);
-
-            // Assert
-            Assert.Empty(result);
-        }
-
-        #endregion
-
         #region QueryEventsBySubscriptions Tests
-
-        [Fact]
-        public async Task QueryEventsBySubscriptions_Success_OrganizationLevel()
-        {
-            // Arrange
-            var subscription = new Subscription
-            {
-                UserId = mockUserId,
-                OrganizationId = mockOrganizationId,
-                ProjectId = null,
-                EntityId = null,
-                EntityType = null,
-                DataSourceId = null,
-                Operation = null,
-                ActionId = mockActionId
-            };
-            Context.Subscriptions.Add(subscription);
-            await Context.SaveChangesAsync();
-
-            // Act
-            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, null, mockOrganizationId, null);
-
-            // Assert
-            Assert.Equal(2, result.TotalCount);
-            Assert.Equal(2, result.Items.Count);
-        }
 
         [Fact]
         public async Task QueryEventsBySubscriptions_Success_ProjectLevel()
@@ -646,7 +486,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, null, mockOrganizationId, pid);
+            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, mockOrganizationId, pid, null);
 
             // Assert
             Assert.Equal(6, result.TotalCount);
@@ -660,7 +500,7 @@ namespace deeplynx.tests
             {
                 UserId = mockUserId,
                 OrganizationId = mockOrganizationId,
-                ProjectId = null,
+                ProjectId = pid,
                 EntityId = null,
                 EntityType = null,
                 DataSourceId = null,
@@ -673,12 +513,11 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { PageNumber = 1, PageSize = 3 };
 
             // Act
-            var result =
-                await _eventBusiness.QueryEventsBySubscriptions(mockUserId, queryDto, mockOrganizationId, null);
+            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, mockOrganizationId, pid, queryDto);
 
             // Assert
-            Assert.Equal(2, result.TotalCount);
-            Assert.Equal(2, result.Items.Count);
+            Assert.Equal(6, result.TotalCount);
+            Assert.Equal(3, result.Items.Count);
         }
 
         [Fact]
@@ -702,11 +541,68 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { operation = "create" };
 
             // Act
-            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, queryDto, mockOrganizationId, pid);
+            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Equal(2, result.TotalCount);
             Assert.All(result.Items, e => Assert.Equal("create", e.Operation));
+        }
+
+        [Fact]
+        public async Task QueryEventsBySubscriptions_Success_MatchingSpecificEntity()
+        {
+            // Arrange
+            var subscription = new Subscription
+            {
+                UserId = mockUserId,
+                OrganizationId = mockOrganizationId,
+                ProjectId = pid,
+                EntityId = 1,
+                EntityType = "edge",
+                DataSourceId = mockDataSourceId,
+                Operation = "create",
+                ActionId = mockActionId
+            };
+            Context.Subscriptions.Add(subscription);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, mockOrganizationId, pid, null);
+
+            // Assert
+            Assert.Single(result.Items);
+            Assert.Equal("create", result.Items[0].Operation);
+            Assert.Equal("edge", result.Items[0].EntityType);
+            Assert.Equal(1, result.Items[0].EntityId);
+        }
+
+        [Fact]
+        public async Task QueryEventsBySubscriptions_Success_MatchingByOperation()
+        {
+            // Arrange
+            var subscriptions = new List<Subscription>
+            {
+                new Subscription
+                {
+                    UserId = mockUserId,
+                    OrganizationId = mockOrganizationId,
+                    ProjectId = pid,
+                    EntityId = null,
+                    EntityType = null,
+                    DataSourceId = null,
+                    Operation = "delete",
+                    ActionId = mockActionId
+                }
+            };
+            Context.Subscriptions.AddRange(subscriptions);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, mockOrganizationId, pid, null);
+
+            // Assert
+            Assert.Equal(3, result.TotalCount); // 3 delete events in pid
+            Assert.All(result.Items, e => Assert.Equal("delete", e.Operation));
         }
 
         [Fact]
@@ -716,7 +612,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO();
 
             // Act
-            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, queryDto, mockOrganizationId, pid);
+            var result = await _eventBusiness.QueryEventsBySubscriptions(mockUserId, mockOrganizationId, pid, queryDto);
 
             // Assert
             Assert.Empty(result.Items);
@@ -742,7 +638,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.CreateEvent(mockUserId, dto, mockOrganizationId, null);
+            var result = await _eventBusiness.CreateEvent(mockUserId, mockOrganizationId, null, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -768,51 +664,13 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.CreateEvent(mockUserId, dto, null, pid);
+            var result = await _eventBusiness.CreateEvent(mockUserId, mockOrganizationId, pid, dto);
 
             // Assert
             Assert.NotNull(result);
             Assert.NotEqual(0, result.Id);
             Assert.Equal(pid, result.ProjectId);
-            Assert.Null(result.OrganizationId);
-        }
-
-        [Fact]
-        public async Task CreateEvent_Fails_IfBothOrganizationAndProjectProvided()
-        {
-            // Arrange
-            var dto = new CreateEventRequestDto
-            {
-                Operation = "create",
-                EntityType = "metadata",
-                EntityId = 1,
-                DataSourceId = null,
-                Properties = "{}",
-                LastUpdatedBy = mockUserId
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                _eventBusiness.CreateEvent(mockUserId, dto, mockOrganizationId, pid));
-        }
-
-        [Fact]
-        public async Task CreateEvent_Fails_IfNeitherOrganizationNorProjectProvided()
-        {
-            // Arrange
-            var dto = new CreateEventRequestDto
-            {
-                Operation = "create",
-                EntityType = "metadata",
-                EntityId = 1,
-                DataSourceId = null,
-                Properties = "{}",
-                LastUpdatedBy = mockUserId
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                _eventBusiness.CreateEvent(mockUserId, dto, null, null));
+            Assert.Equal(mockOrganizationId, result.OrganizationId);
         }
 
         [Fact]
@@ -831,7 +689,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _eventBusiness.CreateEvent(mockUserId, dto, mockOrganizationId, null));
+                _eventBusiness.CreateEvent(mockUserId, mockOrganizationId, null, dto));
         }
 
         [Fact]
@@ -850,7 +708,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                _eventBusiness.CreateEvent(mockUserId, dto, mockOrganizationId, null));
+                _eventBusiness.CreateEvent(mockUserId, mockOrganizationId, null, dto));
         }
 
         #endregion
@@ -920,34 +778,12 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.BulkCreateEvents(mockUserId, events, null, pid);
+            var result = await _eventBusiness.BulkCreateEvents(mockUserId, events, mockOrganizationId, pid);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(pid, result.ProjectId);
-            Assert.Null(result.OrganizationId);
-        }
-
-        [Fact]
-        public async Task BulkCreateEvents_Fails_IfBothOrganizationAndProjectProvided()
-        {
-            // Arrange
-            var events = new List<CreateEventRequestDto>
-            {
-                new CreateEventRequestDto
-                {
-                    Operation = "create",
-                    EntityType = "metadata",
-                    EntityId = 1,
-                    DataSourceId = null,
-                    Properties = "{}",
-                    LastUpdatedBy = mockUserId
-                }
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                _eventBusiness.BulkCreateEvents(mockUserId, events, mockOrganizationId, pid));
+            Assert.Equal(mockOrganizationId, result.OrganizationId);
         }
 
         #endregion

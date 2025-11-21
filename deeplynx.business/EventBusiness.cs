@@ -89,20 +89,18 @@ public class EventBusiness : IEventBusiness
     /// <param name="organizationId">The id of the organization the events are a part of</param>
     /// <param name="projectId">The id of the project the events are a part of</param>
     /// <returns>Paginated response containing events and pagination metadata</returns>
-    public async Task<PaginatedResponse<EventResponseDto>> QueryAllEvents(EventsQueryRequestDTO? queryDto,
-        long? organizationId, long? projectId)
+    public async Task<PaginatedResponse<EventResponseDto>> QueryAllEvents(
+        long organizationId, long? projectId, EventsQueryRequestDTO? queryDto)
     {
         var eventQuery = _context.Events
             .Include(e => e.Organization)
             .Include(e => e.Project)
             .Include(e => e.DataSource)
             .AsQueryable();
-
-        if (organizationId.HasValue)
-        {
-            eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
-        }
-        else if (projectId.HasValue)
+        
+        eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId);
+        
+        if (projectId.HasValue)
         {
             eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
         }
@@ -199,40 +197,32 @@ public class EventBusiness : IEventBusiness
     /// </summary>
     /// <param name="queryDto">Filter criteria and pagination parameters</param>
     /// <returns>Paginated response containing events and pagination metadata</returns>
-    public async Task<PaginatedResponse<EventResponseDto>> QueryAuthorizedEvents(long currentUserId,
-        EventsQueryRequestDTO? queryDto, long? organizationId, long? projectId)
+    public async Task<PaginatedResponse<EventResponseDto>> QueryAuthorizedEvents(long currentUserId, 
+        long organizationId, long? projectId, EventsQueryRequestDTO? queryDto)
     {
         var eventQuery = _context.Events
             .Include(e => e.Organization)
             .Include(e => e.Project)
             .Include(e => e.DataSource)
             .AsQueryable();
+        
+        // Get all project IDs the user has access to within this organization
+        var userProjectIds = await _context.Projects
+            .Where(p => p.OrganizationId == organizationId &&
+                   p.ProjectMembers.Any(pm =>
+                   pm.UserId == currentUserId ||
+                   (pm.GroupId.HasValue && pm.Group != null &&
+                   pm.Group.Users.Any(u => u.Id == currentUserId))
+                   ))
+            .Select(p => p.Id)
+            .ToListAsync();
 
-        if (organizationId.HasValue)
-        {
-            // Get all project IDs the user has access to within this organization
-            var userProjectIds = await _context.Projects
-                .Where(p => p.OrganizationId == organizationId &&
-                            p.ProjectMembers.Any(pm =>
-                                pm.UserId == currentUserId ||
-                                (pm.GroupId.HasValue && pm.Group != null &&
-                                 pm.Group.Users.Any(u => u.Id == currentUserId))
-                            ))
-                .Select(p => p.Id)
-                .ToListAsync();
+       eventQuery = eventQuery.Where(e =>
+          (e.OrganizationId == organizationId) || 
+          (e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
+       );
 
-            eventQuery = eventQuery.Where(e =>
-                (e.OrganizationId == organizationId.Value) ||
-                (e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
-            );
-
-            if (projectId.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
-            }
-        }
-        else if (projectId.HasValue)
-        {
+        if (projectId.HasValue) { 
             eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
         }
 
@@ -339,7 +329,7 @@ public class EventBusiness : IEventBusiness
     /// <param name="organizationId">The ID of the organization</param>
     /// <param name="projectId">Optional ID of the project to filter events</param>
     public async Task<PaginatedResponse<EventResponseDto>> QueryEventsBySubscriptions(long currentUserId,
-        EventsQueryRequestDTO? queryDto, long? organizationId, long? projectId)
+        long organizationId, long? projectId, EventsQueryRequestDTO? queryDto)
     {
         var subscriptionsQuery = _context.Set<Subscription>()
             .Where(s => s.UserId == currentUserId && s.OrganizationId == organizationId);
@@ -506,16 +496,11 @@ public class EventBusiness : IEventBusiness
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
-    public async Task<EventResponseDto> CreateEvent(long currentUserId, CreateEventRequestDto dto, long? organizationId, long? projectId)
+    public async Task<EventResponseDto> CreateEvent(long currentUserId, long organizationId, long? projectId, CreateEventRequestDto dto)
     {
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-
-        if ((organizationId.HasValue && projectId.HasValue) || (!organizationId.HasValue && !projectId.HasValue))
-        {
-            throw new ArgumentException("Exactly one of OrganizationId or ProjectId must be provided.");
-        }
 
         var project = projectId != null
             ? await _context.Projects.FindAsync(projectId)
@@ -579,7 +564,7 @@ public class EventBusiness : IEventBusiness
     public async Task<EventResponseDto> BulkCreateEvents(
         long currentUserId,
         List<CreateEventRequestDto> events,
-        long? organizationId,
+        long organizationId,
         long? projectId = null
     )
     {
@@ -590,12 +575,6 @@ public class EventBusiness : IEventBusiness
 
         ValidationHelper.ValidateTypes(firstEvent.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(firstEvent.Operation, "Operation");
-
-        // Validate XOR constraint
-        if ((organizationId.HasValue && projectId.HasValue) || (!organizationId.HasValue && !projectId.HasValue))
-        {
-            throw new ArgumentException("Exactly one of OrganizationId or ProjectId must be provided.");
-        }
 
         var project = projectId != null
             ? await _context.Projects.FindAsync(projectId)

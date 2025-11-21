@@ -1,207 +1,131 @@
 using deeplynx.helpers.Context;
+using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers;
-
-/// <summary>
-///     Controller for managing events.
-/// </summary>
-/// <remarks>
-///     This controller provides endpoints to create, retrieve, and query event information.
-/// </remarks>
-[ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/events")]
-[Authorize]
-public class EventController : ControllerBase
+namespace deeplynx.api.Controllers
 {
-    private readonly IEventBusiness _eventBusiness;
-    private readonly ILogger<EventController> _logger;
-
     /// <summary>
-    ///     Initializes a new instance of the <see cref="EventController" /> class
+    /// Controller for fetching events that match user subscriptions.
     /// </summary>
-    /// <param name="eventBusiness">The business logic interface for handling Event operations.</param>
-    /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public EventController(IEventBusiness eventBusiness, ILogger<EventController> logger)
+    /// <remarks>
+    /// This controller provides an endpoint retrieve project events that match the user's subscriptions.
+    /// </remarks>
+
+    [ApiController]
+    [Route("events")]
+    [Authorize]
+    public class EventController : ControllerBase // Inherit from ControllerBase
     {
-        _eventBusiness = eventBusiness;
-        _logger = logger;
-    }
-
-    /// <summary>
-    ///     Get All Events
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the events belong</param>
-    /// <param name="projectId">The ID of the project to which the events belong</param>
-    /// <returns>A list of events for the given organization/project.</returns>
-    [HttpGet(Name = "api_get_all_events")]
-    public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEvents(
-        long organizationId,
-        long projectId)
-    {
-        try
+        private readonly IEventBusiness _eventBusiness;
+        private readonly ILogger<EventController> _logger;
+        public EventController(IEventBusiness eventBusiness,  ILogger<EventController> logger)
         {
-            var events = await _eventBusiness.GetAllEvents(projectId, organizationId);
-            return Ok(events);
+            _eventBusiness = eventBusiness;
+            _logger = logger;
         }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while listing events: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Query Events with Pagination
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the events belong</param>
-    /// <param name="projectId">The ID of the project to which the events belong</param>
-    /// <param name="queryDto">Filter criteria and pagination parameters</param>
-    /// <returns>Paginated response containing events and metadata</returns>
-    [HttpGet("query", Name = "api_query_events")]
-    public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
-        long organizationId,
-        long projectId,
-        [FromQuery] EventsQueryRequestDTO? queryDto)
-    {
-        try
-        {
-            var events = await _eventBusiness.QueryAllEvents(
-                queryDto, organizationId, projectId );
-            return Ok(events);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while querying events: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Query Events by User Project Membership
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the events belong</param>
-    /// <param name="projectId">The ID of the project to which the events belong</param>
-    /// <param name="queryDto">Filter criteria and pagination parameters</param>
-    /// <returns>Paginated response containing events for projects the user is a member of</returns>
-    [HttpGet("by-user", Name = "api_query_events_by_user")]
-    public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEventsByUser(
-        long projectId,
-        long organizationId,
-        [FromQuery] EventsQueryRequestDTO? queryDto)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-            var events = await _eventBusiness.QueryAuthorizedEvents(
-                currentUserId, queryDto, organizationId, projectId);
-            return Ok(events);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while querying events by user: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Get Events by User Project Subscriptions
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the events belong</param>
-    /// <param name="projectId">The ID of the project to which the events belong</param>
-    /// <param name="userId">The ID of the user whose subscriptions to filter by</param>
-    /// <returns>A list of events matching the user's subscriptions</returns>
-    [HttpGet("subscriptions", Name = "api_query_events_by_subscriptions")]
-    public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsBySubscriptions(
-        long organizationId,
-        long projectId
+        
+        /// <summary>
+        /// Get All Events
+        /// </summary>
+        /// <param name="projectId">Optional filter to only include events matching the projectId</param>
+        /// <param name="organizationId">Optional filter </param>
+        /// <returns></returns>
+        [HttpGet("GetAllEvents", Name = "api_get_all_events")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> GetAllEvents(
+            [FromQuery] long? projectId,
+            [FromQuery] long? organizationId
         )
-    {
-        try
         {
-            var currentUserId = UserContextStorage.UserId;
-            var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, projectId);
-            return Ok(events);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while fetching events by subscriptions: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Create an Event
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the event belongs</param>
-    /// <param name="projectId">The ID of the project to which the event belongs</param>
-    /// <param name="dto">The data transfer object containing event details</param>
-    /// <returns>The created event</returns>
-    [HttpPost(Name = "api_create_event")]
-    public async Task<ActionResult<EventResponseDto>> CreateEvent(
-        long organizationId,
-        long projectId,
-        [FromBody] CreateEventRequestDto dto)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-
-            // Ensure IDs from routes are used
-            dto.ProjectId = projectId;
-            dto.OrganizationId = organizationId;
-
-            var eventResponse = await _eventBusiness.CreateEvent(
-                currentUserId, dto, projectId, organizationId);
-            return Ok(eventResponse);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while creating event: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Bulk Create Events
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the events belong</param>
-    /// <param name="projectId">The ID of the project to which the events belong</param>
-    /// <param name="events">List of data transfer objects containing event details</param>
-    /// <returns>The list of created events</returns>
-    [HttpPost("bulk", Name = "api_bulk_create_events")]
-    public async Task<ActionResult<IEnumerable<EventResponseDto>>> BulkCreateEvents(
-        long organizationId,
-        long projectId,
-        [FromBody] List<CreateEventRequestDto> events)
-    {
-        try
-        {
-            var currentUserId = UserContextStorage.UserId;
-            // Ensure organizationId from route is used for all events
-            foreach (var evt in events)
+            try
             {
-                evt.OrganizationId = organizationId;
-                evt.ProjectId = projectId;
+                var events = await _eventBusiness.GetAllEvents(projectId, organizationId);
+                return Ok(events);
             }
-
-            var eventResponses = await _eventBusiness.BulkCreateEvents(
-                currentUserId, events, projectId, organizationId);
-            return Ok(eventResponses);
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
-        catch (Exception exc)
+
+        /// <summary>
+        /// QueryEvents (Paginated)
+        /// </summary>
+        /// <param name="organizationId">The id of the organization</param>.
+        /// <param name="projectId">The id of the project</param>.
+        /// <param name="queryDto">Filter criteria and pagination parameters</param>.
+        /// <returns></returns>
+        [HttpGet("QueryEvents", Name = "api_query_events_paginated")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
+            long organizationId,
+            long projectId,
+            [FromQuery] EventsQueryRequestDTO? queryDto
+        )
         {
-            var message = $"An error occurred while bulk creating events: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
+            try
+            {
+                var events = await _eventBusiness.QueryAllEvents(organizationId, projectId, queryDto);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Query All Events The requesting user is Authorized to See (Paginated).
+        /// </summary>
+        [HttpGet("QueryAuthorizedEvents", Name = "api_query_authorized_events")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryAuthorizedEvents(
+            long organizationId,
+            long projectId,
+            [FromQuery] EventsQueryRequestDTO? queryDto)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, organizationId, projectId, queryDto);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Query Events by subscriptions 
+        /// </summary>
+        /// <param name="organizationId">The ID of the organization</param>
+        /// <param name="projectId">The ID of the project to which the events belong</param>
+        /// <param name="queryDto">The DTO containing the optional filters</param>
+        /// <returns></returns>
+        [HttpGet("QueryEventsBySubscriptions", Name = "api_query_events_by_subscriptions")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsBySubscriptions(
+            long organizationId,
+            long projectId,
+            [FromQuery] EventsQueryRequestDTO? queryDto)
+        {
+            try
+            {
+                var currentUserId = UserContextStorage.UserId;
+                var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, organizationId, projectId, queryDto);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
     }
 }
