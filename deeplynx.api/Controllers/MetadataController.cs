@@ -43,7 +43,8 @@ public class MetadataController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var createdMetadata =
-                await _metadataBusiness.CreateMetadata(currentUserId, projectId, dataSourceId, metadataRequestDto);
+                await _metadataBusiness.CreateMetadata(currentUserId, projectId, organizationId, dataSourceId,
+                    metadataRequestDto);
             return Ok(createdMetadata);
         }
         catch (Exception exception)
@@ -73,7 +74,8 @@ public class MetadataController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var createdMetadata =
-                await _metadataBusiness.CreateMetadataFromFile(currentUserId, projectId, dataSourceId, file);
+                await _metadataBusiness.CreateMetadataFromFile(currentUserId, projectId, organizationId, dataSourceId,
+                    file);
             return Ok(createdMetadata);
         }
         catch (Exception exception)
