@@ -94,7 +94,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             Name = "Test Data Source",
             Description = "Test data source for unit tests",
             ProjectId = project.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
 
         var dataSource2 = new DataSource
@@ -102,7 +103,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             Name = "Test Data Source 2",
             Description = "Test data source 2 for unit tests",
             ProjectId = project2.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
 
         var dataSource3 = new DataSource
@@ -110,7 +112,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             Name = "Test Data Source 3",
             Description = "Test data source 3 for unit tests",
             ProjectId = project2.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
 
         Context.DataSources.Add(dataSource);
@@ -125,14 +128,16 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             Name = "Test Class",
             Description = "Test class for unit tests",
             ProjectId = project.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         var testClass2 = new Class
         {
             Name = "Test Class 2",
             Description = "Test class 2 for unit tests",
             ProjectId = project2.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
 
         Context.Classes.Add(testClass);
@@ -144,13 +149,15 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag",
             ProjectId = project.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         var testTag2 = new Tag
         {
             Name = "Test Tag 2",
             ProjectId = project2.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
 
         var config = new JsonObject();
@@ -160,7 +167,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             Type = "filesystem",
             Config = config.ToString(),
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         Context.ObjectStorages.Add(objectStorage);
 
@@ -179,7 +187,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             ClassId = testClass.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags = new List<Tag> { testTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
 
         var testRecord2 = new Record
@@ -193,7 +202,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             DataSourceId = dataSource.Id,
             ClassId = testClass.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
 
         var testRecord3 = new Record
@@ -207,7 +217,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             ClassId = testClass2.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags = new List<Tag> { testTag2 },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
 
         var testRecord4 = new Record
@@ -221,7 +232,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             ClassId = testClass2.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags = new List<Tag> { testTag2 },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
 
         Context.Tags.Add(testTag);
@@ -243,7 +255,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
     public async Task GetHistoricalRecords_ReturnsListOfCurrentHistoricalRecordsForProject()
     {
         // Act
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
+        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, organizationId);
 
         // Assert
         Assert.NotNull(historicalRecords);
@@ -282,7 +294,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         await _recordBusiness.UpdateRecord(uid, pid, rid2, dto2);
 
         // Act
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
+        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, organizationId);
 
         // Assert
         Assert.NotNull(historicalRecords);
@@ -298,7 +310,8 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         await _recordBusiness.ArchiveRecord(uid, pid, organizationId, rid);
 
         // Act
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, null, null, false);
+        var historicalRecords =
+            await _historicalRecordBusiness.GetAllHistoricalRecords(pid, organizationId, null, null, false);
 
         // Assert
         Assert.NotNull(historicalRecords);
@@ -311,14 +324,14 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
     public async Task GetHistoricalRecords_DoesNotContainArchivedHistoricalRecords()
     {
         // Arrange
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
+        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, organizationId);
 
         Assert.NotNull(historicalRecords);
         Assert.Equal(2, historicalRecords.Count());
 
         // Act
         await _recordBusiness.ArchiveRecord(uid, pid, organizationId, rid);
-        var arcHistoricalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
+        var arcHistoricalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, organizationId);
 
         // Assert
         Assert.NotNull(arcHistoricalRecords);
@@ -335,7 +348,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         await _recordBusiness.DeleteRecord(pid, rid2);
 
         // Act
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
+        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, organizationId);
 
         // Assert
         Assert.NotNull(historicalRecords);
@@ -346,7 +359,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
     public async Task GetHistoricalRecords_FiltersByDataSource()
     {
         // Act
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid2, did2);
+        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid2, organizationId, did2);
 
         // Assert
         Assert.NotNull(historicalRecords);
@@ -370,14 +383,16 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
             DataSourceId = did,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            Uri = "localhost:8090"
+            Uri = "localhost:8090", 
+            OrganizationId = organizationId
         };
 
         Context.Records.Add(testRecordLate);
         await Context.SaveChangesAsync();
 
         // Act
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, null, pointInTime, false);
+        var historicalRecords =
+            await _historicalRecordBusiness.GetAllHistoricalRecords(pid, organizationId, null, pointInTime, false);
 
         // Assert
         Assert.NotNull(historicalRecords);
@@ -407,7 +422,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         // Act
         await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
         await _recordBusiness.ArchiveRecord(uid, pid, organizationId, rid);
-        var recordHistory = await _historicalRecordBusiness.GetHistoryForRecord(rid);
+        var recordHistory = await _historicalRecordBusiness.GetHistoryForRecord(rid, organizationId);
 
 
         // Assert
@@ -424,7 +439,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _historicalRecordBusiness.GetHistoryForRecord(rid + 100000));
+            _historicalRecordBusiness.GetHistoryForRecord(rid + 100000, organizationId));
     }
 
     #endregion
@@ -440,7 +455,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         Assert.NotNull(record);
 
         // Act
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, null);
 
         // Assert
         Assert.NotNull(historicalRecord);
@@ -478,7 +493,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         Assert.NotNull(updatedRecord);
 
         // Act
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, null);
 
         // Assert
         Assert.NotNull(historicalRecord);
@@ -509,7 +524,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         Assert.NotNull(archivedRecord);
 
         // Act
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, null, false);
 
         // Assert
         Assert.NotNull(historicalRecord);
@@ -547,7 +562,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
 
 
         // Act
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, null);
 
         // Assert
         Assert.NotNull(historicalRecord);
@@ -570,7 +585,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
 
         // Act
         await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, null);
 
         // Assert
         Assert.NotNull(historicalRecord);
@@ -594,7 +609,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         // Act
         await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
         await _recordBusiness.ArchiveRecord(uid, pid, organizationId, rid);
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, null, false);
 
         // Assert
         Assert.NotNull(historicalRecord);
@@ -623,7 +638,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _historicalRecordBusiness.GetHistoricalRecord(rid, null));
+                _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, null));
         Assert.Contains($"Historical record with id {rid} not found or is archived", exception.Message);
     }
 
@@ -645,7 +660,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
 
         // Act
         await _recordBusiness.UpdateRecord(uid, pid, rid, dto);
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, pointInTime);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, organizationId, pointInTime);
 
         // Assert
         Assert.NotNull(historicalRecord);
@@ -657,7 +672,7 @@ public class HistoricalRecordBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _historicalRecordBusiness.GetHistoricalRecord(rid + 100000, null));
+            _historicalRecordBusiness.GetHistoricalRecord(rid + 100000, organizationId, null));
         Assert.Contains($"Historical record with id {rid + 100000} not found", exception.Message);
     }
 
