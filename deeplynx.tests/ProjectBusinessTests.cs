@@ -409,7 +409,7 @@ public class ProjectBusinessTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(dto.Name, project.Name);
-        var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(project.Id, true);
+        var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(oid, project.Id, true);
         Assert.Single(dataSourceResult);
         Assert.Equal("Default Data Source", dataSourceResult[0].Name);
         Assert.Equal("This data source was created alongside the project for ease of use.",
@@ -479,8 +479,7 @@ public class ProjectBusinessTests : IntegrationTestBase
         var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(
-            () => _projectBusiness.CreateProject(uid, oid, dto));
+        await Assert.ThrowsAsync<ValidationException>(() => _projectBusiness.CreateProject(uid, oid, dto));
 
         // Ensure that no project create event is logged
         var eventList = await Context.Events.ToListAsync();
@@ -494,8 +493,8 @@ public class ProjectBusinessTests : IntegrationTestBase
         var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.CreateProject(uid2, oid, dto));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.CreateProject(uid2, oid, dto));
 
         Assert.Contains($"User with id {uid2} does not exist", exception.Message);
     }
@@ -507,8 +506,7 @@ public class ProjectBusinessTests : IntegrationTestBase
         var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(
-            () => _projectBusiness.CreateProject(uid, oid, dto));
+        await Assert.ThrowsAsync<ValidationException>(() => _projectBusiness.CreateProject(uid, oid, dto));
 
         // Ensure that no project create event is logged
         var eventList = await Context.Events.ToListAsync();
@@ -562,8 +560,7 @@ public class ProjectBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.CreateProject(uid, oid2, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.CreateProject(uid, oid2, dto));
 
         // Ensure that no project create event is logged
         var eventList = await Context.Events.ToListAsync();
@@ -662,8 +659,8 @@ public class ProjectBusinessTests : IntegrationTestBase
         const long nonExistentUserId = 999999;
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _projectBusiness.GetAllProjects(nonExistentUserId, null));
+        var exception =
+            await Assert.ThrowsAsync<ArgumentException>(() => _projectBusiness.GetAllProjects(nonExistentUserId, null));
 
         Assert.Contains($"User with id {nonExistentUserId} not found.", exception.Message);
     }
@@ -741,8 +738,9 @@ public class ProjectBusinessTests : IntegrationTestBase
         const long nonExistentId = 999999;
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UpdateProject(uid, nonExistentId, dto));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.UpdateProject(uid, nonExistentId, dto));
 
         Assert.Contains("Project not found.", exception.Message);
 
@@ -774,8 +772,8 @@ public class ProjectBusinessTests : IntegrationTestBase
         const long nonExistentId = 999999;
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.DeleteProject(nonExistentId));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.DeleteProject(nonExistentId));
 
         Assert.Contains($"Project with id {nonExistentId} not found.", exception.Message);
     }
@@ -835,8 +833,8 @@ public class ProjectBusinessTests : IntegrationTestBase
         const long nonExistentId = 999999;
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.ArchiveProject(uid, nonExistentId));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.ArchiveProject(uid, nonExistentId));
 
         Assert.Contains("Project not found.", exception.Message);
 
@@ -894,8 +892,8 @@ public class ProjectBusinessTests : IntegrationTestBase
         const long nonExistentId = 999999;
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UnarchiveProject(uid, nonExistentId));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.UnarchiveProject(uid, nonExistentId));
 
         Assert.Contains("Project not found or is not archived.", exception.Message);
     }
@@ -904,8 +902,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task UnarchiveProject_Fails_IfNotArchived()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UnarchiveProject(uid, pid)); // pid is not archived
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.UnarchiveProject(uid, pid)); // pid is not archived
 
         Assert.Contains("Project not found or is not archived.", exception.Message);
     }
@@ -1077,8 +1076,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task AddMemberToProject_Fails_IfBothUserAndGroupAreSet()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _projectBusiness.AddMemberToProject(pid3, null, uid, gid));
+        var exception =
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _projectBusiness.AddMemberToProject(pid3, null, uid, gid));
 
         Assert.Contains("Please provide only one of User ID or Group ID, not both", exception.Message);
     }
@@ -1087,8 +1087,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task AddMemberToProject_Fails_IfNeitherUserNorGroupAreSet()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _projectBusiness.AddMemberToProject(pid3, null, null, null));
+        var exception =
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _projectBusiness.AddMemberToProject(pid3, null, null, null));
 
         Assert.Contains("One of User ID or Group ID must be provided", exception.Message);
     }
@@ -1097,8 +1098,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task AddMemberToProject_Fails_IfUserDoesNotExist()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.AddMemberToProject(pid3, null, uid2, null));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.AddMemberToProject(pid3, null, uid2, null));
 
         Assert.Contains($"User with id {uid2} not found", exception.Message);
     }
@@ -1107,8 +1109,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task AddMemberToProject_Fails_IfGroupDoesNotExist()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.AddMemberToProject(pid3, null, null, gid2));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.AddMemberToProject(pid3, null, null, gid2));
 
         Assert.Contains($"Group with id {gid2} not found", exception.Message);
     }
@@ -1128,8 +1131,8 @@ public class ProjectBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         const long MissingProjectId = 999999;
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.AddMemberToProject(MissingProjectId, null, uid, null)
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _projectBusiness.AddMemberToProject(MissingProjectId, null, uid, null)
         );
         Assert.Equal($"Project with id {MissingProjectId} not found", exception.Message);
     }
@@ -1222,9 +1225,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task UpdateProjectMemberRole_Fails_IfBothUserAndGroupAreSet()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _projectBusiness.UpdateProjectMemberRole(pid, rid, 1, 1)
-        );
+        var exception =
+            await Assert.ThrowsAsync<ArgumentException>(() => _projectBusiness.UpdateProjectMemberRole(pid, rid, 1, 1)
+            );
         Assert.Equal("Please provide only one of User ID or Group ID, not both", exception.Message);
     }
 
@@ -1232,9 +1235,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task UpdateProjectMemberRole_Fails_IfNeitherUserNorGroupAreSet()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _projectBusiness.UpdateProjectMemberRole(pid, rid, null, null)
-        );
+        var exception =
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _projectBusiness.UpdateProjectMemberRole(pid, rid, null, null)
+            );
         Assert.Equal("One of User ID or Group ID must be provided", exception.Message);
     }
 
@@ -1242,9 +1246,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task UpdateProjectMemberRole_Fails_IfUserDoesNotExist()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UpdateProjectMemberRole(pid, rid, uid2, null)
-        );
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.UpdateProjectMemberRole(pid, rid, uid2, null)
+            );
         Assert.Equal($"User with id {uid2} is not a member of project {pid}", exception.Message);
     }
 
@@ -1252,9 +1257,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task UpdateProjectMemberRole_Fails_IfGroupDoesNotExist()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UpdateProjectMemberRole(pid, rid, null, gid2)
-        );
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.UpdateProjectMemberRole(pid, rid, null, gid2)
+            );
         Assert.Equal($"Group with id {gid2} is not a member of project {pid}", exception.Message);
     }
 
@@ -1262,9 +1268,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task UpdateProjectMemberRole_Fails_IfRoleDoesNotExist()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UpdateProjectMemberRole(pid, rid2, uid, null)
-        );
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.UpdateProjectMemberRole(pid, rid2, uid, null)
+            );
         Assert.Equal($"Role with id {rid2} not found", exception.Message);
     }
 
@@ -1273,8 +1280,8 @@ public class ProjectBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         const long MissingProjectId = 999999;
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UpdateProjectMemberRole(MissingProjectId, rid, uid, null)
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _projectBusiness.UpdateProjectMemberRole(MissingProjectId, rid, uid, null)
         );
         Assert.Equal($"User with id {uid} is not a member of project {MissingProjectId}", exception.Message);
     }
@@ -1283,9 +1290,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task UpdateProjectMemberRole_Fails_IfProjectMemberNotExists()
     {
         // Act & Assert (user exists but is not a member of the project)
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.UpdateProjectMemberRole(pid3, rid, uid, null)
-        );
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.UpdateProjectMemberRole(pid3, rid, uid, null)
+            );
         Assert.Equal($"User with id {uid} is not a member of project {pid3}", exception.Message);
     }
 
@@ -1326,9 +1334,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task RemoveMemberFromProject_Fails_IfBothUserAndGroupAreSet()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _projectBusiness.RemoveMemberFromProject(pid, 1, 1)
-        );
+        var exception =
+            await Assert.ThrowsAsync<ArgumentException>(() => _projectBusiness.RemoveMemberFromProject(pid, 1, 1)
+            );
         Assert.Equal("Please provide only one of User ID or Group ID, not both", exception.Message);
     }
 
@@ -1336,9 +1344,9 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task RemoveMemberFromProject_Fails_IfNeitherUserNorGroupAreSet()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _projectBusiness.RemoveMemberFromProject(pid, null, null)
-        );
+        var exception =
+            await Assert.ThrowsAsync<ArgumentException>(() => _projectBusiness.RemoveMemberFromProject(pid, null, null)
+            );
         Assert.Equal("One of either User ID or Group ID must be provided", exception.Message);
     }
 
@@ -1346,9 +1354,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task RemoveMemberFromProject_Fails_IfUserDoesNotExist()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.RemoveMemberFromProject(pid, uid2, null)
-        );
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.RemoveMemberFromProject(pid, uid2, null)
+            );
         Assert.Equal($"User with id {uid2} is not a member of project {pid}", exception.Message);
     }
 
@@ -1356,9 +1365,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task RemoveMemberFromProject_Fails_IfGroupDoesNotExist()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.RemoveMemberFromProject(pid, null, gid2)
-        );
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.RemoveMemberFromProject(pid, null, gid2)
+            );
         Assert.Equal($"Group with id {gid2} is not a member of project {pid}", exception.Message);
     }
 
@@ -1367,8 +1377,8 @@ public class ProjectBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         const long nonExistentProjectId = 999999;
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.RemoveMemberFromProject(nonExistentProjectId, uid, null)
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _projectBusiness.RemoveMemberFromProject(nonExistentProjectId, uid, null)
         );
         Assert.Equal($"User with id {uid} is not a member of project {nonExistentProjectId}", exception.Message);
     }
@@ -1377,9 +1387,10 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task RemoveMemberFromProject_Fails_IfProjectMemberNotExists()
     {
         // Act & Assert (user exists but is not a member of the project)
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _projectBusiness.RemoveMemberFromProject(pid3, uid, null)
-        );
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _projectBusiness.RemoveMemberFromProject(pid3, uid, null)
+            );
         Assert.Equal($"User with id {uid} is not a member of project {pid3}", exception.Message);
     }
 
