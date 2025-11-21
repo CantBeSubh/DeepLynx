@@ -12,6 +12,7 @@ public class DataSourceResponseDto
     public string? Type { get; set; }
     public string? BaseUri { get; set; }
     public JsonObject? Config { get; set; }
+    public long OrganizationId { get; set; }
     public long? ProjectId { get; set; }
     public DateTime LastUpdatedAt { get; set; }
     public long? LastUpdatedBy { get; set; }

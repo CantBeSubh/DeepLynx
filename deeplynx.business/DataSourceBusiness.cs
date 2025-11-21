@@ -51,7 +51,9 @@ public class DataSourceBusiness : IDataSourceBusiness
         bool hideArchived)
     {
         var dataSources = await _context.DataSources
-            .Where(d => d.ProjectId == projectId).ToListAsync();
+            .Where(d => d.OrganizationId == organizationId
+                        && (!projectId.HasValue || d.ProjectId == projectId.Value))
+            .ToListAsync();
 
         if (hideArchived) dataSources = dataSources.Where(d => !d.IsArchived).ToList();
 
@@ -61,6 +63,7 @@ public class DataSourceBusiness : IDataSourceBusiness
                 Id = d.Id,
                 Name = d.Name,
                 Description = d.Description,
+                OrganizationId = d.OrganizationId,
                 Default = d.Default,
                 Abbreviation = d.Abbreviation,
                 Type = d.Type,
@@ -85,7 +88,10 @@ public class DataSourceBusiness : IDataSourceBusiness
         bool hideArchived)
     {
         var dataSources = await _context.DataSources
-            .Where(d => d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value)).ToListAsync();
+            .Where(d => d.OrganizationId == organizationId
+                        && d.ProjectId.HasValue
+                        && projectIds.Contains(d.ProjectId.Value))
+            .ToListAsync();
 
         if (hideArchived) dataSources = dataSources.Where(d => !d.IsArchived).ToList();
 
@@ -95,6 +101,7 @@ public class DataSourceBusiness : IDataSourceBusiness
                 Id = d.Id,
                 Name = d.Name,
                 Description = d.Description,
+                OrganizationId = d.OrganizationId,
                 Default = d.Default,
                 Abbreviation = d.Abbreviation,
                 Type = d.Type,
@@ -121,7 +128,8 @@ public class DataSourceBusiness : IDataSourceBusiness
         bool hideArchived)
     {
         var dataSource = await _context.DataSources
-            .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
+            .Where(d => d.OrganizationId == organizationId && d.Id == datasourceId
+                                                           && projectId.HasValue && d.ProjectId == projectId.Value)
             .FirstOrDefaultAsync();
 
         if (dataSource == null || dataSource.ProjectId != projectId)
@@ -135,6 +143,7 @@ public class DataSourceBusiness : IDataSourceBusiness
             Id = dataSource.Id,
             Name = dataSource.Name,
             Description = dataSource.Description,
+            OrganizationId = dataSource.OrganizationId,
             Default = dataSource.Default,
             Abbreviation = dataSource.Abbreviation,
             Type = dataSource.Type,
@@ -158,7 +167,8 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<DataSourceResponseDto> GetDefaultDataSource(long organizationId, long? projectId)
     {
         var dataSource = await _context.DataSources
-            .Where(d => d.ProjectId == projectId && d.Default == true && !d.IsArchived)
+            .Where(d => d.OrganizationId == organizationId && d.Default == true && !d.IsArchived
+                        && projectId.HasValue && d.ProjectId == projectId.Value)
             .FirstOrDefaultAsync();
 
         if (dataSource == null || dataSource.ProjectId != projectId)
@@ -200,6 +210,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         var dataSource = new DataSource
         {
             Name = dto.Name,
+            OrganizationId = organizationId,
             ProjectId = projectId,
             Description = dto.Description,
             Default = makeDefault,
@@ -223,6 +234,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
+            OrganizationId = organizationId,
             Operation = "create",
             EntityType = "data_source",
             EntityId = dataSource.Id,
@@ -235,6 +247,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         {
             Id = dataSource.Id,
             Name = dataSource.Name,
+            OrganizationId = dataSource.OrganizationId,
             Description = dataSource.Description,
             Default = dataSource.Default,
             Abbreviation = dataSource.Abbreviation,
@@ -267,7 +280,10 @@ public class DataSourceBusiness : IDataSourceBusiness
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-        if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
+        if (dataSource == null
+            || dataSource.OrganizationId != organizationId
+            || (projectId.HasValue && dataSource.ProjectId != projectId.Value)
+            || dataSource.IsArchived)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         dataSource.Name = dto.Name ?? dataSource.Name;
@@ -285,6 +301,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
+            OrganizationId = organizationId,
             Operation = "update",
             EntityType = "data_source",
             EntityId = dataSource.Id,
@@ -305,6 +322,7 @@ public class DataSourceBusiness : IDataSourceBusiness
             // return empty object for config if null
             Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
             ProjectId = dataSource.ProjectId,
+            OrganizationId = dataSource.OrganizationId,
             LastUpdatedAt = dataSource.LastUpdatedAt,
             LastUpdatedBy = dataSource.LastUpdatedBy,
             IsArchived = dataSource.IsArchived
@@ -323,7 +341,9 @@ public class DataSourceBusiness : IDataSourceBusiness
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-        if (dataSource == null || dataSource.ProjectId != projectId)
+        if (dataSource == null
+            || dataSource.OrganizationId != organizationId
+            || (projectId.HasValue && dataSource.ProjectId != projectId.Value))
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         _context.DataSources.Remove(dataSource);
@@ -346,7 +366,10 @@ public class DataSourceBusiness : IDataSourceBusiness
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-        if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
+        if (dataSource == null
+            || dataSource.OrganizationId != organizationId
+            || (projectId.HasValue && dataSource.ProjectId != projectId.Value)
+            || dataSource.IsArchived)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         dataSource.IsArchived = true;
@@ -359,6 +382,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
+            OrganizationId = organizationId,
             Operation = "archive",
             EntityType = "data_source",
             EntityId = dataSource.Id,
@@ -384,7 +408,10 @@ public class DataSourceBusiness : IDataSourceBusiness
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-        if (dataSource == null || dataSource.ProjectId != projectId || !dataSource.IsArchived)
+        if (dataSource == null
+            || dataSource.OrganizationId != organizationId
+            || (projectId.HasValue && dataSource.ProjectId != projectId.Value)
+            || !dataSource.IsArchived)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found or is not archived.");
 
         dataSource.IsArchived = false;
@@ -397,6 +424,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = projectId,
+            OrganizationId = organizationId,
             Operation = "unarchive",
             EntityType = "data_source",
             EntityId = dataSource.Id,
@@ -425,7 +453,10 @@ public class DataSourceBusiness : IDataSourceBusiness
     {
         var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-        if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
+        if (dataSource == null
+            || dataSource.OrganizationId != organizationId
+            || (projectId.HasValue && dataSource.ProjectId != projectId)
+            || dataSource.IsArchived)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         if (!dataSource.Default)
@@ -439,6 +470,7 @@ public class DataSourceBusiness : IDataSourceBusiness
 
             await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
             {
+                OrganizationId = organizationId,
                 ProjectId = projectId,
                 Operation = "update",
                 EntityType = "data_source",
@@ -460,6 +492,7 @@ public class DataSourceBusiness : IDataSourceBusiness
             BaseUri = dataSource.BaseUri,
             // return empty object for config if null
             Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
+            OrganizationId = dataSource.OrganizationId,
             ProjectId = dataSource.ProjectId,
             LastUpdatedAt = dataSource.LastUpdatedAt,
             LastUpdatedBy = dataSource.LastUpdatedBy,
