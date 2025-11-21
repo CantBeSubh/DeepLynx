@@ -117,14 +117,18 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // Log create Organization event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "create",
-            EntityType = "organization",
-            EntityId = organization.Id,
-            EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
-        }, organization.Id, null);
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organization.Id, 
+            null, 
+            new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "organization",
+                EntityId = organization.Id,
+                EntityName = organization.Name,
+                Properties = JsonSerializer.Serialize(new { organization.Name }),
+            });
 
         return new OrganizationResponseDto
         {
@@ -166,14 +170,18 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // log update Organization event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "update",
-            EntityType = "organization",
-            EntityId = organization.Id,
-            EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
-        }, organization.Id, null);
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organization.Id, 
+            null, 
+            new CreateEventRequestDto
+            {
+                Operation = "update",
+                EntityType = "organization",
+                EntityId = organization.Id,
+                EntityName = organization.Name,
+                Properties = JsonSerializer.Serialize(new { organization.Name }),
+            });
 
         return new OrganizationResponseDto
         {
@@ -208,14 +216,18 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // Log organization archive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "archive",
-            EntityType = "organization",
-            EntityId = organization.Id,
-            EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
-        }, organization.Id, null);
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organizationId, 
+            null, 
+            new CreateEventRequestDto
+            {
+                Operation = "archive",
+                EntityType = "organization",
+                EntityId = organization.Id,
+                EntityName = organization.Name,
+                Properties = JsonSerializer.Serialize(new { organization.Name }),
+            });
 
         return true;
     }
@@ -241,14 +253,18 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _context.SaveChangesAsync();
 
         // Log organization archive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "unarchive",
-            EntityType = "organization",
-            EntityId = organization.Id,
-            EntityName = organization.Name,
-            Properties = JsonSerializer.Serialize(new { organization.Name }),
-        }, organization.Id, null);
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organization.Id, 
+            null, 
+            new CreateEventRequestDto
+            {
+                Operation = "unarchive",
+                EntityType = "organization",
+                EntityId = organization.Id,
+                EntityName = organization.Name,
+                Properties = JsonSerializer.Serialize(new { organization.Name }),
+            });
 
         return true;
     }

@@ -193,14 +193,18 @@ public class RelationshipBusiness : IRelationshipBusiness
         }
 
         // log relationship create event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "create",
-            EntityType = "relationship",
-            EntityId = relationship.Id,
-            EntityName = relationship.Name,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        }, null, projectId);
+        // await _eventBusiness.CreateEvent(
+        //     currentUserId, 
+        //     organizationId, 
+        //     projectId, 
+        //     new CreateEventRequestDto
+        //     {
+        //         Operation = "create",
+        //         EntityType = "relationship",
+        //         EntityId = relationship.Id,
+        //         EntityName = relationship.Name,
+        //         Properties = JsonSerializer.Serialize(new {relationship.Name}),
+        //     });
         
         return new RelationshipResponseDto
         {
@@ -273,21 +277,21 @@ public class RelationshipBusiness : IRelationshipBusiness
             .ToListAsync();
 
         // Bulk log events for each relationship creation
-        var events = new List<CreateEventRequestDto> { };
-
-        foreach (var relationship in result)
-        {
-            events.Add(new CreateEventRequestDto
-            {
-                Operation = "create",
-                EntityType = "relationship",
-                EntityId = relationship.Id,
-                EntityName = relationship.Name,
-                Properties = "{}",
-            });
-        }
+        // var events = new List<CreateEventRequestDto> { };
+        //
+        // foreach (var relationship in result)
+        // {
+        //     events.Add(new CreateEventRequestDto
+        //     {
+        //         Operation = "create",
+        //         EntityType = "relationship",
+        //         EntityId = relationship.Id,
+        //         EntityName = relationship.Name,
+        //         Properties = "{}",
+        //     });
+        // }
         
-        await _eventBusiness.BulkCreateEvents(currentUserId, events, null, projectId);
+        // await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
         
         return result;
     }
@@ -337,14 +341,14 @@ public class RelationshipBusiness : IRelationshipBusiness
         await _context.SaveChangesAsync();
 
         // log relationship update event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "update",
-            EntityType = "relationship",
-            EntityId = relationship.Id,
-            EntityName = relationship.Name,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        }, null, projectId);
+        // await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        // {
+        //     Operation = "update",
+        //     EntityType = "relationship",
+        //     EntityId = relationship.Id,
+        //     EntityName = relationship.Name,
+        //     Properties = JsonSerializer.Serialize(new {relationship.Name}),
+        // });
         
         return new RelationshipResponseDto
         {
@@ -404,15 +408,15 @@ public class RelationshipBusiness : IRelationshipBusiness
         await _context.SaveChangesAsync();
 
         // Log relationship archive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "archive",
-            EntityType = "relationship",
-            EntityId = relationship.Id,
-            EntityName = relationship.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        },  null, projectId);
+        // await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        // {
+        //     Operation = "archive",
+        //     EntityType = "relationship",
+        //     EntityId = relationship.Id,
+        //     EntityName = relationship.Name,
+        //     DataSourceId = null,
+        //     Properties = JsonSerializer.Serialize(new {relationship.Name}),
+        // });
         
         return true;
     }
@@ -439,15 +443,15 @@ public class RelationshipBusiness : IRelationshipBusiness
         await _context.SaveChangesAsync();
 
         // Log relationship unarchive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "unarchive",
-            EntityType = "relationship",
-            EntityId = relationship.Id,
-            EntityName = relationship.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {relationship.Name}),
-        }, null, projectId);
+        // await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        // {
+        //     Operation = "unarchive",
+        //     EntityType = "relationship",
+        //     EntityId = relationship.Id,
+        //     EntityName = relationship.Name,
+        //     DataSourceId = null,
+        //     Properties = JsonSerializer.Serialize(new {relationship.Name}),
+        // });
         
         return true;
     }

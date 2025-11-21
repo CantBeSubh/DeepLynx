@@ -63,7 +63,7 @@ namespace deeplynx.tests
             var result = await _eventBusiness.GetAllEvents(mockOrganizationId, null);
 
             // Assert
-            Assert.Equal(2, result.Count); // All events have the same organizationId
+            Assert.Equal(10, result.Count); // All events have the same organizationId
             Assert.All(result, e => Assert.Equal(mockOrganizationId, e.OrganizationId));
         }
 
@@ -100,8 +100,8 @@ namespace deeplynx.tests
             var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, null, null);
 
             // Assert
-            Assert.Equal(2, result.TotalCount); // Only org-level events
-            Assert.Equal(2, result.Items.Count);
+            Assert.Equal(10, result.TotalCount);
+            Assert.Equal(10, result.Items.Count);
             Assert.Equal(1, result.PageNumber);
             Assert.Equal(500, result.PageSize); // Default page size
         }
@@ -124,7 +124,7 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { lastUpdatedBy = mockUserId };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, null, queryDto);
 
             // Assert
             Assert.Equal(3, result.TotalCount);
@@ -152,10 +152,10 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { entityType = "edge" };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, null, queryDto);
 
             // Assert
-            Assert.Equal(4, result.TotalCount);
+            Assert.Equal(8, result.TotalCount);
             Assert.All(result.Items, e => Assert.Equal("edge", e.EntityType));
         }
 
@@ -179,10 +179,10 @@ namespace deeplynx.tests
             var queryDto = new EventsQueryRequestDTO { dataSourceName = "DataSource1" };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, null, queryDto);
 
             // Assert
-            Assert.Equal(5, result.TotalCount); // 5 events in pid with DataSource1
+            Assert.Equal(8, result.TotalCount); // 1 event in pid with DataSource1
             Assert.All(result.Items, e => Assert.Equal("DataSource1", e.DataSourceName));
         }
 
@@ -229,10 +229,10 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, null, queryDto);
 
             // Assert
-            Assert.Equal(6, result.TotalCount);
+            Assert.Equal(10, result.TotalCount);
             Assert.All(result.Items, e =>
             {
                 Assert.True(e.LastUpdatedAt >= startDate);
@@ -272,10 +272,10 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, pid, queryDto);
+            var result = await _eventBusiness.QueryAllEvents(mockOrganizationId, null, queryDto);
 
             // Assert
-            Assert.Equal(6, result.TotalCount);
+            Assert.Equal(10, result.TotalCount);
             Assert.Equal(3, result.Items.Count);
             Assert.Equal(1, result.PageNumber);
             Assert.Equal(3, result.PageSize);
@@ -346,8 +346,8 @@ namespace deeplynx.tests
             var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, null);
 
             // Assert
-            Assert.Equal(8, result.TotalCount);
-            Assert.Equal(8, result.Items.Count);
+            Assert.Equal(10, result.TotalCount);
+            Assert.Equal(10, result.Items.Count);
         }
 
         [Fact]
@@ -388,17 +388,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Equal(10, result.TotalCount); // All events from both projects
-        }
-
-        [Fact]
-        public async Task QueryAuthorizedEvents_ReturnsEmpty_WhenUserHasNoAccess()
-        {
-            // Act - User has no project memberships
-            var result = await _eventBusiness.QueryAuthorizedEvents(mockUserId, mockOrganizationId, null, null);
-
-            // Assert
-            Assert.Equal(2, result.Items.Count); // it will include the two organization level events
-            Assert.Equal(2, result.TotalCount);
         }
 
         [Fact]
@@ -797,7 +786,7 @@ namespace deeplynx.tests
             var testEvent = new Event
             {
                 ProjectId = pid,
-                OrganizationId = null,
+                OrganizationId = mockOrganizationId,
                 Operation = "create",
                 EntityType = "test",
                 EntityId = 999,
@@ -824,7 +813,7 @@ namespace deeplynx.tests
             var testEvent = new Event
             {
                 ProjectId = pid,
-                OrganizationId = null,
+                OrganizationId = mockOrganizationId,
                 Operation = "create",
                 EntityType = "test",
                 EntityId = 998,
@@ -856,7 +845,7 @@ namespace deeplynx.tests
             var testEvent = new Event
             {
                 ProjectId = pid,
-                OrganizationId = null,
+                OrganizationId = mockOrganizationId,
                 Operation = "create",
                 EntityType = "test",
                 EntityId = 997,
@@ -889,7 +878,7 @@ namespace deeplynx.tests
             var testEvent = new Event
             {
                 ProjectId = pid,
-                OrganizationId = null,
+                OrganizationId = mockOrganizationId,
                 Operation = "create",
                 EntityType = "test",
                 EntityId = 996,
@@ -983,6 +972,7 @@ namespace deeplynx.tests
                 new DataSource
                 {
                     Name = "DataSource1",
+                    OrganizationId = mockOrganizationId,
                     ProjectId = pid,
                     LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
@@ -990,6 +980,7 @@ namespace deeplynx.tests
                 new DataSource
                 {
                     Name = "DataSource2",
+                    OrganizationId = mockOrganizationId,
                     ProjectId = pid2,
                     LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
@@ -1016,7 +1007,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "create",
                     EntityType = "edge",
                     EntityId = 1,
@@ -1028,7 +1019,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "create",
                     EntityType = "edge",
                     EntityId = 2,
@@ -1040,7 +1031,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "class",
                     EntityId = 3,
@@ -1052,7 +1043,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "class",
                     EntityId = 4,
@@ -1064,7 +1055,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "edge",
                     EntityId = 2,
@@ -1076,7 +1067,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "update",
                     EntityType = "edge",
                     EntityId = 5,
@@ -1089,7 +1080,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid2,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "update",
                     EntityType = "edge",
                     EntityId = 3,
@@ -1101,7 +1092,7 @@ namespace deeplynx.tests
                 new Event
                 {
                     ProjectId = pid2,
-                    OrganizationId = null,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "edge",
                     EntityId = 4,

@@ -143,15 +143,20 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
 
         // Log Tag Create Event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "create",
-            EntityType = "tag",
-            EntityId = tag.Id,
-            EntityName = tag.Name,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
-            DataSourceId = null,
-        },null, projectId);
+        // await _eventBusiness.CreateEvent(
+        //     currentUserId, 
+        //     organizationId,
+        //     projectId,
+        //     new CreateEventRequestDto
+        //     {
+        //         Operation = "create",
+        //         EntityType = "tag",
+        //         EntityId = tag.Id,
+        //         EntityName = tag.Name,
+        //         Properties = JsonSerializer.Serialize(new {tag.Name}),
+        //         DataSourceId = null,
+        //     }
+        // );
 
         return new TagResponseDto // Return validated response DTO back to user.
         {
@@ -215,19 +220,19 @@ public class TagBusiness : ITagBusiness
             .ToListAsync();
 
         // log tag create event for each tag created
-        var events = new List<CreateEventRequestDto>();
-        foreach (var item in result)
-            events.Add(new CreateEventRequestDto
-            {
-                Operation = "create",
-                EntityType = "tag",
-                EntityId = item.Id,
-                EntityName = item.Name,
-                Properties = JsonSerializer.Serialize(new { item.Name }),
-                DataSourceId = null
-            });
-        
-        await _eventBusiness.BulkCreateEvents(currentUserId, events, null, projectId);
+        // var events = new List<CreateEventRequestDto>();
+        // foreach (var item in result)
+        //     events.Add(new CreateEventRequestDto
+        //     {
+        //         Operation = "create",
+        //         EntityType = "tag",
+        //         EntityId = item.Id,
+        //         EntityName = item.Name,
+        //         Properties = JsonSerializer.Serialize(new { item.Name }),
+        //         DataSourceId = null
+        //     });
+        //
+        // await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
         
         return result;
     }
@@ -261,15 +266,20 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
 
         // Log tag update event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "update",
-            EntityType = "tag",
-            EntityId = tag.Id,
-            EntityName = tag.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
-        }, null, projectId);
+        // await _eventBusiness.CreateEvent(
+        //     currentUserId, 
+        //     organizationId, 
+        //     projectId, 
+        //     new CreateEventRequestDto
+        //     {
+        //         Operation = "update",
+        //         EntityType = "tag",
+        //         EntityId = tag.Id,
+        //         EntityName = tag.Name,
+        //         DataSourceId = null,
+        //         Properties = JsonSerializer.Serialize(new {tag.Name}),
+        //     }
+        // );
 
         return new TagResponseDto
         {
@@ -322,16 +332,20 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
 
         // Log tag soft delete event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "delete",
-            EntityType = "tag",
-            EntityId = tag.Id,
-            EntityName = tag.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
-        }, null, projectId);
-        
+        // await _eventBusiness.CreateEvent(
+        //     currentUserId, 
+        //     organizationId, 
+        //     projectId, 
+        //     new CreateEventRequestDto
+        //     {
+        //         Operation = "delete",
+        //         EntityType = "tag",
+        //         EntityId = tag.Id,
+        //         EntityName = tag.Name,
+        //         DataSourceId = null,
+        //         Properties = JsonSerializer.Serialize(new {tag.Name}),
+        //     });
+            
         return true;
     }
 
@@ -356,15 +370,19 @@ public class TagBusiness : ITagBusiness
         tag.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
 
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "unarchive",
-            EntityType = "tag",
-            EntityId = tag.Id,
-            EntityName = tag.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {tag.Name}),
-        }, null, projectId);
+        // await _eventBusiness.CreateEvent(
+        //     currentUserId, 
+        //     organizationId, 
+        //     projectId, 
+        //     new CreateEventRequestDto
+        // {
+        //     Operation = "unarchive",
+        //     EntityType = "tag",
+        //     EntityId = tag.Id,
+        //     EntityName = tag.Name,
+        //     DataSourceId = null,
+        //     Properties = JsonSerializer.Serialize(new {tag.Name}),
+        // });
         
         return true;
     }

@@ -217,15 +217,15 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _context.SaveChangesAsync();
             
         // Log DataSource Create Event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            Operation = "create",
-            EntityType = "data_source",
-            EntityId = dataSource.Id,
-            EntityName = dataSource.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-        }, null, projectId);
+        // await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        // {
+        //     Operation = "create",
+        //     EntityType = "data_source",
+        //     EntityId = dataSource.Id,
+        //     EntityName = dataSource.Name,
+        //     DataSourceId = null,
+        //     Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+        // });
 
 
         return new DataSourceResponseDto
@@ -278,15 +278,15 @@ public class DataSourceBusiness : IDataSourceBusiness
             //_context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
             
-            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-            {
-                Operation = "update",
-                EntityType = "data_source",
-                EntityId = dataSource.Id,
-                DataSourceId = null,
-                EntityName = dataSource.Name,
-                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-            }, null, projectId);
+            // await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+            // {
+            //     Operation = "update",
+            //     EntityType = "data_source",
+            //     EntityId = dataSource.Id,
+            //     DataSourceId = null,
+            //     EntityName = dataSource.Name,
+            //     Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+            // });
 
         return new DataSourceResponseDto
         {
@@ -350,15 +350,19 @@ public class DataSourceBusiness : IDataSourceBusiness
             await _context.SaveChangesAsync();
             
             // Log dataSource archive event
-            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-            {
-                Operation = "archive",
-                EntityType = "data_source",
-                EntityId = dataSource.Id,
-                DataSourceId = null,
-                EntityName = dataSource.Name,
-                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-            }, null, projectId);
+            // await _eventBusiness.CreateEvent(
+            //     currentUserId, 
+            //     organizationId, 
+            //     projectId, 
+            //     new CreateEventRequestDto
+            //     {
+            //         Operation = "archive",
+            //         EntityType = "data_source",
+            //         EntityId = dataSource.Id,
+            //         DataSourceId = null,
+            //         EntityName = dataSource.Name,
+            //         Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+            //     });
             
             return true;
         }
@@ -386,15 +390,19 @@ public class DataSourceBusiness : IDataSourceBusiness
             await _context.SaveChangesAsync();
             
             // Log dataSource unarchive event
-            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-            {
-                Operation = "unarchive",
-                EntityType = "data_source",
-                EntityId = dataSource.Id,
-                EntityName = dataSource.Name,
-                DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-            }, null, projectId);
+            // await _eventBusiness.CreateEvent(
+            //     currentUserId, 
+            //     organizationId, 
+            //     projectId, 
+            //     new CreateEventRequestDto
+            //     {
+            //         Operation = "unarchive",
+            //         EntityType = "data_source",
+            //         EntityId = dataSource.Id,
+            //         EntityName = dataSource.Name,
+            //         DataSourceId = null,
+            //         Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+            //     });
             
             return true;
         }
@@ -427,16 +435,21 @@ public class DataSourceBusiness : IDataSourceBusiness
             await MakePreviousDefaultsFalse(currentUserId, projectId, dataSource.Id);
             await _context.SaveChangesAsync();
 
-                await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-                {
-                    Operation = "update",
-                    EntityType = "data_source",
-                    EntityId = dataSource.Id,
-                    EntityName = dataSource.Name,
-                    DataSourceId = null,
-                    Properties = JsonSerializer.Serialize(new { dataSource.Name }),
-                }, null, projectId);
-            }
+                // await _eventBusiness.CreateEvent(
+                //     currentUserId, 
+                //     organizationId, 
+                //     projectId, 
+                //     new CreateEventRequestDto
+                //     {
+                //         Operation = "update",
+                //         EntityType = "data_source",
+                //         EntityId = dataSource.Id,
+                //         EntityName = dataSource.Name,
+                //         DataSourceId = null,
+                //         Properties = JsonSerializer.Serialize(new { dataSource.Name }),
+                //     }
+                // );
+        }
 
         return new DataSourceResponseDto
         {

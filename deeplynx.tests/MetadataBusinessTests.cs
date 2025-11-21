@@ -233,7 +233,7 @@ public class MetadataBusinessTests : IntegrationTestBase
         };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(uid, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(uid, pid, organizationId, did, dto);
             
             // Assert
             Assert.Equal(2, result.Classes.Count);
