@@ -57,11 +57,13 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long currentUserId, long projectId, long organizationId,
-        long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(
+        long currentUserId, 
+        long projectId, 
+        long organizationId,
+        long dataSourceId,
+        CreateMetadataRequestDto metadataRequestDto)
     {
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
 
@@ -83,11 +85,13 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="ArgumentNullException">If file is null.</exception>
     /// <exception cref="ArgumentException">If file is empty or not a .json file.</exception>
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
-    public async Task<MetadataResponseDto> CreateMetadataFromFile(long currentUserId, long projectId,
-        long organizationId, long dataSourceId, IFormFile file)
+    public async Task<MetadataResponseDto> CreateMetadataFromFile(
+        long currentUserId, 
+        long projectId,
+        long organizationId, 
+        long dataSourceId, 
+        IFormFile file)
     {
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-
         if (file == null)
             throw new ArgumentNullException(nameof(file), "File cannot be null.");
 
@@ -170,7 +174,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional relationships and then insert
             var relationshipsToInsert = BuildRelationships(relationships, edges);
             if (relationshipsToInsert.Any())
-                relMap = await BulkUpsertRelationships(currentUserId, projectId, relationshipsToInsert,
+                relMap = await BulkUpsertRelationships(currentUserId, organizationId, projectId, relationshipsToInsert,
                     metadataResponseDto);
         }
 
@@ -363,17 +367,19 @@ public class MetadataBusiness : IMetadataBusiness
     ///     Bulk upserts relationships and returns a mapping of relationship name to ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">ID of the organization associated.</param>
     /// <param name="projectId"></param>
     /// <param name="relationships"></param>
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of relationship name to relationship ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRelationships(
         long currentUserId,
+        long organizationId,
         long projectId,
         List<CreateRelationshipRequestDto> relationships,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _relationshipBusiness.BulkCreateRelationships(currentUserId, projectId, relationships);
+        var inserted = await _relationshipBusiness.BulkCreateRelationships(currentUserId, organizationId, projectId, relationships);
         metadataResponseDto.Relationships = inserted;
         return inserted.ToDictionary(r => r.Name, r => r.Id);
     }
