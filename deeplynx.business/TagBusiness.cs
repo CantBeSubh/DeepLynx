@@ -67,7 +67,9 @@ public class TagBusiness : ITagBusiness
     public async Task<List<TagResponseDto>> GetAllTagsMultiProject(long organizationId, long[] projectIds, bool hideArchived)
     {
         var tagQuery = _context.Tags
-            .Where(t => t.ProjectId != null && projectIds.Contains(t.ProjectId.Value));
+            .Where(t => t.OrganizationId == organizationId
+                && t.ProjectId != null
+                && projectIds.Contains(t.ProjectId.Value));
 
         if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
 
@@ -77,7 +79,8 @@ public class TagBusiness : ITagBusiness
             Name = t.Name,
             ProjectId = t.ProjectId,
             LastUpdatedBy = t.LastUpdatedBy,
-            LastUpdatedAt = t.LastUpdatedAt
+            LastUpdatedAt = t.LastUpdatedAt,
+            OrganizationId = t.OrganizationId
         })
             .ToListAsync();
     }
@@ -96,13 +99,13 @@ public class TagBusiness : ITagBusiness
         var tag = await _context.Tags
             .Where(t => t.Id == tagId
                 && t.OrganizationId == organizationId
-                && (!hideArchived || !t.IsArchived)
                 && (!projectId.HasValue || t.ProjectId == projectId.Value))
             .FirstOrDefaultAsync();
 
         if (tag == null) throw new KeyNotFoundException($"Tag with id {tagId} not found");
 
-        if (hideArchived && tag.IsArchived) throw new KeyNotFoundException($"Tag with id {tagId} is archived");
+        if (hideArchived && tag.IsArchived)
+            throw new KeyNotFoundException($"Tag with id {tagId} is archived");
 
         return new TagResponseDto
         {
@@ -226,7 +229,7 @@ public class TagBusiness : ITagBusiness
                 VALUES {0}
                 ON CONFLICT (organization_id, project_id, name) WHERE project_id IS NOT NULL
                 DO UPDATE SET
-                    last_updated_at = @now
+                    last_updated_at = @now,
                     last_updated_by = @lastUpdatedBy
                 RETURNING id, project_id, organization_id, name, last_updated_at, is_archived, last_updated_by;"
                     : @"
@@ -234,7 +237,7 @@ public class TagBusiness : ITagBusiness
                 VALUES {0}
                 ON CONFLICT (organization_id, name) WHERE project_id IS NULL
                 DO UPDATE SET
-                    last_updated_at = @now
+                    last_updated_at = @now,
                     last_updated_by = @lastUpdatedBy
             RETURNING id, project_id, organization_id, name, last_updated_at, is_archived, last_updated_by;";
 
@@ -280,7 +283,7 @@ public class TagBusiness : ITagBusiness
                 DataSourceId = null
             });
 
-        await _eventBusiness.BulkCreateEvents(events, projectId);
+        await _eventBusiness.BulkCreateEvents(events, projectId, organizationId);
 
         return result;
     }
@@ -377,6 +380,10 @@ public class TagBusiness : ITagBusiness
 
         if (tag == null)
             throw new KeyNotFoundException($"Tag with id {tagId} not found or does not belong to the specified organization/project context");
+
+        _context.Tags.Remove(tag);
+        await _context.SaveChangesAsync();
+
         return true;
     }
 
@@ -438,7 +445,7 @@ public class TagBusiness : ITagBusiness
         var tag = await _context.Tags
             .Where(t => t.Id == tagId
                         && t.OrganizationId == organizationId
-                        && !t.IsArchived
+                        && t.IsArchived
                         && (!projectId.HasValue || t.ProjectId == projectId.Value))
             .FirstOrDefaultAsync();
 

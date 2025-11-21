@@ -30,22 +30,22 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            
+
             // Setup mocks
             _mockLogger = new Mock<ILogger<NotificationBusiness>>();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockClientProxy = new Mock<IClientProxy>();
             _mockClients = new Mock<IHubClients>();
-            
+
             // Setup hub context to return our mock clients
             _mockHubContext.Setup(h => h.Clients).Returns(_mockClients.Object);
-            
+
             // Setup clients to return our mock client proxy for any group
             _mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockClientProxy.Object);
-            
+
             _notificationBusiness = new NotificationBusiness(
-                Context, 
-                _mockLogger.Object, 
+                Context,
+                _mockLogger.Object,
                 _mockHubContext.Object
             );
         }
@@ -71,6 +71,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = _actionId,
                 EntityType = "class",
                 EntityId = 100,
@@ -82,6 +83,7 @@ namespace deeplynx.tests
             {
                 UserId = _user2.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = _actionId,
                 EntityType = "class",
                 EntityId = null, // Wildcard subscription
@@ -97,12 +99,12 @@ namespace deeplynx.tests
 
             // Assert
             _mockClients.Verify(
-                c => c.Group($"user_{_user1.Id}"), 
+                c => c.Group($"user_{_user1.Id}"),
                 Times.Once
             );
-            
+
             _mockClients.Verify(
-                c => c.Group($"user_{_user2.Id}"), 
+                c => c.Group($"user_{_user2.Id}"),
                 Times.Once
             );
 
@@ -192,17 +194,19 @@ namespace deeplynx.tests
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(testAction);
             await Context.SaveChangesAsync();
-            
+
             // Wildcard subscription (all nulls except project)
             var wildcardSubscription = new Subscription
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = null,
                 EntityId = null,
@@ -218,7 +222,7 @@ namespace deeplynx.tests
 
             // Assert
             _mockClients.Verify(
-                c => c.Group($"user_{_user1.Id}"), 
+                c => c.Group($"user_{_user1.Id}"),
                 Times.Once
             );
         }
@@ -236,11 +240,12 @@ namespace deeplynx.tests
                 DataSourceId = _dataSourceId,
                 Operation = "create"
             };
-            
+
             var testAction = new Action
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
@@ -252,6 +257,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = "relationship", // Different entity type
                 EntityId = 100,
@@ -295,6 +301,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = _actionId,
                 EntityType = "class",
                 EntityId = null,
@@ -310,7 +317,7 @@ namespace deeplynx.tests
 
             // Assert - Verify notification sent to correct user group (based on userId from email lookup)
             _mockClients.Verify(
-                c => c.Group($"user_{_user1.Id}"), 
+                c => c.Group($"user_{_user1.Id}"),
                 Times.Once,
                 $"Expected notification to be sent to group 'user_{_user1.Id}' for user with email {_user1.Email}"
             );
@@ -345,11 +352,12 @@ namespace deeplynx.tests
             };
 
             var events = new List<EventResponseDto> { event1, event2 };
-            
+
             var testAction = new Action
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
@@ -361,6 +369,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = "class",
                 EntityId = null, // Wildcard
@@ -373,6 +382,7 @@ namespace deeplynx.tests
             {
                 UserId = _user2.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = "class",
                 EntityId = 200,
@@ -389,13 +399,13 @@ namespace deeplynx.tests
             // Assert
             // User1 should receive 2 notifications (both events)
             _mockClients.Verify(
-                c => c.Group($"user_{_user1.Id}"), 
+                c => c.Group($"user_{_user1.Id}"),
                 Times.Exactly(2)
             );
 
             // User2 should receive 1 notification (event2 only)
             _mockClients.Verify(
-                c => c.Group($"user_{_user2.Id}"), 
+                c => c.Group($"user_{_user2.Id}"),
                 Times.Once
             );
 
@@ -515,11 +525,12 @@ namespace deeplynx.tests
                     Operation = "update"
                 }
             };
-            
+
             var testAction = new Action
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
@@ -530,6 +541,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,  // Use the newly created action's ID
                 EntityType = "class",
                 EntityId = null,
@@ -579,6 +591,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = _actionId,
                 EntityType = "class",
                 EntityId = null,
@@ -590,6 +603,7 @@ namespace deeplynx.tests
             {
                 UserId = _user2.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = _actionId,
                 EntityType = "class",
                 EntityId = null,
@@ -639,11 +653,12 @@ namespace deeplynx.tests
                 DataSourceId = _dataSourceId,
                 Operation = "create"
             };
-            
+
             var testAction = new Action
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
@@ -655,6 +670,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = "class",
                 EntityId = null,
@@ -667,6 +683,7 @@ namespace deeplynx.tests
             {
                 UserId = _user2.Id,
                 ProjectId = otherProject.Id,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = "class",
                 EntityId = null,
@@ -682,12 +699,12 @@ namespace deeplynx.tests
 
             // Assert
             _mockClients.Verify(
-                c => c.Group($"user_{_user1.Id}"), 
+                c => c.Group($"user_{_user1.Id}"),
                 Times.Once
             );
 
             _mockClients.Verify(
-                c => c.Group($"user_{_user2.Id}"), 
+                c => c.Group($"user_{_user2.Id}"),
                 Times.Never
             );
         }
@@ -705,11 +722,12 @@ namespace deeplynx.tests
                 DataSourceId = _dataSourceId,
                 Operation = "create"
             };
-            
+
             var testAction = new Action
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
@@ -721,6 +739,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = "class",
                 EntityId = 100,
@@ -732,6 +751,7 @@ namespace deeplynx.tests
             {
                 UserId = _user1.Id,
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 ActionId = testAction.Id,
                 EntityType = "class",
                 EntityId = null, // Wildcard also matches
@@ -747,7 +767,7 @@ namespace deeplynx.tests
 
             // Assert - Should only send once due to Distinct() in the code
             _mockClients.Verify(
-                c => c.Group($"user_{_user1.Id}"), 
+                c => c.Group($"user_{_user1.Id}"),
                 Times.Once,
                 "Should only send one notification even with multiple matching subscriptions"
             );
@@ -758,7 +778,7 @@ namespace deeplynx.tests
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-            
+
             _user1 = new User
             {
                 Name = "Test User 1",
@@ -774,7 +794,7 @@ namespace deeplynx.tests
                 Password = "test_password",
                 IsArchived = false
             };
-            
+
             var organization = new Organization { Name = "Test Organization" };
             Context.Organizations.Add(organization);
             await Context.SaveChangesAsync();
@@ -782,9 +802,9 @@ namespace deeplynx.tests
 
             Context.Users.AddRange(_user1, _user2);
             await Context.SaveChangesAsync();
-            
-            var project = new Project 
-            { 
+
+            var project = new Project
+            {
                 Name = "Test Project",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = _user1.Id,
@@ -798,17 +818,19 @@ namespace deeplynx.tests
             {
                 Name = "Test DataSource",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = _user1.Id
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             _dataSourceId = dataSource.Id;
-            
+
             var action = new Action
             {
                 Name = "Action1",
                 ProjectId = _projectId,
+                OrganizationId = organizationId,
                 LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };

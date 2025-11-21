@@ -71,28 +71,28 @@ public class TagBusinessTests : IntegrationTestBase
         var organization = new Organization { Name = "Test Organization" };
         Context.Organizations.Add(organization);
         await Context.SaveChangesAsync();
-        var organizationId = organization.Id;
+        oid = organization.Id;
 
         // Add projects
         var project = new Project
         {
             Name = "Project 1",
             LastUpdatedBy = uid,
-            OrganizationId = organizationId,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var project2 = new Project
         {
             Name = "Project2",
             LastUpdatedBy = uid,
-            OrganizationId = organizationId,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var project3 = new Project
         {
             Name = "Project 3",
             LastUpdatedBy = uid,
-            OrganizationId = organizationId,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Projects.Add(project);
@@ -111,7 +111,8 @@ public class TagBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false
+            IsArchived = false,
+            OrganizationId = oid
         };
 
         var tag2 = new Tag
@@ -120,7 +121,8 @@ public class TagBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false
+            IsArchived = false,
+            OrganizationId = oid
         };
         var tag3 = new Tag
         {
@@ -128,7 +130,8 @@ public class TagBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = true
+            IsArchived = true,
+            OrganizationId = oid
         };
         var tag4 = new Tag
         {
@@ -136,7 +139,8 @@ public class TagBusinessTests : IntegrationTestBase
             ProjectId = pid2,
             LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false
+            IsArchived = false,
+            OrganizationId = oid
         };
         await Context.Tags.AddAsync(tag);
         await Context.Tags.AddAsync(tag2);
@@ -350,6 +354,31 @@ public class TagBusinessTests : IntegrationTestBase
         Assert.Contains($"Tag with id {tid3} is archived", exception.Message);
     }
 
+    [Fact]
+    public async Task GetTagsByName_Success_WithNullProjectId()
+    {
+        // Arrange
+        var orgTag = new Tag
+        {
+            Name = "Org Tag By Name",
+            ProjectId = null,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.Tags.Add(orgTag);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _tagBusiness.GetTagsByName(oid, null, new List<string> { "Org Tag By Name" });
+
+        // Assert
+        Assert.Single(result);
+        Assert.Null(result[0].ProjectId);
+        Assert.Equal(oid, result[0].OrganizationId);
+    }
+
     #endregion
 
     #region CreateTag Tests
@@ -481,6 +510,44 @@ public class TagBusinessTests : IntegrationTestBase
         // Ensure that no tag create event was logged
         var eventList = await Context.Events.ToListAsync();
         Assert.Empty(eventList);
+    }
+
+    [Fact]
+    public async Task CreateTagNullProjId_Success_CreatesOrgTag()
+    {
+        // Arrange
+        var dto = new CreateTagRequestDto
+        {
+            Name = "Organization Tag"
+        };
+
+        // Act
+        var result = await _tagBusiness.CreateTag(oid, uid, null, dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Null(result.ProjectId);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Equal("Organization Tag", result.Name);
+    }
+
+    [Fact]
+    public async Task BulkCreateTags_Success_WithNullProjectId()
+    {
+        // Arrange
+        var tags = new List<CreateTagRequestDto>
+        {
+            new() { Name = "Org Tag 1" },
+            new() { Name = "Org Tag 2" }
+        };
+
+        // Act
+        var result = await _tagBusiness.BulkCreateTags(oid, uid, null, tags);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.All(result, t => Assert.Null(t.ProjectId));
+        Assert.All(result, t => Assert.Equal(oid, t.OrganizationId));
     }
 
     #endregion
@@ -908,6 +975,7 @@ public class TagBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag LastUpdatedBy",
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid
         };
@@ -930,6 +998,7 @@ public class TagBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag Navigation",
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid
         };
@@ -957,9 +1026,9 @@ public class TagBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag Null",
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null,
-            OrganizationId = oid
         };
 
         // Act

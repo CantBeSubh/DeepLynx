@@ -698,6 +698,7 @@ namespace deeplynx.tests
             {
                 UserId = mockUserId,
                 ProjectId = pid,
+                OrganizationId = mockOrganizationId,
                 EntityId = null,
                 EntityType = null,
                 DataSourceId = null,
@@ -724,6 +725,7 @@ namespace deeplynx.tests
                 // Get Event with specific Entity
                 UserId = mockUserId,
                 ProjectId = pid,
+                OrganizationId = mockOrganizationId,
                 EntityId = 1,
                 EntityType = "edge",
                 DataSourceId = mockDataSourceId,
@@ -759,6 +761,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -769,6 +772,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -779,6 +783,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -848,6 +853,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -858,6 +864,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -868,6 +875,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid2,
+                    OrganizationId = mockOrganizationId,
                     EntityId = 0,
                     EntityType = "class",
                     DataSourceId = mockDataSource2Id,
@@ -878,6 +886,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid2,
+                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -888,6 +897,7 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid2,
+                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = mockDataSource2Id,
