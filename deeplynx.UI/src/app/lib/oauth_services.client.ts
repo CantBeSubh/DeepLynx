@@ -1,12 +1,20 @@
-import { CreateOauthApplicationRequestDto, UpdateOauthApplicationRequestDto } from "../(home)/types/requestDTOs";
-import { OauthApplicationResponseDto, OauthApplicationSecureResponseDto } from "../(home)/types/responseDTOs";
-import api from "./api";
+'use client';
 
-//List OAuth Applications
-export const getAllOauthApplications = async (hideArchived: boolean = true): Promise<OauthApplicationResponseDto[]> => {
+import api from './api';
+import { CreateOauthApplicationRequestDto, UpdateOauthApplicationRequestDto } from '../(home)/types/requestDTOs';
+import { OauthApplicationResponseDto, OauthApplicationSecureResponseDto } from '../(home)/types/responseDTOs';
+
+/**
+ * Get all OAuth applications
+ * @param hideArchived - Flag to hide archived applications (default: true)
+ * @returns Promise with array of OauthApplicationResponseDto
+ */
+export const getAllOauthApplications = async (
+    hideArchived: boolean = true
+): Promise<OauthApplicationResponseDto[]> => {
     try {
         const res = await api.get<OauthApplicationResponseDto[]>(
-            `/oauth-applications/GetAllOauthApplications`,
+            `/oauth/applications`,
             { params: { hideArchived } }
         );
         return res.data;
@@ -16,19 +24,62 @@ export const getAllOauthApplications = async (hideArchived: boolean = true): Pro
     }
 };
 
+/**
+ * Get a specific OAuth application by ID
+ * @param applicationId - The ID of the OAuth application
+ * @param hideArchived - Flag to hide archived applications (default: true)
+ * @returns Promise with OauthApplicationResponseDto
+ */
+export const getOauthApplication = async (
+    applicationId: number,
+    hideArchived: boolean = true
+): Promise<OauthApplicationResponseDto> => {
+    try {
+        const res = await api.get<OauthApplicationResponseDto>(
+            `/oauth/applications/${applicationId}`,
+            { params: { hideArchived } }
+        );
+        return res.data;
+    } catch (error) {
+        console.error(`Error fetching OAuth application ${applicationId}:`, error);
+        throw error;
+    }
+};
 
-export async function createOauthApplication(dto: CreateOauthApplicationRequestDto) {
-    const res = await api.post("/oauth-applications/CreateOauthApplication", dto, {
-        headers: { "Content-Type": "application/json" },
-    });
-    return res.data;
-}
+/**
+ * Create a new OAuth application
+ * @param dto - The OAuth application creation request DTO
+ * @returns Promise with OauthApplicationSecureResponseDto (includes client secret)
+ */
+export const createOauthApplication = async (
+    dto: CreateOauthApplicationRequestDto
+): Promise<OauthApplicationSecureResponseDto> => {
+    try {
+        const res = await api.post<OauthApplicationSecureResponseDto>(
+            `/oauth/applications`,
+            dto,
+            { headers: { "Content-Type": "application/json" } }
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error creating OAuth application:", error);
+        throw error;
+    }
+};
 
-//Update an OAuth Application
-export const updateOauthApplication = async (applicationId: number, dto: UpdateOauthApplicationRequestDto): Promise<OauthApplicationResponseDto> => {
+/**
+ * Update an OAuth application
+ * @param applicationId - The ID of the OAuth application to update
+ * @param dto - The OAuth application update request DTO
+ * @returns Promise with OauthApplicationResponseDto
+ */
+export const updateOauthApplication = async (
+    applicationId: number,
+    dto: UpdateOauthApplicationRequestDto
+): Promise<OauthApplicationResponseDto> => {
     try {
         const res = await api.put<OauthApplicationResponseDto>(
-            `/oauth-applications/UpdateOauthApplication/${applicationId}`,
+            `/oauth/applications/${applicationId}`,
             dto
         );
         return res.data;
@@ -38,12 +89,44 @@ export const updateOauthApplication = async (applicationId: number, dto: UpdateO
     }
 };
 
-//Archive an OAuth Application
-export const archiveOauthApplication = async (applicationId: number): Promise<void> => {
+/**
+ * Delete an OAuth application
+ * @param applicationId - The ID of the OAuth application to delete
+ * @returns Promise with success message
+ */
+export const deleteOauthApplication = async (
+    applicationId: number
+): Promise<{ message: string }> => {
     try {
-        await api.delete(`/oauth-applications/ArchiveOauthApplication/${applicationId}`);
+        const res = await api.delete(
+            `/oauth/applications/${applicationId}`
+        );
+        return res.data;
     } catch (error) {
-        console.error(`Error archiving OAuth application ${applicationId}:`, error);
+        console.error(`Error deleting OAuth application ${applicationId}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Archive or unarchive an OAuth application
+ * @param applicationId - The ID of the OAuth application to archive/unarchive
+ * @param archive - True to archive, false to unarchive
+ * @returns Promise with success message
+ */
+export const archiveOauthApplication = async (
+    applicationId: number,
+    archive: boolean
+): Promise<{ message: string }> => {
+    try {
+        const res = await api.patch(
+            `/oauth/applications/${applicationId}`,
+            null,
+            { params: { archive } }
+        );
+        return res.data;
+    } catch (error) {
+        console.error(`Error ${archive ? 'archiving' : 'unarchiving'} OAuth application ${applicationId}:`, error);
         throw error;
     }
 };
