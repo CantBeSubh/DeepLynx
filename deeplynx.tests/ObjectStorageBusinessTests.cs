@@ -132,6 +132,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         {
             Name = "Test Object Storage 1",
             ProjectId = pid,
+            OrganizationId = organizationId,
             Type = "filesystem",
             Config = os1Config.ToString(),
             Default = true
@@ -144,6 +145,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
             Name = "Test Object Storage 2",
             Type = "filesystem",
             ProjectId = pid,
+            OrganizationId = organizationId,
             Config = os2Config.ToString()
         };
 
@@ -153,6 +155,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
         {
             Name = "Test Object Storage 3",
             ProjectId = pid2,
+            OrganizationId = organizationId,
             Type = "filesystem",
             Config = os3Config.ToString()
         };
@@ -164,6 +167,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
             Name = "Test Object Storage 4",
             Type = "filesystem",
             ProjectId = pid2,
+            OrganizationId = organizationId,
             Config = os4Config.ToString()
         };
 
@@ -174,6 +178,7 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
             Name = "Test Object Storage 5",
             Type = "filesystem",
             ProjectId = pid,
+            OrganizationId = organizationId,
             Config = os5Config.ToString(),
             IsArchived = true
         };
@@ -237,7 +242,8 @@ public class ObjectStorageBusinessTests : IntegrationTestBase
     public async Task GetAllObjectStorages_Success_ReturnsAllObjectStoragesInProject()
     {
         // Act
-        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(null, pid, true);
+        var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(
+            organizationId, pid, true);
 
         // Assert
         Assert.Equal(2, objectStorages.Count);
