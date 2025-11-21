@@ -140,7 +140,7 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.SavedSearches.RemoveRange(savedSearches);
         await Context.SaveChangesAsync();
 
-        var permissions = await Context.Permissions.ToListAsync();
+        var permissions = await Context.Permissions.Where(p => !p.IsDefault).ToListAsync();
         Context.Permissions.RemoveRange(permissions);
         await Context.SaveChangesAsync();
 

@@ -13,6 +13,7 @@ public class OrganizationBusiness : IOrganizationBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly IRoleBusiness _roleBusiness;
     private readonly ILogger<OrganizationBusiness> _logger;
 
     /// <summary>
@@ -20,15 +21,18 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// </summary>
     /// <param name="context">The database context used for organization CRUD operations.</param>
     /// <param name="eventBusiness">Used for logging events during CRUD operations.</param>
+    /// <param name="roleBusiness">Used to create default roles automatically on project creation.</param>
     /// <param name="logger"></param>
     public OrganizationBusiness(
         DeeplynxContext context,
         IEventBusiness eventBusiness,
+        IRoleBusiness roleBusiness,
         ILogger<OrganizationBusiness> logger
     )
     {
         _context = context;
         _eventBusiness = eventBusiness;
+        _roleBusiness = roleBusiness;
         _logger = logger;
     }
 
@@ -109,12 +113,11 @@ public class OrganizationBusiness : IOrganizationBusiness
 
         _context.Organizations.Add(organization);
 
+        await _context.SaveChangesAsync();
+        
         if (isDefault) await MakePreviousDefaultsFalse(organization.Id);
 
-
-        await SetDefaultPermissions(organization);
-
-        await _context.SaveChangesAsync();
+        await SetOrganizationDefaults(currentUserId, organization.Id);
 
         // Log create Organization event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
@@ -375,33 +378,52 @@ public class OrganizationBusiness : IOrganizationBusiness
                 defaultOrg.DefaultOrg = false;
                 _context.Organizations.Update(defaultOrg);
             }
+        await _context.SaveChangesAsync();
     }
 
-    private async Task SetDefaultPermissions(Organization organization)
+    private async Task SetOrganizationDefaults(long currentUserId, long organizationId)
     {
-        var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
-
-        foreach (var defaultPermission in defaultPermissions)
+        var defaultRoles = new List<CreateRoleRequestDto>
         {
-            // Check if this permission already exists for this organization
-            var existingPermission = await _context.Permissions
-                .FirstOrDefaultAsync(p =>
-                    p.Resource == defaultPermission.Resource &&
-                    p.Action == defaultPermission.Action);
-
-            // Only add if it doesn't exist
-            if (existingPermission == null)
-            {
-                var permission = new Permission
-                {
-                    Name = defaultPermission.Name,
-                    Resource = defaultPermission.Resource,
-                    Action = defaultPermission.Action,
-                    Description = defaultPermission.Description,
-                    IsDefault = true
-                };
-                _context.Permissions.Add(permission);
-            }
-        }
+            new() { Name = "Admin" },
+            new() { Name = "User" }
+        };
+        var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, null, defaultRoles);
+        var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
+        var userRoleId = roles.Single(r => r.Name == "User").Id;
+        
+        // set role permissions for admin and user
+        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions,
+            organizationId, null);
+        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions,
+            organizationId, null);
     }
+
+    // private async Task SetDefaultPermissions(Organization organization)
+    // {
+    //     var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
+    //
+    //     foreach (var defaultPermission in defaultPermissions)
+    //     {
+    //         // Check if this permission already exists for this organization
+    //         var existingPermission = await _context.Permissions
+    //             .FirstOrDefaultAsync(p =>
+    //                 p.Resource == defaultPermission.Resource &&
+    //                 p.Action == defaultPermission.Action);
+    //
+    //         // Only add if it doesn't exist
+    //         if (existingPermission == null)
+    //         {
+    //             var permission = new Permission
+    //             {
+    //                 Name = defaultPermission.Name,
+    //                 Resource = defaultPermission.Resource,
+    //                 Action = defaultPermission.Action,
+    //                 Description = defaultPermission.Description,
+    //                 IsDefault = true
+    //             };
+    //             _context.Permissions.Add(permission);
+    //         }
+    //     }
+    // }
 }

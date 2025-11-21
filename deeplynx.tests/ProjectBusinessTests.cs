@@ -336,6 +336,84 @@ public class ProjectBusinessTests : IntegrationTestBase
             e.EntityId == result.Id
         );
     }
+    
+    [Fact]
+    public async Task CreateProject_Success_CreatesDefaultRolesWithCorrectPermissions()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var dto = new CreateProjectRequestDto
+        {
+            Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+            Description = "Test Description",
+            Abbreviation = "TST"
+        };
+
+        // Act
+        var result = await _projectBusiness.CreateProject(uid, oid, dto);
+
+        // Assert
+        Assert.True(result.Id > 0);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.Equal(dto.Abbreviation, result.Abbreviation);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Equal(uid, result.LastUpdatedBy);
+        
+        var defaultRoles = await Context.Roles.Where(r => r.ProjectId == result.Id).Include(r => r.Permissions).ToListAsync();
+        var adminRole = defaultRoles.Single(r => r.Name == "Admin");
+        var userRole =  defaultRoles.Single(r => r.Name == "User");
+        
+        Assert.True(adminRole.Permissions.All(p => p.IsDefault));
+        Assert.True(userRole.Permissions.All(p => p.IsDefault));
+
+        // Calculate expected permission count
+        var expectedAdminPermissionCount = DefaultRolePermissions.Admin.AllowedPermissions.Sum(kvp => kvp.Value.Length);
+        var expectedUserPermissionCount = DefaultRolePermissions.User.AllowedPermissions.Sum(kvp => kvp.Value.Length);
+        Assert.Equal(expectedAdminPermissionCount, adminRole.Permissions.Count);
+        Assert.Equal(expectedUserPermissionCount, userRole.Permissions.Count);
+
+        // Verify each resource type has the correct actions
+        foreach (var (resource, actions) in DefaultRolePermissions.Admin.AllowedPermissions)
+        {
+            var resourcePermissions = adminRole.Permissions
+                .Where(p => p.Resource == resource)
+                .Select(p => p.Action)
+                .OrderBy(a => a)
+                .ToList();
+
+            var expectedActions = actions.OrderBy(a => a).ToList();
+    
+            Assert.Equal(expectedActions, resourcePermissions);
+        }
+        
+        // Verify each resource type has the correct actions
+        foreach (var (resource, actions) in DefaultRolePermissions.User.AllowedPermissions)
+        {
+            var resourcePermissions = userRole.Permissions
+                .Where(p => p.Resource == resource)
+                .Select(p => p.Action)
+                .OrderBy(a => a)
+                .ToList();
+
+            var expectedActions = actions.OrderBy(a => a).ToList();
+    
+            Assert.Equal(expectedActions, resourcePermissions);
+        }
+
+        // Ensure that the project create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Equal(7, eventList.Count);
+        Assert.Single(eventList, e =>
+            e.ProjectId == result.Id &&
+            e.Operation == "create" &&
+            e.EntityType == "project" &&
+            e.EntityId == result.Id
+        );
+        
+        
+    }
 
     [Fact]
     public async Task CreateProject_Creates_DefaultPermissions()

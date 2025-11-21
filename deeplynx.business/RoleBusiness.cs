@@ -756,7 +756,9 @@ public class RoleBusiness : IRoleBusiness
 
         // filter in memory to match the exact actions
         var matchingPermissions = allPermissions
-            .Where(p => permissionPatterns.ContainsKey(p.Resource) &&
+            .Where(p => 
+                        p.IsDefault &&
+                        permissionPatterns.ContainsKey(p.Resource) &&
                         permissionPatterns[p.Resource].Contains(p.Action))
             .ToList();
 

@@ -16,6 +16,7 @@ namespace deeplynx.tests;
 public class OrganizationBusinessTests : IntegrationTestBase
 {
     private EventBusiness _eventBusiness = null!;
+    private RoleBusiness _roleBusiness = null!;
     private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     private Mock<ILogger<OrganizationBusiness>> _mockLoggerOrg = null!;
     private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
@@ -41,11 +42,12 @@ public class OrganizationBusinessTests : IntegrationTestBase
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
         _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+        _roleBusiness = new RoleBusiness(Context, _cacheBusiness, _eventBusiness);
 
         // org business and dependencies
         _mockLoggerOrg = new Mock<ILogger<OrganizationBusiness>>();
         _organizationBusiness = new OrganizationBusiness(
-            Context, _eventBusiness, _mockLoggerOrg.Object);
+            Context, _eventBusiness, _roleBusiness, _mockLoggerOrg.Object);
     }
 
     #region OrganizationResponseDto Tests
@@ -198,36 +200,78 @@ public class OrganizationBusinessTests : IntegrationTestBase
 
     #region CreateOrganization Tests
 
-        [Fact]
-        public async Task CreateOrganization_Success_ReturnsCorrectValues()
+    [Fact]
+    public async Task CreateOrganization_Success_ReturnsCorrectValues()
+    {
+        // Arrange
+        var dto = new CreateOrganizationRequestDto
         {
-            // Arrange
-            var dto = new CreateOrganizationRequestDto
-            {
-                Name = "New Test Organization",
-                Description = "New Test Organization Description",
-            };
-            
-            var now =  DateTime.UtcNow;
-            
-            // Act
-            var result = await _organizationBusiness.CreateOrganization(uid, dto);
+            Name = "New Test Organization",
+            Description = "New Test Organization Description",
+        };
+        
+        var now =  DateTime.UtcNow;
+        
+        // Act
+        var result = await _organizationBusiness.CreateOrganization(uid, dto);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
-            Assert.Equal(dto.Name, result.Name);
-            Assert.Equal(dto.Description, result.Description);
-            Assert.False(result.DefaultOrg);
-            Assert.False(result.IsArchived);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(uid, result.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Id > 0);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.False(result.DefaultOrg);
+        Assert.False(result.IsArchived);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // verify org was actually created in database
         var createdOrg = await Context.Organizations.FindAsync(result.Id);
         Assert.NotNull(createdOrg);
         Assert.Equal(dto.Name, createdOrg.Name);
     }
+    
+    [Fact]
+    public async Task CreateOrganization_Success_CreatesDefaultRolesWithCorrectPermissions()
+    {
+        // Arrange
+        var dto = new CreateOrganizationRequestDto
+        {
+            Name = "New Test Organization",
+            Description = "New Test Organization Description",
+        };
+        
+        var now =  DateTime.UtcNow;
+        
+        // Act
+        var result = await _organizationBusiness.CreateOrganization(uid, dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Id > 0);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.False(result.DefaultOrg);
+        Assert.False(result.IsArchived);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
+
+        // verify org was actually created in database
+        var createdOrg = await Context.Organizations.FindAsync(result.Id);
+        Assert.NotNull(createdOrg);
+        Assert.Equal(dto.Name, createdOrg.Name);
+        
+        var defaultRoles = await Context.Roles.Where(r => r.OrganizationId == result.Id).Include(r => r.Permissions).ToListAsync();
+        var adminRole = defaultRoles.Single(r => r.Name == "Admin");
+        var userRole =  defaultRoles.Single(r => r.Name == "User");
+        
+        Assert.True(adminRole.Permissions.All(p => p.IsDefault));
+        Assert.True(userRole.Permissions.All(p => p.IsDefault));
+        
+        AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
+        AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
+    }
+        
 
     [Fact]
     public async Task CreateOrganization_Success_CreatesDefaultPermissions()
@@ -1059,4 +1103,33 @@ public class OrganizationBusinessTests : IntegrationTestBase
     }
 
     #endregion
+    
+    private void AssertRolePermissions(
+        Role role, 
+        Dictionary<string, string[]> expectedPermissions)
+    {
+        // All permissions should be marked as default
+        Assert.True(
+            role.Permissions.All(p => p.IsDefault),
+            $"Role '{role.Name}' has permissions not marked as default"
+        );
+
+        // Verify permission count
+        var expectedCount = expectedPermissions.Sum(kvp => kvp.Value.Length);
+        Assert.Equal(expectedCount, role.Permissions.Count);
+
+        // Verify each resource type has the correct actions
+        foreach (var (resource, expectedActions) in expectedPermissions)
+        {
+            var actualActions = role.Permissions
+                .Where(p => p.Resource == resource)
+                .Select(p => p.Action)
+                .OrderBy(a => a)
+                .ToList();
+
+            var sortedExpectedActions = expectedActions.OrderBy(a => a).ToList();
+
+            Assert.Equal(sortedExpectedActions, actualActions);
+        }
+    }
 }
