@@ -80,7 +80,8 @@ public class FileBusiness
         }
         else
         {
-            var defaultObjectStorageResponseDto = await _objectStorageBusiness.GetDefaultObjectStorage(null, projectId);
+            var defaultObjectStorageResponseDto = await _objectStorageBusiness.GetDefaultObjectStorage(
+                organizationId, projectId);
             objectStorage = await _context.ObjectStorages.FindAsync(defaultObjectStorageResponseDto.Id);
         }
 
