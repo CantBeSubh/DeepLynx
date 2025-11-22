@@ -192,8 +192,10 @@ public class RecordBusiness : IRecordBusiness
 
         _context.Records.Remove(record);
         await _context.SaveChangesAsync();
+
         return true;
     }
+
 
     /// <summary>
     ///     Attaches a tag to a record
@@ -474,7 +476,7 @@ public class RecordBusiness : IRecordBusiness
                 last_updated_at = @now,
                 last_updated_by = @lastUpdatedBy,
                 file_type = COALESCE(EXCLUDED.file_type, records.file_type)
-            RETURNING *;
+            RETURNING *;                                                          
         ";
 
         // establish "constant" parameters

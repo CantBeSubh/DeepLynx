@@ -44,7 +44,7 @@ namespace deeplynx.helpers
 
         public static async Task<ProjectResponseDto> EnsureProjectExistsAsync(
             DeeplynxContext context,
-            long? projectId,
+            long projectId,
             ICacheBusiness cacheBusiness,
             bool hideArchived = true)
         {
@@ -89,7 +89,7 @@ namespace deeplynx.helpers
             return project;
         }
 
-        public static async Task EnsureDataSourceExistsForProjectAsync(DeeplynxContext context, long dataSourceId, long? projectId, bool hideArchived = true)
+        public static async Task EnsureDataSourceExistsForProjectAsync(DeeplynxContext context, long dataSourceId, long projectId, bool hideArchived = true)
         {
             var dataSourceExists = hideArchived
                 ? await context.DataSources.AnyAsync(ds => ds.ProjectId == projectId && ds.Id == dataSourceId && ds.IsArchived == false)

@@ -698,7 +698,6 @@ namespace deeplynx.tests
             {
                 UserId = mockUserId,
                 ProjectId = pid,
-                OrganizationId = mockOrganizationId,
                 EntityId = null,
                 EntityType = null,
                 DataSourceId = null,
@@ -725,7 +724,6 @@ namespace deeplynx.tests
                 // Get Event with specific Entity
                 UserId = mockUserId,
                 ProjectId = pid,
-                OrganizationId = mockOrganizationId,
                 EntityId = 1,
                 EntityType = "edge",
                 DataSourceId = mockDataSourceId,
@@ -761,7 +759,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
-                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -772,7 +769,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
-                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -783,7 +779,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
-                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -853,7 +848,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid,
-                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -864,7 +858,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUserId,
                     ProjectId = pid,
-                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -875,7 +868,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid2,
-                    OrganizationId = mockOrganizationId,
                     EntityId = 0,
                     EntityType = "class",
                     DataSourceId = mockDataSource2Id,
@@ -886,7 +878,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid2,
-                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = null,
@@ -897,7 +888,6 @@ namespace deeplynx.tests
                 {
                     UserId = mockUser2Id,
                     ProjectId = pid2,
-                    OrganizationId = mockOrganizationId,
                     EntityId = null,
                     EntityType = null,
                     DataSourceId = mockDataSource2Id,
@@ -1061,8 +1051,7 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = mockUserId,
-                LastUpdatedAt = now,
-                OrganizationId = mockOrganizationId
+                LastUpdatedAt = now
             };
 
             // Act
@@ -1088,8 +1077,7 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = mockUserId,
-                LastUpdatedAt = now,
-                OrganizationId = mockOrganizationId
+                LastUpdatedAt = now
             };
 
             Context.Events.Add(testEvent);
@@ -1120,8 +1108,7 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = null,
-                LastUpdatedAt = now,
-                OrganizationId = mockOrganizationId
+                LastUpdatedAt = now
             };
 
             // Act
@@ -1153,8 +1140,7 @@ namespace deeplynx.tests
                 DataSourceId = mockDataSourceId,
                 Properties = "{}",
                 LastUpdatedBy = null,
-                LastUpdatedAt = now,
-                OrganizationId = mockOrganizationId
+                LastUpdatedAt = now
             };
             Context.Events.Add(testEvent);
             await Context.SaveChangesAsync();
@@ -1228,7 +1214,6 @@ namespace deeplynx.tests
             {
                 Name = "Action1",
                 ProjectId = pid,
-                OrganizationId = mockOrganizationId,
                 LastUpdatedBy = mockUserId,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
@@ -1242,7 +1227,6 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource1",
                     ProjectId = pid,
-                    OrganizationId = mockOrganizationId,
                     LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 },
@@ -1250,7 +1234,6 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource2",
                     ProjectId = pid2,
-                    OrganizationId = mockOrganizationId,
                     LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }
