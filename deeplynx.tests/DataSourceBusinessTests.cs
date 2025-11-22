@@ -53,12 +53,6 @@ public class DataSourceBusinessTests : IntegrationTestBase
     protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
-
-        var org = new Organization { Name = "Test Org" };
-        Context.Organizations.Add(org);
-        await Context.SaveChangesAsync();
-        oid = org.Id;
-
         var testUser = new User
         {
             Name = "John Smith",
@@ -69,6 +63,11 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Context.Users.Add(testUser);
         await Context.SaveChangesAsync();
         uid = testUser.Id;
+
+        var org = new Organization { Name = "Test Org" };
+        Context.Organizations.Add(org);
+        await Context.SaveChangesAsync();
+        oid = org.Id;
 
         var project = new Project { Name = "Project 1", OrganizationId = oid };
         var project2 = new Project { Name = "Project2", OrganizationId = oid };
@@ -91,8 +90,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = testUser.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false,
-            OrganizationId = oid
+            IsArchived = false
         };
         var dataSource2 = new DataSource
         {
@@ -106,8 +104,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = testUser.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false,
-            OrganizationId = oid
+            IsArchived = false
         };
         var dataSource3 = new DataSource
         {
@@ -121,8 +118,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = testUser.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = true,
-            OrganizationId = oid
+            IsArchived = true
         };
         Context.DataSources.Add(dataSource);
         Context.DataSources.Add(dataSource2);
@@ -181,7 +177,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task GetAllDataSources_DifferentProject_ReturnsCorrectDataSources()
     {
         // Arrange
-        Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = pid2, OrganizationId = oid });
+        Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = pid2 });
         await Context.SaveChangesAsync();
 
         // Act
@@ -223,8 +219,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false,
-            OrganizationId = oid
+            IsArchived = false
         };
         await Context.DataSources.AddAsync(dataSourceWithNullConfig);
         await Context.SaveChangesAsync();
@@ -359,8 +354,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = false,
-            OrganizationId = oid
+            IsArchived = false
         };
         await Context.DataSources.AddAsync(dataSourceWithNullConfig);
         await Context.SaveChangesAsync();
@@ -446,16 +440,16 @@ public class DataSourceBusinessTests : IntegrationTestBase
 
     #region CreateDataSource Tests
 
-    [Fact]
-    public async Task CreateDataSource_ValidDto_ReturnsCorrectValues()
-    {
-        // Arrange
-        var config = new JsonObject
+        [Fact]
+        public async Task CreateDataSource_ValidDto_ReturnsCorrectValues()
         {
-            ["driver"] = "postgresql",
-            ["host"] = "localhost",
-            ["port"] = 5432
-        };
+            // Arrange
+            var config = new JsonObject
+            {
+                ["driver"] = "postgresql",
+                ["host"] = "localhost",
+                ["port"] = 5432
+            };
 
         var dto = new CreateDataSourceRequestDto
         {
@@ -470,18 +464,18 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act
         var result = await _dataSourceBusiness.CreateDataSource(uid, pid, dto);
 
-        // Assert
-        Assert.NotNull(result);
-        Assert.True(result.Id > 0);
-        Assert.Equal("New Test Data Source", result.Name);
-        Assert.Equal("A newly created test data source", result.Description);
-        Assert.Equal("NEW_TEST", result.Abbreviation);
-        Assert.Equal("PostgreSQL", result.Type);
-        Assert.Equal("Server=localhost;Database=NewTest;", result.BaseUri);
-        Assert.Equal(pid, result.ProjectId);
-        Assert.NotNull(result.Config);
-        Assert.Equal("postgresql", result.Config["driver"]?.ToString());
-        Assert.Equal(uid, result.LastUpdatedBy);
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Id > 0);
+            Assert.Equal("New Test Data Source", result.Name);
+            Assert.Equal("A newly created test data source", result.Description);
+            Assert.Equal("NEW_TEST", result.Abbreviation);
+            Assert.Equal("PostgreSQL", result.Type);
+            Assert.Equal("Server=localhost;Database=NewTest;", result.BaseUri);
+            Assert.Equal(pid, result.ProjectId);
+            Assert.NotNull(result.Config);
+            Assert.Equal("postgresql", result.Config["driver"]?.ToString());
+            Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually saved to database
         var savedDataSource = await Context.DataSources.FindAsync(result.Id);
@@ -632,39 +626,39 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.Equal(result.Id, actualEvent.EntityId);
     }
 
-    [Fact]
-    public async Task UpdateDataSource_PartialUpdate_UpdatesDataSource()
-    {
-        // Arrange
-        var updateDto = new UpdateDataSourceRequestDto
+        [Fact]
+        public async Task UpdateDataSource_PartialUpdate_UpdatesDataSource()
         {
-            Description = "Updated Description"
-        };
+            // Arrange
+            var updateDto = new UpdateDataSourceRequestDto
+            {
+                Description = "Updated Description"
+            };
 
-        var beforeUpdate = DateTime.UtcNow;
-
-        // Act
-        var result = await _dataSourceBusiness.UpdateDataSource(uid, pid, did, updateDto);
-
-        //Assert
-        Assert.NotNull(result);
-        Assert.Equal(did, result.Id);
-        Assert.Equal("Updated Description", result.Description);
-        Assert.Equal(pid, result.ProjectId);
-        Assert.Equal(uid, result.LastUpdatedBy);
-        Assert.True(result.LastUpdatedAt >= beforeUpdate);
-        Assert.Equal("Customer CRM Database", result.Name);
-        Assert.Equal("CRM_DB", result.Abbreviation);
-        Assert.Equal("SQL Server", result.Type);
-        Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", result.BaseUri);
-        Assert.NotNull(result.Config);
-        Assert.False(result.IsArchived);
-
-        // Verify it was actually updated in database
-        var updatedDataSource = await Context.DataSources.FindAsync(did);
-        Assert.NotNull(updatedDataSource);
-        Assert.Equal("Updated Description", updatedDataSource.Description);
-        Assert.NotNull(updatedDataSource?.LastUpdatedAt);
+            var beforeUpdate = DateTime.UtcNow;
+            
+            // Act
+            var result = await _dataSourceBusiness.UpdateDataSource(uid, pid, did, updateDto);
+            
+            //Assert
+            Assert.NotNull(result);
+            Assert.Equal(did, result.Id);
+            Assert.Equal("Updated Description", result.Description);
+            Assert.Equal(pid, result.ProjectId);
+            Assert.Equal(uid, result.LastUpdatedBy);
+            Assert.True(result.LastUpdatedAt >= beforeUpdate);
+            Assert.Equal("Customer CRM Database", result.Name);
+            Assert.Equal("CRM_DB", result.Abbreviation);
+            Assert.Equal("SQL Server", result.Type);
+            Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", result.BaseUri);
+            Assert.NotNull(result.Config);
+            Assert.False(result.IsArchived);
+            
+            // Verify it was actually updated in database
+            var updatedDataSource = await Context.DataSources.FindAsync(did);
+            Assert.NotNull(updatedDataSource);
+            Assert.Equal("Updated Description", updatedDataSource.Description);
+            Assert.NotNull(updatedDataSource?.LastUpdatedAt);
 
         // Ensure that datasource update event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -823,34 +817,34 @@ public class DataSourceBusinessTests : IntegrationTestBase
 
     #region ArchiveDataSource Tests
 
-    [Fact]
-    public async Task ArchiveDataSource_ValidDataSource_ArchivesSuccessfully()
-    {
-        var now = DateTime.UtcNow;
-        // Act
-        var result = await _dataSourceBusiness.ArchiveDataSource(uid, pid, did);
+        [Fact]
+        public async Task ArchiveDataSource_ValidDataSource_ArchivesSuccessfully()
+        {
+            var now =  DateTime.UtcNow;
+            // Act
+            var result = await _dataSourceBusiness.ArchiveDataSource(uid, pid, did);
 
         // Assert
         Assert.True(result);
 
         Context.ChangeTracker.Clear();
 
-        // Verify it was actually archived in database
-        var archivedDataSource = await Context.DataSources.FindAsync(did);
-        Assert.NotNull(archivedDataSource);
-        Assert.Equal(did, archivedDataSource.Id);
-        Assert.Equal("Customer CRM Database", archivedDataSource.Name);
-        Assert.Equal("Primary customer relationship management database", archivedDataSource.Description);
-        Assert.Equal("CRM_DB", archivedDataSource.Abbreviation);
-        Assert.Equal("SQL Server", archivedDataSource.Type);
-        Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", archivedDataSource.BaseUri);
-        Assert.Equal(pid, archivedDataSource.ProjectId);
-        Assert.NotNull(archivedDataSource.Config);
-        Assert.True(archivedDataSource.LastUpdatedAt >= now);
-        Assert.Equal(uid, archivedDataSource.LastUpdatedBy);
-        // Ensure that data source soft delete event was logged
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Single(eventList);
+            // Verify it was actually archived in database
+            var archivedDataSource = await Context.DataSources.FindAsync(did);
+            Assert.NotNull(archivedDataSource);
+            Assert.Equal(did, archivedDataSource.Id);
+            Assert.Equal("Customer CRM Database", archivedDataSource.Name);
+            Assert.Equal("Primary customer relationship management database", archivedDataSource.Description);
+            Assert.Equal("CRM_DB", archivedDataSource.Abbreviation);
+            Assert.Equal("SQL Server", archivedDataSource.Type);
+            Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", archivedDataSource.BaseUri);
+            Assert.Equal(pid, archivedDataSource.ProjectId);
+            Assert.NotNull(archivedDataSource.Config);
+            Assert.True(archivedDataSource.LastUpdatedAt >= now);
+            Assert.Equal(uid, archivedDataSource.LastUpdatedBy);
+            // Ensure that data source soft delete event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
 
         var actualEvent = eventList[0];
 
@@ -1090,31 +1084,31 @@ public class DataSourceBusinessTests : IntegrationTestBase
 
     #region UnarchiveDataSource Tests
 
-    [Fact]
-    public async Task UnarchiveDataSource_ValidArchivedDataSource_UnarchivesSuccessfully()
-    {
-        var now = DateTime.UtcNow;
-        // Act
-        var result = await _dataSourceBusiness.UnarchiveDataSource(uid, pid, did3);
+        [Fact]
+        public async Task UnarchiveDataSource_ValidArchivedDataSource_UnarchivesSuccessfully()
+        {
+            var now = DateTime.UtcNow;
+            // Act
+            var result = await _dataSourceBusiness.UnarchiveDataSource(uid, pid, did3);
 
         // Assert
         Assert.True(result);
 
-        Context.ChangeTracker.Clear();
-        var reloaded = await Context.DataSources.FindAsync(did3);
-        Assert.NotNull(reloaded);
-        Assert.False(reloaded.IsArchived);
-        Assert.Equal(uid, reloaded.LastUpdatedBy);
-        Assert.True(reloaded.LastUpdatedAt >= now);
-        Assert.Equal("Customer CRM Database", reloaded.Name);
-        Assert.Equal("Primary customer relationship management database", reloaded.Description);
-        Assert.Equal("CRM_DB", reloaded.Abbreviation);
-        Assert.Equal("SQL Server", reloaded.Type);
-        Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", reloaded.BaseUri);
-        Assert.NotNull(reloaded.Config);
-        Assert.Equal(pid, reloaded.ProjectId);
-        Assert.Equal(did3, reloaded.Id);
-    }
+            Context.ChangeTracker.Clear();
+            var reloaded = await Context.DataSources.FindAsync(did3);
+            Assert.NotNull(reloaded);
+            Assert.False(reloaded.IsArchived);
+            Assert.Equal(uid, reloaded.LastUpdatedBy);
+            Assert.True(reloaded.LastUpdatedAt >= now);
+            Assert.Equal("Customer CRM Database", reloaded.Name);
+            Assert.Equal("Primary customer relationship management database", reloaded.Description);
+            Assert.Equal("CRM_DB", reloaded.Abbreviation);
+            Assert.Equal("SQL Server", reloaded.Type);
+            Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", reloaded.BaseUri);
+            Assert.NotNull(reloaded.Config);
+            Assert.Equal(pid, reloaded.ProjectId);
+            Assert.Equal(did3, reloaded.Id);
+        }
 
     [Fact]
     public async Task UnarchiveDataSource_NonExistent_ThrowsKeyNotFoundException()
@@ -1171,8 +1165,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid,
-            IsArchived = false,
-            OrganizationId = oid
+            IsArchived = false
         };
 
         // Act
@@ -1197,8 +1190,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid,
-            IsArchived = false,
-            OrganizationId = oid
+            IsArchived = false
         };
 
         Context.DataSources.Add(testDataSource);
@@ -1228,8 +1220,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null,
-            IsArchived = false,
-            OrganizationId = oid
+            IsArchived = false
         };
 
         // Act
@@ -1259,8 +1250,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
             Type = "Original Type",
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
         Context.DataSources.Add(testDataSource);
         await Context.SaveChangesAsync();

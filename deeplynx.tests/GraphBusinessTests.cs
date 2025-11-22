@@ -107,7 +107,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             Name = "DataSource 1",
             ProjectId = pid,
-            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.DataSources.Add(dataSource);
@@ -118,7 +117,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             Name = "DataSource 2",
             ProjectId = pid2,
-            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.DataSources.Add(dataSource2);
@@ -129,7 +127,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             Name = "Class 1",
             ProjectId = pid,
-            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Classes.Add(testClass);
@@ -139,7 +136,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             ProjectId = pid,
             DataSourceId = dsid,
-            OrganizationId = oid,
             ClassId = testClass.Id,
             Properties = "{\"test\": \"origin_value\"}",
             Name = "Origin",
@@ -153,7 +149,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             ProjectId = pid2,
             DataSourceId = dsid2,
-            OrganizationId = oid,
             Properties = "{\"test\": \"origin2_value\"}",
             Name = "Origin 2",
             Description = "Origin Description 2",
@@ -166,7 +161,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             ProjectId = pid,
             DataSourceId = dsid,
-            OrganizationId = oid,
             ClassId = testClass.Id,
             Properties = "{\"test\": \"destination_value\"}",
             Name = "Destination 1",
@@ -180,7 +174,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             ProjectId = pid,
             DataSourceId = dsid,
-            OrganizationId = oid,
             Properties = "{\"test\": \"destination2_value\"}",
             Name = "Destination 2",
             Description = "Destination Description 2",
@@ -193,7 +186,6 @@ public class GraphBusinessTests : IntegrationTestBase
         {
             ProjectId = pid2,
             DataSourceId = dsid2,
-            OrganizationId = oid,
             Properties = "{\"test\": \"destination3_value\"}",
             Name = "Destination 3",
             Description = "Destination Description 3",
@@ -227,8 +219,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge2 = new Edge
@@ -238,8 +229,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge3 = new Edge
@@ -249,8 +239,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid2,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge4 = new Edge
@@ -260,8 +249,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge5 = new Edge
@@ -271,8 +259,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         Context.Edges.Add(edge1);
@@ -312,8 +299,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge2 = new Edge
@@ -323,8 +309,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge3 = new Edge
@@ -334,8 +319,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid2,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge4 = new Edge
@@ -345,8 +329,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge5 = new Edge
@@ -356,8 +339,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         Context.Edges.Add(edge1);
@@ -398,8 +380,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge2 = new Edge
@@ -409,8 +390,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge3 = new Edge
@@ -420,8 +400,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid2,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge4 = new Edge
@@ -431,8 +410,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge5 = new Edge
@@ -442,8 +420,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         Context.Edges.Add(edge1);
@@ -525,8 +502,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge2 = new Edge
@@ -536,8 +512,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge3 = new Edge
@@ -547,8 +522,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid2,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge4 = new Edge
@@ -558,8 +532,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge5 = new Edge
@@ -569,8 +542,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         Context.Edges.Add(edge1);
@@ -625,8 +597,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge2 = new Edge
@@ -636,8 +607,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         // edge in restricted project
@@ -648,8 +618,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid2,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         // destination is in restricted project
@@ -660,8 +629,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         // origin is in restricted project
@@ -672,8 +640,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         Context.Edges.Add(edge1);
@@ -724,8 +691,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge2 = new Edge
@@ -735,8 +701,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge3 = new Edge
@@ -746,8 +711,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid2,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge4 = new Edge
@@ -757,8 +721,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         var edge5 = new Edge
@@ -768,8 +731,7 @@ public class GraphBusinessTests : IntegrationTestBase
             DataSourceId = dsid,
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null,
-            OrganizationId = oid
+            LastUpdatedBy = null
         };
 
         Context.Edges.Add(edge1);
