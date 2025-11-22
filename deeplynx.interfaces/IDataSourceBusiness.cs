@@ -6,9 +6,6 @@ public interface IDataSourceBusiness
 {
     Task<List<DataSourceResponseDto>> GetAllDataSources(long organizationId, long? projectId, bool hideArchived);
 
-    Task<List<DataSourceResponseDto>> GetAllDataSourcesMultiProject(long organizationId, long[] projectIds,
-        bool hideArchived);
-
     Task<DataSourceResponseDto> GetDataSource(long organizationId, long? projectId, long dataSourceId,
         bool hideArchived);
 
