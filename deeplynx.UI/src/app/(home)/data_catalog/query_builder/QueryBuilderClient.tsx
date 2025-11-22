@@ -10,7 +10,10 @@ import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
-import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
+import { fullTextSearch } from "@/app/lib/query_services.client";
+import { getAllClasses } from "@/app/lib/class_services client";
+import { getAllDataSources } from "@/app/lib/data_source_services.client";
+import { getAllTags } from "@/app/lib/tag_services.client";
 import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
 import { ClassResponseDto } from "../../types/responseDTOs";
@@ -90,8 +93,8 @@ export default function QueryBuilderClient({
     async function loadClasses() {
       try {
         setIsLoadingClasses(true);
-        const data = await getClassesForProjects(selectedProjects);
-        setClasses(data);
+        // const data = await getClassesForProjects(selectedProjects);
+        // setClasses(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
         setClasses([]);
@@ -110,8 +113,8 @@ export default function QueryBuilderClient({
     async function loadDataSources() {
       try {
         setIsLoadingDataSources(true);
-        const data = await getDataSourcesForProjects(selectedProjects);
-        setDataSources(data);
+        // const data = await getDataSourcesForProjects(selectedProjects);
+        // setDataSources(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
         setDataSources([]);
@@ -129,8 +132,8 @@ export default function QueryBuilderClient({
     async function loadTags() {
       try {
         setIsLoadingTags(true);
-        const data = await getTagsForProjects(selectedProjects);
-        setTags(data);
+        // const data = await getTagsForProjects(selectedProjects);
+        // setTags(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
         setTags([]);
@@ -157,15 +160,15 @@ export default function QueryBuilderClient({
     try {
       const queryDtos = rows.map(r => r.query);
       if (hasValidQueries()) {
-        const data = await queryBuilder(queryDtos, searchTerm, selectedProjects);
-        if (data) {
-          setQueriedRecords(data);
-        }
+        // const data = await queryBuilder(queryDtos, searchTerm, selectedProjects);
+        // if (data) {
+        //   setQueriedRecords(data);
+        // }
       } else {
-        const data = await fullTextSearch(searchTerm, selectedProjects);
-        if (data) {
-          setQueriedRecords(data);
-        }
+        // const data = await fullTextSearch(searchTerm, selectedProjects);
+        // if (data) {
+        //   setQueriedRecords(data);
+        // }
       }
     } catch (error) {
       console.error("Failed to send query")
@@ -260,21 +263,21 @@ export default function QueryBuilderClient({
                               },
                             });
 
-                            if (value === "class_name") {
-                              getClassesForProjects(selectedProjects)
-                                .then(setClasses)
-                                .catch((err: Error) => console.error("Failed to fetch classes:", err));
-                            }
-                            if (value === "data_source_name") {
-                              getDataSourcesForProjects(selectedProjects)
-                                .then(setDataSources)
-                                .catch((err: Error) => console.error("Failed to fetch datasources:", err));
-                            }
-                            if (value === "tags") {
-                              getTagsForProjects(selectedProjects)
-                                .then(setTags)
-                                .catch((err) => console.error("Failed to fetch tags:", err));
-                            }
+                            // if (value === "class_name") {
+                            //   getClassesForProjects(selectedProjects)
+                            //     .then(setClasses)
+                            //     .catch((err: Error) => console.error("Failed to fetch classes:", err));
+                            // }
+                            // if (value === "data_source_name") {
+                            //   getDataSourcesForProjects(selectedProjects)
+                            //     .then(setDataSources)
+                            //     .catch((err: Error) => console.error("Failed to fetch datasources:", err));
+                            // }
+                            // if (value === "tags") {
+                            //   getTagsForProjects(selectedProjects)
+                            //     .then(setTags)
+                            //     .catch((err) => console.error("Failed to fetch tags:", err));
+                            // }
                           }}
                         >
                           <option value="" disabled>

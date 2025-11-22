@@ -1,64 +1,113 @@
 // src/app/lib/query_services.client.ts
 "use client";
-import { CustomQueryRequestDto } from '../(home)/types/requestDTOs';
 import api from "./api";
-import { FileViewerTableRow } from '../(home)/types/types';
-import { DataSourceResponseDto } from '../(home)/types/responseDTOs';
-import { TagResponseDto } from '../(home)/types/responseDTOs';
-import { ClassResponseDto } from '../(home)/types/responseDTOs';
-/** ===== Client calls (browser; cookie/session-based) ===== */
+import { CustomQueryRequestDto } from '../(home)/types/requestDTOs';
+import { HistoricalRecordResponseDto, RecordResponseDto } from '../(home)/types/responseDTOs';
 
-export async function queryBuilder(
-    queryObj: CustomQueryRequestDto[],
-    fullTextSearch: string | null, projectIds: string[]
-) {
-    //Building json string format from key/value input
-    for (const obj of queryObj) {
-        if (obj.jsonKey && obj.jsonValue) {
-            const json = `{"${obj.jsonKey}": "${obj.jsonValue}"}`
-            obj.json = json;
-        }
-    }
-    const newProjectIds = projectIds.map((str) => Number(str));
-    const projectIdsQuery = newProjectIds.map(id => `projectIds=${id}`).join('&');
-    const query = (`${projectIdsQuery}&textSearch=${fullTextSearch}`);
-    const res = await api.post(`/records/QueryBuilder?${query}`, queryObj, {
-        headers: { "Content-Type": "application/json" },
-    });
-    return res.data;
-}
-
+/**
+ * Full text search for records
+ * @param organizationId - The ID of the organization
+ * @param userQuery - String phrase entered by user
+ * @param projectIds - Array of project IDs to search across
+ * @returns Promise with array of HistoricalRecordResponseDto
+ */
 export async function fullTextSearch(
-    userQuery: string, projectIds: string[]
-): Promise<FileViewerTableRow[]> {
-    const newProjectIds = projectIds.map((str) => Number(str));
-    const projectIdsQuery = newProjectIds.map(id => `projectIds=${id}`).join('&');
-    const res = await api.get(`/records/Filter?userQuery=${userQuery}&${projectIdsQuery}`);
-    return res.data as FileViewerTableRow[];
+    organizationId: number,
+    userQuery: string,
+    projectIds: number[]
+): Promise<HistoricalRecordResponseDto[]> {
+    try {
+        const projectIdsQuery = projectIds.map(id => `projectIds=${id}`).join('&');
+        const res = await api.get(
+            `/organizations/${organizationId}/query/records?userQuery=${encodeURIComponent(userQuery)}&${projectIdsQuery}`
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error performing full text search:", error);
+        throw error;
+    }
 }
 
+/**
+ * Build a custom query for records
+ * @param organizationId - The ID of the organization
+ * @param queryObj - Array of custom query request DTOs
+ * @param projectIds - Array of project IDs to search across
+ * @param textSearch - Optional full text search phrase
+ * @returns Promise with array of HistoricalRecordResponseDto
+ */
+export async function queryBuilder(
+    organizationId: number,
+    queryObj: CustomQueryRequestDto[],
+    projectIds: number[],
+    textSearch?: string | null
+): Promise<HistoricalRecordResponseDto[]> {
+    try {
+        // Building json string format from key/value input
+        for (const obj of queryObj) {
+            if (obj.jsonKey && obj.jsonValue) {
+                const json = `{"${obj.jsonKey}": "${obj.jsonValue}"}`;
+                obj.json = json;
+            }
+        }
 
+        const projectIdsQuery = projectIds.map(id => `projectIds=${id}`).join('&');
+        const textSearchParam = textSearch ? `&textSearch=${encodeURIComponent(textSearch)}` : '';
 
-export async function getClassesForProjects(
-    projectIds: string[],
-): Promise<ClassResponseDto[]> {
-    const query = projectIds.map(id => `projectIds=${id}`).join("&");
-    const res = await api.get(`/records/GetAllClasses?${query}`);
-    return res.data as ClassResponseDto[];
+        const res = await api.post(
+            `/organizations/${organizationId}/query/records/advanced?${projectIdsQuery}${textSearchParam}`,
+            queryObj,
+            { headers: { "Content-Type": "application/json" } }
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error building query:", error);
+        throw error;
+    }
 }
 
-export async function getDataSourcesForProjects(
-    projectIds: string[]
-): Promise<DataSourceResponseDto[]> {
-    const query = projectIds.map(id => `projectIds=${id}`).join("&");
-    const res = await api.get(`/records/GetAllDataSources?${query}`);
-    return res.data as DataSourceResponseDto[];
+/**
+ * Get recently added records
+ * @param organizationId - The ID of the organization
+ * @param projectIds - Array of project IDs
+ * @returns Promise with array of HistoricalRecordResponseDto sorted by most recent
+ */
+export async function getRecentlyAddedRecords(
+    organizationId: number,
+    projectIds: number[]
+): Promise<HistoricalRecordResponseDto[]> {
+    try {
+        const projectIdsQuery = projectIds.map(id => `projectIds=${id}`).join('&');
+        const res = await api.get(
+            `/organizations/${organizationId}/query/recent?${projectIdsQuery}`
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error getting recently added records:", error);
+        throw error;
+    }
 }
 
-export async function getTagsForProjects(
-    projectIds: string[]
-): Promise<TagResponseDto[]> {
-    const query = projectIds.map(id => `projectIds=${id}`).join("&");
-    const res = await api.get(`/records/GetAllTags?${query}`);
-    return res.data as TagResponseDto[];
+/**
+ * Get records from multiple projects
+ * @param organizationId - The ID of the organization
+ * @param projectIds - Array of project IDs whose records are to be retrieved
+ * @param hideArchived - Flag to hide archived records (default: true)
+ * @returns Promise with array of RecordResponseDto
+ */
+export async function getMultiProjectRecords(
+    organizationId: number,
+    projectIds: number[],
+    hideArchived: boolean = true
+): Promise<RecordResponseDto[]> {
+    try {
+        const projectIdsQuery = projectIds.map(id => `projects=${id}`).join('&');
+        const res = await api.get(
+            `/organizations/${organizationId}/query/multiproject?${projectIdsQuery}&hideArchived=${hideArchived}`
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error getting multi-project records:", error);
+        throw error;
+    }
 }

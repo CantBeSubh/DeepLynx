@@ -42,7 +42,7 @@ public class QueryBusinessTests : IntegrationTestBase
         var projectIds = new[] { pid, pid2 };
 
         // Act
-        var result = await _queryBusiness.GetMultiProjectRecords(projectIds, true);
+        var result = await _queryBusiness.GetMultiProjectRecords(organizationId, projectIds, true);
         var records = result.ToList();
 
         // Assert
@@ -76,7 +76,8 @@ public class QueryBusinessTests : IntegrationTestBase
         var tag = new Tag
         {
             Name = "Padme",
-            ProjectId = project.Id
+            ProjectId = project.Id,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(tag);
         await Context.SaveChangesAsync();
@@ -85,7 +86,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "R2D2",
             Description = "Weeeeeeeee!",
-            ProjectId = project.Id
+            ProjectId = project.Id,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(dataSource);
         await Context.SaveChangesAsync();
@@ -95,7 +97,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "Darth Maul",
             Description = "My legs!",
-            ProjectId = project.Id
+            ProjectId = project.Id,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(testClass);
         await Context.SaveChangesAsync();
@@ -115,7 +118,8 @@ public class QueryBusinessTests : IntegrationTestBase
         var rebelTag = new Tag
         {
             Name = "Alliance",
-            ProjectId = pid2
+            ProjectId = pid2,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(rebelTag);
         await Context.SaveChangesAsync();
@@ -124,7 +128,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "Yavin IV Base",
             Description = "May the Force be with you",
-            ProjectId = pid2
+            ProjectId = pid2,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(rebelDataSource);
         await Context.SaveChangesAsync();
@@ -133,7 +138,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "Rebel Leaders",
             Description = "Leaders of the Rebellion",
-            ProjectId = pid2
+            ProjectId = pid2,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(rebelClass);
         await Context.SaveChangesAsync();
@@ -152,7 +158,8 @@ public class QueryBusinessTests : IntegrationTestBase
         var imperialTag = new Tag
         {
             Name = "Imperial Officer",
-            ProjectId = pid3
+            ProjectId = pid3,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(imperialTag);
         await Context.SaveChangesAsync();
@@ -161,7 +168,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "Death Star",
             Description = "That's no moon",
-            ProjectId = pid3
+            ProjectId = pid3,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(empireDataSource);
         await Context.SaveChangesAsync();
@@ -170,7 +178,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "Imperial Command",
             Description = "High-ranking Imperial officers",
-            ProjectId = pid3
+            ProjectId = pid3,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(empireClass);
         await Context.SaveChangesAsync();
@@ -189,12 +198,14 @@ public class QueryBusinessTests : IntegrationTestBase
         var mandoTag = new Tag
         {
             Name = "Bounty Hunter",
-            ProjectId = pid4
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         var clanTag = new Tag
         {
             Name = "Clan Leader",
-            ProjectId = pid4
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(mandoTag);
         await Context.Tags.AddAsync(clanTag);
@@ -204,7 +215,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "Nevarro",
             Description = "Covert hideout",
-            ProjectId = pid4
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(mandoDataSource);
         await Context.SaveChangesAsync();
@@ -213,7 +225,8 @@ public class QueryBusinessTests : IntegrationTestBase
         {
             Name = "Warriors",
             Description = "Mandalorian warriors and bounty hunters",
-            ProjectId = pid4
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(mandoClass);
         await Context.SaveChangesAsync();
@@ -228,7 +241,8 @@ public class QueryBusinessTests : IntegrationTestBase
             ProjectId = project.Id,
             DataSourceId = dataSource.Id, // R2D2 datasource
             ClassId = testClass.Id, // Darth Maul class
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(rex);
         await Context.SaveChangesAsync();
@@ -244,7 +258,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = rebelDataSource.Id, // Using Rebellion datasource!
             ClassId = testClass.Id,
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(hunter);
         await Context.SaveChangesAsync();
@@ -259,7 +274,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = empireDataSource.Id, // Using Empire datasource!
             ClassId = rebelClass.Id, // Using Rebel class!
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(tech);
         await Context.SaveChangesAsync();
@@ -274,7 +290,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = mandoDataSource.Id, // Using Mando datasource!
             ClassId = mandoClass.Id, // Using Mando class!
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(wrecker);
         await Context.SaveChangesAsync();
@@ -289,7 +306,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = dataSource.Id,
             ClassId = empireClass.Id, // Using Empire class!
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(crosshair);
         await Context.SaveChangesAsync();
@@ -305,7 +323,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = rebelDataSource.Id,
             ClassId = rebelClass.Id,
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(leia);
         await Context.SaveChangesAsync();
@@ -320,7 +339,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = dataSource.Id, // Using Anakin's R2D2 datasource!
             ClassId = rebelClass.Id,
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(luke);
         await Context.SaveChangesAsync();
@@ -335,7 +355,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = mandoDataSource.Id, // Using Mando datasource!
             ClassId = mandoClass.Id, // Using Mando class!
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(han);
         await Context.SaveChangesAsync();
@@ -350,7 +371,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = empireDataSource.Id, // Using Empire datasource!
             ClassId = testClass.Id, // Using Anakin's Darth Maul class!
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(wedge);
         await Context.SaveChangesAsync();
@@ -366,7 +388,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = empireDataSource.Id,
             ClassId = empireClass.Id,
             Tags = new List<Tag> { imperialTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(vader);
         await Context.SaveChangesAsync();
@@ -381,7 +404,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = rebelDataSource.Id, // Using Rebellion datasource!
             ClassId = rebelClass.Id, // Using Rebel class! (Infiltration?)
             Tags = new List<Tag> { imperialTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(tarkin);
         await Context.SaveChangesAsync();
@@ -396,7 +420,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = dataSource.Id, // Using Anakin's datasource!
             ClassId = mandoClass.Id, // Using Mando class!
             Tags = new List<Tag> { imperialTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(thrawn);
         await Context.SaveChangesAsync();
@@ -412,7 +437,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = mandoDataSource.Id,
             ClassId = mandoClass.Id,
             Tags = new List<Tag> { mandoTag, clanTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(dinDjarin);
         await Context.SaveChangesAsync();
@@ -427,7 +453,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = rebelDataSource.Id, // Using Rebellion datasource!
             ClassId = rebelClass.Id, // Using Rebel class!
             Tags = new List<Tag> { clanTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(boKatan);
         await Context.SaveChangesAsync();
@@ -442,7 +469,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = empireDataSource.Id, // Using Empire datasource!
             ClassId = empireClass.Id, // Using Empire class!
             Tags = new List<Tag> { mandoTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(bobafett);
         await Context.SaveChangesAsync();
@@ -457,7 +485,8 @@ public class QueryBusinessTests : IntegrationTestBase
             DataSourceId = dataSource.Id, // Using Anakin's datasource!
             ClassId = testClass.Id, // Using Anakin's class!
             Tags = new List<Tag> { clanTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(pazVizsla);
         await Context.SaveChangesAsync();
@@ -469,7 +498,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByFullName()
     {
         // Act
-        var result = await _queryBusiness.Search("Captain Rex", [pid]);
+        var result = await _queryBusiness.Search("Captain Rex", organizationId,[pid]);
         var records = result.ToList();
 
         // Assert
@@ -482,7 +511,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByPartialName()
     {
         // Act
-        var result = await _queryBusiness.Search("capt", [pid]);
+        var result = await _queryBusiness.Search("capt", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -494,7 +523,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByOriginalId()
     {
         // Act
-        var result = await _queryBusiness.Search("CT-9901", [pid]);
+        var result = await _queryBusiness.Search("CT-9901", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -505,7 +534,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByPartialDescription()
     {
         // Act
-        var result = await _queryBusiness.Search("Omega", [pid]);
+        var result = await _queryBusiness.Search("Omega", organizationId,[pid]);
         var records = result.ToList();
 
         // Assert
@@ -517,7 +546,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByStringInProperties()
     {
         // Act
-        var result = await _queryBusiness.Search("Sith", [pid3]);
+        var result = await _queryBusiness.Search("Sith", organizationId, [pid3]);
         var records = result.ToList();
 
         // Assert
@@ -529,7 +558,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsWithSpecialCharacters()
     {
         // Act
-        var result = await _queryBusiness.Search("CT-", [pid]);
+        var result = await _queryBusiness.Search("CT-", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -540,7 +569,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_ReturnsEmptyForNonExistentTerm()
     {
         // Act
-        var result = await _queryBusiness.Search("Wookiee", [pid]);
+        var result = await _queryBusiness.Search("Wookiee", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -551,7 +580,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_RestrictsResultsToSpecifiedProject()
     {
         // Act
-        var result = await _queryBusiness.Search("the", [pid2]);
+        var result = await _queryBusiness.Search("the", organizationId, [pid2]);
         var records = result.ToList();
 
         // Assert
@@ -562,7 +591,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByPartialTagName()
     {
         // Act
-        var result = await _queryBusiness.Search("Padme", [pid]);
+        var result = await _queryBusiness.Search("Padme", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -573,7 +602,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByPartialTagNameCaseInsensitive()
     {
         // Act
-        var result = await _queryBusiness.Search("padme", [pid]);
+        var result = await _queryBusiness.Search("padme", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -584,7 +613,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByTagAcrossMultipleProjects()
     {
         // Act
-        var result = await _queryBusiness.Search("Bounty", pids);
+        var result = await _queryBusiness.Search("Bounty", organizationId, pids);
         var records = result.ToList();
 
         // Assert
@@ -595,7 +624,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsMultipleRecordsByJsonProperties()
     {
         // Act
-        var result = await _queryBusiness.Search("99", [pid]);
+        var result = await _queryBusiness.Search("99", organizationId,[pid]);
         var records = result.ToList();
 
         // Assert
@@ -606,7 +635,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByPartialOriginalId()
     {
         // Act
-        var result = await _queryBusiness.Search("CT-99", [pid]);
+        var result = await _queryBusiness.Search("CT-99", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -617,7 +646,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByNumericPartialId()
     {
         // Act
-        var result = await _queryBusiness.Search("99", [pid]);
+        var result = await _queryBusiness.Search("99", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -628,7 +657,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByPartialDataSourceName()
     {
         // Act
-        var result = await _queryBusiness.Search("Yav", pids);
+        var result = await _queryBusiness.Search("Yav", organizationId, pids);
         var records = result.ToList();
 
         // Assert
@@ -639,7 +668,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByPartialProjectName()
     {
         // Act
-        var result = await _queryBusiness.Search("Rebel", [pid2]);
+        var result = await _queryBusiness.Search("Rebel", organizationId, [pid2]);
         var records = result.ToList();
 
         // Assert
@@ -650,7 +679,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByShortPartialMatch()
     {
         // Act
-        var result = await _queryBusiness.Search("Bo", [pid4]);
+        var result = await _queryBusiness.Search("Bo", organizationId, [pid4]);
         var records = result.ToList();
 
         // Assert
@@ -661,7 +690,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByCaseInsensitivePartialMatch()
     {
         // Act
-        var result = await _queryBusiness.Search("CAPT", [pid]);
+        var result = await _queryBusiness.Search("CAPT", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -673,7 +702,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByMultipleWordPartialMatch()
     {
         // Act
-        var result = await _queryBusiness.Search("grand adm", [pid3]);
+        var result = await _queryBusiness.Search("grand adm", organizationId, [pid3]);
         var records = result.ToList();
 
         // Assert
@@ -685,7 +714,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByMiddleOfWordPartialMatch()
     {
         // Act
-        var result = await _queryBusiness.Search("eck", [pid]);
+        var result = await _queryBusiness.Search("eck", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -697,7 +726,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsByUriPartialMatch()
     {
         // Act
-        var result = await _queryBusiness.Search("8090", [pid]);
+        var result = await _queryBusiness.Search("8090", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -708,7 +737,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordByBeginningOfWordPartialMatch()
     {
         // Act
-        var result = await _queryBusiness.Search("Wre", [pid]);
+        var result = await _queryBusiness.Search("Wre", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -720,7 +749,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordsAcrossAllAccessibleProjects()
     {
         // Act
-        var result = await _queryBusiness.Search("Captain", pids);
+        var result = await _queryBusiness.Search("Captain", organizationId, pids);
         var records = result.ToList();
 
         // Assert
@@ -731,7 +760,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task Search_Success_FindsRecordUsingCrossProjectResources()
     {
         // Act
-        var result = await _queryBusiness.Search("Death Star", [pid]);
+        var result = await _queryBusiness.Search("Death Star", organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -745,7 +774,7 @@ public class QueryBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() =>
-            _queryBusiness.Search("", [pid]));
+            _queryBusiness.Search("", organizationId, [pid]));
 
         Assert.Contains("Search query is required", exception.Message);
     }
@@ -755,7 +784,7 @@ public class QueryBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() =>
-            _queryBusiness.Search(null, [pid]));
+            _queryBusiness.Search(null, organizationId, [pid]));
 
         Assert.Contains("Search query is required", exception.Message);
     }
@@ -765,7 +794,7 @@ public class QueryBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() =>
-            _queryBusiness.Search("     ", [pid]));
+            _queryBusiness.Search("     ", organizationId, [pid]));
 
         Assert.Contains("Search query is required", exception.Message);
     }
@@ -779,7 +808,7 @@ public class QueryBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _queryBusiness.QueryBuilder(null, new[] { pid }));
+            _queryBusiness.QueryBuilder(null, organizationId, new[] { pid }));
 
         Assert.Contains("Custom query request dto cannot be null", exception.Message);
     }
@@ -794,7 +823,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -812,7 +841,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -833,7 +862,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -854,7 +883,8 @@ public class QueryBusinessTests : IntegrationTestBase
             ProjectId = pid,
             DataSourceId = did,
             ClassId = cid,
-            Uri = "localhost:8090"
+            Uri = "localhost:8090", 
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(ahsoka);
         await Context.SaveChangesAsync();
@@ -878,7 +908,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto1, dto2], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -899,7 +929,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto1, dto2], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -920,7 +950,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto1, dto2], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -945,7 +975,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto1, dto2, dto3], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2, dto3], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -970,7 +1000,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto1, dto2, dto3], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2, dto3], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -987,7 +1017,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid], "Captain");
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid], "Captain");
         var records = result.ToList();
 
         // Assert
@@ -1004,7 +1034,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId,  [pid]);
         var records = result.ToList();
 
         // Assert
@@ -1022,7 +1052,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -1039,7 +1069,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid, pid2]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid, pid2]);
         var records = result.ToList();
 
         // Assert
@@ -1056,7 +1086,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid2]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid2]);
         var records = result.ToList();
 
         // Assert
@@ -1073,7 +1103,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid3]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid3]);
         var records = result.ToList();
 
         // Assert
@@ -1090,7 +1120,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid4]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid4]);
         var records = result.ToList();
 
         // Assert
@@ -1101,7 +1131,7 @@ public class QueryBusinessTests : IntegrationTestBase
     public async Task QueryBuilder_Success_FiltersRecordsByUserAccessToSpecificProjectsOnly()
     {
         // Act
-        var result = await _queryBusiness.QueryBuilder([], [pid, pid3]);
+        var result = await _queryBusiness.QueryBuilder([], organizationId, [pid, pid3]);
         var records = result.ToList();
 
         // Assert
@@ -1118,7 +1148,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -1135,7 +1165,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], pids);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, pids);
         var records = result.ToList();
 
         // Assert
@@ -1152,7 +1182,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], []);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId,[]);
         var records = result.ToList();
 
         // Assert
@@ -1169,7 +1199,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid2]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid2]);
         var records = result.ToList();
 
         // Assert
@@ -1186,7 +1216,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid, pid4]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid, pid4]);
         var records = result.ToList();
 
         // Assert
@@ -1207,7 +1237,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto1, dto2], pids);
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, pids);
         var records = result.ToList();
 
         // Assert
@@ -1227,7 +1257,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -1248,7 +1278,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -1268,7 +1298,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
         var records = result.ToList();
 
         // Assert
@@ -1289,7 +1319,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid2]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid2]);
         var records = result.ToList();
 
         // Assert
@@ -1310,7 +1340,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid4]);
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid4]);
         var records = result.ToList();
 
         // Assert
@@ -1327,7 +1357,7 @@ public class QueryBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _queryBusiness.QueryBuilder([dto], [pid], "CT-7567");
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid], "CT-7567");
         var records = result.ToList();
 
         // Assert
@@ -1345,7 +1375,7 @@ public class QueryBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await _queryBusiness.QueryBuilder([dto], [pid]));
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
     }
 
     [Fact]
@@ -1359,7 +1389,7 @@ public class QueryBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await _queryBusiness.QueryBuilder([dto], [pid]));
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
     }
 
     [Fact]
@@ -1373,7 +1403,7 @@ public class QueryBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await _queryBusiness.QueryBuilder([dto], [pid]));
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
     }
 
     [Fact]
@@ -1387,7 +1417,7 @@ public class QueryBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await _queryBusiness.QueryBuilder([dto], [pid]));
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
     }
 
     [Fact]
@@ -1401,7 +1431,7 @@ public class QueryBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () =>
-            await _queryBusiness.QueryBuilder([dto], [pid]));
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
     }
 
     #endregion
@@ -1415,7 +1445,7 @@ public class QueryBusinessTests : IntegrationTestBase
         var projectIds = new[] { pid, pid2 };
 
         // Act
-        var result = await _queryBusiness.GetRecentlyAddedRecords(projectIds);
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
         var records = result.ToList();
 
         // Assert
@@ -1440,7 +1470,7 @@ public class QueryBusinessTests : IntegrationTestBase
         var projectIds = new[] { pid };
 
         // Act
-        var result = await _queryBusiness.GetRecentlyAddedRecords(projectIds);
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
         var records = result.ToList();
 
         // Assert - Archived records should not appear
@@ -1454,7 +1484,7 @@ public class QueryBusinessTests : IntegrationTestBase
         var projectIds = new long[] { };
 
         // Act
-        var result = await _queryBusiness.GetRecentlyAddedRecords(projectIds);
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
         var records = result.ToList();
 
         // Assert
@@ -1468,7 +1498,7 @@ public class QueryBusinessTests : IntegrationTestBase
         var projectIds = new[] { pid };
 
         // Act
-        var result = await _queryBusiness.GetRecentlyAddedRecords(projectIds);
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
         var records = result.ToList();
 
         // Assert - Historical records should return the most recent version

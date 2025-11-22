@@ -1,169 +1,204 @@
+import api from "./api";
 import { ObjectStorageResponseDto } from "../(home)/types/responseDTOs";
 import { CreateObjectStorageRequestDto, UpdateObjectStorageRequestDto } from "../(home)/types/requestDTOs";
-import api from "./api";
 
+/**
+ * Get all object storages for a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param hideArchived - Flag to hide archived object storages (default: true)
+ * @returns Promise with array of ObjectStorageResponseDto
+ */
 export async function getAllObjectStorages(
-    projectId: number | string,
-    hidearchived: boolean = true
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-
+    organizationId: number,
+    projectId: number,
+    hideArchived: boolean = true
+): Promise<ObjectStorageResponseDto[]> {
     try {
         const res = await api.get<ObjectStorageResponseDto[]>(
-            `/projects/${projectId}/storages/GetAllObjectStorages`,
-            { params: { hidearchived } }
+            `/organizations/${organizationId}/projects/${projectId}/storages`,
+            { params: { hideArchived } }
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error("Error fetching object storages: ", error);
+        console.error("Error fetching object storages:", error);
         throw error;
     }
 }
 
+/**
+ * Get a specific object storage by ID
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param objectStorageId - The ID of the object storage
+ * @param hideArchived - Flag to hide archived object storages (default: true)
+ * @returns Promise with ObjectStorageResponseDto
+ */
 export async function getObjectStorage(
-    projectId: number | string,
-    objectStorageId: number | string,
-    hidearchived: boolean = true
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-    if (!objectStorageId) throw new Error("Object Storage ID is required.");
-
+    organizationId: number,
+    projectId: number,
+    objectStorageId: number,
+    hideArchived: boolean = true
+): Promise<ObjectStorageResponseDto> {
     try {
         const res = await api.get<ObjectStorageResponseDto>(
-            `/projects/${projectId}/storages/GetObjectStorage/${objectStorageId}`,
-            { params: { hidearchived } }
+            `/organizations/${organizationId}/projects/${projectId}/storages/${objectStorageId}`,
+            { params: { hideArchived } }
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error(`Error fetching object storage ${objectStorageId}: `, error);
+        console.error(`Error fetching object storage ${objectStorageId}:`, error);
         throw error;
     }
 }
 
-export async function getDefaultObjectStorage(projectId: number | string) {
-    if (!projectId) throw new Error("Project ID is required.");
-
+/**
+ * Get the default object storage for a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @returns Promise with ObjectStorageResponseDto
+ */
+export async function getDefaultObjectStorage(
+    organizationId: number,
+    projectId: number
+): Promise<ObjectStorageResponseDto> {
     try {
         const res = await api.get<ObjectStorageResponseDto>(
-            `/projects/${projectId}/storages/GetDefaultObjectStorage`
+            `/organizations/${organizationId}/projects/${projectId}/storages/default`
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error("Error fetching default object storage: ", error);
+        console.error("Error fetching default object storage:", error);
         throw error;
     }
 }
 
+/**
+ * Create a new object storage
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param dto - The object storage creation request DTO
+ * @param makeDefault - Flag to make the created storage default (default: false)
+ * @returns Promise with ObjectStorageResponseDto
+ */
 export async function createObjectStorage(
-    projectId: number | string,
+    organizationId: number,
+    projectId: number,
     dto: CreateObjectStorageRequestDto,
     makeDefault: boolean = false
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-
+): Promise<ObjectStorageResponseDto> {
     try {
         const res = await api.post<ObjectStorageResponseDto>(
-            `/projects/${projectId}/storages/CreateObjectStorage`,
+            `/organizations/${organizationId}/projects/${projectId}/storages`,
             dto,
             { params: { makeDefault } }
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error("Error creating object storage: ", error);
+        console.error("Error creating object storage:", error);
         throw error;
     }
 }
 
+/**
+ * Update an object storage
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param objectStorageId - The ID of the object storage to update
+ * @param dto - The object storage update request DTO
+ * @returns Promise with ObjectStorageResponseDto
+ */
 export async function updateObjectStorage(
-    projectId: number | string,
-    objectStorageId: number | string,
+    organizationId: number,
+    projectId: number,
+    objectStorageId: number,
     dto: UpdateObjectStorageRequestDto
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-    if (!objectStorageId) throw new Error("Object Storage ID is required.");
-
+): Promise<ObjectStorageResponseDto> {
     try {
         const res = await api.put<ObjectStorageResponseDto>(
-            `/projects/${projectId}/storages/UpdateObjectStorage/${objectStorageId}`,
+            `/organizations/${organizationId}/projects/${projectId}/storages/${objectStorageId}`,
             dto
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error(`Error updating object storage ${objectStorageId}: `, error);
+        console.error(`Error updating object storage ${objectStorageId}:`, error);
         throw error;
     }
 }
 
+/**
+ * Delete an object storage
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param objectStorageId - The ID of the object storage to delete
+ * @returns Promise with success message
+ */
 export async function deleteObjectStorage(
-    projectId: number | string,
-    objectStorageId: number | string
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-    if (!objectStorageId) throw new Error("Object Storage ID is required.");
-
+    organizationId: number,
+    projectId: number,
+    objectStorageId: number
+): Promise<{ message: string }> {
     try {
         const res = await api.delete<{ message: string }>(
-            `/projects/${projectId}/storages/DeleteObjectStorage/${objectStorageId}`
+            `/organizations/${organizationId}/projects/${projectId}/storages/${objectStorageId}`
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error(`Error deleting object storage ${objectStorageId}: `, error);
+        console.error(`Error deleting object storage ${objectStorageId}:`, error);
         throw error;
     }
 }
 
+/**
+ * Archive or unarchive an object storage
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param objectStorageId - The ID of the object storage to archive/unarchive
+ * @param archive - True to archive, false to unarchive
+ * @returns Promise with success message
+ */
 export async function archiveObjectStorage(
-    projectId: number | string,
-    objectStorageId: number | string
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-    if (!objectStorageId) throw new Error("Object Storage ID is required.");
-
+    organizationId: number,
+    projectId: number,
+    objectStorageId: number,
+    archive: boolean
+): Promise<{ message: string }> {
     try {
-        const res = await api.delete<{ message: string }>(
-            `/projects/${projectId}/storages/ArchiveObjectStorage/${objectStorageId}`
+        const res = await api.patch<{ message: string }>(
+            `/organizations/${organizationId}/projects/${projectId}/storages/${objectStorageId}`,
+            null,
+            { params: { archive } }
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error(`Error archiving object storage ${objectStorageId}: `, error);
+        console.error(`Error ${archive ? 'archiving' : 'unarchiving'} object storage ${objectStorageId}:`, error);
         throw error;
     }
 }
 
-export async function unarchiveObjectStorage(
-    projectId: number | string,
-    objectStorageId: number | string
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-    if (!objectStorageId) throw new Error("Object Storage ID is required.");
-
-    try {
-        const res = await api.put<{ message: string }>(
-            `/projects/${projectId}/storages/UnarchiveObjectStorage/${objectStorageId}`,
-            {}
-        );
-        return res;
-    } catch (error) {
-        console.error(`Error unarchiving object storage ${objectStorageId}: `, error);
-        throw error;
-    }
-}
-
+/**
+ * Set an object storage as the default for the project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param objectStorageId - The ID of the object storage to set as default
+ * @param isDefault - True to set as default (default: true)
+ * @returns Promise with success message
+ */
 export async function setDefaultObjectStorage(
-    projectId: number | string,
-    objectStorageId: number | string
-) {
-    if (!projectId) throw new Error("Project ID is required.");
-    if (!objectStorageId) throw new Error("Object Storage ID is required.");
-
+    organizationId: number,
+    projectId: number,
+    objectStorageId: number,
+    isDefault: boolean = true
+): Promise<{ message: string }> {
     try {
-        const res = await api.put<{ message: string }>(
-            `/projects/${projectId}/storages/SetDefaultObjectStorage/${objectStorageId}`,
-            {}
+        const res = await api.patch<{ message: string }>(
+            `/organizations/${organizationId}/projects/${projectId}/storages/${objectStorageId}/default`,
+            null,
+            { params: { isDefault } }
         );
-        return res;
+        return res.data;
     } catch (error) {
-        console.error(`Error setting default object storage ${objectStorageId}: `, error);
+        console.error(`Error setting default object storage ${objectStorageId}:`, error);
         throw error;
     }
 }

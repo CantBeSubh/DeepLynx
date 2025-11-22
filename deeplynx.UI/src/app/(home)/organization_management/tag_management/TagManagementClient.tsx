@@ -26,6 +26,7 @@ import {
   ProjectResponseDto,
   RecordResponseDto,
 } from "../../types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -74,6 +75,8 @@ const TagManagementClient = ({
   const [isSearchingByTags, setIsSearchingByTags] = useState(false);
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
+  const { organization } = useOrganizationSession();
+
 
   useEffect(() => {
     setSelectedTagIds(new Set());
@@ -90,7 +93,7 @@ const TagManagementClient = ({
     setError(null);
 
     try {
-      const allTags = await getAllTags(Number(selectedProject));
+      const allTags = await getAllTags(organization?.organizationId as number, Number(selectedProject));
       setTags(allTags);
       setFilteredTags(allTags);
     } catch (error) {
@@ -125,7 +128,7 @@ const TagManagementClient = ({
   const handleSearchByTags = async (tagIds: number[]) => {
     setIsSearchingByTags(true);
     try {
-      const records = await getRecordsByTags(Number(selectedProject), tagIds);
+      const records = await getRecordsByTags(organization?.organizationId as number, Number(selectedProject), tagIds);
 
       if (records.length === 0) {
         toast.error("No records found with these tags");
@@ -144,8 +147,7 @@ const TagManagementClient = ({
 
       setRecordsFromTagSearch(recordsWithParsedTags);
       toast.success(
-        `Found ${records.length} record${
-          records.length !== 1 ? "s" : ""
+        `Found ${records.length} record${records.length !== 1 ? "s" : ""
         } with selected tags`
       );
     } catch (error) {
@@ -170,7 +172,7 @@ const TagManagementClient = ({
 
   const handleUpdateTag = async (tagId: number, newName: string) => {
     try {
-      await updateTag(Number(selectedProject), tagId, { name: newName });
+      await updateTag(organization?.organizationId as number, Number(selectedProject), tagId, { name: newName });
       await refetchTags();
     } catch (error) {
       console.error("Error updating tag:", error);
@@ -180,7 +182,7 @@ const TagManagementClient = ({
 
   const handleDeleteTag = async (tagId: number) => {
     try {
-      await deleteTag(Number(selectedProject), tagId);
+      await deleteTag(organization?.organizationId as number, Number(selectedProject), tagId);
       const newSelected = new Set(selectedTagIds);
       newSelected.delete(tagId);
       setSelectedTagIds(newSelected);
@@ -226,11 +228,10 @@ const TagManagementClient = ({
               <li
                 key={item}
                 onClick={() => setSelectedMenuItems(item)}
-                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-bold ${
-                  selectedMenuItem === item
-                    ? "bg-info/50 text-info-content"
-                    : "hover:bg-base-200"
-                }`}
+                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-bold ${selectedMenuItem === item
+                  ? "bg-info/50 text-info-content"
+                  : "hover:bg-base-200"
+                  }`}
               >
                 {item}
               </li>
