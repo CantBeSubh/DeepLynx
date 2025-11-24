@@ -379,7 +379,7 @@ try
                 },
                 new()
                 {
-                    Name = "SensitivityLabel",
+                    Name = "Sensitivity Label",
                     Description = "Handles operations related to Sensitivity Label management"
                 },
                 new()
