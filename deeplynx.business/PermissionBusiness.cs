@@ -46,11 +46,11 @@ public class PermissionBusiness : IPermissionBusiness
         long? labelId, long? projectId, long? organizationId,
         bool hideArchived = true)
     {
+        //Returns permission defaults if no project or organization IDs 
         var permissionQuery = _context.Permissions.Where(p =>
-            p.IsDefault || (!p.IsDefault && // ensure Default perms are returned regardless of filters
-                            (!labelId.HasValue || p.LabelId == labelId) && // check for label filter
-                            (!projectId.HasValue || p.ProjectId == projectId) && // check for project filter
-                            (!organizationId.HasValue || p.OrganizationId == organizationId))); // check for org filter
+            p.ProjectId == projectId && 
+            p.OrganizationId == organizationId &&
+            (!labelId.HasValue || p.LabelId == labelId));
 
         if (hideArchived)
             permissionQuery = permissionQuery.Where(p => !p.IsArchived);
