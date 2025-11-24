@@ -47,7 +47,7 @@ public class PermissionController : ControllerBase
         try
         {
             var permissions =
-                await _permissionBusiness.GetAllPermissions(labelId, null, organizationId,
+                await _permissionBusiness.GetAllPermissions(labelId, projectId, organizationId,
                     hideArchived); //setting project ID null for now to circumvent xor logic
             return Ok(permissions);
         }
@@ -104,7 +104,7 @@ public class PermissionController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var permission =
-                await _permissionBusiness.CreatePermission(currentUserId, dto, null,
+                await _permissionBusiness.CreatePermission(currentUserId, dto, projectId,
                     organizationId); //setting project ID null for now to circumvent xor logic
             return Ok(permission);
         }
