@@ -714,7 +714,7 @@ public class RelationshipBusinessTests : IntegrationTestBase
     public async Task RelationshipArchived_WhenProjectArchived()
     {
         // Act
-        var archivedResult = await _projectBusiness.ArchiveProject(uid, pid);
+        var archivedResult = await _projectBusiness.ArchiveProject(uid, oid, pid);
         Assert.True(archivedResult);
 
         // procedure is not traced by entity framework
