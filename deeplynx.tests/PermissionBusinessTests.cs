@@ -941,4 +941,334 @@ public class PermissionBusinessTests : IntegrationTestBase
     }
 
     #endregion
+    
+    #region Scope Level Tests (Default, Organization, Project)
+
+    [Fact]
+    public async Task GetAllPermissions_ReturnsOnlyDefaults_WhenNoOrgOrProject()
+    {
+        // Arrange - Create some default permissions (no org or project)
+        var defaultPerm1 = new Permission
+        {
+            Name = "Default Permission 1",
+            Action = "read",
+            LabelId = null,
+            OrganizationId = null,
+            ProjectId = null,
+            IsDefault = false
+        };
+        var defaultPerm2 = new Permission
+        {
+            Name = "Default Permission 2",
+            Action = "write",
+            LabelId = null,
+            OrganizationId = null,
+            ProjectId = null,
+            IsDefault = false
+        };
+        Context.Permissions.AddRange(defaultPerm1, defaultPerm2);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _permissionBusiness.GetAllPermissions(null, null, null);
+        var permissions = result.ToList();
+
+        // Assert - should return only default permissions (no org or project)
+        Assert.Equal(2, permissions.Count);
+        Assert.All(permissions, p => Assert.Null(p.OrganizationId));
+        Assert.All(permissions, p => Assert.Null(p.ProjectId));
+        Assert.Contains(permissions, p => p.Name == "Default Permission 1");
+        Assert.Contains(permissions, p => p.Name == "Default Permission 2");
+    }
+
+    [Fact]
+    public async Task GetAllPermissions_ReturnsOnlyOrgLevel_WhenOrgSuppliedNoProject()
+    {
+        // Act - Get org-level permissions (no project filter)
+        var result = await _permissionBusiness.GetAllPermissions(null, null, oid);
+        var permissions = result.ToList();
+
+        // Assert - should return only org-level permissions (has org, no project)
+        Assert.True(permissions.Count >= 1); // At least permid7 is org-level only
+        Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
+        
+        // Check that org-level permissions are included
+        Assert.Contains(permissions, p => p.Id == permid7); // "Second Permission Same Organization" - org only, no project
+        
+        // Should NOT include pure default permissions (no org/project)
+        Assert.DoesNotContain(permissions, p => p.OrganizationId == null);
+    }
+
+    [Fact]
+    public async Task GetAllPermissions_ReturnsOnlyProjectLevel_WhenBothOrgAndProjectSupplied()
+    {
+        // Act - Get project-level permissions
+        var result = await _permissionBusiness.GetAllPermissions(null, pid, oid);
+        var permissions = result.ToList();
+
+        // Assert - should return only project-level permissions
+        Assert.True(permissions.Count >= 5); // Several project-level permissions exist
+        Assert.All(permissions, p => Assert.Equal(pid, p.ProjectId));
+        Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
+        
+        // Check that project-level permissions are included
+        Assert.Contains(permissions, p => p.Id == permid1); // "Basic Permission"
+        Assert.Contains(permissions, p => p.Id == permid3); // "Permission with Project"
+        Assert.Contains(permissions, p => p.Id == permid5); // "Permission with Organization"
+        Assert.Contains(permissions, p => p.Id == permid6); // "Second Permission Same Project"
+        
+        // Should NOT include org-level only permissions
+        Assert.DoesNotContain(permissions, p => p.Id == permid7); // org-level only (no project)
+    }
+
+    [Fact]
+    public async Task GetAllPermissions_ScopeIsolation_DefaultsDoNotMixWithOrg()
+    {
+        // Arrange - Create a default permission
+        var defaultPerm = new Permission
+        {
+            Name = "Pure Default",
+            Action = "test",
+            OrganizationId = null,
+            ProjectId = null,
+            IsDefault = false
+        };
+        Context.Permissions.Add(defaultPerm);
+        await Context.SaveChangesAsync();
+
+        // Act - Get org permissions
+        var orgPermissions = await _permissionBusiness.GetAllPermissions(null, null, oid);
+        
+        // Assert - default permission should NOT appear in org results
+        Assert.DoesNotContain(orgPermissions, p => p.Name == "Pure Default");
+        Assert.All(orgPermissions, p => Assert.NotNull(p.OrganizationId));
+    }
+
+    [Fact]
+    public async Task GetAllPermissions_ScopeIsolation_OrgDoNotMixWithProject()
+    {
+        // Arrange - permid7 is org-level only (no project)
+        
+        // Act - Get project permissions
+        var projectPermissions = await _permissionBusiness.GetAllPermissions(null, pid, oid);
+        
+        // Assert - org-level permission should NOT appear in project results
+        Assert.DoesNotContain(projectPermissions, p => p.Id == permid7);
+        Assert.All(projectPermissions, p => Assert.NotNull(p.ProjectId));
+    }
+
+    [Fact]
+    public async Task GetPermission_ReturnsDefault_WhenNoOrgOrProject()
+    {
+        // Arrange - Create a default permission
+        var defaultPerm = new Permission
+        {
+            Name = "Get Default Permission",
+            Action = "test",
+            OrganizationId = null,
+            ProjectId = null,
+            IsDefault = true // Mark as default - these are system permissions
+        };
+        Context.Permissions.Add(defaultPerm);
+        await Context.SaveChangesAsync();
+        var defaultPermId = defaultPerm.Id;
+
+        // Act - Default permissions can be retrieved regardless of scope filters due to IsDefault check
+        var result = await _permissionBusiness.GetPermission(null, null, defaultPermId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(defaultPermId, result.Id);
+        Assert.Null(result.OrganizationId);
+        Assert.Null(result.ProjectId);
+        Assert.True(result.IsDefault);
+        Assert.Equal("Get Default Permission", result.Name);
+    }
+
+    [Fact]
+    public async Task GetPermission_ReturnsOrgLevel_WhenOrgSuppliedNoProject()
+    {
+        // Act - Get org-level permission (permid7)
+        var result = await _permissionBusiness.GetPermission(oid, null, permid7);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(permid7, result.Id);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Null(result.ProjectId);
+        Assert.Equal("Second Permission Same Organization", result.Name);
+    }
+
+    [Fact]
+    public async Task GetPermission_ReturnsProjectLevel_WhenBothOrgAndProjectSupplied()
+    {
+        // Act - Get project-level permission
+        var result = await _permissionBusiness.GetPermission(oid, pid, permid1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(permid1, result.Id);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.Equal("Basic Permission", result.Name);
+    }
+
+    [Fact]
+    public async Task GetPermission_ReturnsDefaultPermission_RegardlessOfScope()
+    {
+        // Act - permid8 is a default permission, should be retrievable with any scope
+        var resultWithProject = await _permissionBusiness.GetPermission(oid, pid, permid8);
+        var resultWithOrg = await _permissionBusiness.GetPermission(oid, null, permid8);
+        var resultWithNeither = await _permissionBusiness.GetPermission(null, null, permid8);
+
+        // Assert - All should succeed because IsDefault bypasses scope checks
+        Assert.NotNull(resultWithProject);
+        Assert.NotNull(resultWithOrg);
+        Assert.NotNull(resultWithNeither);
+        Assert.All(new[] { resultWithProject, resultWithOrg, resultWithNeither }, 
+            r => Assert.True(r.IsDefault));
+    }
+    
+
+    [Fact]
+    public async Task UpdatePermission_CannotUpdateDefaultPermission()
+    {
+        // Arrange - permid8 is a default permission
+        var dto = new UpdatePermissionRequestDto
+        {
+            Name = "Attempt to Update Default",
+            Description = "This should fail"
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _permissionBusiness.UpdatePermission(oid, pid, uid, permid8, dto));
+
+        Assert.Contains($"Permission with id {permid8} cannot be updated", exception.Message);
+
+        // Verify it was not modified
+        var unchangedPermission = await Context.Permissions.FindAsync(permid8);
+        Assert.NotNull(unchangedPermission);
+        Assert.Equal("Default Permission with Project", unchangedPermission.Name); // Original name
+    }
+    
+
+    [Fact]
+    public async Task DeletePermission_CannotDeleteDefaultPermission()
+    {
+        // Act & Assert - permid8 is a default permission
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _permissionBusiness.DeletePermission(oid, pid, uid, permid8));
+
+        Assert.Contains($"Permission with id {permid8} cannot be deleted", exception.Message);
+
+        // Verify it still exists
+        var unchangedPermission = await Context.Permissions.FindAsync(permid8);
+        Assert.NotNull(unchangedPermission);
+    }
+    
+
+    [Fact]
+    public async Task ArchivePermission_CannotArchiveDefaultPermission()
+    {
+        // Act & Assert - permid8 is a default permission
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _permissionBusiness.ArchivePermission(oid, pid, uid, permid8));
+
+        Assert.Contains($"Permission with id {permid8} cannot be updated", exception.Message);
+
+        // Verify it remains unarchived
+        var unchangedPermission = await Context.Permissions.FindAsync(permid8);
+        Assert.NotNull(unchangedPermission);
+        Assert.False(unchangedPermission.IsArchived);
+    }
+
+    [Fact]
+    public async Task ArchivePermission_ArchivesOrgLevel_WhenOrgSuppliedNoProject()
+    {
+        // Act - Archive org-level permission (permid7 is org-only)
+        var result = await _permissionBusiness.ArchivePermission(oid, null, uid, permid7);
+
+        // Assert
+        Assert.True(result);
+
+        // Verify in DB
+        var savedPermission = await Context.Permissions.FindAsync(permid7);
+        Assert.NotNull(savedPermission);
+        Assert.True(savedPermission.IsArchived);
+        Assert.Equal(oid, savedPermission.OrganizationId);
+        Assert.Null(savedPermission.ProjectId);
+    }
+
+    [Fact]
+    public async Task UnarchivePermission_CannotUnarchiveDefaultPermission()
+    {
+        // Arrange - Create and archive a default permission
+        var defaultPerm = new Permission
+        {
+            Name = "Archived Default Permission",
+            Action = "test",
+            OrganizationId = oid,
+            ProjectId = pid,
+            IsDefault = true,
+            IsArchived = true
+        };
+        Context.Permissions.Add(defaultPerm);
+        await Context.SaveChangesAsync();
+        var defaultPermId = defaultPerm.Id;
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _permissionBusiness.UnarchivePermission(oid, pid, uid, defaultPermId));
+
+        Assert.Contains($"Permission with id {defaultPermId} cannot be updated", exception.Message);
+
+        // Verify it remains archived
+        var unchangedPermission = await Context.Permissions.FindAsync(defaultPermId);
+        Assert.NotNull(unchangedPermission);
+        Assert.True(unchangedPermission.IsArchived);
+    }
+
+    [Fact]
+    public async Task CreatePermission_AlwaysCreatesWithIsDefaultFalse()
+    {
+        // Arrange - Try to create at all three scope levels
+        var defaultScopeDto = new CreatePermissionRequestDto
+        {
+            Name = "Default Scope Permission",
+            Action = "test"
+        };
+        var orgScopeDto = new CreatePermissionRequestDto
+        {
+            Name = "Org Scope Permission",
+            Action = "test"
+        };
+        var projectScopeDto = new CreatePermissionRequestDto
+        {
+            Name = "Project Scope Permission",
+            Action = "test",
+            LabelId = lid
+        };
+
+        // Act
+        var defaultResult = await _permissionBusiness.CreatePermission(uid, defaultScopeDto, null, oid);
+        var orgResult = await _permissionBusiness.CreatePermission(uid, orgScopeDto, null, oid);
+        var projectResult = await _permissionBusiness.CreatePermission(uid, projectScopeDto, pid, oid);
+
+        // Assert - All user-created permissions should have IsDefault = false
+        Assert.False(defaultResult.IsDefault);
+        Assert.False(orgResult.IsDefault);
+        Assert.False(projectResult.IsDefault);
+
+        // Verify in DB
+        var defaultPerm = await Context.Permissions.FindAsync(defaultResult.Id);
+        var orgPerm = await Context.Permissions.FindAsync(orgResult.Id);
+        var projectPerm = await Context.Permissions.FindAsync(projectResult.Id);
+
+        Assert.False(defaultPerm!.IsDefault);
+        Assert.False(orgPerm!.IsDefault);
+        Assert.False(projectPerm!.IsDefault);
+    }
+
+    #endregion
 }
