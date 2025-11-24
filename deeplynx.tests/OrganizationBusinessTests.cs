@@ -234,6 +234,24 @@ public class OrganizationBusinessTests : IntegrationTestBase
     [Fact]
     public async Task CreateOrganization_Success_CreatesDefaultRolesWithCorrectPermissions()
     {
+        
+        var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
+    
+        foreach (var defaultPermission in defaultPermissions)
+        {
+            var permission = new Permission
+            {
+                Name = defaultPermission.Name,
+                Resource = defaultPermission.Resource,
+                Action = defaultPermission.Action,
+                Description = defaultPermission.Description,
+                IsDefault = true
+            };
+            Context.Permissions.Add(permission);
+        }
+        
+        await Context.SaveChangesAsync();
+        
         // Arrange
         var dto = new CreateOrganizationRequestDto
         {
@@ -270,93 +288,6 @@ public class OrganizationBusinessTests : IntegrationTestBase
         
         AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
         AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
-    }
-        
-
-    [Fact]
-    public async Task CreateOrganization_Success_CreatesDefaultPermissions()
-    {
-        // Arrange
-        var dto = new CreateOrganizationRequestDto
-        {
-            Name = "New Test Organization",
-            Description = "New Test Organization Description"
-        };
-
-        // Verify no permissions exist before creating org
-        var permissionsBeforeCount = await Context.Permissions.CountAsync();
-
-        // Act
-        var result = await _organizationBusiness.CreateOrganization(uid, dto);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(dto.Name, result.Name);
-        Assert.Equal(dto.Description, result.Description);
-        Assert.False(result.IsArchived);
-
-        // Verify org was actually created in database
-        var createdOrg = await Context.Organizations.FindAsync(result.Id);
-        Assert.NotNull(createdOrg);
-        Assert.Equal(dto.Name, createdOrg.Name);
-
-        // Verify default permissions were created
-        var defaultPermissions = await Context.Permissions.Where(p => p.IsDefault).ToListAsync();
-        Assert.True(defaultPermissions.Count > 0);
-        Assert.True(defaultPermissions.All(p => p.IsDefault));
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultPermissions.Count);
-
-        // Verify the count increased by the expected amount
-        var permissionsAfterCount = await Context.Permissions.CountAsync();
-        Assert.Equal(permissionsBeforeCount + DefaultPermissions.AllDefaultPermissions.Count, permissionsAfterCount);
-    }
-
-    [Fact]
-    public async Task CreateOrganization_Success_DoesNotDuplicateExistingDefaultPermissions()
-    {
-        // Arrange
-        // First, create an organization which will create the default permissions
-        var firstDto = new CreateOrganizationRequestDto
-        {
-            Name = "First Organization",
-            Description = "First org to create default permissions"
-        };
-
-        var firstOrg = await _organizationBusiness.CreateOrganization(uid, firstDto);
-
-        // Get the count of permissions after first org creation
-        var permissionsAfterFirstOrg = await Context.Permissions.CountAsync();
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, permissionsAfterFirstOrg);
-
-        // Act - Create a second organization
-        var secondDto = new CreateOrganizationRequestDto
-        {
-            Name = "Second Organization",
-            Description = "Second org should not duplicate permissions"
-        };
-
-        var secondOrg = await _organizationBusiness.CreateOrganization(uid, secondDto);
-
-        // Assert
-        Assert.NotNull(secondOrg);
-
-        // Verify no additional permissions were created
-        var permissionsAfterSecondOrg = await Context.Permissions.CountAsync();
-        Assert.Equal(permissionsAfterFirstOrg, permissionsAfterSecondOrg);
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, permissionsAfterSecondOrg);
-
-        // Verify all default permissions still exist and are not duplicated
-        var defaultPermissions = await Context.Permissions.Where(p => p.IsDefault).ToListAsync();
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultPermissions.Count);
-
-        // Verify each permission exists exactly once
-        foreach (var defaultPerm in DefaultPermissions.AllDefaultPermissions)
-        {
-            var matchingPerms = defaultPermissions
-                .Where(p => p.Resource == defaultPerm.Resource && p.Action == defaultPerm.Action)
-                .ToList();
-            Assert.Single(matchingPerms);
-        }
     }
 
     [Fact]

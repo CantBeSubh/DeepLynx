@@ -653,6 +653,12 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_permissions_last_updated_by");
+            
+            // Check constraint: if is_default is true, organization_id, project_id, and label_id must be null
+            entity.ToTable(p => p.HasCheckConstraint(
+                "chk_default_permissions_no_org_project_label",
+                "is_default = false OR (organization_id IS NULL AND project_id IS NULL AND label_id IS NULL)"
+            ));
 
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedPermissions)
