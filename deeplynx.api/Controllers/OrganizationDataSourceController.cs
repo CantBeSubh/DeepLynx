@@ -7,15 +7,15 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers;
 
 /// <summary>
-///     Controller for managing data sources.
+///     Controller for managing data sources on org level.
 /// </summary>
 /// <remarks>
 ///     This controller provides endpoints to create, update, delete, and retrieve data source information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/datasources")]
+[Route("organizations/{organizationId}/datasources")]
 [Authorize]
-public class DataSourceController : ControllerBase
+public class OrganizationDataSourceController : ControllerBase
 {
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly ILogger<DataSourceController> _logger;
@@ -25,28 +25,27 @@ public class DataSourceController : ControllerBase
     /// </summary>
     /// <param name="dataSourceBusiness">The business logic interface for handling data source operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public DataSourceController(IDataSourceBusiness dataSourceBusiness, ILogger<DataSourceController> logger)
+    public OrganizationDataSourceController(IDataSourceBusiness dataSourceBusiness,
+        ILogger<DataSourceController> logger)
     {
         _dataSourceBusiness = dataSourceBusiness;
         _logger = logger;
     }
 
     /// <summary>
-    ///     Get All Data Sources
+    ///     Get All Data Sources for Organization
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
     /// <returns>A list of data sources for the given project.</returns>
-    [HttpGet(Name = "api_get_all_data_sources_for_project")]
-    public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
+    [HttpGet(Name = "api_get_all_data_sources_for_organization")]
+    public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSourcesForOrg(
         long organizationId,
-        long[] projectId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var dataSources = await _dataSourceBusiness.GetAllDataSources(organizationId, projectId, hideArchived);
+            var dataSources = await _dataSourceBusiness.GetAllDataSources(organizationId, hideArchived: hideArchived);
             return Ok(dataSources);
         }
         catch (Exception exc)
@@ -58,24 +57,22 @@ public class DataSourceController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Data Source
+    ///     Get a Data Source for org
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
     /// <returns>The data source associated with the given ID</returns>
-    [HttpGet("{dataSourceId}", Name = "api_get_a_data_source_for_project")]
-    public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
+    [HttpGet("{dataSourceId}", Name = "api_get_a_data_source_for_organization")]
+    public async Task<ActionResult<DataSourceResponseDto>> GetDataSourceForOrg(
         long organizationId,
-        long projectId,
         long dataSourceId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
             var dataSource =
-                await _dataSourceBusiness.GetDataSource(organizationId, dataSourceId, hideArchived, projectId);
+                await _dataSourceBusiness.GetDataSource(organizationId, dataSourceId, hideArchived);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -87,46 +84,41 @@ public class DataSourceController : ControllerBase
     }
 
     /// <summary>
-    ///     Get Default Data Source
+    ///     Get Default Data Source for org
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <returns>The default data source for the project</returns>
-    [HttpGet("default", Name = "api_get_default_data_source_for_project")]
-    public async Task<ActionResult<DataSourceResponseDto>> GetDefaultDataSource(
-        long organizationId,
-        long projectId)
+    [HttpGet("default", Name = "api_get_default_data_source_for_organization")]
+    public async Task<ActionResult<DataSourceResponseDto>> GetDefaultDataSourceForOrg(long organizationId)
     {
         try
         {
-            var dataSource = await _dataSourceBusiness.GetDefaultDataSource(organizationId, projectId);
+            var dataSource = await _dataSourceBusiness.GetDefaultDataSource(organizationId);
             return Ok(dataSource);
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while retrieving default data source for project {projectId}: {exc}";
+            var message = $"An error occurred while retrieving default data source for org {organizationId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
 
     /// <summary>
-    ///     Create a Data Source
+    ///     Create a Data Source for org
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dto">The data transfer object containing data source details</param>
     /// <returns>The created data source</returns>
-    [HttpPost(Name = "api_create_a_data_source_for_project")]
-    public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(
+    [HttpPost(Name = "api_create_a_data_source_for_organization")]
+    public async Task<ActionResult<DataSourceResponseDto>> CreateDataSourceForOrg(
         long organizationId,
-        long projectId,
         [FromBody] CreateDataSourceRequestDto dto)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.CreateDataSource(currentUserId, organizationId, dto, projectId);
+            var dataSource = await _dataSourceBusiness.CreateDataSource(currentUserId, organizationId, dto);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -138,17 +130,15 @@ public class DataSourceController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Data Source
+    ///     Update a Data Source for org
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to update</param>
     /// <param name="dto">The data transfer object containing updated data source details</param>
     /// <returns>The newly updated data source</returns>
-    [HttpPut("{dataSourceId}", Name = "api_update_a_data_source_for_project")]
-    public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
+    [HttpPut("{dataSourceId}", Name = "api_update_a_data_source_for_organization")]
+    public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSourceForOrg(
         long organizationId,
-        long projectId,
         long dataSourceId,
         [FromBody] UpdateDataSourceRequestDto dto)
     {
@@ -156,7 +146,7 @@ public class DataSourceController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var dataSource =
-                await _dataSourceBusiness.UpdateDataSource(currentUserId, organizationId, dataSourceId, dto, projectId);
+                await _dataSourceBusiness.UpdateDataSource(currentUserId, organizationId, dataSourceId, dto);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -168,21 +158,19 @@ public class DataSourceController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Data Source
+    ///     Delete a Data Source for org
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to delete</param>
     /// <returns>A message stating the data source was successfully deleted.</returns>
-    [HttpDelete("{dataSourceId}", Name = "api_delete_a_data_source_for_project")]
-    public async Task<IActionResult> DeleteDataSource(
+    [HttpDelete("{dataSourceId}", Name = "api_delete_a_data_source_for_organization")]
+    public async Task<IActionResult> DeleteDataSourceForOrg(
         long organizationId,
-        long dataSourceId,
-        long projectId)
+        long dataSourceId)
     {
         try
         {
-            await _dataSourceBusiness.DeleteDataSource(organizationId, dataSourceId, projectId);
+            await _dataSourceBusiness.DeleteDataSource(organizationId, dataSourceId);
             return Ok(new { message = $"Deleted data source {dataSourceId}" });
         }
         catch (Exception exc)
@@ -194,17 +182,15 @@ public class DataSourceController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Data Source
+    ///     Archive or Unarchive a Data Source for org
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to archive or unarchive</param>
     /// <param name="archive">True to archive the data source, false to unarchive it.</param>
     /// <returns>A message stating the data source was successfully archived or unarchived.</returns>
-    [HttpPatch("{dataSourceId}", Name = "api_archive_data_source_for_project")]
-    public async Task<IActionResult> ArchiveDataSource(
+    [HttpPatch("{dataSourceId}", Name = "api_archive_data_source_for_organization")]
+    public async Task<IActionResult> ArchiveDataSourceForOrg(
         long organizationId,
-        long projectId,
         long dataSourceId,
         [FromQuery] bool archive)
     {
@@ -213,11 +199,11 @@ public class DataSourceController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _dataSourceBusiness.ArchiveDataSource(currentUserId, organizationId, dataSourceId, projectId);
+                await _dataSourceBusiness.ArchiveDataSource(currentUserId, organizationId, dataSourceId);
                 return Ok(new { message = $"Archived data source {dataSourceId}" });
             }
 
-            await _dataSourceBusiness.UnarchiveDataSource(currentUserId, organizationId, dataSourceId, projectId);
+            await _dataSourceBusiness.UnarchiveDataSource(currentUserId, organizationId, dataSourceId);
             return Ok(new { message = $"Unarchived data source {dataSourceId}" });
         }
         catch (Exception exc)
@@ -230,17 +216,15 @@ public class DataSourceController : ControllerBase
     }
 
     /// <summary>
-    ///     Set Default Data Source
+    ///     Set Default Data Source for org
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to set as default</param>
     /// <param name="isDefault">True to set as default, false to unset as default.</param>
     /// <returns>The updated data source</returns>
-    [HttpPatch("{dataSourceId}/default", Name = "api_set_default_data_source_for_project")]
-    public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
+    [HttpPatch("{dataSourceId}/default", Name = "api_set_default_data_source_for_organization")]
+    public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSourceForOrg(
         long organizationId,
-        long projectId,
         long dataSourceId,
         [FromQuery] bool isDefault = true)
     {
@@ -248,7 +232,7 @@ public class DataSourceController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var dataSource =
-                await _dataSourceBusiness.SetDefaultDataSource(currentUserId, organizationId, dataSourceId, projectId);
+                await _dataSourceBusiness.SetDefaultDataSource(currentUserId, organizationId, dataSourceId);
             return Ok(dataSource);
         }
         catch (Exception exc)

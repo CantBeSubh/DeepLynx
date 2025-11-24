@@ -411,44 +411,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     }
 
     /// <summary>
-    ///     Retrieves all data sources for a specific project.
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
-    /// <param name="projectId">ID's of the projects whose data sources are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
-    /// <returns>A list of data sources within the given project.</returns>
-    public async Task<List<DataSourceResponseDto>> GetAllDataSources(
-        long organizationId,
-        long? projectId = null,
-        bool hideArchived = true)
-    {
-        var dataSources = await _context.DataSources
-            .AsNoTracking()
-            .Where(d =>
-                d.OrganizationId == organizationId
-                || (d.ProjectId.HasValue && d.ProjectId == projectId
-                                         //(projectIds == null || projectIds.Length == 0 ||
-                                         //(d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value))) &&
-                                         && (!hideArchived || !d.IsArchived))).ToListAsync();
-        return dataSources.Select(d => new DataSourceResponseDto
-        {
-            Id = d.Id,
-            Name = d.Name,
-            Description = d.Description,
-            OrganizationId = d.OrganizationId,
-            Default = d.Default,
-            Abbreviation = d.Abbreviation,
-            Type = d.Type,
-            BaseUri = d.BaseUri,
-            Config = JsonNode.Parse(d.Config ?? "{}") as JsonObject,
-            ProjectId = d.ProjectId,
-            LastUpdatedAt = d.LastUpdatedAt,
-            LastUpdatedBy = d.LastUpdatedBy,
-            IsArchived = d.IsArchived
-        }).ToList();
-    }
-
-    /// <summary>
     ///     Archives a specific data source by its ID.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
@@ -491,6 +453,49 @@ public class DataSourceBusiness : IDataSourceBusiness
         });
 
         return true;
+    }
+
+    /// <summary>
+    ///     Retrieves all data sources for a specific project.
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
+    /// <param name="projectIds">ID's of the projects whose data sources are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
+    /// <returns>A list of data sources within the given project.</returns>
+    public async Task<List<DataSourceResponseDto>> GetAllDataSources(
+        long organizationId,
+        long[]? projectIds = null,
+        bool hideArchived = true)
+    {
+        var query = _context.DataSources
+            .AsNoTracking()
+            .Where(d => d.OrganizationId == organizationId);
+
+        if (projectIds is { Length: > 0 })
+            query = query.Where(c => c.ProjectId.HasValue && projectIds.Contains(c.ProjectId.Value));
+
+        if (hideArchived)
+            query = query.Where(c => !c.IsArchived);
+
+
+        var dataSources = await query.ToListAsync();
+
+        return dataSources.Select(d => new DataSourceResponseDto
+        {
+            Id = d.Id,
+            Name = d.Name,
+            Description = d.Description,
+            Default = d.Default,
+            Abbreviation = d.Abbreviation,
+            Type = d.Type,
+            BaseUri = d.BaseUri,
+            Config = JsonNode.Parse(d.Config ?? "{}") as JsonObject,
+            OrganizationId = d.OrganizationId,
+            ProjectId = d.ProjectId,
+            LastUpdatedAt = d.LastUpdatedAt,
+            LastUpdatedBy = d.LastUpdatedBy,
+            IsArchived = d.IsArchived
+        }).ToList();
     }
 
     private async Task MakePreviousDefaultsFalse(long currentUserId, long organizationId, long? projectId,
