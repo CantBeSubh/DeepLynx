@@ -338,7 +338,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
-                    b.Property<long?>("ProjectId")
+                    b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -2093,6 +2093,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("DataSources")
                         .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("data_sources_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
