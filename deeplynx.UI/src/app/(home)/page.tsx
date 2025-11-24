@@ -44,7 +44,7 @@ export default async function Page() {
   // Fetch projects filtered by organization
   let projects: ProjectResponseDto[] = [];
   try {
-    const apiProjects = await getAllProjectsServer(organizationId, true);
+    const apiProjects = await getAllProjectsServer(organizationId as number, true);
     projects = apiProjects.map(mapToProjectResponseDtos);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);

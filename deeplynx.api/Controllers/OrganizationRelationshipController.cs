@@ -7,25 +7,27 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers;
 
 /// <summary>
-///     Controller for managing relationships.
+///     Controller for managing relationships at the organization level.
 /// </summary>
 /// <remarks>
 ///     This controller provides endpoints to create, update, delete, and retrieve relationship information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/relationships")]
+[Route("organizations/{organizationId}/relationships")]
 [Authorize]
-public class RelationshipController : ControllerBase
+[Tags("Organization Management", "Relationship")]
+public class OrganizationRelationshipController : ControllerBase
 {
     private readonly ILogger<RelationshipController> _logger;
     private readonly IRelationshipBusiness _relationshipBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="RelationshipController" /> class
+    ///     Initializes a new instance of the <see cref="OrganizationRelationshipController" /> class
     /// </summary>
     /// <param name="relationshipBusiness">The business logic interface for handling relationship operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public RelationshipController(IRelationshipBusiness relationshipBusiness, ILogger<RelationshipController> logger)
+    public OrganizationRelationshipController(IRelationshipBusiness relationshipBusiness,
+        ILogger<RelationshipController> logger)
     {
         _relationshipBusiness = relationshipBusiness;
         _logger = logger;
@@ -34,20 +36,20 @@ public class RelationshipController : ControllerBase
     /// <summary>
     ///     Get All Relationships
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project whose relationships are to be retrieved</param>
+    /// <param name="organizationId">The ID of the organization to which the relationship's project belongs</param>
+    /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
-    /// <returns>A list of relationships for the given project.</returns>
-    [HttpGet(Name = "api_get_all_relationships")]
+    /// <returns>List of relationship response DTOs</returns>
+    [HttpGet(Name = "api_get_all_relationships_organization")]
     public async Task<ActionResult<IEnumerable<RelationshipResponseDto>>> GetAllRelationships(
         long organizationId,
-        long projectId,
+        [FromQuery] long[]? projectIds,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
             var relationships =
-                await _relationshipBusiness.GetAllRelationships(organizationId, [projectId], hideArchived);
+                await _relationshipBusiness.GetAllRelationships(organizationId, projectIds, hideArchived);
             return Ok(relationships);
         }
         catch (Exception exc)
@@ -61,22 +63,20 @@ public class RelationshipController : ControllerBase
     /// <summary>
     ///     Get a Relationship
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the relationship's project belongs</param>
     /// <param name="relationshipId">The ID of the relationship to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
-    /// <returns>The relationship associated with the given ID</returns>
-    [HttpGet("{relationshipId:long}", Name = "api_get_a_relationship")]
+    /// <returns>Relationship response DTO</returns>
+    [HttpGet("{relationshipId:long}", Name = "api_get_a_relationship_organization")]
     public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
         long organizationId,
-        long projectId,
         long relationshipId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
             var relationship =
-                await _relationshipBusiness.GetRelationship(organizationId, projectId, relationshipId, hideArchived);
+                await _relationshipBusiness.GetRelationship(organizationId, null, relationshipId, hideArchived);
             return Ok(relationship);
         }
         catch (KeyNotFoundException ex)
@@ -94,20 +94,18 @@ public class RelationshipController : ControllerBase
     /// <summary>
     ///     Create a Relationship
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the relationship's project belongs</param>
     /// <param name="dto">The relationship request data transfer object containing relationship details</param>
     /// <returns>The created relationship</returns>
-    [HttpPost(Name = "api_create_a_relationship")]
+    [HttpPost(Name = "api_create_a_relationship_organization")]
     public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(
         long organizationId,
-        long projectId,
         [FromBody] CreateRelationshipRequestDto dto)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var created = await _relationshipBusiness.CreateRelationship(currentUserId, organizationId, projectId, dto);
+            var created = await _relationshipBusiness.CreateRelationship(currentUserId, organizationId, null, dto);
             return Ok(created);
         }
         catch (Exception exc)
@@ -121,21 +119,19 @@ public class RelationshipController : ControllerBase
     /// <summary>
     ///     Bulk Create Relationships
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the relationships belong</param>
+    /// <param name="organizationId">The ID of the organization to which the relationship's project belongs</param>
     /// <param name="relationships">List of relationship request data transfer objects containing relationship details</param>
     /// <returns>The created relationships</returns>
-    [HttpPost("bulk", Name = "api_create_many_relationships")]
+    [HttpPost("bulk", Name = "api_create_many_relationships_organization")]
     public async Task<ActionResult<List<RelationshipResponseDto>>> BulkCreateRelationships(
         long organizationId,
-        long projectId,
         [FromBody] List<CreateRelationshipRequestDto> relationships)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
             var created =
-                await _relationshipBusiness.BulkCreateRelationships(currentUserId, organizationId, projectId,
+                await _relationshipBusiness.BulkCreateRelationships(currentUserId, organizationId, null,
                     relationships);
             return Ok(created);
         }
@@ -150,15 +146,13 @@ public class RelationshipController : ControllerBase
     /// <summary>
     ///     Update a Relationship
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the relationship's project belongs</param>
     /// <param name="relationshipId">The ID of the relationship to update</param>
     /// <param name="dto">The relationship request data transfer object containing updated relationship details</param>
     /// <returns>The updated relationship</returns>
-    [HttpPut("{relationshipId:long}", Name = "api_update_a_relationship")]
+    [HttpPut("{relationshipId:long}", Name = "api_update_a_relationship_organization")]
     public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(
         long organizationId,
-        long projectId,
         long relationshipId,
         [FromBody] UpdateRelationshipRequestDto dto)
     {
@@ -166,7 +160,7 @@ public class RelationshipController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var result =
-                await _relationshipBusiness.UpdateRelationship(currentUserId, organizationId, projectId, relationshipId,
+                await _relationshipBusiness.UpdateRelationship(currentUserId, organizationId, null, relationshipId,
                     dto);
             return Ok(result);
         }
@@ -181,20 +175,18 @@ public class RelationshipController : ControllerBase
     /// <summary>
     ///     Delete a Relationship
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the relationship's project belongs</param>
     /// <param name="relationshipId">The ID of the relationship to delete</param>
     /// <returns>A message stating the relationship was successfully deleted.</returns>
-    [HttpDelete("{relationshipId:long}", Name = "api_delete_a_relationship")]
+    [HttpDelete("{relationshipId:long}", Name = "api_delete_a_relationship_organization")]
     public async Task<IActionResult> DeleteRelationship(
         long organizationId,
-        long projectId,
         long relationshipId)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            await _relationshipBusiness.DeleteRelationship(currentUserId, organizationId, projectId, relationshipId);
+            await _relationshipBusiness.DeleteRelationship(currentUserId, organizationId, null, relationshipId);
             return Ok(new { message = $"Deleted relationship {relationshipId}" });
         }
         catch (Exception exc)
@@ -208,15 +200,13 @@ public class RelationshipController : ControllerBase
     /// <summary>
     ///     Archive or Unarchive a Relationship
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the relationship's project belongs</param>
     /// <param name="relationshipId">The ID of the relationship to archive or unarchive</param>
     /// <param name="archive">True to archive the relationship, false to unarchive it.</param>
     /// <returns>A message stating the relationship was successfully archived or unarchived.</returns>
-    [HttpPatch("{relationshipId:long}", Name = "api_archive_relationship")]
+    [HttpPatch("{relationshipId:long}", Name = "api_archive_relationship_organization")]
     public async Task<IActionResult> ArchiveRelationship(
         long organizationId,
-        long projectId,
         long relationshipId,
         [FromQuery] bool archive)
     {
@@ -225,12 +215,12 @@ public class RelationshipController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _relationshipBusiness.ArchiveRelationship(currentUserId, organizationId, projectId,
+                await _relationshipBusiness.ArchiveRelationship(currentUserId, organizationId, null,
                     relationshipId);
                 return Ok(new { message = $"Archived relationship {relationshipId}" });
             }
 
-            await _relationshipBusiness.UnarchiveRelationship(currentUserId, organizationId, projectId, relationshipId);
+            await _relationshipBusiness.UnarchiveRelationship(currentUserId, organizationId, null, relationshipId);
             return Ok(new { message = $"Unarchived relationship {relationshipId}" });
         }
         catch (Exception exc)

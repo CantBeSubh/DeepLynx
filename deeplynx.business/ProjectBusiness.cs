@@ -496,7 +496,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>A list of project stats</returns>
     public async Task<ProjectStatResponseDto> GetProjectStats(long projectId)
     {
-        //classes": number, “dataRecords”: number, “connections”: number 
+        // "classes": number, “dataRecords”: number, “connections”: number 
         var classes = _context.Classes
             .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         var records = _context.Records
@@ -798,8 +798,9 @@ public class ProjectBusiness : IProjectBusiness
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
-                                      throw new NullReferenceException("AWS connection string not set");
+            var awsConnectionString = 
+                Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
+                throw new NullReferenceException("AWS connection string not set");
             config["awsConnectionString"] = awsConnectionString;
         }
         else
@@ -813,8 +814,8 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Instance Default",
             Config = config
         };
-        await _objectStorageBusiness.CreateObjectStorage(currentUserId, organizationId, projectId,
-            objectStorageRequestDto, true);
+        await _objectStorageBusiness.CreateObjectStorage(
+            currentUserId, organizationId, projectId, objectStorageRequestDto);
 
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT

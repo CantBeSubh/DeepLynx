@@ -16,6 +16,7 @@ import { getAllUsers } from "@/app/lib/user_services.client";
 import AvatarCell from "./Avatar";
 import { format } from "date-fns";
 import { ProjectResponseDto } from "../types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 interface Props {
   project: ProjectResponseDto;
@@ -25,6 +26,8 @@ interface Props {
 const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
   const router = useRouter();
   const { t } = useLanguage();
+  const { organization, hasLoaded } = useOrganizationSession();
+
 
   const [stats, setStats] = useState<{
     classes: number;
@@ -38,7 +41,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
 
     const fetchStats = async () => {
       try {
-        const data = await getProjectStats(project.id.toString()!);
+        const data = await getProjectStats(organization?.organizationId as number, project.id as number);
         setStats({
           classes: data.classes,
           records: data.records,

@@ -49,7 +49,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
     try {
       setLoadingProjects(true);
-      const data = await getAllProjects(organization.organizationId, true);
+      const data = await getAllProjects(organization.organizationId as number, true);
       setProjects(data);
     } catch (error) {
       console.error("Failed to fetch projects:", error);
@@ -181,9 +181,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 left-18 flex z-30">
       <aside
-        className={`h-full shadow-xl ${
-          isCollapsed ? "w-22" : "w-64"
-        } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
+        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
+          } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
       >
         {/* Projects Section */}
         {!shouldHideProjects && (
@@ -233,11 +232,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                     <li key={proj.id}>
                       <button
                         onClick={() => handleProjectClick(proj)}
-                        className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${
-                          isProjectActive(proj.id)
+                        className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${isProjectActive(proj.id)
                             ? "bg-info/30 text-primary-content font-semibold"
                             : "hover:bg-info/20 text-primary-content"
-                        }`}
+                          }`}
                       >
                         <span className="truncate">{proj.name}</span>
                         {isProjectActive(proj.id) && (

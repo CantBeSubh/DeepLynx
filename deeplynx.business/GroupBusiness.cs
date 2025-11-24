@@ -1,9 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using deeplynx.models;
-using deeplynx.interfaces;
+using System.Text.Json;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
-using System.Text.Json;
+using deeplynx.interfaces;
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
@@ -13,7 +13,7 @@ public class GroupBusiness : IGroupBusiness
     private readonly IEventBusiness _eventBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GroupBusiness"/> class.
+    ///     Initializes a new instance of the <see cref="GroupBusiness" /> class.
     /// </summary>
     /// <param name="context">Database context used for group CRUD operations</param>
     /// <param name="eventBusiness">Used for logging events during CRUD operations</param>
@@ -24,24 +24,19 @@ public class GroupBusiness : IGroupBusiness
     }
 
     /// <summary>
-    /// Get all groups within an organization
+    ///     Get all groups within an organization
     /// </summary>
     /// <param name="organizationId">ID of the organization from which to list groups</param>
     /// <param name="hideArchived">Boolean indicating whether to hide archived groups from results</param>
     /// <returns>An array of groups within the given organization</returns>
     public async Task<IEnumerable<GroupResponseDto>> GetAllGroups(long organizationId, bool hideArchived = true)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
         var groupQuery = _context.Groups.Where(g => g.OrganizationId == organizationId);
 
-        if (hideArchived)
-        {
-            groupQuery = groupQuery.Where(g => !g.IsArchived);
-        }
+        if (hideArchived) groupQuery = groupQuery.Where(g => !g.IsArchived);
 
         return await groupQuery
-            .Select(g => new GroupResponseDto()
+            .Select(g => new GroupResponseDto
             {
                 Id = g.Id,
                 Name = g.Name,
@@ -56,38 +51,7 @@ public class GroupBusiness : IGroupBusiness
     }
 
     /// <summary>
-    /// Retrieves a specific group by ID
-    /// </summary>
-    /// <param name="groupId">The ID by which to retrieve the group</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived groups from the result</param>
-    /// <returns>The given group to return</returns>
-    /// <exception cref="KeyNotFoundException">Returned if the group is not found or is archived</exception>
-    public async Task<GroupResponseDto> GetGroup(long groupId, bool hideArchived = true)
-    {
-        var group = await _context.Groups
-            .Where(g => g.Id == groupId)
-            .FirstOrDefaultAsync();
-
-        if (group == null)
-            throw new KeyNotFoundException($"Group with id {groupId} does not exist");
-
-        if (hideArchived && group.IsArchived)
-            throw new KeyNotFoundException($"Group with id {groupId} is archived");
-
-        return new GroupResponseDto
-        {
-            Id = group.Id,
-            Name = group.Name,
-            Description = group.Description,
-            LastUpdatedAt = group.LastUpdatedAt,
-            LastUpdatedBy = group.LastUpdatedBy,
-            IsArchived = group.IsArchived,
-            OrganizationId = group.OrganizationId,
-        };
-    }
-
-    /// <summary>
-    /// Create a group
+    ///     Create a group
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The organization ID to which the group will belong</param>
@@ -95,15 +59,15 @@ public class GroupBusiness : IGroupBusiness
     /// <returns>The newly created group</returns>
     public async Task<GroupResponseDto> CreateGroup(long currentUserId, long organizationId, CreateGroupRequestDto dto)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         ValidationHelper.ValidateModel(dto);
+
         var group = new Group
         {
             Name = dto.Name,
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = currentUserId,
-            OrganizationId = organizationId,
+            OrganizationId = organizationId
         };
 
         _context.Groups.Add(group);
@@ -131,30 +95,65 @@ public class GroupBusiness : IGroupBusiness
             LastUpdatedAt = group.LastUpdatedAt,
             LastUpdatedBy = group.LastUpdatedBy,
             IsArchived = group.IsArchived,
-            OrganizationId = group.OrganizationId,
+            OrganizationId = group.OrganizationId
         };
     }
 
     /// <summary>
-    /// Update a group with new information
+    ///     Retrieves a specific group by ID and organization
+    /// </summary>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
+    /// <param name="groupId">The ID by which to retrieve the group</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived groups from the result</param>
+    /// <returns>The given group to return</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the group is not found or is archived</exception>
+    public async Task<GroupResponseDto> GetGroup(long organizationId, long groupId, bool hideArchived = true)
+    {
+        var group = await _context.Groups
+            .Where(g => g.Id == groupId && g.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
+
+        if (group == null)
+            throw new KeyNotFoundException($"Group with id {groupId} does not exist");
+
+        if (hideArchived && group.IsArchived)
+            throw new KeyNotFoundException($"Group with id {groupId} is archived");
+
+        return new GroupResponseDto
+        {
+            Id = group.Id,
+            Name = group.Name,
+            Description = group.Description,
+            LastUpdatedAt = group.LastUpdatedAt,
+            LastUpdatedBy = group.LastUpdatedBy,
+            IsArchived = group.IsArchived,
+            OrganizationId = group.OrganizationId
+        };
+    }
+
+    /// <summary>
+    ///     Update a group with new information
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
     /// <param name="groupId">The ID of the group to be updated</param>
     /// <param name="dto">The data transfer object holding information </param>
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<GroupResponseDto> UpdateGroup(long currentUserId, long groupId, UpdateGroupRequestDto dto)
+    public async Task<GroupResponseDto> UpdateGroup(long currentUserId, long organizationId, long groupId,
+        UpdateGroupRequestDto dto)
     {
-        var group = await _context.Groups.FindAsync(groupId);
+        ValidationHelper.ValidateModel(dto);
+
+        var group = await _context.Groups.Where(g => g.Id == groupId && g.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
 
         group.Name = dto.Name ?? group.Name;
         group.Description = dto.Description ?? group.Description;
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        group.LastUpdatedBy = currentUserId; 
-
-        _context.Groups.Update(group);
+        group.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
 
         // Log update Group event
@@ -179,20 +178,22 @@ public class GroupBusiness : IGroupBusiness
             LastUpdatedAt = group.LastUpdatedAt,
             LastUpdatedBy = group.LastUpdatedBy,
             IsArchived = group.IsArchived,
-            OrganizationId = group.OrganizationId,
+            OrganizationId = group.OrganizationId
         };
     }
 
     /// <summary>
-    /// Archive a specific group by ID
+    ///     Archive a specific group by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
     /// <param name="groupId">ID of the group to archive</param>
     /// <returns>Boolean true on successful archive</returns>
     /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
-    public async Task<bool> ArchiveGroup(long currentUserId, long groupId)
+    public async Task<bool> ArchiveGroup(long currentUserId, long organizationId, long groupId)
     {
-        var group = await _context.Groups.FindAsync(groupId);
+        var group = await _context.Groups.Where(g => g.Id == groupId && g.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found or is archived");
 
@@ -219,17 +220,17 @@ public class GroupBusiness : IGroupBusiness
     }
 
     /// <summary>
-    /// Unarchive a specific group by ID
+    ///     Unarchive a specific group by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
     /// <param name="groupId">ID of the group to unarchive</param>
     /// <returns>Boolean true on successful unarchive</returns>
     /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
-    public async Task<bool> UnarchiveGroup(long currentUserId, long groupId)
+    public async Task<bool> UnarchiveGroup(long currentUserId, long organizationId, long groupId)
     {
-        var group = await _context.Groups.FindAsync(groupId);
-        // note that we purposefully return an error here if a group is not archived.
-        // we only want to unarchive what has already been archived
+        var group = await _context.Groups.Where(g => g.Id == groupId && g.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
         if (group == null || !group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found or is not archived");
 
@@ -256,16 +257,21 @@ public class GroupBusiness : IGroupBusiness
     }
 
     /// <summary>
-    /// Delete a specific group by ID
+    ///     Delete a specific group by ID
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
     /// <param name="groupId">ID of the group to delete</param>
     /// <returns>Boolean true on successful delete</returns>
     /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
-    public async Task<bool> DeleteGroup(long currentUserId, long groupId)
+    public async Task<bool> DeleteGroup(long currentUserId, long organizationId, long groupId)
     {
-        var group = await _context.Groups.FindAsync(groupId);
+        var group = await _context.Groups.Where(g => g.Id == groupId && g.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
+
+        var groupName = group.Name;
 
         _context.Groups.Remove(group);
         await _context.SaveChangesAsync();
@@ -279,24 +285,26 @@ public class GroupBusiness : IGroupBusiness
         {
             Operation = "delete",
             EntityType = "group",
-            EntityId = group.Id,
-            EntityName = group.Name,
-            Properties = JsonSerializer.Serialize(new { group.Name }),
+            EntityId = groupId,
+            EntityName = groupName,
+            Properties = JsonSerializer.Serialize(new { groupName })
         });
 
         return true;
     }
 
     /// <summary>
-    /// Add a user to a group
+    ///     Add a user to a group
     /// </summary>
-    /// <param name="groupId">ID of group to add user to</param>
     /// <param name="userId">ID of user to add to group</param>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
+    /// <param name="groupId">ID of group to add user to</param>
     /// <returns>True if successful</returns>
     /// <exception cref="KeyNotFoundException">Returned if group or user not found</exception>
-    public async Task<bool> AddUserToGroup(long groupId, long userId)
+    public async Task<bool> AddUserToGroup(long userId, long organizationId, long groupId)
     {
-        var group = await _context.Groups.FindAsync(groupId);
+        var group = await _context.Groups.Where(g => g.Id == groupId && g.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
 
@@ -311,17 +319,18 @@ public class GroupBusiness : IGroupBusiness
     }
 
     /// <summary>
-    /// Remove a user from a group
+    ///     Remove a user from a group
     /// </summary>
-    /// <param name="groupId">ID of group to remove user from</param>
     /// <param name="userId">ID of user to remove from group</param>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
+    /// <param name="groupId">ID of group to remove user from</param>
     /// <returns>True if successful</returns>
     /// <exception cref="KeyNotFoundException">Returned if group or user not found</exception>
-    public async Task<bool> RemoveUserFromGroup(long groupId, long userId)
+    public async Task<bool> RemoveUserFromGroup(long userId, long organizationId, long groupId)
     {
         var group = await _context.Groups
-            .Include(g => g.Users)  // Loads only users in THIS group
-            .FirstOrDefaultAsync(g => g.Id == groupId);
+            .Include(g => g.Users) // Loads only users in THIS group
+            .FirstOrDefaultAsync(g => g.Id == groupId && organizationId == g.OrganizationId);
 
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
@@ -332,7 +341,7 @@ public class GroupBusiness : IGroupBusiness
 
         // Check if user is in the group
         if (!group.Users.Any(u => u.Id == userId))
-            return false;  // User exists in DB but not in this group
+            return false; // User exists in DB but not in this group
 
         group.Users.Remove(user);
         await _context.SaveChangesAsync();
@@ -341,16 +350,17 @@ public class GroupBusiness : IGroupBusiness
     }
 
     /// <summary>
-    /// Get all members of a group
+    ///     Get all members of a group
     /// </summary>
+    /// <param name="organizationId">The organization ID to which the group belongs</param>
     /// <param name="groupId">ID of the group</param>
     /// <returns>List of users who are members of the group</returns>
     /// <exception cref="KeyNotFoundException">Returned if group not found</exception>
-    public async Task<IEnumerable<UserResponseDto>> GetGroupMembers(long groupId)
+    public async Task<IEnumerable<UserResponseDto>> GetGroupMembers(long organizationId, long groupId)
     {
         var group = await _context.Groups
             .Include(g => g.Users)
-            .FirstOrDefaultAsync(g => g.Id == groupId);
+            .FirstOrDefaultAsync(g => g.Id == groupId && organizationId == g.OrganizationId);
 
         if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");

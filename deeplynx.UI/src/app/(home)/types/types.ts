@@ -137,11 +137,11 @@ export type UpdateRecordPayload = {
 
 //DatePicker
 export type DatePickerQuery = {
-    id: string;
-    connector?: string;
-    filter?: string;
-    operator?: string;
-    value?: string; // you can store the combined timestamp here if you want
+  id: string;
+  connector?: string;
+  filter?: string;
+  operator?: string;
+  value?: string; // you can store the combined timestamp here if you want
 };
 
 //NewFileUploadCard
@@ -177,7 +177,7 @@ export type UserResponseDto =
     projectId?: number;
   }
 
-  export type UserRequestDto =
+export type UserRequestDto =
   {
     name: string;
     username: string;
@@ -187,7 +187,7 @@ export type UserResponseDto =
     isActive: boolean | null;
   }
 
-  export type RoleResponseDto =
+export type RoleResponseDto =
   {
     id: number;
     name?: string;
@@ -200,7 +200,7 @@ export type UserResponseDto =
     roleId?: number;
   }
 
-  export type ProjectResponseDto =
+export type ProjectResponseDto =
   {
     id: number;
     name?: string;
@@ -215,7 +215,7 @@ export type UserResponseDto =
     userId?: number;
   }
 
-  export type PermissionResponseDto =
+export type PermissionResponseDto =
   {
     id: number;
     name?: string;
@@ -233,7 +233,7 @@ export type UserResponseDto =
     userId?: number;
   }
 
-  export type CreateRoleRequestDto =
+export type CreateRoleRequestDto =
   {
     name: string;
     description?: string | null;
@@ -241,7 +241,7 @@ export type UserResponseDto =
     organizationId?: number;
   }
 
-  export type PermissionRequestDto =
+export type PermissionRequestDto =
   {
     name: string;
     description?: string | null;
@@ -291,6 +291,7 @@ export type RecentUpload = {
 
 //file_upload_services
 export type UploadFileArgs = {
+  organizationId: number | string;
   projectId: number | string;
   dataSourceId: number | string;
   objectStorageId: number | string;
@@ -337,3 +338,32 @@ export type Role = {
   projectId: number;
   organizationId: number | null;
 }
+
+export type PaginatedResponse<T> = {
+  data: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+};
+
+export type GraphNode = {
+  id: number;
+  label: string;
+  type: string;
+};
+
+export type GraphLink = {
+  source: number;
+  target: number;
+  relationshipId?: number;
+  relationshipName?: string;
+  edgeId: number;
+};
+
+export type GraphResponse = {
+  nodes?: GraphNode[];
+  links?: GraphLink[];
+};

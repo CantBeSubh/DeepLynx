@@ -51,13 +51,13 @@ const RecordViewModal: React.FC<RecordViewModalProps> = ({
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value:
-            typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
+      const value = parsedProperties[key as keyof object];
+      return {
+        label: key,
+        value:
+          typeof value === "object" ? JSON.stringify(value) : String(value),
+      };
+    })
     : [];
 
   return (
