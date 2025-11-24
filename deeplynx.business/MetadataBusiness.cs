@@ -367,7 +367,7 @@ public class MetadataBusiness : IMetadataBusiness
     ///     Bulk upserts relationships and returns a mapping of relationship name to ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="organizationId">ID of the organization associated.</param>
+    /// <param name="organizationId"></param>
     /// <param name="projectId"></param>
     /// <param name="relationships"></param>
     /// <param name="metadataResponseDto"></param>
@@ -379,7 +379,9 @@ public class MetadataBusiness : IMetadataBusiness
         List<CreateRelationshipRequestDto> relationships,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _relationshipBusiness.BulkCreateRelationships(currentUserId, organizationId, projectId, relationships);
+        var inserted =
+            await _relationshipBusiness.BulkCreateRelationships(currentUserId, organizationId, projectId,
+                relationships);
         metadataResponseDto.Relationships = inserted;
         return inserted.ToDictionary(r => r.Name, r => r.Id);
     }

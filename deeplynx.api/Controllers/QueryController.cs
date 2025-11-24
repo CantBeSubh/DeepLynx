@@ -42,7 +42,7 @@ public class QueryController : ControllerBase
     {
         try
         {
-            var records = await _queryBusiness.Search(userQuery, projectIds);
+            var records = await _queryBusiness.Search(userQuery,organizationId, projectIds);
             return Ok(records);
         }
         catch (Exception exc)
@@ -68,7 +68,7 @@ public class QueryController : ControllerBase
     {
         try
         {
-            var records = await _queryBusiness.QueryBuilder(filterArray, projectIds, textSearch);
+            var records = await _queryBusiness.QueryBuilder(filterArray, organizationId, projectIds, textSearch);
             return Ok(records);
         }
         catch (Exception exc)
@@ -82,15 +82,16 @@ public class QueryController : ControllerBase
     /// <summary>
     ///     Get recent records
     /// </summary>
+    /// <param name="organizationId"> Orginization Id of projects</param>
     /// <param name="projectIds">Array of project ids</param>
     /// <returns>List of record response DTOs sorted by most recent</returns>
     [HttpGet("recent", Name = "api_get_recent_records")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords(
-        [FromQuery] long[] projectIds)
+        long organizationId, [FromQuery] long[] projectIds)
     {
         try
         {
-            var records = await _queryBusiness.GetRecentlyAddedRecords(projectIds);
+            var records = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
             return Ok(records);
         }
         catch (Exception exc)
@@ -117,7 +118,7 @@ public class QueryController : ControllerBase
     {
         try
         {
-            var records = await _queryBusiness.GetMultiProjectRecords(projects, hideArchived);
+            var records = await _queryBusiness.GetMultiProjectRecords(organizationId, projects, hideArchived);
             return Ok(records);
         }
         catch (Exception exc)

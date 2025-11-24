@@ -35,7 +35,8 @@ public class QueryBusiness : IQueryBusiness
     /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> QueryBuilder(
-        CustomQueryDtos.CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
+        CustomQueryDtos.CustomQueryRequestDto[] request, long organizationId, long[] projectIds,
+        string? textSearch = null)
     {
         if (request == null) throw new ArgumentException("Custom query request dto cannot be null");
 
@@ -59,7 +60,8 @@ public class QueryBusiness : IQueryBusiness
                     hr.is_archived as IsArchived
                 FROM deeplynx.historical_records hr
                 WHERE hr.is_archived = false
-                AND hr.project_id = ANY(@projectIds)";
+                AND hr.project_id = ANY(@projectIds)
+                AND hr.organization_id = @organizationId";
 
             var parameters = new List<NpgsqlParameter>();
             var conditions = new List<string>();
@@ -67,7 +69,9 @@ public class QueryBusiness : IQueryBusiness
             {
                 Value = projectIds
             };
+            var orgIdsParam = new NpgsqlParameter("organizationId", organizationId);
             parameters.Add(projectIdsParam);
+            parameters.Add(orgIdsParam);
 
             // Build individual conditions
             if (request?.Length > 0)
@@ -258,7 +262,8 @@ public class QueryBusiness : IQueryBusiness
     /// <param name="userQuery">String query</param>
     /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery, long[] projectIds)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery, long organizationId,
+        long[] projectIds)
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
@@ -287,6 +292,7 @@ public class QueryBusiness : IQueryBusiness
         FROM deeplynx.historical_records hr
         WHERE hr.is_archived = false
         AND hr.project_id = ANY(@project_ids)
+        AND hr.organization_id = @organization_id
         AND (
             to_tsvector('english',
                     coalesce(name, '') || ' ' ||
@@ -314,8 +320,9 @@ public class QueryBusiness : IQueryBusiness
         {
             Value = projectIds
         };
+        var param4 = new NpgsqlParameter("organization_id", organizationId);
 
-        var results = _context.HistoricalRecords.FromSqlRaw(sql, param1, param2, param3);
+        var results = _context.HistoricalRecords.FromSqlRaw(sql, param1, param2, param3, param4);
 
         return await results
             .Select(r => new HistoricalRecordResponseDto
@@ -343,12 +350,14 @@ public class QueryBusiness : IQueryBusiness
     /// <summary>
     ///     Retrieves current records for projects, ordered by last_updated_at first
     /// </summary>
+    /// <param name="organizationId"> Orginization Id of projects</param>
     /// <param name="projectIds">An array of project ids</param>
     /// <returns>An array of records</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectIds)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long organizationId,
+        long[] projectIds)
     {
         var records = _context.HistoricalRecords
-            .Where(p => projectIds.Contains(p.ProjectId))
+            .Where(p => projectIds.Contains(p.ProjectId) && p.OrganizationId == organizationId)
             .Where(r => !r.IsArchived)
             .GroupBy(r => r.RecordId)
             .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
@@ -380,14 +389,15 @@ public class QueryBusiness : IQueryBusiness
     /// <summary>
     ///     Retrieves all records for multiple projects.
     /// </summary>
+    /// <param name="organizationId"> Orginization Id of projects</param>
     /// <param name="projects">Array of project ids whose records are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(long organizationId,
         long[] projects, bool hideArchived)
     {
         var recordQuery = _context.HistoricalRecords
-            .Where(r => projects.Contains(r.ProjectId));
+            .Where(r => projects.Contains(r.ProjectId) && r.OrganizationId == organizationId);
 
         if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
 

@@ -235,7 +235,7 @@ public class UserBusinessTests : IntegrationTestBase
         var projectMember1 = new ProjectMember
         {
             ProjectId = pid,
-            UserId = uid1
+            UserId = uid1,
         };
         var projectMember2 = new ProjectMember
         {
@@ -290,28 +290,32 @@ public class UserBusinessTests : IntegrationTestBase
             Name = "DataSource 1",
             Description = "First data source",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         var dataSource2 = new DataSource
         {
             Name = "DataSource 2",
             Description = "Second data source",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         var dataSource3 = new DataSource
         {
             Name = "DataSource 3",
             Description = "Third data source",
             ProjectId = pid2,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         var dataSource4 = new DataSource
         {
             Name = "DataSource 4",
             Description = "Fourth data source",
             ProjectId = pid3,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.DataSources.AddRange(dataSource1, dataSource2, dataSource3, dataSource4);
         await Context.SaveChangesAsync();
@@ -326,7 +330,8 @@ public class UserBusinessTests : IntegrationTestBase
             Name = "Test Class",
             Description = "Test class for records",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();
@@ -337,7 +342,8 @@ public class UserBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag",
             ProjectId = pid2,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
         };
         Context.Tags.Add(testTag);
         await Context.SaveChangesAsync();
@@ -353,7 +359,8 @@ public class UserBusinessTests : IntegrationTestBase
             DataSourceId = dsid1,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-2),
-            Uri = "localhost:8090/record1"
+            Uri = "localhost:8090/record1",
+            OrganizationId = oid
         };
         var record2 = new Record
         {
@@ -365,7 +372,8 @@ public class UserBusinessTests : IntegrationTestBase
             DataSourceId = dsid2,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-1),
-            Uri = "localhost:8090/record2"
+            Uri = "localhost:8090/record2",
+            OrganizationId = oid
         };
         var archivedRecord = new Record
         {
@@ -378,7 +386,8 @@ public class UserBusinessTests : IntegrationTestBase
             ClassId = cid,
             IsArchived = true,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-            Uri = "localhost:8090/archived"
+            Uri = "localhost:8090/archived",
+            OrganizationId = oid
         };
         // create records for project 2
         var record3 = new Record
@@ -391,7 +400,8 @@ public class UserBusinessTests : IntegrationTestBase
             DataSourceId = dsid3,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            Uri = "localhost:8090/record3"
+            Uri = "localhost:8090/record3",
+            OrganizationId = oid
         };
         var record4 = new Record
         {
@@ -403,7 +413,8 @@ public class UserBusinessTests : IntegrationTestBase
             DataSourceId = dsid3,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            Uri = "localhost:8090/record4"
+            Uri = "localhost:8090/record4",
+            OrganizationId = oid
         };
         var record5 = new Record
         {
@@ -416,7 +427,8 @@ public class UserBusinessTests : IntegrationTestBase
             ClassId = testClass.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags = new List<Tag> { testTag },
-            Uri = "localhost:8090/record6"
+            Uri = "localhost:8090/record6",
+            OrganizationId = oid
         };
         // create records for project 3
         var record6 = new Record
@@ -429,7 +441,7 @@ public class UserBusinessTests : IntegrationTestBase
             DataSourceId = dsid4,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            Uri = "localhost:8090/record6"
+            Uri = "localhost:8090/record6", OrganizationId = oid
         };
 
         Context.Records.AddRange(record1, record2, record3, record4, record5, record6, archivedRecord);
@@ -458,7 +470,8 @@ public class UserBusinessTests : IntegrationTestBase
             ClassName = "Test Class",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-2),
             LastUpdatedBy = "user1@test.com",
-            Uri = "localhost:8090/record1"
+            Uri = "localhost:8090/record1",
+            OrganizationId = oid
         };
         var historicalRecord1_v2 = new HistoricalRecord
         {
@@ -475,7 +488,8 @@ public class UserBusinessTests : IntegrationTestBase
             ClassName = "Test Class",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddHours(-1),
             LastUpdatedBy = "user1@test.com",
-            Uri = "localhost:8090/record1"
+            Uri = "localhost:8090/record1",
+            OrganizationId = oid
         };
         var historicalRecord2 = new HistoricalRecord
         {
@@ -492,7 +506,8 @@ public class UserBusinessTests : IntegrationTestBase
             ClassName = "Test Class",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-1),
             LastUpdatedBy = "user1@test.com",
-            Uri = "localhost:8090/record2"
+            Uri = "localhost:8090/record2",
+            OrganizationId = oid
         };
         var historicalRecord3 = new HistoricalRecord
         {
@@ -509,7 +524,8 @@ public class UserBusinessTests : IntegrationTestBase
             ClassName = "Test Class",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = "user1@test.com",
-            Uri = "localhost:8090/record3"
+            Uri = "localhost:8090/record3",
+            OrganizationId = oid
         };
         var historicalRecord4 = new HistoricalRecord
         {
@@ -526,7 +542,8 @@ public class UserBusinessTests : IntegrationTestBase
             ClassName = "Test Class",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = "user1@test.com",
-            Uri = "localhost:8090/record4"
+            Uri = "localhost:8090/record4",
+            OrganizationId = oid
         };
         var historicalArchivedRecord = new HistoricalRecord
         {
@@ -544,7 +561,8 @@ public class UserBusinessTests : IntegrationTestBase
             IsArchived = true,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
             LastUpdatedBy = "user1@test.com",
-            Uri = "localhost:8090/archived"
+            Uri = "localhost:8090/archived",
+            OrganizationId = oid
         };
 
         Context.HistoricalRecords.AddRange(
