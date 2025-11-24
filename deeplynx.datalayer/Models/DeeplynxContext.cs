@@ -1123,12 +1123,12 @@ public partial class DeeplynxContext : DbContext
             .WithMany(o => o.Tags)
             .HasForeignKey(t => t.OrganizationId)
             .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(t => t.Project)
             .WithMany(p => p.Tags)
             .HasForeignKey(t => t.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade)
+            .OnDelete(DeleteBehavior.NoAction)
             .HasConstraintName("tags_project_id_fkey");
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_tags_last_updated_by");
@@ -1136,7 +1136,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedTags)
                 .HasForeignKey(d => d.LastUpdatedBy)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
 
             // Uniqueness when ProjectId is NULL: (OrganizationId, Name)
