@@ -91,7 +91,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid,
-            IsArchived = false, 
+            IsArchived = false,
             OrganizationId = oid
         };
         var archivedLabel = new SensitivityLabel
@@ -116,7 +116,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     public async Task GetAllSensitivityLabels_ExcludesArchived()
     {
         // Act
-        var result = await _labelBusiness.GetAllSensitivityLabels(pid, oid);
+        var result = await _labelBusiness.GetAllSensitivityLabels([pid], oid);
         var labels = result.ToList();
 
         // Assert
@@ -129,7 +129,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     public async Task GetAllSensitivityLabels_WithHideArchivedFalse_IncludesArchived()
     {
         // Act
-        var result = await _labelBusiness.GetAllSensitivityLabels(pid, oid, false);
+        var result = await _labelBusiness.GetAllSensitivityLabels([pid], oid, false);
         var labels = result.ToList();
 
         // Assert
@@ -142,7 +142,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     public async Task GetAllSensitivityLabels_FiltersOnProjectId()
     {
         // Act
-        var result = await _labelBusiness.GetAllSensitivityLabels(pid, oid);
+        var result = await _labelBusiness.GetAllSensitivityLabels([pid], oid);
         var labels = result.ToList();
 
         // Assert
@@ -159,14 +159,14 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
             Name = "Org Label",
             Description = "Organization level label",
             OrganizationId = oid,
-            IsArchived = false, 
+            IsArchived = false,
             ProjectId = pid
         };
         Context.SensitivityLabels.Add(orgLabel);
         await Context.SaveChangesAsync();
 
         // Act
-        var result = await _labelBusiness.GetAllSensitivityLabels(pid, oid);
+        var result = await _labelBusiness.GetAllSensitivityLabels([pid], oid);
         var labels = result.ToList();
 
         // Assert
@@ -196,7 +196,8 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     public async Task GetSensitivityLabel_Fails_IfNotFound()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _labelBusiness.GetSensitivityLabel(99999, pid, oid));
+        var exception =
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _labelBusiness.GetSensitivityLabel(99999, pid, oid));
 
         Assert.Contains("Sensitivity label with id 99999 not found", exception.Message);
     }
@@ -355,7 +356,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
         var eventList = await Context.Events.ToListAsync();
         Assert.Empty(eventList);
     }
-    
+
     #endregion
 
     #region UpdateSensitivityLabel Tests
@@ -531,7 +532,8 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception =
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _labelBusiness.ArchiveSensitivityLabel(uid, 99999, pid, oid));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _labelBusiness.ArchiveSensitivityLabel(uid, 99999, pid, oid));
 
         Assert.Contains("Sensitivity label with id 99999 not found or is archived", exception.Message);
 
@@ -598,7 +600,8 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception =
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _labelBusiness.UnarchiveSensitivityLabel(uid, 99999, pid, oid));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _labelBusiness.UnarchiveSensitivityLabel(uid, 99999, pid, oid));
 
         Assert.Contains("Sensitivity label with id 99999 not found or is not archived", exception.Message);
 
@@ -641,7 +644,8 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception =
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _labelBusiness.DeleteSensitivityLabel(uid, 99999, pid, oid));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+                _labelBusiness.DeleteSensitivityLabel(uid, 99999, pid, oid));
 
         Assert.Contains("Sensitivity label with id 99999 not found or is archived", exception.Message);
 
@@ -679,7 +683,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
             Description = "Test description",
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid, 
+            LastUpdatedBy = uid,
             OrganizationId = oid
         };
 
@@ -703,7 +707,7 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
             Description = "Test description 2",
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid, 
+            LastUpdatedBy = uid,
             OrganizationId = oid
         };
 
