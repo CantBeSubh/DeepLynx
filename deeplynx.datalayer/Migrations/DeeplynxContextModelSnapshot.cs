@@ -1839,7 +1839,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
-                    b.Property<long?>("ProjectId")
+                    b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -1861,19 +1861,9 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex("ProjectId")
                         .HasDatabaseName("idx_tags_project_id");
 
-                    b.HasIndex("OrganizationId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("unique_organization_tag_name")
-                        .HasFilter("project_id IS NULL");
-
                     b.HasIndex("ProjectId", "Name")
                         .IsUnique()
                         .HasDatabaseName("unique_tag_name");
-
-                    b.HasIndex("OrganizationId", "ProjectId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("unique_project_tag_name")
-                        .HasFilter("project_id IS NOT NULL");
 
                     b.ToTable("tags", "deeplynx");
                 });
@@ -2696,14 +2686,15 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Tags")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("tags_organization_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("Tags")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("tags_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");

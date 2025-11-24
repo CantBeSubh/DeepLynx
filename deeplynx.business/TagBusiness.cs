@@ -209,20 +209,6 @@ public class TagBusiness : ITagBusiness
             return new List<TagResponseDto>();
         }
 
-        //Not handled by middleware for bulk operations are not accessible via routing
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
-            var project = await _context.Projects.FindAsync(projectId.Value);
-            if (project?.OrganizationId != organizationId)
-            {
-                throw new ArgumentException($"Project {projectId.Value} does not belong to organization {organizationId}");
-            }
-        }
-
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = projectId.HasValue ? @"
             INSERT INTO deeplynx.tags (project_id, organization_id, name, last_updated_at, is_archived, last_updated_by)
@@ -268,7 +254,7 @@ public class TagBusiness : ITagBusiness
             .SqlQueryRaw<TagResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
 
-        // log tag create event for each tag created
+        // TODO: Bulk create events rework
         var events = new List<CreateEventRequestDto> { };
         foreach (var item in result)
             events.Add(new CreateEventRequestDto
@@ -283,7 +269,7 @@ public class TagBusiness : ITagBusiness
                 DataSourceId = null
             });
 
-        await _eventBusiness.BulkCreateEvents(events, projectId, organizationId);
+        // await _eventBusiness.BulkCreateEvents(events, projectId, organizationId);
 
         return result;
     }
