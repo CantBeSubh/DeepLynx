@@ -80,14 +80,14 @@ public class TagController : ControllerBase
     /// <summary>
     ///     Get All Tags (Multi Project)
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the tag belongs</param>
     /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags for the given project.</returns>
     [HttpGet("multiproject", Name = "api_get_all_tags_multi_project")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTagsMultiProject(
-        [FromQuery] long organizationId,
-        [FromQuery] long[] projectIds,
+        long organizationId,
+        long[] projectIds,
         [FromQuery] bool hideArchived = true)
     {
         try
@@ -119,7 +119,7 @@ public class TagController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var createdTag = await _tagBusiness.CreateTag(organizationId, currentUserId, projectId, tagRequestDto);
+            var createdTag = await _tagBusiness.CreateTag(currentUserId, organizationId, projectId, tagRequestDto);
             return Ok(createdTag);
         }
         catch (Exception exception)
@@ -146,7 +146,7 @@ public class TagController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(organizationId, currentUserId, projectId, tagRequestDto);
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(currentUserId, organizationId, projectId, tagRequestDto);
             return Ok(bulkTagResponseDto);
         }
         catch (Exception exception)
@@ -173,7 +173,7 @@ public class TagController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var updatedTag = await _tagBusiness.UpdateTag(organizationId, currentUserId, projectId, tagId, tagRequestDto);
+            var updatedTag = await _tagBusiness.UpdateTag(currentUserId, organizationId, projectId, tagId, tagRequestDto);
             return Ok(updatedTag);
         }
         catch (Exception exception)
