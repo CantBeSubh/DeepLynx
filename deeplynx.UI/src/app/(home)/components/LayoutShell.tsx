@@ -181,10 +181,11 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <li key={org.id}>
                       <button
                         onClick={() => handleOrganizationSwitch(org)}
-                        className={`flex items-center justify-between ${organization?.organizationId === org.id
-                          ? "active bg-info/60 text-primary-content"
-                          : ""
-                          }`}
+                        className={`flex items-center justify-between ${
+                          organization?.organizationId === org.id
+                            ? "active bg-info/60 text-primary-content"
+                            : ""
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           <AvatarCell name={org.name} size={8} />
@@ -221,17 +222,20 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </ul>
           )}
         </div>
-
-        <Image
-          src="/assets/nexusWhite.png"
-          alt="Logo"
-          height={20}
-          width={150}
-          className="rounded cursor-pointer"
-          onClick={() => router.push("/")}
-        />
+        <div>
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="Logo"
+            height={20}
+            width={150}
+            className="rounded cursor-pointer"
+            onClick={() => router.push("/")}
+          />
+          {/* <span className="text-xs text-base-200 flex justify-end mt-2">
+            V 0.2.0
+          </span> */}
+        </div>
       </header>
-
       {/* Page Content */}
       <div className="flex h-full z-0">
         {/* Side Menu */}
@@ -258,7 +262,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <li className="mt-5">
                 <Link
                   href="/organization_management"
-                  onClick={(e) => handleItemClick("/organization_management", e)}
+                  onClick={(e) =>
+                    handleItemClick("/organization_management", e)
+                  }
                 >
                   <AdjustmentsHorizontalIcon className="size-10" />
                 </Link>
@@ -341,17 +347,20 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     process.env.NEXT_PUBLIC_DOCS_PATH
                       ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
                       : "/docs"
-                  }>
+                  }
+                >
                   <QuestionMarkCircleIcon className="size-10" />
                 </Link>
               </li>
+              <span className="text-xs font-bold text-base-200/50">V0.2.0</span>
             </ul>
           </aside>
         </div>
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18 ${isMenuCollapsed ? "ml-40" : "ml-82"
-            }`}
+          className={`transition-all duration-300 w-full mt-18 ${
+            isMenuCollapsed ? "ml-40" : "ml-82"
+          }`}
         >
           {children}
         </main>
