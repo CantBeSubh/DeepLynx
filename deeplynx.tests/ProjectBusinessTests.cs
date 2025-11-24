@@ -522,32 +522,16 @@ public class ProjectBusinessTests : IntegrationTestBase
         Assert.Equal(dto.Name, project.Name);
 
         // Verify default roles were created
-        var roles = Context.Roles.Where(r => r.ProjectId == project.Id).ToList();
+        var roles = Context.Roles.Where(r => r.ProjectId == project.Id).Include(r => r.Permissions).ToList();
         Assert.Equal(2, roles.Count);
         var adminRole = roles.Single(r => r.Name == "Admin");
         var userRole = roles.Single(r => r.Name == "User");
-        Assert.NotNull(adminRole);
-        Assert.NotNull(userRole);
-
-        // Verify admin role has correct permissions
-        var adminRoleWithPerms = await Context.Roles
-            .Include(r => r.Permissions)
-            .Where(r => r.Id == adminRole.Id)
-            .ToListAsync();
-        var adminPermissionsList = adminRoleWithPerms[0].Permissions.ToList();
-        Assert.True(adminPermissionsList.Count > 0);
-        Assert.Contains(adminPermissionsList, p => p.Resource == "permission" && p.Action == "write");
-        Assert.DoesNotContain(adminPermissionsList, p => p.Resource == "organization" && p.Action == "write");
-
-        // Verify user role has correct permissions
-        var userRoleWithPerms = await Context.Roles
-            .Include(r => r.Permissions)
-            .Where(r => r.Id == userRole.Id)
-            .ToListAsync();
-        var userPermissionsList = userRoleWithPerms[0].Permissions.ToList();
-        Assert.True(userPermissionsList.Count > 0);
-        Assert.Contains(userPermissionsList, p => p.Resource == "project" && p.Action == "read");
-        Assert.DoesNotContain(userPermissionsList, p => p.Resource == "permission" && p.Action == "write");
+        
+        Assert.True(adminRole.Permissions.All(p => p.IsDefault));
+        Assert.True(userRole.Permissions.All(p => p.IsDefault));
+        
+        AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
+        AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
     }
 
     [Fact]
@@ -1587,4 +1571,33 @@ public class ProjectBusinessTests : IntegrationTestBase
     }
 
     #endregion
+    
+    private void AssertRolePermissions(
+        Role role, 
+        Dictionary<string, string[]> expectedPermissions)
+    {
+        // All permissions should be marked as default
+        Assert.True(
+            role.Permissions.All(p => p.IsDefault),
+            $"Role '{role.Name}' has permissions not marked as default"
+        );
+
+        // Verify permission count
+        var expectedCount = expectedPermissions.Sum(kvp => kvp.Value.Length);
+        Assert.Equal(expectedCount, role.Permissions.Count);
+
+        // Verify each resource type has the correct actions
+        foreach (var (resource, expectedActions) in expectedPermissions)
+        {
+            var actualActions = role.Permissions
+                .Where(p => p.Resource == resource)
+                .Select(p => p.Action)
+                .OrderBy(a => a)
+                .ToList();
+
+            var sortedExpectedActions = expectedActions.OrderBy(a => a).ToList();
+
+            Assert.Equal(sortedExpectedActions, actualActions);
+        }
+    }
 }
