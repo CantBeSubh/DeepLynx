@@ -181,7 +181,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional tags and then insert
             var tagsToInsert = BuildTags(tags, records);
             if (tagsToInsert.Any())
-                tagMap = await BulkUpsertTags(currentUserId, projectId, tagsToInsert, metadataResponseDto);
+                tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert, metadataResponseDto);
         }
 
         // Records
@@ -343,12 +343,13 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="currentUserId"></param>
     /// <param name="projectId"></param>
+    /// <param name="organizationId"></param>
     /// <param name="classes"></param>
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of class name to class ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertClasses(
-        long currentUserId,
         long organizationId,
+        long currentUserId,
         long projectId,
         List<CreateClassRequestDto> classes,
         MetadataResponseDto metadataResponseDto)
@@ -369,8 +370,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of relationship name to relationship ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRelationships(
-        long currentUserId,
         long organizationId,
+        long currentUserId,
         long projectId,
         List<CreateRelationshipRequestDto> relationships,
         MetadataResponseDto metadataResponseDto)
@@ -387,16 +388,18 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="projectId"></param>
+    /// <param name="organizationId"></param>
     /// <param name="tags"></param>
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
         long currentUserId,
+        long organizationId,
         long projectId,
         List<CreateTagRequestDto> tags,
         MetadataResponseDto metadataResponseDto)
     {
-        var inserted = await _tagBusiness.BulkCreateTags(currentUserId, projectId, tags);
+        var inserted = await _tagBusiness.BulkCreateTags(organizationId, currentUserId, projectId, tags);
         metadataResponseDto.Tags = inserted;
         return inserted.ToDictionary(t => t.Name, t => t);
     }

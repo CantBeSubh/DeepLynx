@@ -138,7 +138,7 @@ public class MetadataBusinessTests : IntegrationTestBase
             ProjectId = project.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null,
-            IsArchived = false, OrganizationId = organizationId
+            IsArchived = false
         };
         Context.DataSources.Add(dataSource);
         await Context.SaveChangesAsync();
@@ -149,14 +149,14 @@ public class MetadataBusinessTests : IntegrationTestBase
             Name = "Origin Class",
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = false, OrganizationId = organizationId
+            IsArchived = false
         };
         var destClass = new Class
         {
             Name = "Dest Class",
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = false, OrganizationId = organizationId
+            IsArchived = false
         };
         Context.Classes.AddRange(originClass, destClass);
         await Context.SaveChangesAsync();

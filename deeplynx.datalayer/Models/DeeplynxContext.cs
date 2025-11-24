@@ -512,7 +512,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_object_storages_last_updated_by");
 
             // entity.ToTable( e => e.HasCheckConstraint(
-            //     "ck_object_storages_ProjectXorOrg", 
+            //     "ck_object_storages_ProjectXorOrg",
             //     "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)"));
 
             // Add filtered unique indexes
@@ -1060,7 +1060,7 @@ public partial class DeeplynxContext : DbContext
 
             // Composite unique index - prevents duplicate subscriptions
             entity.HasIndex(e => new
-                    { e.UserId, e.ActionId, e.Operation, e.ProjectId, e.DataSourceId, e.EntityType, e.EntityId })
+            { e.UserId, e.ActionId, e.Operation, e.ProjectId, e.DataSourceId, e.EntityType, e.EntityId })
                 .HasDatabaseName("idx_unique_subscription")
                 .IsUnique();
 
@@ -1109,27 +1109,46 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy)
                 .HasDatabaseName("idx_tags_last_updated_by");
 
-            // Composite unique index - tag names are unique within a project
-            entity.HasIndex(e => new { e.ProjectId, e.Name })
-                .HasDatabaseName("unique_tag_name")
-                .IsUnique();
+            // Uniqueness when ProjectId is NULL: (OrganizationId, Name)
+            entity.HasIndex(e => new { e.OrganizationId, e.Name })
+                .HasDatabaseName("unique_organization_tag_name")
+                .IsUnique()
+                .HasFilter("project_id IS NULL");
+
+            // Uniqueness when ProjectId is NOT NULL: (OrganizationId, ProjectId, Name)
+            entity.HasIndex(e => new { e.OrganizationId, e.ProjectId, e.Name })
+                .HasDatabaseName("unique_project_tag_name")
+                .IsUnique()
+                .HasFilter("project_id IS NOT NULL");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            entity.Property(e => e.ProjectId).IsRequired(false);
 
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_tags_last_updated_by");
+
+            // Organization relationship
+            entity.HasOne(t => t.Organization)
+                .WithMany(o => o.Tags)
+                .HasForeignKey(t => t.OrganizationId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("tags_organization_id_fkey");
+
+            // Project relationship
+            entity.HasOne(t => t.Project)
+                .WithMany(p => p.Tags)
+                .HasForeignKey(t => t.ProjectId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("tags_project_id_fkey");
 
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedTags)
                 .HasForeignKey(d => d.LastUpdatedBy)
-                .OnDelete(DeleteBehavior.NoAction)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName(null);
-
-            entity.HasOne(d => d.Project).WithMany(p => p.Tags).HasConstraintName("tags_project_id_fkey");
-
-            entity.HasOne(d => d.Organization).WithMany(p => p.Tags).HasConstraintName("tags_organization_id_fkey");
         });
 
         modelBuilder.Entity<User>(entity =>
