@@ -96,7 +96,7 @@ public class ProjectTagController : ControllerBase
         try
         {
             var tags = await _tagBusiness.GetAllTagsMultiProject(
-                organizationId, projectId, projectIds, hideArchived);
+                organizationId, projectIds, hideArchived);
             return Ok(tags);
         }
         catch (Exception exc)
