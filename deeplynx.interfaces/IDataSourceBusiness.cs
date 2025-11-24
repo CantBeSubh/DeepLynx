@@ -4,24 +4,24 @@ namespace deeplynx.interfaces;
 
 public interface IDataSourceBusiness
 {
-    Task<List<DataSourceResponseDto>> GetAllDataSources(long organizationId, long? projectIds, bool hideArchived);
+    Task<List<DataSourceResponseDto>>
+        GetAllDataSources(long organizationId, long? projectId = null, bool hideArchived = true);
 
-    Task<DataSourceResponseDto> GetDataSource(long organizationId, long? projectId, long dataSourceId,
-        bool hideArchived);
+    Task<DataSourceResponseDto> GetDataSource(long organizationId, long dataSourceId,
+        bool hideArchived = true, long? projectId = null);
 
-    Task<DataSourceResponseDto> GetDefaultDataSource(long organizationId, long? projectId);
+    Task<DataSourceResponseDto> GetDefaultDataSource(long organizationId, long? projectId = null);
 
-    Task<DataSourceResponseDto> SetDefaultDataSource(long currentUserId, long organizationId, long? projectId,
-        long dataSourceId);
+    Task<DataSourceResponseDto> SetDefaultDataSource(long currentUserId, long organizationId,
+        long dataSourceId, long? projectId = null);
 
-    Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId, long? projectId,
-        CreateDataSourceRequestDto dto);
+    Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId,
+        CreateDataSourceRequestDto dto, long? projectId = null);
 
-    Task<DataSourceResponseDto> UpdateDataSource(long currentUserId, long organizationId, long? projectId,
-        long dataSourceId,
-        UpdateDataSourceRequestDto dto);
+    Task<DataSourceResponseDto> UpdateDataSource(long currentUserId, long organizationId,
+        long dataSourceId, UpdateDataSourceRequestDto dto, long? projectId = null);
 
-    Task<bool> DeleteDataSource(long organizationId, long? projectId, long dataSourceId);
-    Task<bool> ArchiveDataSource(long currentUserId, long organizationId, long? projectId, long dataSourceId);
-    Task<bool> UnarchiveDataSource(long currentUserId, long organizationId, long? projectId, long dataSourceId);
+    Task<bool> DeleteDataSource(long organizationId, long dataSourceId, long? projectId = null);
+    Task<bool> ArchiveDataSource(long currentUserId, long organizationId, long dataSourceId, long? projectId = null);
+    Task<bool> UnarchiveDataSource(long currentUserId, long organizationId, long dataSourceId, long? projectId = null);
 }

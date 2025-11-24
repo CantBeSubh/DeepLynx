@@ -50,8 +50,10 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>The data source in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
-    public async Task<DataSourceResponseDto> GetDataSource(long organizationId, long? projectId, long datasourceId,
-        bool hideArchived)
+    public async Task<DataSourceResponseDto> GetDataSource(long organizationId,
+        long datasourceId,
+        bool hideArchived,
+        long? projectId)
     {
         var dataSource = await _context.DataSources
             .Where(d => d.OrganizationId == organizationId && d.Id == datasourceId
@@ -131,9 +133,9 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<DataSourceResponseDto> UpdateDataSource(
         long currentUserId,
         long organizationId,
-        long? projectId,
         long dataSourceId,
-        UpdateDataSourceRequestDto dto)
+        UpdateDataSourceRequestDto dto,
+        long? projectId)
     {
         var dataSource = await _context.DataSources
             .AsNoTracking()
@@ -197,7 +199,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="dataSourceId">The ID of the data source to delete</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
-    public async Task<bool> DeleteDataSource(long organizationId, long? projectId, long dataSourceId)
+    public async Task<bool> DeleteDataSource(long organizationId, long dataSourceId, long? projectId)
     {
         var dataSource = await _context.DataSources
             .AsNoTracking()
@@ -216,51 +218,6 @@ public class DataSourceBusiness : IDataSourceBusiness
     }
 
     /// <summary>
-    ///     Archives a specific data source by its ID.
-    /// </summary>
-    /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
-    /// <param name="projectId">The ID of the project to which the data source belongs.</param>
-    /// <param name="dataSourceId">The ID of the data source to archive</param>
-    /// <returns>Boolean true on successful archival.</returns>
-    /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-    public async Task<bool> ArchiveDataSource(long currentUserId, long organizationId, long? projectId,
-        long dataSourceId)
-    {
-        var dataSource = await _context.DataSources
-            .AsNoTracking()
-            .FirstOrDefaultAsync(d =>
-                d.Id == dataSourceId &&
-                d.OrganizationId == organizationId &&
-                (!projectId.HasValue || d.ProjectId == projectId.Value) &&
-                !d.IsArchived);
-
-        if (dataSource == null)
-            throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
-
-        dataSource.IsArchived = true;
-        dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        dataSource.LastUpdatedBy = currentUserId;
-
-        await _context.SaveChangesAsync();
-
-        // Log dataSource archive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            ProjectId = projectId,
-            OrganizationId = organizationId,
-            Operation = "archive",
-            EntityType = "data_source",
-            EntityId = dataSource.Id,
-            DataSourceId = null,
-            EntityName = dataSource.Name,
-            Properties = JsonSerializer.Serialize(new { dataSource.Name })
-        });
-
-        return true;
-    }
-
-    /// <summary>
     ///     Unarchives a specific data source by its ID.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
@@ -269,8 +226,8 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="dataSourceId">The ID of the data source to unarchive</param>
     /// <returns>Boolean true on successful unarchive action.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-    public async Task<bool> UnarchiveDataSource(long currentUserId, long organizationId, long? projectId,
-        long dataSourceId)
+    public async Task<bool> UnarchiveDataSource(long currentUserId, long organizationId,
+        long dataSourceId, long? projectId)
     {
         var dataSource = await _context.DataSources
             .AsNoTracking()
@@ -317,8 +274,8 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<DataSourceResponseDto> SetDefaultDataSource(
         long currentUserId,
         long organizationId,
-        long? projectId,
-        long dataSourceId)
+        long dataSourceId,
+        long? projectId)
     {
         var dataSource = await _context.DataSources
             .AsNoTracking()
@@ -391,11 +348,9 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dto">The data transfer object containing data source details</param>
-    /// <param name="makeDefault">Boolean to make the data source default or not</param>
     /// <returns>The created data source.</returns>
     public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId,
-        long? projectId,
-        CreateDataSourceRequestDto dto)
+        CreateDataSourceRequestDto dto, long? projectId)
     {
         ValidationHelper.ValidateModel(dto);
         if (dto == null)
@@ -459,13 +414,13 @@ public class DataSourceBusiness : IDataSourceBusiness
     ///     Retrieves all data sources for a specific project.
     /// </summary>
     /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
-    /// <param name="projectIds">ID's of the projects whose data sources are to be retrieved</param>
+    /// <param name="projectId">ID's of the projects whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>A list of data sources within the given project.</returns>
     public async Task<List<DataSourceResponseDto>> GetAllDataSources(
         long organizationId,
-        long? projectId,
-        bool hideArchived)
+        long? projectId = null,
+        bool hideArchived = true)
     {
         var dataSources = await _context.DataSources
             .AsNoTracking()
@@ -491,6 +446,51 @@ public class DataSourceBusiness : IDataSourceBusiness
             LastUpdatedBy = d.LastUpdatedBy,
             IsArchived = d.IsArchived
         }).ToList();
+    }
+
+    /// <summary>
+    ///     Archives a specific data source by its ID.
+    /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
+    /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+    /// <param name="dataSourceId">The ID of the data source to archive</param>
+    /// <returns>Boolean true on successful archival.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
+    public async Task<bool> ArchiveDataSource(long currentUserId, long organizationId,
+        long dataSourceId, long? projectId)
+    {
+        var dataSource = await _context.DataSources
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d =>
+                d.Id == dataSourceId &&
+                d.OrganizationId == organizationId &&
+                (!projectId.HasValue || d.ProjectId == projectId.Value) &&
+                !d.IsArchived);
+
+        if (dataSource == null)
+            throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+
+        dataSource.IsArchived = true;
+        dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        dataSource.LastUpdatedBy = currentUserId;
+
+        await _context.SaveChangesAsync();
+
+        // Log dataSource archive event
+        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            OrganizationId = organizationId,
+            Operation = "archive",
+            EntityType = "data_source",
+            EntityId = dataSource.Id,
+            DataSourceId = null,
+            EntityName = dataSource.Name,
+            Properties = JsonSerializer.Serialize(new { dataSource.Name })
+        });
+
+        return true;
     }
 
     private async Task MakePreviousDefaultsFalse(long currentUserId, long organizationId, long? projectId,
