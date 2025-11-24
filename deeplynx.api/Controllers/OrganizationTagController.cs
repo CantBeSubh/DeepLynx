@@ -30,11 +30,12 @@ public class OrganizationTagController : ControllerBase
     ///     Get all tags
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet(Name = "api_get_all_tags_organization")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
-        long organizationId, [FromQuery] bool hideArchived = true)
+        long organizationId, [FromQuery] long[]? projectIds, [FromQuery] bool hideArchived = true)
     {
         try
         {

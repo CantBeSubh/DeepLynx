@@ -31,18 +31,21 @@ public class TagBusiness : ITagBusiness
     /// <summary>
     ///     Retrieves all tags for a specified project.
     /// </summary>
-    /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="projectIds">The IDs of the project whose tags are to be retrieved.</param>
     /// <param name="organizationId">The ID of the organization whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTags(long organizationId, long? projectId, bool hideArchived)
+    public async Task<List<TagResponseDto>> GetAllTags(long organizationId, long[]? projectIds, bool hideArchived)
     {
         var tagQuery = _context.Tags
             .Where(t => t.OrganizationId == organizationId
-                && (!hideArchived || !t.IsArchived)
-                && (!projectId.HasValue || t.ProjectId == projectId.Value));
+                && (!hideArchived || !t.IsArchived));
 
-        if (tagQuery == null)
+        // Filter by projectIds if provided and not empty
+        if (projectIds is { Length: > 0 })
+            tagQuery = tagQuery.Where(c => c.ProjectId.HasValue && projectIds.Contains(c.ProjectId.Value));
+
+         if (tagQuery == null)
             throw new KeyNotFoundException($"Tags not found or do not belong to the specified organization/project context");
 
         return await tagQuery.Select(t => new TagResponseDto()
@@ -53,34 +56,6 @@ public class TagBusiness : ITagBusiness
             LastUpdatedBy = t.LastUpdatedBy,
             LastUpdatedAt = t.LastUpdatedAt,
             OrganizationId = t.OrganizationId,
-        })
-            .ToListAsync();
-    }
-
-    /// <summary>
-    ///     Retrieves all tags for a specified project.
-    /// </summary>
-    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
-    /// <param name="organizationId">The IDs of the organization whose tags are to be retrieved.</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
-    /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTagsMultiProject(long organizationId, long[] projectIds, bool hideArchived)
-    {
-        var tagQuery = _context.Tags
-            .Where(t => t.OrganizationId == organizationId
-                && t.ProjectId != null
-                && projectIds.Contains(t.ProjectId.Value));
-
-        if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
-
-        return await tagQuery.Select(t => new TagResponseDto
-        {
-            Id = t.Id,
-            Name = t.Name,
-            ProjectId = t.ProjectId,
-            LastUpdatedBy = t.LastUpdatedBy,
-            LastUpdatedAt = t.LastUpdatedAt,
-            OrganizationId = t.OrganizationId
         })
             .ToListAsync();
     }

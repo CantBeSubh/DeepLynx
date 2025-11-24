@@ -10,8 +10,13 @@ namespace deeplynx.datalayer.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "unique_tag_name",
+            migrationBuilder.DropForeignKey(
+                name: "tags_organization_id_fkey",
+                schema: "deeplynx",
+                table: "tags");
+
+            migrationBuilder.DropForeignKey(
+                name: "tags_project_id_fkey",
                 schema: "deeplynx",
                 table: "tags");
 
@@ -41,7 +46,17 @@ namespace deeplynx.datalayer.Migrations
                 filter: "project_id IS NOT NULL");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_tags_users_last_updated_by",
+                name: "tags_organization_id_fkey",
+                schema: "deeplynx",
+                table: "tags",
+                column: "last_updated_by",
+                principalSchema: "deeplynx",
+                principalTable: "users",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "tags_project_id_fkey",
                 schema: "deeplynx",
                 table: "tags",
                 column: "last_updated_by",
@@ -55,7 +70,12 @@ namespace deeplynx.datalayer.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_tags_users_last_updated_by",
+                name: "tags_project_id_fkey",
+                schema: "deeplynx",
+                table: "tags");
+
+            migrationBuilder.DropForeignKey(
+                name: "tags_organization_id_fkey",
                 schema: "deeplynx",
                 table: "tags");
 
@@ -78,13 +98,6 @@ namespace deeplynx.datalayer.Migrations
                 oldClrType: typeof(long),
                 oldType: "bigint",
                 oldNullable: true);
-
-            migrationBuilder.CreateIndex(
-                name: "unique_tag_name",
-                schema: "deeplynx",
-                table: "tags",
-                columns: new[] { "project_id", "name" },
-                unique: true);
         }
     }
 }

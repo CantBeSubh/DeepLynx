@@ -39,7 +39,7 @@ public class ProjectTagController : ControllerBase
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(organizationId, projectId, hideArchived);
+            var tags = await _tagBusiness.GetAllTags(organizationId, [projectId], hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -73,35 +73,6 @@ public class ProjectTagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while retrieving tag {tagId}: {exception}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Get All Tags (Multi Project)
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the tag belongs</param>
-    /// <param name="projectId">The ID of the project to which the tag belongs</param>
-    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
-    /// <returns>A list of tags for the given project.</returns>
-    [HttpGet("multiproject", Name = "api_get_all_tags_multiproject")]
-    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTagsMultiProject(
-        long organizationId,
-        long? projectId,
-        long[] projectIds,
-        [FromQuery] bool hideArchived = true)
-    {
-        try
-        {
-            var tags = await _tagBusiness.GetAllTagsMultiProject(
-                organizationId, projectIds, hideArchived);
-            return Ok(tags);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while listing all tags: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
