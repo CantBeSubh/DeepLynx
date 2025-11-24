@@ -225,8 +225,7 @@ public class MetadataBusinessTests : IntegrationTestBase
                 new()
                 {
                     Name = "Bulk Class 1",
-                    Description = "First class",
-                    
+                    Description = "First class"
                 },
                 new()
                 {

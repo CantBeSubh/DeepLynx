@@ -14,11 +14,11 @@ public partial class Tag
     public string Name { get; set; } = null!;
 
     [Column("project_id")]
-    public long ProjectId { get; set; }
-    
+    public long? ProjectId { get; set; }
+
     [Column("organization_id")]
     public long OrganizationId { get; set; }
-    
+
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
 
@@ -30,8 +30,8 @@ public partial class Tag
 
     [ForeignKey("ProjectId")]
     [InverseProperty("Tags")]
-    public virtual Project Project { get; set; } = null!;
-    
+    public virtual Project? Project { get; set; }
+
     [ForeignKey("OrganizationId")]
     [InverseProperty("Tags")]
     public virtual Organization Organization { get; set; } = null!;
@@ -39,7 +39,7 @@ public partial class Tag
     [ForeignKey("TagId")]
     [InverseProperty("Tags")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
-    
+
     [InverseProperty("LastUpdatedTags")]
     public virtual User? LastUpdatedByUser { get; set; }
 }
