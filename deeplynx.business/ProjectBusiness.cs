@@ -766,7 +766,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
-        await _dataSourceBusiness.CreateDataSource(currentUserId, organizationId, projectId, defaultDataSource, true);
+        await _dataSourceBusiness.CreateDataSource(currentUserId, organizationId, projectId, defaultDataSource);
 
         // ===============================
         // CREATE DEFAULT OBJECT STORAGE
@@ -792,7 +792,7 @@ public class ProjectBusiness : IProjectBusiness
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            var awsConnectionString = 
+            var awsConnectionString =
                 Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
                 throw new NullReferenceException("AWS connection string not set");
             config["awsConnectionString"] = awsConnectionString;

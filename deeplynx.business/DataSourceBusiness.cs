@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -134,12 +135,15 @@ public class DataSourceBusiness : IDataSourceBusiness
         long dataSourceId,
         UpdateDataSourceRequestDto dto)
     {
-        var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+        var dataSource = await _context.DataSources
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d =>
+                d.Id == dataSourceId &&
+                d.OrganizationId == organizationId &&
+                (!projectId.HasValue || d.ProjectId == projectId.Value) &&
+                !d.IsArchived);
 
-        if (dataSource == null
-            || dataSource.OrganizationId != organizationId
-            || (projectId.HasValue && dataSource.ProjectId != projectId.Value)
-            || dataSource.IsArchived)
+        if (dataSource == null)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         dataSource.Name = dto.Name ?? dataSource.Name;
@@ -195,11 +199,14 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
     public async Task<bool> DeleteDataSource(long organizationId, long? projectId, long dataSourceId)
     {
-        var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+        var dataSource = await _context.DataSources
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d =>
+                d.Id == dataSourceId &&
+                d.OrganizationId == organizationId &&
+                (!projectId.HasValue || d.ProjectId == projectId.Value));
 
-        if (dataSource == null
-            || dataSource.OrganizationId != organizationId
-            || (projectId.HasValue && dataSource.ProjectId != projectId.Value))
+        if (dataSource == null)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         _context.DataSources.Remove(dataSource);
@@ -220,12 +227,15 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<bool> ArchiveDataSource(long currentUserId, long organizationId, long? projectId,
         long dataSourceId)
     {
-        var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+        var dataSource = await _context.DataSources
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d =>
+                d.Id == dataSourceId &&
+                d.OrganizationId == organizationId &&
+                (!projectId.HasValue || d.ProjectId == projectId.Value) &&
+                !d.IsArchived);
 
-        if (dataSource == null
-            || dataSource.OrganizationId != organizationId
-            || (projectId.HasValue && dataSource.ProjectId != projectId.Value)
-            || dataSource.IsArchived)
+        if (dataSource == null)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         dataSource.IsArchived = true;
@@ -262,13 +272,16 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<bool> UnarchiveDataSource(long currentUserId, long organizationId, long? projectId,
         long dataSourceId)
     {
-        var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+        var dataSource = await _context.DataSources
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d =>
+                d.Id == dataSourceId &&
+                d.OrganizationId == organizationId &&
+                (!projectId.HasValue || d.ProjectId == projectId.Value) &&
+                d.IsArchived);
 
-        if (dataSource == null
-            || dataSource.OrganizationId != organizationId
-            || (projectId.HasValue && dataSource.ProjectId != projectId.Value)
-            || !dataSource.IsArchived)
-            throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found or is not archived.");
+        if (dataSource == null)
+            throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found or is not archived");
 
         dataSource.IsArchived = false;
         dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -307,12 +320,15 @@ public class DataSourceBusiness : IDataSourceBusiness
         long? projectId,
         long dataSourceId)
     {
-        var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+        var dataSource = await _context.DataSources
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d =>
+                d.Id == dataSourceId &&
+                d.OrganizationId == organizationId &&
+                (!projectId.HasValue || d.ProjectId == projectId.Value) &&
+                !d.IsArchived);
 
-        if (dataSource == null
-            || dataSource.OrganizationId != organizationId
-            || (projectId.HasValue && dataSource.ProjectId != projectId)
-            || dataSource.IsArchived)
+        if (dataSource == null)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         if (!dataSource.Default)
@@ -321,20 +337,31 @@ public class DataSourceBusiness : IDataSourceBusiness
             dataSource.LastUpdatedBy = currentUserId;
             dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-            await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+            try
             {
-                OrganizationId = organizationId,
-                ProjectId = projectId,
-                Operation = "update",
-                EntityType = "data_source",
-                EntityId = dataSource.Id,
-                EntityName = dataSource.Name,
-                DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new { dataSource.Name })
-            });
+                await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
+                await _context.SaveChangesAsync();
+
+                await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+                {
+                    OrganizationId = organizationId,
+                    ProjectId = projectId,
+                    Operation = "update",
+                    EntityType = "data_source",
+                    EntityId = dataSource.Id,
+                    EntityName = dataSource.Name,
+                    DataSourceId = null,
+                    Properties = JsonSerializer.Serialize(new { dataSource.Name })
+                });
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("Unable to create object storage");
+            }
         }
 
         return new DataSourceResponseDto
@@ -356,6 +383,7 @@ public class DataSourceBusiness : IDataSourceBusiness
         };
     }
 
+
     /// <summary>
     ///     Asynchronously creates a new data source for a specified project.
     /// </summary>
@@ -365,9 +393,11 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="dto">The data transfer object containing data source details</param>
     /// <param name="makeDefault">Boolean to make the data source default or not</param>
     /// <returns>The created data source.</returns>
-    public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId, long? projectId,
+    public async Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId,
+        long? projectId,
         CreateDataSourceRequestDto dto)
     {
+        ValidationHelper.ValidateModel(dto);
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
 
@@ -434,16 +464,17 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <returns>A list of data sources within the given project.</returns>
     public async Task<List<DataSourceResponseDto>> GetAllDataSources(
         long organizationId,
-        long[]? projectIds,
+        long? projectId,
         bool hideArchived)
     {
         var dataSources = await _context.DataSources
             .AsNoTracking()
             .Where(d =>
-                d.OrganizationId == organizationId &&
-                (projectIds == null || projectIds.Length == 0 ||
-                 (d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value))) &&
-                (!hideArchived || !d.IsArchived)).ToListAsync();
+                d.OrganizationId == organizationId
+                || (d.ProjectId.HasValue && d.ProjectId == projectId
+                                         //(projectIds == null || projectIds.Length == 0 ||
+                                         //(d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value))) &&
+                                         && (!hideArchived || !d.IsArchived))).ToListAsync();
         return dataSources.Select(d => new DataSourceResponseDto
         {
             Id = d.Id,

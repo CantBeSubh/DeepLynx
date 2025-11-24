@@ -4,7 +4,7 @@ namespace deeplynx.interfaces;
 
 public interface IDataSourceBusiness
 {
-    Task<List<DataSourceResponseDto>> GetAllDataSources(long organizationId, long? projectId, bool hideArchived);
+    Task<List<DataSourceResponseDto>> GetAllDataSources(long organizationId, long? projectIds, bool hideArchived);
 
     Task<DataSourceResponseDto> GetDataSource(long organizationId, long? projectId, long dataSourceId,
         bool hideArchived);
@@ -15,8 +15,7 @@ public interface IDataSourceBusiness
         long dataSourceId);
 
     Task<DataSourceResponseDto> CreateDataSource(long currentUserId, long organizationId, long? projectId,
-        CreateDataSourceRequestDto dto,
-        bool makeDefault = false);
+        CreateDataSourceRequestDto dto);
 
     Task<DataSourceResponseDto> UpdateDataSource(long currentUserId, long organizationId, long? projectId,
         long dataSourceId,
