@@ -61,10 +61,11 @@ public class TagBusiness : ITagBusiness
     ///     Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
+    /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <param name="organizationId">The IDs of the organization whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTagsMultiProject(long organizationId, long[] projectIds, bool hideArchived)
+    public async Task<List<TagResponseDto>> GetAllTagsMultiProject(long organizationId, long? projectId, long[] projectIds, bool hideArchived)
     {
         var tagQuery = _context.Tags
             .Where(t => t.OrganizationId == organizationId
