@@ -64,7 +64,7 @@ public class OrganizationPermissionController : ControllerBase
     /// <param name="permissionId">The ID of the permission to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
     /// <returns>The permission associated with the given ID</returns>
-    [HttpGet("organizations/{organizationId}/permissions/{permissionId}", Name = "api_get_organizataion_permission")]
+    [HttpGet("organizations/{organizationId}/permissions/{permissionId}", Name = "api_get_organization_permission")]
     public async Task<ActionResult<PermissionResponseDto>> GetPermission(
         long organizationId,
         long permissionId,
@@ -117,7 +117,7 @@ public class OrganizationPermissionController : ControllerBase
     /// <param name="permissionId">The ID of the permission to update</param>
     /// <param name="dto">The data transfer object containing updated permission details</param>
     /// <returns>The updated permission</returns>
-    [HttpPut("organizations/{organizationId}/permissions/{permissionId}", Name = "api_update_organizataion_permission")]
+    [HttpPut("organizations/{organizationId}/permissions/{permissionId}", Name = "api_update_organization_permission")]
     public async Task<ActionResult<PermissionResponseDto>> UpdatePermission(
         long organizationId,
         long permissionId,
@@ -169,7 +169,7 @@ public class OrganizationPermissionController : ControllerBase
     /// <param name="permissionId">The ID of the permission to archive or unarchive</param>
     /// <param name="archive">True to archive the permission, false to unarchive it.</param>
     /// <returns>A message stating the permission was successfully archived or unarchived.</returns>
-    [HttpPatch("organizations/{organizationId}/permissions/{permissionId}", Name = "api_archive_organizataion_permission")]
+    [HttpPatch("organizations/{organizationId}/permissions/{permissionId}", Name = "api_archive_organization_permission")]
     public async Task<IActionResult> ArchivePermission(
         long organizationId,
         long permissionId,
