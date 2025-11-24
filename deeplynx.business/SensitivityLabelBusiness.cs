@@ -37,10 +37,16 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <returns>The newly updated label</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found</exception>
     public async Task<SensitivityLabelResponseDto> UpdateSensitivityLabel(
-        long currentUserId, long labelId, long projectId, long organizationId, UpdateSensitivityLabelRequestDto dto)
+        long currentUserId, long labelId, long? projectId, long organizationId, UpdateSensitivityLabelRequestDto dto)
     {
-        var label = await _context.SensitivityLabels.FirstOrDefaultAsync(l =>
-            l.Id == labelId && l.ProjectId == projectId && l.OrganizationId == organizationId);
+        var query = _context.SensitivityLabels
+            .Where(l => l.Id == labelId && l.OrganizationId == organizationId);
+
+        if (projectId.HasValue)
+            query = query.Where(l => l.ProjectId == projectId);
+
+        var label = await query.FirstOrDefaultAsync();
+
         if (label == null || label.IsArchived)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found");
 
@@ -94,11 +100,17 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <param name="organizationId">ID of the organization the label belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found or is already archived</exception>
-    public async Task<bool> ArchiveSensitivityLabel(long currentUserId, long labelId, long projectId,
+    public async Task<bool> ArchiveSensitivityLabel(long currentUserId, long labelId, long? projectId,
         long organizationId)
     {
-        var label = await _context.SensitivityLabels.FirstOrDefaultAsync(l =>
-            l.Id == labelId && l.ProjectId == projectId && l.OrganizationId == organizationId);
+        var query = _context.SensitivityLabels
+            .Where(l => l.Id == labelId && l.OrganizationId == organizationId);
+
+        if (projectId.HasValue)
+            query = query.Where(l => l.ProjectId == projectId);
+
+        var label = await query.FirstOrDefaultAsync();
+
         if (label == null || label.IsArchived)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found or is archived");
 
@@ -139,11 +151,17 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <param name="organizationId">ID of the organization the label belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found or is not archived</exception>
-    public async Task<bool> UnarchiveSensitivityLabel(long currentUserId, long labelId, long projectId,
+    public async Task<bool> UnarchiveSensitivityLabel(long currentUserId, long labelId, long? projectId,
         long organizationId)
     {
-        var label = await _context.SensitivityLabels.FirstOrDefaultAsync(l =>
-            l.Id == labelId && l.ProjectId == projectId && l.OrganizationId == organizationId);
+        var query = _context.SensitivityLabels
+            .Where(l => l.Id == labelId && l.OrganizationId == organizationId);
+
+        if (projectId.HasValue)
+            query = query.Where(l => l.ProjectId == projectId);
+
+        var label = await query.FirstOrDefaultAsync();
+
         if (label == null || !label.IsArchived)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found or is not archived");
 
@@ -184,11 +202,17 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <param name="organizationId">ID of the organization the label belongs</param>
     /// <returns>Boolean true if executed successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if label not found</exception>
-    public async Task<bool> DeleteSensitivityLabel(long currentUserId, long labelId, long projectId,
+    public async Task<bool> DeleteSensitivityLabel(long currentUserId, long labelId, long? projectId,
         long organizationId)
     {
-        var label = await _context.SensitivityLabels.FirstOrDefaultAsync(l =>
-            l.Id == labelId && l.ProjectId == projectId && l.OrganizationId == organizationId);
+        var query = _context.SensitivityLabels
+            .Where(l => l.Id == labelId && l.OrganizationId == organizationId);
+
+        if (projectId.HasValue)
+            query = query.Where(l => l.ProjectId == projectId);
+
+        var label = await query.FirstOrDefaultAsync();
+
         if (label == null || label.IsArchived)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found or is archived");
 
@@ -228,7 +252,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <returns>The newly created label</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
     public async Task<SensitivityLabelResponseDto> CreateSensitivityLabel(
-        long currentUserId, CreateSensitivityLabelRequestDto dto, long projectId, long organizationId)
+        long currentUserId, CreateSensitivityLabelRequestDto dto, long? projectId, long organizationId)
     {
         ValidationHelper.ValidateModel(dto);
 
@@ -285,15 +309,22 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <param name="hideArchived">Flag indicating whether to search on archived labels</param>
     /// <returns>A list of labels</returns>
     public async Task<IEnumerable<SensitivityLabelResponseDto>> GetAllSensitivityLabels(
-        long projectId, long organizationId, bool hideArchived = true)
+        long[]? projectIds, long organizationId, bool hideArchived = true)
     {
-        var labelQuery =
-            _context.SensitivityLabels.Where(l => l.ProjectId == projectId && l.OrganizationId == organizationId);
+        // Start with base query
+        var query = _context.SensitivityLabels
+            .Where(l => l.OrganizationId == organizationId)
+            .AsQueryable();
 
+        // Filter by projectIds if provided and not empty
+        if (projectIds is { Length: > 0 })
+            query = query.Where(l => l.ProjectId.HasValue && projectIds.Contains(l.ProjectId.Value));
+
+        // Optionally hide archived classes
         if (hideArchived)
-            labelQuery = labelQuery.Where(l => !l.IsArchived);
+            query = query.Where(l => !l.IsArchived);
 
-        return await labelQuery.Select(l => new SensitivityLabelResponseDto
+        return await query.Select(l => new SensitivityLabelResponseDto
             {
                 Id = l.Id,
                 Name = l.Name,
@@ -316,11 +347,16 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
     /// <param name="organizationId">ID of the organization across which to search</param>
     /// <returns>The requested label</returns>
     /// <exception cref="KeyNotFoundException">Thrown if label not found</exception>
-    public async Task<SensitivityLabelResponseDto> GetSensitivityLabel(long labelId, long projectId,
+    public async Task<SensitivityLabelResponseDto> GetSensitivityLabel(long labelId, long? projectId,
         long organizationId, bool hideArchived = true)
     {
-        var label = await _context.SensitivityLabels.FirstOrDefaultAsync(l =>
-            l.Id == labelId && l.ProjectId == projectId && l.OrganizationId == organizationId);
+        var query = _context.SensitivityLabels
+            .Where(l => l.Id == labelId && l.OrganizationId == organizationId);
+
+        if (projectId.HasValue)
+            query = query.Where(l => l.ProjectId == projectId);
+
+        var label = await query.FirstOrDefaultAsync();
 
         if (label == null)
             throw new KeyNotFoundException($"Sensitivity label with id {labelId} not found");
