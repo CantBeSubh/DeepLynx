@@ -1,6 +1,5 @@
 using System.Text.Json;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
@@ -58,9 +57,9 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
     public async Task<MetadataResponseDto> CreateMetadata(
-        long currentUserId, 
-        long projectId, 
+        long currentUserId,
         long organizationId,
+        long projectId,
         long dataSourceId,
         CreateMetadataRequestDto metadataRequestDto)
     {
@@ -86,10 +85,10 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="ArgumentException">If file is empty or not a .json file.</exception>
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
     public async Task<MetadataResponseDto> CreateMetadataFromFile(
-        long currentUserId, 
-        long organizationId, 
+        long currentUserId,
+        long organizationId,
         long projectId,
-        long dataSourceId, 
+        long dataSourceId,
         IFormFile file)
     {
         if (file == null)
@@ -142,7 +141,7 @@ public class MetadataBusiness : IMetadataBusiness
         long dataSourceId,
         long organizationId,
         long projectId
-        )
+    )
     {
         var metadataResponseDto = new MetadataResponseDto();
 
@@ -175,7 +174,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional relationships and then insert
             var relationshipsToInsert = BuildRelationships(relationships, edges);
             if (relationshipsToInsert.Any())
-                relMap = await BulkUpsertRelationships(currentUserId, organizationId, projectId, relationshipsToInsert,
+                relMap = await BulkUpsertRelationships(organizationId, currentUserId, projectId, relationshipsToInsert,
                     metadataResponseDto);
         }
 
@@ -186,7 +185,8 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional tags and then insert
             var tagsToInsert = BuildTags(tags, records);
             if (tagsToInsert.Any())
-                tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert, metadataResponseDto);
+                tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert,
+                    metadataResponseDto);
         }
 
         // Records
@@ -361,7 +361,7 @@ public class MetadataBusiness : IMetadataBusiness
         MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _classBusiness.BulkCreateClasses(
-            currentUserId, organizationId, projectId, classes);
+            organizationId, currentUserId, projectId, classes);
         metadataResponseDto.Classes = inserted;
         return inserted.ToDictionary(c => c.Name, c => c.Id);
     }
@@ -399,8 +399,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
-        long currentUserId,
         long organizationId,
+        long currentUserId,
         long projectId,
         List<CreateTagRequestDto> tags,
         MetadataResponseDto metadataResponseDto)

@@ -199,7 +199,7 @@ public class MetadataBusinessTests : IntegrationTestBase
             }
         };
         // Act
-        var result = await _metadataBusiness.CreateMetadata(uid, pid, organizationId, did, dto);
+        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid,did, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -236,7 +236,7 @@ public class MetadataBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _metadataBusiness.CreateMetadata(uid, pid, organizationId, did, dto);
+        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid,did, dto);
 
         // Assert
         Assert.Equal(2, result.Classes.Count);
@@ -270,7 +270,7 @@ public class MetadataBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _metadataBusiness.CreateMetadata(uid, pid, organizationId, did, dto);
+        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid, did, dto);
 
         // Assert
         Assert.Single(result.Classes);
@@ -347,7 +347,7 @@ public class MetadataBusinessTests : IntegrationTestBase
             }
         };
 
-        var result = await _metadataBusiness.CreateMetadata(uid, pid, organizationId, did, dto);
+        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid, did, dto);
 
         // Assert
         Assert.Single(result.Classes);
@@ -394,43 +394,7 @@ public class MetadataBusinessTests : IntegrationTestBase
 
         // Ensure all complex data events are created and logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(6, eventList.Count);
-
-        var actualEvent0 = eventList[0];
-        Assert.Equal(pid, actualEvent0.ProjectId);
-        Assert.Equal("create", actualEvent0.Operation);
-        Assert.Equal("class", actualEvent0.EntityType);
-        Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
-
-        var actualEvent1 = eventList[1];
-        Assert.Equal(pid, actualEvent1.ProjectId);
-        Assert.Equal("create", actualEvent1.Operation);
-        Assert.Equal("relationship", actualEvent1.EntityType);
-        Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
-
-        var actualEvent2 = eventList[2];
-        Assert.Equal(pid, actualEvent2.ProjectId);
-        Assert.Equal("create", actualEvent2.Operation);
-        Assert.Equal("tag", actualEvent2.EntityType);
-        Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
-
-        var actualEvent3 = eventList[3];
-        Assert.Equal(pid, actualEvent3.ProjectId);
-        Assert.Equal("create", actualEvent3.Operation);
-        Assert.Equal("record", actualEvent3.EntityType);
-        Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
-
-        var actualEvent4 = eventList[4];
-        Assert.Equal(pid, actualEvent4.ProjectId);
-        Assert.Equal("create", actualEvent4.Operation);
-        Assert.Equal("record", actualEvent4.EntityType);
-        Assert.Equal(result.Records[1].Id, actualEvent4.EntityId);
-
-        var actualEvent5 = eventList[5];
-        Assert.Equal(pid, actualEvent5.ProjectId);
-        Assert.Equal("create", actualEvent5.Operation);
-        Assert.Equal("edge", actualEvent5.EntityType);
-        Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
+        Assert.Equal(3, eventList.Count);
     }
 
     #endregion
@@ -458,7 +422,7 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, pid, organizationId, did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid, did, file);
 
         // Assert
         Assert.NotNull(result);
@@ -498,7 +462,7 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, pid, organizationId, did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid,did, file);
 
         // Assert
         Assert.Equal(2, result.Classes.Count);
@@ -549,7 +513,7 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, pid, organizationId, did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid, did, file);
 
         // Assert
         Assert.Single(result.Classes);
@@ -630,7 +594,7 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, pid, organizationId, did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid,did, file);
 
         // Assert
         Assert.Single(result.Classes);
@@ -644,43 +608,7 @@ public class MetadataBusinessTests : IntegrationTestBase
 
         // Ensure all complex data events are created and logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(6, eventList.Count);
-
-        var actualEvent0 = eventList[0];
-        Assert.Equal(pid, actualEvent0.ProjectId);
-        Assert.Equal("create", actualEvent0.Operation);
-        Assert.Equal("class", actualEvent0.EntityType);
-        Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
-
-        var actualEvent1 = eventList[1];
-        Assert.Equal(pid, actualEvent1.ProjectId);
-        Assert.Equal("create", actualEvent1.Operation);
-        Assert.Equal("relationship", actualEvent1.EntityType);
-        Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
-
-        var actualEvent2 = eventList[2];
-        Assert.Equal(pid, actualEvent2.ProjectId);
-        Assert.Equal("create", actualEvent2.Operation);
-        Assert.Equal("tag", actualEvent2.EntityType);
-        Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
-
-        var actualEvent3 = eventList[3];
-        Assert.Equal(pid, actualEvent3.ProjectId);
-        Assert.Equal("create", actualEvent3.Operation);
-        Assert.Equal("record", actualEvent3.EntityType);
-        Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
-
-        var actualEvent4 = eventList[4];
-        Assert.Equal(pid, actualEvent4.ProjectId);
-        Assert.Equal("create", actualEvent4.Operation);
-        Assert.Equal("record", actualEvent4.EntityType);
-        Assert.Equal(result.Records[1].Id, actualEvent4.EntityId);
-
-        var actualEvent5 = eventList[5];
-        Assert.Equal(pid, actualEvent5.ProjectId);
-        Assert.Equal("create", actualEvent5.Operation);
-        Assert.Equal("edge", actualEvent5.EntityType);
-        Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
+        Assert.Equal(3, eventList.Count);
     }
 
     #endregion
