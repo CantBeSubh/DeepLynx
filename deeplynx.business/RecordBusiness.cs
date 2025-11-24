@@ -576,15 +576,18 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
 
         // Log Record Update Event
-        // await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        // {
-        //     EntityType = "record",
-        //     EntityId = record.Id,
-        //     EntityName = record.Name,
-        //     Operation = "update",
-        //     Properties = "{}",
-        //     DataSourceId = record.DataSourceId,
-        // }, null, projectId);
+        await _eventBusiness.CreateEvent(currentUserId, 
+            record.OrganizationId,
+            projectId,
+            new CreateEventRequestDto
+        {
+            EntityType = "record",
+            EntityId = record.Id,
+            EntityName = record.Name,
+            Operation = "update",
+            Properties = "{}",
+            DataSourceId = record.DataSourceId,
+        });
         
         return new RecordResponseDto
         {
@@ -712,16 +715,18 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record soft delete event
-        // Log record soft delete event
-        // await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        // {
-        //     Operation = "unarchive",
-        //     EntityType = "record",
-        //     EntityId = record.Id,
-        //     EntityName = record.Name,
-        //     DataSourceId = record.DataSourceId,
-        //     Properties = JsonSerializer.Serialize(new {record.Name}),
-        // }, null, projectId);
+        await _eventBusiness.CreateEvent(currentUserId, 
+            organizationId,
+            projectId,
+            new CreateEventRequestDto
+        {
+            Operation = "unarchive",
+            EntityType = "record",
+            EntityId = record.Id,
+            EntityName = record.Name,
+            DataSourceId = record.DataSourceId,
+            Properties = JsonSerializer.Serialize(new {record.Name}),
+        });
 
         return true;
     }

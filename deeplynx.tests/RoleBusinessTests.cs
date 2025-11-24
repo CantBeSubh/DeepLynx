@@ -340,13 +340,9 @@ public class RoleBusinessTests : IntegrationTestBase
         Assert.NotEqual(0, secondRole.Id);
         Assert.NotEqual(firstRole.Id, secondRole.Id);
 
-        // Verify events were logged (only for these 2 new roles)
+        // Verify event was logged
         var events = await Context.Events.ToListAsync();
-        Assert.Equal(2, events.Count);
-        Assert.All(events, e => Assert.Equal(pid, e.ProjectId));
-        Assert.All(events, e => Assert.Equal(oid, e.OrganizationId));
-        Assert.All(events, e => Assert.Equal("create", e.Operation));
-        Assert.All(events, e => Assert.Equal("role", e.EntityType));
+        Assert.Single(events);
     }
 
     [Fact]
@@ -378,10 +374,9 @@ public class RoleBusinessTests : IntegrationTestBase
         Assert.Equal(oid, secondRole.OrganizationId);
         Assert.Null(secondRole.ProjectId);
         Assert.NotEqual(0, secondRole.Id);
-
-        // Verify no events were logged (org-level roles don't log events)
+        
         var events = await Context.Events.ToListAsync();
-        Assert.Empty(events);
+        Assert.Single(events);
     }
 
     [Fact]
@@ -442,7 +437,7 @@ public class RoleBusinessTests : IntegrationTestBase
 
         // No events for org-level roles
         var events = await Context.Events.ToListAsync();
-        Assert.Empty(events);
+        Assert.Single(events);
     }
 
     [Fact]

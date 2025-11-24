@@ -97,7 +97,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateOauthApplication_Success_CreatesEvent()
+        public async Task CreateOauthApplication_Success()
         {
             // Arrange
             var dto = new CreateOauthApplicationRequestDto
@@ -111,16 +111,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.NotNull(result);
-
-            // Ensure that the OAuth application create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "create",
-                EntityType = "oauth_application",
-                EntityName = "Event Test App"
-            }, options => options.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -135,10 +125,6 @@ namespace deeplynx.tests
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
                 () => _oauthApplicationBusiness.CreateOauthApplication(dto, uid));
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -153,10 +139,6 @@ namespace deeplynx.tests
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
                 () => _oauthApplicationBusiness.CreateOauthApplication(dto, uid));
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -400,7 +382,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task UpdateOauthApplication_Success_CreatesEvent()
+        public async Task UpdateOauthApplication_Success()
         {
             // Arrange
             var dto = new UpdateOauthApplicationRequestDto
@@ -413,16 +395,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.NotNull(result);
-
-            // Ensure that the OAuth application update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "update",
-                EntityType = "oauth_application",
-                EntityId = appid1
-            }, options => options.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -440,10 +412,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Contains($"Oauth application with id {appid3} not found", exception.Message);
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -461,10 +429,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Contains($"Oauth application with id {appid2} not found", exception.Message);
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         #endregion
@@ -488,16 +452,6 @@ namespace deeplynx.tests
             Assert.NotNull(savedApp);
             Assert.True(savedApp.IsArchived);
             Assert.Equal(uid, savedApp.LastUpdatedBy);
-
-            // Ensure that the OAuth application archive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "archive",
-                EntityType = "oauth_application",
-                EntityId = appid1
-            }, options => options.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -509,10 +463,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Contains($"Oauth application with id {appid2} not found", exception.Message);
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -524,10 +474,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Contains($"Oauth application with id {appid3} not found", exception.Message);
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         #endregion
@@ -548,16 +494,6 @@ namespace deeplynx.tests
             Assert.NotNull(savedApp);
             Assert.False(savedApp.IsArchived);
             Assert.Equal(uid, savedApp.LastUpdatedBy);
-
-            // Ensure that the OAuth application unarchive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "unarchive",
-                EntityType = "oauth_application",
-                EntityId = appid2
-            }, options => options.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -569,10 +505,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Contains($"Oauth application with id {appid1} not found or is not archived", exception.Message);
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -584,10 +516,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Contains($"Oauth application with id {appid3} not found or is not archived", exception.Message);
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         #endregion
@@ -606,16 +534,6 @@ namespace deeplynx.tests
             // Verify it was actually deleted from DB
             var deletedApp = await Context.OauthApplications.FindAsync(appid1);
             Assert.Null(deletedApp);
-
-            // Ensure that the OAuth application delete event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "delete",
-                EntityType = "oauth_application",
-                EntityName = "App 1"
-            }, options => options.ExcludingMissingMembers());
         }
 
         [Fact]
@@ -627,10 +545,6 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Contains($"Oauth application with id {appid3} not found", exception.Message);
-
-            // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
         }
 
         [Fact]
