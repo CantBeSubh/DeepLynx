@@ -159,7 +159,7 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task GetAllTags_ValidProjectId_ReturnsActiveTags()
     {
         // Act
-        var result = await _tagBusiness.GetAllTags(oid, pid, true);
+        var result = await _tagBusiness.GetAllTags(oid, [pid], true);
         var tags = result.ToList();
 
         // Assert
@@ -176,7 +176,7 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
     {
         // Act
-        var result = await _tagBusiness.GetAllTags(oid, pid3, true);
+        var result = await _tagBusiness.GetAllTags(oid, [pid3], true);
         var tags = result.ToList();
 
         // Assert
@@ -187,122 +187,13 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task GetAllTags_DifferentProject_ReturnsCorrectTags()
     {
         // Act
-        var result = await _tagBusiness.GetAllTags(oid, pid, true);
+        var result = await _tagBusiness.GetAllTags(oid, [pid], true);
         var tags = result.ToList();
 
         // Assert
         Assert.Equal(2, tags.Count);
         Assert.All(tags, ds => Assert.Equal(pid, ds.ProjectId));
         Assert.Equal(pid, tags.First().ProjectId);
-    }
-
-    #endregion
-
-    #region GetAllTagsMultiProject Tests
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_ValidProjectIds_ReturnsTagsFromAllProjects()
-    {
-        // Arrange
-        var projectIds = new[] { pid, pid2 };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(oid, projectIds, true);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(3, tags.Count); // 2 from pid, 1 from pid2 (tid4)
-        Assert.Contains(tags, t => t.Id == tid && t.ProjectId == pid);
-        Assert.Contains(tags, t => t.Id == tid2 && t.ProjectId == pid);
-        Assert.Contains(tags, t => t.Id == tid4 && t.ProjectId == pid2);
-        Assert.DoesNotContain(tags, t => t.Id == tid3); // archived tag should not be included
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_SingleProjectId_ReturnsSameAsGetAllTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid };
-
-        // Act
-        var multiProjectResult = await _tagBusiness.GetAllTagsMultiProject(oid, projectIds, true);
-        var singleProjectResult = await _tagBusiness.GetAllTags(oid, pid, true);
-
-        // Assert
-        Assert.Equal(singleProjectResult.Count, multiProjectResult.Count);
-        Assert.All(multiProjectResult, t => Assert.Equal(pid, t.ProjectId));
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_EmptyProjectIdsArray_ReturnsEmptyList()
-    {
-        // Arrange
-        var projectIds = Array.Empty<long>();
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(oid, projectIds, true);
-
-        // Assert
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_NonExistentProjectIds_ReturnsEmptyList()
-    {
-        // Arrange
-        var projectIds = new long[] { 999, 998 };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(oid, projectIds, true);
-
-        // Assert
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_HideArchivedFalse_ReturnsArchivedTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(oid, projectIds, false);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(3, tags.Count); // tid, tid2, and tid3 (archived)
-        Assert.Contains(tags, t => t.Id == tid3);
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_HideArchivedTrue_ExcludesArchivedTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(oid, projectIds, true);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(2, tags.Count);
-        Assert.DoesNotContain(tags, t => t.Id == tid3);
-        Assert.All(tags, t => Assert.False(t.IsArchived));
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_MixedProjectsWithAndWithoutTags_ReturnsCorrectTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid, pid3 }; // pid3 has no tags
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(oid, projectIds, true);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(2, tags.Count); // Only tags from pid
-        Assert.All(tags, t => Assert.Equal(pid, t.ProjectId));
     }
 
     #endregion
@@ -810,11 +701,11 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task ArchiveTag_ArchivedTagNotReturnedInGetAll()
     {
         // Arrange
-        var initialCount = (await _tagBusiness.GetAllTags(oid, pid, true)).Count;
+        var initialCount = (await _tagBusiness.GetAllTags(oid, [pid], true)).Count;
 
         // Act
         await _tagBusiness.ArchiveTag(oid, uid, pid, tid);
-        var finalCount = (await _tagBusiness.GetAllTags(oid, pid, true)).Count;
+        var finalCount = (await _tagBusiness.GetAllTags(oid, [pid], true)).Count;
 
         // Assert
         Assert.Equal(initialCount - 1, finalCount);
