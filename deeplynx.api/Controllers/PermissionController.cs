@@ -12,6 +12,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve permission information.
 /// </remarks>
 [ApiController]
+[Tags("Permission", "Project Management")]
 [Route("organizations/{organizationId}/projects/{projectId}/permissions")]
 public class PermissionController : ControllerBase
 {
@@ -37,7 +38,7 @@ public class PermissionController : ControllerBase
     /// <param name="labelId">Optional sensitivity label ID to filter permissions</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
     /// <returns>A list of permissions for the given organization/project.</returns>
-    [HttpGet(Name = "api_get_all_permissions")]
+    [HttpGet(Name = "api_get_all_project_permissions")]
     public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetAllPermissions(
         long organizationId,
         long projectId,
@@ -67,7 +68,7 @@ public class PermissionController : ControllerBase
     /// <param name="permissionId">The ID of the permission to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
     /// <returns>The permission associated with the given ID</returns>
-    [HttpGet("{permissionId}", Name = "api_get_permission")]
+    [HttpGet("{permissionId}", Name = "api_get_project_permission")]
     public async Task<ActionResult<PermissionResponseDto>> GetPermission(
         long organizationId,
         long projectId,
@@ -94,7 +95,7 @@ public class PermissionController : ControllerBase
     /// <param name="projectId">The ID of the project to which the permission belongs</param>
     /// <param name="dto">The data transfer object containing permission details</param>
     /// <returns>The created permission</returns>
-    [HttpPost(Name = "api_create_permission")]
+    [HttpPost(Name = "api_create_project_permission")]
     public async Task<ActionResult<PermissionResponseDto>> CreatePermission(
         long organizationId,
         long projectId,
@@ -124,7 +125,7 @@ public class PermissionController : ControllerBase
     /// <param name="permissionId">The ID of the permission to update</param>
     /// <param name="dto">The data transfer object containing updated permission details</param>
     /// <returns>The updated permission</returns>
-    [HttpPut("{permissionId}", Name = "api_update_permission")]
+    [HttpPut("{permissionId}", Name = "api_update_project_permission")]
     public async Task<ActionResult<PermissionResponseDto>> UpdatePermission(
         long organizationId,
         long projectId,
@@ -152,7 +153,7 @@ public class PermissionController : ControllerBase
     /// <param name="projectId">The ID of the project to which the permission belongs</param>
     /// <param name="permissionId">The ID of the permission to delete</param>
     /// <returns>A message stating the permission was successfully deleted.</returns>
-    [HttpDelete("{permissionId}", Name = "api_delete_permission")]
+    [HttpDelete("{permissionId}", Name = "api_delete_project_permission")]
     public async Task<ActionResult> DeletePermission(
         long organizationId,
         long projectId,
@@ -180,7 +181,7 @@ public class PermissionController : ControllerBase
     /// <param name="permissionId">The ID of the permission to archive or unarchive</param>
     /// <param name="archive">True to archive the permission, false to unarchive it.</param>
     /// <returns>A message stating the permission was successfully archived or unarchived.</returns>
-    [HttpPatch("{permissionId}", Name = "api_archive_permission")]
+    [HttpPatch("{permissionId}", Name = "api_archive_project_permission")]
     public async Task<IActionResult> ArchivePermission(
         long organizationId,
         long projectId,
