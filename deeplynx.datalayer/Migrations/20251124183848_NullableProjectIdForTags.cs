@@ -98,6 +98,24 @@ namespace deeplynx.datalayer.Migrations
                 oldClrType: typeof(long),
                 oldType: "bigint",
                 oldNullable: true);
+
+            migrationBuilder.AddForeignKey(
+                name: "tags_organization_id_fkey",
+                schema: "deeplynx",
+                table: "tags",
+                column: "last_updated_by",
+                principalSchema: "deeplynx",
+                principalTable: "users",
+                principalColumn: "id");
+
+            migrationBuilder.AddForeignKey(
+                name: "tags_project_id_fkey",
+                schema: "deeplynx",
+                table: "tags",
+                column: "last_updated_by",
+                principalSchema: "deeplynx",
+                principalTable: "users",
+                principalColumn: "id");
         }
     }
 }
