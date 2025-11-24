@@ -1,6 +1,5 @@
 using System.Text.Json;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
@@ -57,15 +56,17 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long currentUserId, long projectId, long organizationId,
-        long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(
+        long currentUserId,
+        long organizationId,
+        long projectId,
+        long dataSourceId,
+        CreateMetadataRequestDto metadataRequestDto)
     {
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
 
-        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, organizationId, projectId);
     }
 
     /// <summary>
@@ -83,11 +84,13 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="ArgumentNullException">If file is null.</exception>
     /// <exception cref="ArgumentException">If file is empty or not a .json file.</exception>
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
-    public async Task<MetadataResponseDto> CreateMetadataFromFile(long currentUserId, long projectId,
-        long organizationId, long dataSourceId, IFormFile file)
+    public async Task<MetadataResponseDto> CreateMetadataFromFile(
+        long currentUserId,
+        long organizationId,
+        long projectId,
+        long dataSourceId,
+        IFormFile file)
     {
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-
         if (file == null)
             throw new ArgumentNullException(nameof(file), "File cannot be null.");
 
@@ -120,7 +123,7 @@ public class MetadataBusiness : IMetadataBusiness
             throw new JsonException($"Error reading JSON from file: {ex.Message}", ex);
         }
 
-        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, organizationId, projectId);
     }
 
     /// <summary>
@@ -136,8 +139,9 @@ public class MetadataBusiness : IMetadataBusiness
         long currentUserId,
         CreateMetadataRequestDto metadataRequestDto,
         long dataSourceId,
-        long projectId,
-        long organizationId)
+        long organizationId,
+        long projectId
+    )
     {
         var metadataResponseDto = new MetadataResponseDto();
 
@@ -170,7 +174,7 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional relationships and then insert
             var relationshipsToInsert = BuildRelationships(relationships, edges);
             if (relationshipsToInsert.Any())
-                relMap = await BulkUpsertRelationships(currentUserId, organizationId, projectId, relationshipsToInsert,
+                relMap = await BulkUpsertRelationships(organizationId, currentUserId, projectId, relationshipsToInsert,
                     metadataResponseDto);
         }
 
@@ -181,7 +185,8 @@ public class MetadataBusiness : IMetadataBusiness
             // check dependent objects for additional tags and then insert
             var tagsToInsert = BuildTags(tags, records);
             if (tagsToInsert.Any())
-                tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert, metadataResponseDto);
+                tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert,
+                    metadataResponseDto);
         }
 
         // Records
@@ -342,6 +347,7 @@ public class MetadataBusiness : IMetadataBusiness
     ///     Bulk upserts classes and returns a mapping of class name to ID
     /// </summary>
     /// <param name="currentUserId"></param>
+    /// <param name="organizationId"></param>
     /// <param name="projectId"></param>
     /// <param name="organizationId"></param>
     /// <param name="classes"></param>
@@ -355,7 +361,7 @@ public class MetadataBusiness : IMetadataBusiness
         MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _classBusiness.BulkCreateClasses(
-            currentUserId, organizationId, projectId, classes);
+            organizationId, currentUserId, projectId, classes);
         metadataResponseDto.Classes = inserted;
         return inserted.ToDictionary(c => c.Name, c => c.Id);
     }
@@ -393,8 +399,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
-        long currentUserId,
         long organizationId,
+        long currentUserId,
         long projectId,
         List<CreateTagRequestDto> tags,
         MetadataResponseDto metadataResponseDto)
