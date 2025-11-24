@@ -15,6 +15,7 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId}/datasources")]
 [Authorize]
+[Tags("Organization Management", "DataSource")]
 public class OrganizationDataSourceController : ControllerBase
 {
     private readonly IDataSourceBusiness _dataSourceBusiness;

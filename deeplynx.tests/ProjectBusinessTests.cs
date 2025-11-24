@@ -409,7 +409,7 @@ public class ProjectBusinessTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(dto.Name, project.Name);
-        var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(oid, project.Id, true);
+        var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(oid, new[] { project.Id }, true);
         Assert.Single(dataSourceResult);
         Assert.Equal("Default Data Source", dataSourceResult[0].Name);
         Assert.Equal("This data source was created alongside the project for ease of use.",

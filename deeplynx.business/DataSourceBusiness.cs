@@ -137,58 +137,69 @@ public class DataSourceBusiness : IDataSourceBusiness
         UpdateDataSourceRequestDto dto,
         long? projectId)
     {
-        var dataSource = await _context.DataSources
-            .AsNoTracking()
-            .FirstOrDefaultAsync(d =>
-                d.Id == dataSourceId &&
-                d.OrganizationId == organizationId &&
-                (!projectId.HasValue || d.ProjectId == projectId.Value) &&
-                !d.IsArchived);
+        ValidationHelper.ValidateModel(dto);
 
-        if (dataSource == null)
+        var query = _context.DataSources
+            .Where(d => d.Id == dataSourceId && d.OrganizationId == organizationId);
+
+        if (projectId.HasValue) query = query.Where(d => d.ProjectId == projectId.Value);
+
+        var dataSource = await query.FirstOrDefaultAsync();
+
+        if (dataSource is null || dataSource.IsArchived)
             throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
-        dataSource.Name = dto.Name ?? dataSource.Name;
-        dataSource.Description = dto.Description ?? dataSource.Description;
-        dataSource.Abbreviation = dto.Abbreviation ?? dataSource.Abbreviation;
-        dataSource.BaseUri = dto.BaseUri ?? dataSource.BaseUri;
-        dataSource.Config = dto.Config?.ToString() != null ? dto.Config.ToString() : new JsonObject().ToString();
-        dataSource.Type = dto.Type ?? dataSource.Type;
-        dataSource.LastUpdatedBy = currentUserId;
-        dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-
-        //_context.DataSources.Update(dataSource);
-        await _context.SaveChangesAsync();
-
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
         {
-            ProjectId = projectId,
-            OrganizationId = organizationId,
-            Operation = "update",
-            EntityType = "data_source",
-            EntityId = dataSource.Id,
-            DataSourceId = null,
-            EntityName = dataSource.Name,
-            Properties = JsonSerializer.Serialize(new { dataSource.Name })
-        });
+            dataSource.Name = dto.Name ?? dataSource.Name;
+            dataSource.Description = dto.Description ?? dataSource.Description;
+            dataSource.Abbreviation = dto.Abbreviation ?? dataSource.Abbreviation;
+            dataSource.BaseUri = dto.BaseUri ?? dataSource.BaseUri;
+            dataSource.Config = dto.Config?.ToString() ?? new JsonObject().ToString();
+            dataSource.Type = dto.Type ?? dataSource.Type;
+            dataSource.LastUpdatedBy = currentUserId;
+            dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-        return new DataSourceResponseDto
+            await _context.SaveChangesAsync();
+
+            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                OrganizationId = organizationId,
+                Operation = "update",
+                EntityType = "data_source",
+                EntityId = dataSource.Id,
+                DataSourceId = null,
+                EntityName = dataSource.Name,
+                Properties = JsonSerializer.Serialize(new { dataSource.Name })
+            });
+
+            await transaction.CommitAsync();
+
+            return new DataSourceResponseDto
+            {
+                Id = dataSource.Id,
+                Name = dataSource.Name,
+                Description = dataSource.Description,
+                Default = dataSource.Default,
+                Abbreviation = dataSource.Abbreviation,
+                Type = dataSource.Type,
+                BaseUri = dataSource.BaseUri,
+                // return empty object for config if null
+                Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
+                ProjectId = dataSource.ProjectId,
+                OrganizationId = dataSource.OrganizationId,
+                LastUpdatedAt = dataSource.LastUpdatedAt,
+                LastUpdatedBy = dataSource.LastUpdatedBy,
+                IsArchived = dataSource.IsArchived
+            };
+        }
+        catch (Exception ex)
         {
-            Id = dataSource.Id,
-            Name = dataSource.Name,
-            Description = dataSource.Description,
-            Default = dataSource.Default,
-            Abbreviation = dataSource.Abbreviation,
-            Type = dataSource.Type,
-            BaseUri = dataSource.BaseUri,
-            // return empty object for config if null
-            Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
-            ProjectId = dataSource.ProjectId,
-            OrganizationId = dataSource.OrganizationId,
-            LastUpdatedAt = dataSource.LastUpdatedAt,
-            LastUpdatedBy = dataSource.LastUpdatedBy,
-            IsArchived = dataSource.IsArchived
-        };
+            await transaction.RollbackAsync();
+            throw new Exception($"Unable to update data source: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -201,15 +212,16 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
     public async Task<bool> DeleteDataSource(long organizationId, long dataSourceId, long? projectId)
     {
-        var dataSource = await _context.DataSources
-            .AsNoTracking()
-            .FirstOrDefaultAsync(d =>
+        var query = _context.DataSources
+            .Where(d =>
                 d.Id == dataSourceId &&
-                d.OrganizationId == organizationId &&
-                (!projectId.HasValue || d.ProjectId == projectId.Value));
+                d.OrganizationId == organizationId);
 
-        if (dataSource == null)
-            throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+        if (projectId.HasValue) query = query.Where(d => d.ProjectId == projectId.Value);
+
+        var dataSource = await query.FirstOrDefaultAsync();
+
+        if (dataSource == null) throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         _context.DataSources.Remove(dataSource);
         await _context.SaveChangesAsync();
@@ -230,7 +242,6 @@ public class DataSourceBusiness : IDataSourceBusiness
         long dataSourceId, long? projectId)
     {
         var dataSource = await _context.DataSources
-            .AsNoTracking()
             .FirstOrDefaultAsync(d =>
                 d.Id == dataSourceId &&
                 d.OrganizationId == organizationId &&
@@ -422,16 +433,16 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<bool> ArchiveDataSource(long currentUserId, long organizationId,
         long dataSourceId, long? projectId)
     {
-        var dataSource = await _context.DataSources
-            .AsNoTracking()
-            .FirstOrDefaultAsync(d =>
+        var query = _context.DataSources
+            .Where(d =>
                 d.Id == dataSourceId &&
                 d.OrganizationId == organizationId &&
                 (!projectId.HasValue || d.ProjectId == projectId.Value) &&
                 !d.IsArchived);
 
-        if (dataSource == null)
-            throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+        var dataSource = await query.FirstOrDefaultAsync();
+
+        if (dataSource == null) throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
         dataSource.IsArchived = true;
         dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -472,11 +483,9 @@ public class DataSourceBusiness : IDataSourceBusiness
             .Where(d => d.OrganizationId == organizationId);
 
         if (projectIds is { Length: > 0 })
-            query = query.Where(c => c.ProjectId.HasValue && projectIds.Contains(c.ProjectId.Value));
+            query = query.Where(d => d.ProjectId.HasValue && projectIds.Contains(d.ProjectId.Value));
 
-        if (hideArchived)
-            query = query.Where(c => !c.IsArchived);
-
+        if (hideArchived) query = query.Where(d => !d.IsArchived);
 
         var dataSources = await query.ToListAsync();
 
