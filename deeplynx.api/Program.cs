@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi.Models.References;
 using Scalar.AspNetCore;
 using Serilog;
 using StackExchange.Redis;
@@ -212,6 +214,34 @@ try
             document.Info.Version = "v1";
             document.Info.Title = "DeepLynx Nexus";
             document.Info.Description = "DeepLynx Nexus Api Documentation";
+            // Add security scheme
+            document.Components ??= new OpenApiComponents();
+            document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        
+            var bearerScheme = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Enter your JWT token"
+            };
+        
+            document.Components.SecuritySchemes["Bearer"] = bearerScheme;
+            // Create a security scheme reference using the constructor
+            var securitySchemeReference = new OpenApiSecuritySchemeReference("Bearer", document);
+            var securityRequirement = new OpenApiSecurityRequirement
+            {
+                [securitySchemeReference] = new List<string>()
+            };
+            // Apply to all operations
+            foreach (var path in document.Paths.Values)
+            {
+                foreach (var operation in path.Operations.Values)
+                {
+                    operation.Security ??= new List<OpenApiSecurityRequirement>();
+                    operation.Security.Add(securityRequirement);
+                }
+            }
 
             document.Tags = new HashSet<OpenApiTag>
             {
