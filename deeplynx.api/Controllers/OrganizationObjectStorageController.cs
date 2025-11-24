@@ -48,7 +48,7 @@ public class OrganizationObjectStorageController : ControllerBase
         try
         {
             var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(
-                organizationId,null, hideArchived);
+                organizationId, null, hideArchived);
 
             return Ok(objectStorages);
         }
