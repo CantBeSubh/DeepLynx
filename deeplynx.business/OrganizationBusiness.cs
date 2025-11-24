@@ -385,8 +385,8 @@ public class OrganizationBusiness : IOrganizationBusiness
     {
         var defaultRoles = new List<CreateRoleRequestDto>
         {
-            new() { Name = "Admin" },
-            new() { Name = "User" }
+            new() { Name = "Admin", Description = "Organization administrator with full permissions" },
+            new() { Name = "User", Description = "Standard organization user with limited permissions" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, null, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
@@ -398,32 +398,4 @@ public class OrganizationBusiness : IOrganizationBusiness
         await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions,
             organizationId, null);
     }
-
-    // private async Task SetDefaultPermissions(Organization organization)
-    // {
-    //     var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
-    //
-    //     foreach (var defaultPermission in defaultPermissions)
-    //     {
-    //         // Check if this permission already exists for this organization
-    //         var existingPermission = await _context.Permissions
-    //             .FirstOrDefaultAsync(p =>
-    //                 p.Resource == defaultPermission.Resource &&
-    //                 p.Action == defaultPermission.Action);
-    //
-    //         // Only add if it doesn't exist
-    //         if (existingPermission == null)
-    //         {
-    //             var permission = new Permission
-    //             {
-    //                 Name = defaultPermission.Name,
-    //                 Resource = defaultPermission.Resource,
-    //                 Action = defaultPermission.Action,
-    //                 Description = defaultPermission.Description,
-    //                 IsDefault = true
-    //             };
-    //             _context.Permissions.Add(permission);
-    //         }
-    //     }
-    // }
 }

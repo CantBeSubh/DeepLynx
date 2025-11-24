@@ -830,8 +830,8 @@ public class ProjectBusiness : IProjectBusiness
         // TODO: project config should determine whether to do this (true by default)
         var defaultRoles = new List<CreateRoleRequestDto>
         {
-            new() { Name = "Admin" },
-            new() { Name = "User" }
+            new() { Name = "Admin", Description = "Project administrator with full permissions" },
+            new() { Name = "User",  Description = "Standard project user with limited permissions" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
