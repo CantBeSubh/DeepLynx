@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   attachTagToRecord,
-  unAttachTagFromRecord,
+  unattachTagFromRecord,
 } from "@/app/lib/record_services.client";
 import toast from "react-hot-toast";
 import { LinkSlashIcon } from "@heroicons/react/24/outline";
@@ -10,6 +10,7 @@ import {
   TagResponseDto,
   RecordResponseDto,
 } from "@/app/(home)/types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 export const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -58,6 +59,7 @@ const SearchTags = ({
   onSearchByTags,
 }: Props) => {
   const [searchLoading, setSearchLoading] = useState(false);
+
 
   const handleTagToggle = (tagId: number) => {
     const newSelected = new Set(selectedTagIds);
@@ -153,8 +155,7 @@ const SearchTags = ({
             {searchLoading ? (
               <span className="loading loading-spinner loading-sm"></span>
             ) : (
-              `Search Records with ${selectedTagIds.size} Tag${
-                selectedTagIds.size > 1 ? "s" : ""
+              `Search Records with ${selectedTagIds.size} Tag${selectedTagIds.size > 1 ? "s" : ""
               }`
             )}
           </button>
@@ -191,6 +192,8 @@ export const SearchTagsRecordsList = ({
   const [recordToUnattach, setRecordToUnattach] =
     useState<RecordResponseDto | null>(null);
   const [unattachLoading, setUnattachLoading] = useState(false);
+  const { organization, hasLoaded } = useOrganizationSession();
+
 
   const handleRecordToggle = (recordId: number | null) => {
     if (recordId === null) return;
@@ -218,16 +221,22 @@ export const SearchTagsRecordsList = ({
     setAttachLoading(true);
 
     try {
-      const attachPromises: Promise<TagResponseDto>[] = [];
+      const attachPromises: Promise<{ message: string }>[] = [];
 
       selectedRecordIds.forEach((recordId) => {
         selectedTagIds.forEach((tagId) => {
           attachPromises.push(
-            attachTagToRecord(Number(projectId), recordId, tagId)
+            attachTagToRecord(
+              organization?.organizationId as number,
+              Number(projectId),
+              recordId,
+              tagId
+            )
           );
         });
       });
 
+      // Then await them
       await Promise.all(attachPromises);
 
       toast.success(
@@ -274,7 +283,7 @@ export const SearchTagsRecordsList = ({
     setUnattachLoading(true);
 
     try {
-      const unattachPromises: Promise<TagResponseDto>[] = [];
+      const unattachPromises: Promise<{ message: string }>[] = [];
 
       const tagsToRemove = recordToUnattach.tags
         ?.filter((tag) => tag.id !== null && selectedTagIds.has(tag.id))
@@ -288,7 +297,7 @@ export const SearchTagsRecordsList = ({
 
       tagsToRemove.forEach((tagId) => {
         unattachPromises.push(
-          unAttachTagFromRecord(
+          unattachTagFromRecord(organization?.organizationId as number,
             Number(projectId),
             recordToUnattach.id as number,
             tagId
@@ -299,8 +308,7 @@ export const SearchTagsRecordsList = ({
       await Promise.all(unattachPromises);
 
       toast.success(
-        `Successfully removed ${tagsToRemove.length} tag${
-          tagsToRemove.length !== 1 ? "s" : ""
+        `Successfully removed ${tagsToRemove.length} tag${tagsToRemove.length !== 1 ? "s" : ""
         } from "${recordToUnattach.name}"`
       );
 
@@ -376,11 +384,10 @@ export const SearchTagsRecordsList = ({
                               tag.id !== null && selectedTagIds.has(tag.id);
                             return (
                               <span
-                                className={`badge badge-sm ${
-                                  isSearchedTag
-                                    ? "badge-secondary"
-                                    : "badge-outline badge-secondary"
-                                }`}
+                                className={`badge badge-sm ${isSearchedTag
+                                  ? "badge-secondary"
+                                  : "badge-outline badge-secondary"
+                                  }`}
                                 key={tag.id}
                               >
                                 {tag.name}

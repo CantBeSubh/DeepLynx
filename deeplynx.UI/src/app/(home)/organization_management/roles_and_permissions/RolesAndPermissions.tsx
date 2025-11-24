@@ -19,7 +19,7 @@ import {
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import React, { useEffect, useRef, useState } from "react";
+import React, { DO_NOT_USE_OR_YOU_WILL_BE_FIRED_EXPERIMENTAL_FORM_ACTIONS, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   PermissionResponseDto,
@@ -28,6 +28,9 @@ import {
 import CreateRoleModal from "./CreateRoleModal";
 import DeleteRoleModal from "./DeleteRoleModal";
 import EditRoleModal from "./EditRoleModal";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { CreateRoleRequestDto, UpdateRoleRequestDto } from "../../types/requestDTOs";
+import { describe } from "node:test";
 
 interface RolesAndPermissionsProps {
   initialRoles: RoleResponseDto[];
@@ -59,6 +62,8 @@ const RolesAndPermissions = ({
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { organization } = useOrganizationSession();
+  const { project, setProject } = useProjectSession();
+
 
   const handleCreateRole = async (data: {
     name: string;
@@ -69,16 +74,14 @@ const RolesAndPermissions = ({
     }
 
     const orgId = Number(organization.organizationId);
+    const dto: CreateRoleRequestDto = {
+      name: data.name,
+      description: data.description,
+
+    }
 
     try {
-      const newRole = await createRole(
-        {
-          name: data.name,
-          description: data.description,
-          organizationId: orgId,
-        },
-        { organizationId: orgId }
-      );
+      const newRole = await createRole(organization.organizationId as number, project?.projectId as number, dto);
 
       // Add the new role to the state
       setRoles((prev) => [...prev, newRole]);
@@ -98,10 +101,15 @@ const RolesAndPermissions = ({
 
   const handleUpdateRole = async (
     roleId: number,
-    data: { name?: string | null; description?: string | null }
+    name?: string | null,
+    description?: string | null
   ) => {
     try {
-      const updatedRole = await updateRole(roleId, data);
+      const dto: UpdateRoleRequestDto = {
+        name: name,
+        description: description
+      }
+      const updatedRole = await updateRole(organization?.organizationId as number, project?.projectId as number, roleId, dto);
 
       setRoles((prev) =>
         prev.map((role) => (role.id === roleId ? updatedRole : role))
@@ -135,7 +143,7 @@ const RolesAndPermissions = ({
     if (!roleToDelete) return;
 
     try {
-      await archiveRole(roleToDelete.id); // Changed from deleteRole to archiveRole
+      await archiveRole(organization?.organizationId as number, project?.projectId as number, roleToDelete.id); // Changed from deleteRole to archiveRole
 
       // Remove the role from state (it's now archived, so hide it)
       setRoles((prev) => prev.filter((role) => role.id !== roleToDelete.id));
@@ -203,7 +211,7 @@ const RolesAndPermissions = ({
     if (!currentRole) return;
 
     try {
-      await setPermissionsForRole(currentRole.id, Array.from(tempPermissions));
+      await setPermissionsForRole(organization?.organizationId as number, project?.projectId as number, currentRole.id, Array.from(tempPermissions));
 
       // Update the rolePermissions state
       const updatedPerms = permissions.filter((p) =>
@@ -300,7 +308,7 @@ const RolesAndPermissions = ({
       // Update permissions for all roles that changed
       const updatePromises = roles.map((role) => {
         const newPermissions = Array.from(matrixTempPermissions[role.id] || []);
-        return setPermissionsForRole(role.id, newPermissions);
+        return setPermissionsForRole(organization?.organizationId as number, project?.projectId as number, role.id, newPermissions);
       });
 
       await Promise.all(updatePromises);
@@ -374,7 +382,7 @@ const RolesAndPermissions = ({
 
     setIsLoadingPermissions(true);
     try {
-      const perms = await getPermissionsByRole(roleId);
+      const perms = await getPermissionsByRole(organization?.organizationId as number, project?.projectId as number, roleId);
       setRolePermissions((prev) => ({
         ...prev,
         [roleId]: perms,
@@ -391,7 +399,7 @@ const RolesAndPermissions = ({
     setIsLoadingPermissions(true);
     try {
       const promises = roles.map((role) =>
-        getPermissionsByRole(role.id)
+        getPermissionsByRole(organization?.organizationId as number, project?.projectId as number, role.id)
           .then((perms) => ({ roleId: role.id, perms }))
           .catch((error) => {
             console.error(
@@ -471,24 +479,21 @@ const RolesAndPermissions = ({
                   key={role.id}
                   onClick={() => handleRoleSelection(role.id)}
                   disabled={isEditingPermissions}
-                  className={`w-full px-4 py-3 text-left border-b border-base-300 transition-colors ${
-                    selectedRoleId === role.id
-                      ? "bg-primary/10 border-l-4 border-l-primary"
-                      : ""
-                  } ${
-                    isEditingPermissions
+                  className={`w-full px-4 py-3 text-left border-b border-base-300 transition-colors ${selectedRoleId === role.id
+                    ? "bg-primary/10 border-l-4 border-l-primary"
+                    : ""
+                    } ${isEditingPermissions
                       ? "opacity-50 cursor-not-allowed"
                       : "hover:bg-base-200 cursor-pointer"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <ShieldCheckIcon
-                        className={`w-4 h-4 ${
-                          selectedRoleId === role.id
-                            ? "text-primary"
-                            : "text-base-content/40"
-                        }`}
+                        className={`w-4 h-4 ${selectedRoleId === role.id
+                          ? "text-primary"
+                          : "text-base-content/40"
+                          }`}
                       />
                       <span className="font-medium text-sm">{role.name}</span>
                     </div>
@@ -589,8 +594,8 @@ const RolesAndPermissions = ({
                       isStandardRole(currentRole)
                         ? "Standard role permissions cannot be modified"
                         : rolesLocked
-                        ? "Roles are locked"
-                        : "Edit Permissions"
+                          ? "Roles are locked"
+                          : "Edit Permissions"
                     }
                   >
                     <PencilIcon className="w-4 h-4" />
@@ -647,18 +652,17 @@ const RolesAndPermissions = ({
                             const hasPermission = isEditingPermissions
                               ? tempPermissions.has(Number(perm.id))
                               : roleHasPermission(
-                                  currentRole.id,
-                                  Number(perm.id)
-                                );
+                                currentRole.id,
+                                Number(perm.id)
+                              );
 
                             return (
                               <label
                                 key={perm.id}
-                                className={`label justify-start gap-2 ${
-                                  isEditingPermissions
-                                    ? "cursor-pointer"
-                                    : "cursor-default"
-                                }`}
+                                className={`label justify-start gap-2 ${isEditingPermissions
+                                  ? "cursor-pointer"
+                                  : "cursor-default"
+                                  }`}
                                 title={perm.description || perm.name}
                               >
                                 <input
@@ -828,44 +832,40 @@ const RolesAndPermissions = ({
                                     );
                                   }
                                 }}
-                                className={`inline-block ${
-                                  isEditingMatrix && !isStandard
-                                    ? "cursor-pointer hover:scale-110 transition-transform"
-                                    : "cursor-default"
-                                } ${
-                                  isStandard && isEditingMatrix
+                                className={`inline-block ${isEditingMatrix && !isStandard
+                                  ? "cursor-pointer hover:scale-110 transition-transform"
+                                  : "cursor-default"
+                                  } ${isStandard && isEditingMatrix
                                     ? "opacity-60 ring-2 ring-warning rounded-lg p-1" // Add warning ring
                                     : ""
-                                }`}
+                                  }`}
                                 title={
                                   isStandard && isEditingMatrix
                                     ? "Standard role permissions cannot be modified"
                                     : isEditingMatrix
-                                    ? "Click to toggle"
-                                    : hasPermission
-                                    ? "Has permission"
-                                    : "No permission"
+                                      ? "Click to toggle"
+                                      : hasPermission
+                                        ? "Has permission"
+                                        : "No permission"
                                 }
                               >
                                 {hasPermission ? (
                                   <CheckIcon
-                                    className={`size-8 mx-auto ${
-                                      isEditingMatrix && !isStandard
-                                        ? "text-success hover:text-success/70"
-                                        : isStandard && isEditingMatrix
+                                    className={`size-8 mx-auto ${isEditingMatrix && !isStandard
+                                      ? "text-success hover:text-success/70"
+                                      : isStandard && isEditingMatrix
                                         ? "text-warning" // Change to warning color
                                         : "text-success"
-                                    }`}
+                                      }`}
                                   />
                                 ) : (
                                   <XMarkIcon
-                                    className={`size-8 mx-auto ${
-                                      isEditingMatrix && !isStandard
-                                        ? "text-base-300 hover:text-success/50"
-                                        : isStandard && isEditingMatrix
+                                    className={`size-8 mx-auto ${isEditingMatrix && !isStandard
+                                      ? "text-base-300 hover:text-success/50"
+                                      : isStandard && isEditingMatrix
                                         ? "text-warning/50" // Change to warning color
                                         : "text-base-300"
-                                    }`}
+                                      }`}
                                   />
                                 )}
                               </div>
@@ -932,17 +932,15 @@ const RolesAndPermissions = ({
         <div className="btn-group">
           <button
             onClick={() => setActiveLayout("split-view")}
-            className={`btn border-2 border-primary mr-3 ${
-              activeLayout === "split-view" ? "btn-primary" : "btn-ghost"
-            }`}
+            className={`btn border-2 border-primary mr-3 ${activeLayout === "split-view" ? "btn-primary" : "btn-ghost"
+              }`}
           >
             Split View
           </button>
           <button
             onClick={() => setActiveLayout("matrix")}
-            className={`btn border-2 border-primary ${
-              activeLayout === "matrix" ? "btn-primary" : "btn-ghost"
-            }`}
+            className={`btn border-2 border-primary ${activeLayout === "matrix" ? "btn-primary" : "btn-ghost"
+              }`}
           >
             Matrix View
           </button>

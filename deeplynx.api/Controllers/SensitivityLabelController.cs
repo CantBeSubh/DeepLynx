@@ -4,7 +4,6 @@ using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
-using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("organizations/{organizationId}/projects/{projectId}/labels")]
@@ -41,7 +40,7 @@ public class SensitivityLabelController : ControllerBase
         try
         {
             var labels = await _sensitivityLabelBusiness
-                .GetAllSensitivityLabels(null, organizationId,
+                .GetAllSensitivityLabels(projectId, organizationId,
                     hideArchived); //setting project ID null for now to circumvent xor logic
             return Ok(labels);
         }
@@ -68,7 +67,8 @@ public class SensitivityLabelController : ControllerBase
     {
         try
         {
-            var label = await _sensitivityLabelBusiness.GetSensitivityLabel(labelId, hideArchived);
+            var label = await _sensitivityLabelBusiness.GetSensitivityLabel(labelId, projectId, organizationId,
+                hideArchived);
             return Ok(label);
         }
         catch (Exception exc)
@@ -95,8 +95,8 @@ public class SensitivityLabelController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, null,
-                organizationId); //setting project ID null for now to circumvent xor logic
+            var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, projectId,
+                organizationId);
             return Ok(label);
         }
         catch (Exception exc)
@@ -125,7 +125,8 @@ public class SensitivityLabelController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, dto);
+            var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, projectId,
+                organizationId, dto);
             return Ok(label);
         }
         catch (Exception exc)
@@ -152,7 +153,7 @@ public class SensitivityLabelController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId);
+            await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId, projectId, organizationId);
             return Ok(new { message = $"Deleted sensitivity label {labelId}" });
         }
         catch (Exception exc)
@@ -183,11 +184,13 @@ public class SensitivityLabelController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _sensitivityLabelBusiness.ArchiveSensitivityLabel(currentUserId, labelId);
+                await _sensitivityLabelBusiness.ArchiveSensitivityLabel(currentUserId, labelId, projectId,
+                    organizationId);
                 return Ok(new { message = $"Archived sensitivity label {labelId}" });
             }
 
-            await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(currentUserId, labelId);
+            await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(currentUserId, labelId, projectId,
+                organizationId);
             return Ok(new { message = $"Unarchived sensitivity label {labelId}" });
         }
         catch (Exception exc)

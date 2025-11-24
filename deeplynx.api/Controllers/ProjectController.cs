@@ -215,7 +215,7 @@ public class ProjectController : ControllerBase
     /// <param name="projectId">(Optional)ID of the project</param>
     /// <returns>A list of groups and users in the project, along with their roles</returns>
     [HttpGet("{projectId}/members", Name = "api_get_project_members")]
-    public async Task<ActionResult> GetProjectMembers(long organizationId, long projectId)
+    public async Task<ActionResult<ProjectMemberResponseDto>> GetProjectMembers(long organizationId, long projectId)
     {
         try
         {

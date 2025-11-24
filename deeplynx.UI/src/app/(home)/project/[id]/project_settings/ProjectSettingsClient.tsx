@@ -14,7 +14,9 @@ import {
   ProjectResponseDto,
   ProjectMembersDto,
   RoleResponseDto,
+  ProjectMemberResponseDto,
 } from "@/app/(home)/types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 interface ProjectSettingsProps {
   projects: ProjectResponseDto[];
   initialProject: ProjectResponseDto | null;
@@ -35,16 +37,17 @@ export default function ProjectSettingsClient({
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     initialProject?.id.toString() || null
   );
-  const [projectMembers, setProjectMembers] = useState<ProjectMembersDto[]>([]);
+  const [projectMembers, setProjectMembers] = useState<ProjectMemberResponseDto[]>([]);
 
   const [roles, setRoles] = useState<RoleResponseDto[]>([]);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
+  const { organization } = useOrganizationSession();
+
 
   useEffect(() => {
     const fetchRoles = async () => {
-      const rolesData = await getAllRoles({
-        projectId: Number(selectedProjectId),
-      });
+      const rolesData = await getAllRoles(organization?.organizationId as number, Number(selectedProjectId),
+      );
       setRoles(rolesData);
     };
     fetchRoles();
@@ -55,7 +58,7 @@ export default function ProjectSettingsClient({
 
     (async () => {
       try {
-        const users = await getProjectMembers(Number(selectedProjectId));
+        const users = await getProjectMembers(organization?.organizationId as number, Number(selectedProjectId));
         setProjectMembers(users);
         setIsMembersLoading(false);
       } catch (err) {
@@ -66,7 +69,7 @@ export default function ProjectSettingsClient({
 
   const refreshMembers = async () => {
     if (selectedProjectId) {
-      const users = await getProjectMembers(Number(selectedProjectId));
+      const users = await getProjectMembers(organization?.organizationId as number, Number(selectedProjectId));
       setProjectMembers(users);
     }
   };

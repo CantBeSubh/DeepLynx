@@ -10,6 +10,7 @@ import {
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { downloadFile } from "@/app/lib/file_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 interface PropertyRow {
   label: string;
@@ -41,6 +42,8 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
   const projectId = projectIdParam ? Number(projectIdParam) : NaN;
   const recordId = recordIdParam ? Number(recordIdParam) : NaN;
   const canDownload = Number.isFinite(projectId) && Number.isFinite(recordId);
+  const { organization, hasLoaded } = useOrganizationSession();
+
 
   const handleEdit = (index: number, currentValue: string) => {
     setEditingIndex(index);
@@ -67,7 +70,7 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
             {download && (
               <button
                 onClick={() =>
-                  canDownload && downloadFile(projectId, recordId, recordName)
+                  canDownload && downloadFile(organization?.organizationId as number, projectId, recordId, recordName)
                 }
                 disabled={!canDownload}
                 title={
@@ -75,11 +78,10 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
                     ? "Download file"
                     : "Missing projectId or recordId in URL"
                 }
-                className={`p-1 transition-colors cursor-pointer ${
-                  canDownload
+                className={`p-1 transition-colors cursor-pointer ${canDownload
                     ? "hover:text-primary"
                     : "opacity-50 cursor-not-allowed"
-                }`}
+                  }`}
               >
                 <ArrowDownTrayIcon className="w-8 h-8" />
               </button>
@@ -92,9 +94,8 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
             {rows.map((row, index) => (
               <div
                 key={index}
-                className={`grid grid-cols-12 ${
-                  index !== rows.length - 1 ? "border-b" : ""
-                } border-base-300`}
+                className={`grid grid-cols-12 ${index !== rows.length - 1 ? "border-b" : ""
+                  } border-base-300`}
               >
                 <div className="col-span-4 p-3 font-medium text-base-content text-sm bg-base-200 border-r border-base-300">
                   {row.label}

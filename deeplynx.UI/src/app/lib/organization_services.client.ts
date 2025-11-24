@@ -1,14 +1,18 @@
-
-
+import api from "./api";
 import { CreateOrganizationRequestDto, UpdateOrganizationRequestDto } from "../(home)/types/requestDTOs";
 import { OrganizationResponseDto } from "../(home)/types/responseDTOs";
-import api from "./api";
 
-//List Organizations
-export const getAllOrganizations = async (hideArchived: boolean = true): Promise<OrganizationResponseDto[]> => {
+/**
+ * Get all organizations
+ * @param hideArchived - Flag to hide archived organizations (default: true)
+ * @returns Promise with array of OrganizationResponseDto
+ */
+export const getAllOrganizations = async (
+    hideArchived: boolean = true
+): Promise<OrganizationResponseDto[]> => {
     try {
         const res = await api.get<OrganizationResponseDto[]>(
-            `/organizations/GetAllOrganizations`,
+            `/organizations`,
             { params: { hideArchived } }
         );
         return res.data;
@@ -18,11 +22,19 @@ export const getAllOrganizations = async (hideArchived: boolean = true): Promise
     }
 };
 
-//Fetch Organization by ID
-export const getOrganization = async (organizationId: number, hideArchived: boolean = true): Promise<OrganizationResponseDto> => {
+/**
+ * Get a specific organization by ID
+ * @param organizationId - The ID of the organization
+ * @param hideArchived - Flag to hide archived organizations (default: true)
+ * @returns Promise with OrganizationResponseDto
+ */
+export const getOrganization = async (
+    organizationId: number,
+    hideArchived: boolean = true
+): Promise<OrganizationResponseDto> => {
     try {
         const res = await api.get<OrganizationResponseDto>(
-            `/organizations/GetOrganization/${organizationId}`,
+            `/organizations/${organizationId}`,
             { params: { hideArchived } }
         );
         return res.data;
@@ -32,11 +44,17 @@ export const getOrganization = async (organizationId: number, hideArchived: bool
     }
 };
 
-//Create an Organization
-export const createOrganization = async (dto: CreateOrganizationRequestDto): Promise<OrganizationResponseDto> => {
+/**
+ * Create a new organization
+ * @param dto - The organization creation request DTO
+ * @returns Promise with OrganizationResponseDto
+ */
+export const createOrganization = async (
+    dto: CreateOrganizationRequestDto
+): Promise<OrganizationResponseDto> => {
     try {
         const res = await api.post<OrganizationResponseDto>(
-            `/organizations/CreateOrganization`,
+            `/organizations`,
             dto
         );
         return res.data;
@@ -46,11 +64,19 @@ export const createOrganization = async (dto: CreateOrganizationRequestDto): Pro
     }
 };
 
-//Update an Organization
-export const updateOrganization = async (organizationId: number, dto: UpdateOrganizationRequestDto): Promise<OrganizationResponseDto> => {
+/**
+ * Update an organization
+ * @param organizationId - The ID of the organization to update
+ * @param dto - The organization update request DTO
+ * @returns Promise with OrganizationResponseDto
+ */
+export const updateOrganization = async (
+    organizationId: number,
+    dto: UpdateOrganizationRequestDto
+): Promise<OrganizationResponseDto> => {
     try {
         const res = await api.put<OrganizationResponseDto>(
-            `/organizations/UpdateOrganization/${organizationId}`,
+            `/organizations/${organizationId}`,
             dto
         );
         return res.data;
@@ -60,61 +86,114 @@ export const updateOrganization = async (organizationId: number, dto: UpdateOrga
     }
 };
 
-//Archive an Organization
-export const archiveOrganization = async (organizationId: number): Promise<void> => {
+/**
+ * Delete an organization
+ * @param organizationId - The ID of the organization to delete
+ * @returns Promise with success message
+ */
+export const deleteOrganization = async (
+    organizationId: number
+): Promise<{ message: string }> => {
     try {
-        await api.delete(`/organizations/ArchiveOrganization/${organizationId}`);
+        const res = await api.delete(
+            `/organizations/${organizationId}`
+        );
+        return res.data;
     } catch (error) {
-        console.error(`Error archiving organization ${organizationId}:`, error);
+        console.error(`Error deleting organization ${organizationId}:`, error);
         throw error;
     }
 };
 
-// //Unarchive an Organization
-// export const unarchiveOrganization = async (organizationId: number): Promise<void> => {
-//     try {
-//         await api.put(`/organizations/UnarchiveOrganization/${organizationId}`);
-//     } catch (error) {
-//         console.error(`Error unarchiving organization ${organizationId}:`, error);
-//         throw error;
-//     }
-// };
-
-//Add User to Organization
-export const addUserToOrganization = async (organizationId: number, userId: number, isAdmin: boolean = false): Promise<void> => {
+/**
+ * Archive or unarchive an organization
+ * @param organizationId - The ID of the organization to archive/unarchive
+ * @param archive - True to archive, false to unarchive
+ * @returns Promise with success message
+ */
+export const archiveOrganization = async (
+    organizationId: number,
+    archive: boolean = true
+): Promise<{ message: string }> => {
     try {
-        await api.post(
-            `/organizations/AddUserToOrganization`,
+        const res = await api.patch(
+            `/organizations/${organizationId}`,
             null,
-            { params: { organizationId, userId, isAdmin } }
+            { params: { archive } }
         );
+        return res.data;
+    } catch (error) {
+        console.error(`Error ${archive ? 'archiving' : 'unarchiving'} organization ${organizationId}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Add a user to an organization
+ * @param organizationId - The ID of the organization
+ * @param userId - The ID of the user to add
+ * @param isAdmin - Whether to add the user as an admin (default: false)
+ * @returns Promise with success message
+ */
+export const addUserToOrganization = async (
+    organizationId: number,
+    userId: number,
+    isAdmin: boolean = false
+): Promise<{ message: string }> => {
+    try {
+        const res = await api.post(
+            `/organizations/${organizationId}/user`,
+            null,
+            { params: { userId, isAdmin } }
+        );
+        return res.data;
     } catch (error) {
         console.error(`Error adding user ${userId} to organization ${organizationId}:`, error);
         throw error;
     }
 };
 
-//Set Admin Status to Organization User
-export const setOrganizationAdminStatus = async (organizationId: number, userId: number, isAdmin: boolean): Promise<void> => {
+/**
+ * Set admin status for an organization user
+ * @param organizationId - The ID of the organization
+ * @param userId - The ID of the user
+ * @param isAdmin - The admin status to set
+ * @returns Promise with success message
+ */
+export const setOrganizationAdminStatus = async (
+    organizationId: number,
+    userId: number,
+    isAdmin: boolean
+): Promise<{ message: string }> => {
     try {
-        await api.put(
-            `/organizations/SetOrganizationAdminStatus`,
+        const res = await api.put(
+            `/organizations/${organizationId}/admin`,
             null,
-            { params: { organizationId, userId, isAdmin } }
+            { params: { userId, isAdmin } }
         );
+        return res.data;
     } catch (error) {
         console.error(`Error setting admin status for user ${userId} in organization ${organizationId}:`, error);
         throw error;
     }
 };
 
-//Remove User from Organization
-export const removeUserFromOrganization = async (organizationId: number, userId: number): Promise<void> => {
+/**
+ * Remove a user from an organization
+ * @param organizationId - The ID of the organization
+ * @param userId - The ID of the user to remove
+ * @returns Promise with success message
+ */
+export const removeUserFromOrganization = async (
+    organizationId: number,
+    userId: number
+): Promise<{ message: string }> => {
     try {
-        await api.delete(
-            `/organizations/RemoveUserFromOrganization`,
-            { params: { organizationId, userId } }
+        const res = await api.delete(
+            `/organizations/${organizationId}/user`,
+            { params: { userId } }
         );
+        return res.data;
     } catch (error) {
         console.error(`Error removing user ${userId} from organization ${organizationId}:`, error);
         throw error;

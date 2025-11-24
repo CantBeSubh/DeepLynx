@@ -38,11 +38,6 @@ public class RoleBusiness : IRoleBusiness
     public async Task<IEnumerable<RoleResponseDto>> GetAllRoles(
         long organizationId, long? projectId, bool hideArchived = true)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId, hideArchived);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
-
         var roleQuery = _context.Roles
             .Where(r => r.OrganizationId == organizationId
                         && (!hideArchived || !r.IsArchived)
@@ -78,11 +73,6 @@ public class RoleBusiness : IRoleBusiness
     public async Task<RoleResponseDto> GetRole(long roleId, long organizationId, long? projectId,
         bool hideArchived = true)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId, hideArchived);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
-
         var role = await _context.Roles
             .Where(r => r.Id == roleId
                         && r.OrganizationId == organizationId
@@ -93,7 +83,6 @@ public class RoleBusiness : IRoleBusiness
         if (role == null)
             throw new KeyNotFoundException(
                 $"Role with id {roleId} not found or does not belong to the specified organization/project context");
-
 
         return new RoleResponseDto
         {
@@ -121,19 +110,6 @@ public class RoleBusiness : IRoleBusiness
         long currentUserId, CreateRoleRequestDto dto, long organizationId, long? projectId = null)
     {
         ValidationHelper.ValidateModel(dto);
-
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
-            // We can also check here for proper project/org connection
-            var project = await _context.Projects.FindAsync(projectId.Value);
-            if (project?.OrganizationId != organizationId)
-                throw new ArgumentException(
-                    $"Project {projectId.Value} does not belong to organization {organizationId}");
-        }
 
         var role = new Role
         {
@@ -201,7 +177,7 @@ public class RoleBusiness : IRoleBusiness
         // There may be a better way to handle this, but let's avoid touching DB unless we have roles supplied
         if (roles == null || roles.Count == 0) return new List<RoleResponseDto>();
 
-        // Ensure organization exists (always required)
+        // These checks aren't handled in middleware as Bulk operation is not accessible via routing
         await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
 
         // If projectId is provided, ensure it exists and belongs to the organization
@@ -215,7 +191,6 @@ public class RoleBusiness : IRoleBusiness
                     $"Project {projectId.Value} does not belong to organization {organizationId}");
         }
 
-        // Bulk insert into roles; if there is a name collision, update the description if present
         // Use different SQL based on whether it's org-level or project-level role
         var sql = projectId.HasValue
             ? @"
@@ -305,11 +280,6 @@ public class RoleBusiness : IRoleBusiness
     {
         ValidationHelper.ValidateModel(dto);
 
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         var role = await _context.Roles
             .Where(r => r.Id == roleId
                         && r.OrganizationId == organizationId
@@ -320,7 +290,6 @@ public class RoleBusiness : IRoleBusiness
         if (role == null)
             throw new KeyNotFoundException(
                 $"Role with id {roleId} not found or does not belong to the specified organization/project context");
-
 
         // Update fields
         role.Name = dto.Name ?? role.Name;
@@ -383,11 +352,6 @@ public class RoleBusiness : IRoleBusiness
     /// <exception cref="DependencyDeletionException">Returned if role removal from project members fails</exception>
     public async Task<bool> ArchiveRole(long currentUserId, long roleId, long organizationId, long? projectId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         var role = await _context.Roles
             .Where(r => r.Id == roleId
                         && r.OrganizationId == organizationId
@@ -454,11 +418,6 @@ public class RoleBusiness : IRoleBusiness
     /// <exception cref="KeyNotFoundException">Returned if role not found or is not archived</exception>
     public async Task<bool> UnarchiveRole(long currentUserId, long roleId, long organizationId, long? projectId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         var role = await _context.Roles
             .Where(r => r.Id == roleId
                         && r.OrganizationId == organizationId
@@ -502,11 +461,6 @@ public class RoleBusiness : IRoleBusiness
     /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
     public async Task<bool> DeleteRole(long currentUserId, long roleId, long organizationId, long? projectId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         var role = await _context.Roles
             .Where(r => r.Id == roleId
                         && r.OrganizationId == organizationId
@@ -518,19 +472,21 @@ public class RoleBusiness : IRoleBusiness
             throw new KeyNotFoundException(
                 $"Role with id {roleId} not found or does not belong to the specified organization/project context");
 
+        var roleName = role.Name;
+
         _context.Roles.Remove(role);
         await _context.SaveChangesAsync();
 
-        // Log archive Role event
+        // Log delete Role event
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
-            OrganizationId = role.OrganizationId,
-            ProjectId = role.ProjectId,
+            OrganizationId = organizationId,
+            ProjectId = projectId,
             Operation = "delete",
             EntityType = "role",
-            EntityName = role.Name,
-            EntityId = role.Id,
-            Properties = JsonSerializer.Serialize(new { role.Name })
+            EntityName = roleName,
+            EntityId = roleId,
+            Properties = JsonSerializer.Serialize(new { roleName })
         });
 
         return true;
@@ -547,12 +503,6 @@ public class RoleBusiness : IRoleBusiness
     public async Task<IEnumerable<PermissionResponseDto>> GetPermissionsByRole(long roleId, long organizationId,
         long? projectId)
     {
-        // check if role exists
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         var role = await _context.Roles
             .Where(r => r.Id == roleId
                         && r.OrganizationId == organizationId
@@ -594,11 +544,6 @@ public class RoleBusiness : IRoleBusiness
     /// <exception cref="InvalidOperationException">Returned if permission already exists for role</exception>
     public async Task<bool> AddPermissionToRole(long roleId, long permissionId, long organizationId, long? projectId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         // check if role exists
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -638,11 +583,6 @@ public class RoleBusiness : IRoleBusiness
     public async Task<bool> RemovePermissionFromRole(long roleId, long permissionId, long organizationId,
         long? projectId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         // check if role exists
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -678,11 +618,6 @@ public class RoleBusiness : IRoleBusiness
     public async Task<bool> SetPermissionsForRole(long roleId, long[] permissionIds, long organizationId,
         long? projectId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         // check if role exists
         var role = await _context.Roles
             .Where(r => r.Id == roleId
@@ -728,11 +663,6 @@ public class RoleBusiness : IRoleBusiness
     public async Task<bool> SetPermissionsByPattern(long roleId, Dictionary<string, string[]> permissionPatterns,
         long organizationId, long? projectId)
     {
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
-
-        if (projectId.HasValue)
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
         // check if role exists
         var role = await _context.Roles
             .Where(r => r.Id == roleId

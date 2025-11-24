@@ -25,6 +25,8 @@ import {
 } from "@heroicons/react/24/outline";
 import AvatarCell from "../../components/Avatar";
 import toast from "react-hot-toast";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { CreateGroupRequestDto, UpdateGroupRequestDto } from "../../types/requestDTOs";
 
 interface InlineGroupsTableProps {
   initialGroups: GroupResponseDto[];
@@ -72,6 +74,8 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   const [selectedGroups, setSelectedGroups] = useState<Set<string | number>>(
     new Set()
   );
+  const { organization, hasLoaded } = useOrganizationSession();
+
 
   // Fetch members for a group
   const fetchGroupMembers = async (groupId: string | number) => {
@@ -84,7 +88,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setLoadingMembers(newLoadingMembers);
 
     try {
-      const members = await getGroupMembers(groupId);
+      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
       setGroupMembers(new Map(groupMembers).set(groupId, members));
     } catch (err) {
       console.error("Failed to fetch group members:", err);
@@ -132,13 +136,12 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
 
     setLoading(true);
     setError(null);
-
+    const dto: CreateGroupRequestDto = {
+      name: newGroupName,
+      description: newGroupDescription
+    }
     try {
-      const newGroup = await createGroup(
-        organizationId,
-        newGroupName,
-        newGroupDescription
-      );
+      const newGroup = await createGroup(organizationId as number, dto);
       setGroups([...groups, newGroup]);
       setNewGroupName("");
       setNewGroupDescription("");
@@ -161,13 +164,12 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
 
     setLoading(true);
     setError(null);
-
+    const dto: UpdateGroupRequestDto = {
+      name: editName,
+      description: editDescription
+    }
     try {
-      const updatedGroup = await updateGroup(
-        groupId,
-        editName,
-        editDescription
-      );
+      const updatedGroup = await updateGroup(organization?.organizationId as number, groupId as number, dto);
       setGroups(groups.map((g) => (g.id === groupId ? updatedGroup : g)));
       setEditingGroup(null);
       setEditName("");
@@ -187,7 +189,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await deleteGroup(groupId);
+      await deleteGroup(organization?.organizationId as number, groupId as number);
       setGroups(groups.filter((g) => g.id !== groupId));
       if (expandedGroup === groupId) {
         setExpandedGroup(null);
@@ -218,7 +220,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
 
     try {
       await Promise.all(
-        Array.from(selectedGroups).map((id) => deleteGroup(id))
+        Array.from(selectedGroups).map((id) => deleteGroup(organization?.organizationId as number, id as number))
       );
       setGroups(groups.filter((g) => !selectedGroups.has(g.id)));
       setSelectedGroups(new Set());
@@ -238,9 +240,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await addUserToGroup(groupId, userId);
+      await addUserToGroup(organization?.organizationId as number, groupId as number, userId as number);
       // Refetch members after adding
-      const members = await getGroupMembers(groupId);
+      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
       setGroupMembers(new Map(groupMembers).set(groupId, members));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add member");
@@ -258,9 +260,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await removeUserFromGroup(groupId, userId);
+      await removeUserFromGroup(organization?.organizationId as number, groupId as number, userId as number);
       // Refetch members after removing
-      const members = await getGroupMembers(groupId);
+      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
       setGroupMembers(new Map(groupMembers).set(groupId, members));
       toast.success("Removed member");
     } catch (err) {
@@ -455,9 +457,8 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                     <React.Fragment key={group.id}>
                       {/* Main Row */}
                       <tr
-                        className={`hover cursor-pointer ${
-                          expandedGroup === group.id ? "bg-base-200" : ""
-                        }`}
+                        className={`hover cursor-pointer ${expandedGroup === group.id ? "bg-base-200" : ""
+                          }`}
                         onClick={() => toggleExpand(group.id)}
                       >
                         <td onClick={(e) => e.stopPropagation()}>
