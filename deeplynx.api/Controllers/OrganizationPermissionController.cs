@@ -12,7 +12,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve organization permission information.
 /// </remarks>
 [ApiController]
-[Tags("Permission", "Organization Management")]
+[Tags("Organization Management", "Permission")]
 public class OrganizationPermissionController : ControllerBase
 {
     private readonly ILogger<OrganizationPermissionController> _logger;

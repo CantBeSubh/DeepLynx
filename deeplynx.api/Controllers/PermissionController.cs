@@ -12,8 +12,8 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve permission information.
 /// </remarks>
 [ApiController]
-[Tags("Permission", "Project Management")]
 [Route("organizations/{organizationId}/projects/{projectId}/permissions")]
+[Tags("Project Management", "Permission")]
 public class PermissionController : ControllerBase
 {
     private readonly ILogger<PermissionController> _logger;
