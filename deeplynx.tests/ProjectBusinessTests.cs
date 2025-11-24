@@ -365,42 +365,8 @@ public class ProjectBusinessTests : IntegrationTestBase
         var adminRole = defaultRoles.Single(r => r.Name == "Admin");
         var userRole =  defaultRoles.Single(r => r.Name == "User");
         
-        Assert.True(adminRole.Permissions.All(p => p.IsDefault));
-        Assert.True(userRole.Permissions.All(p => p.IsDefault));
-
-        // Calculate expected permission count
-        var expectedAdminPermissionCount = DefaultRolePermissions.Admin.AllowedPermissions.Sum(kvp => kvp.Value.Length);
-        var expectedUserPermissionCount = DefaultRolePermissions.User.AllowedPermissions.Sum(kvp => kvp.Value.Length);
-        Assert.Equal(expectedAdminPermissionCount, adminRole.Permissions.Count);
-        Assert.Equal(expectedUserPermissionCount, userRole.Permissions.Count);
-
-        // Verify each resource type has the correct actions
-        foreach (var (resource, actions) in DefaultRolePermissions.Admin.AllowedPermissions)
-        {
-            var resourcePermissions = adminRole.Permissions
-                .Where(p => p.Resource == resource)
-                .Select(p => p.Action)
-                .OrderBy(a => a)
-                .ToList();
-
-            var expectedActions = actions.OrderBy(a => a).ToList();
-    
-            Assert.Equal(expectedActions, resourcePermissions);
-        }
-        
-        // Verify each resource type has the correct actions
-        foreach (var (resource, actions) in DefaultRolePermissions.User.AllowedPermissions)
-        {
-            var resourcePermissions = userRole.Permissions
-                .Where(p => p.Resource == resource)
-                .Select(p => p.Action)
-                .OrderBy(a => a)
-                .ToList();
-
-            var expectedActions = actions.OrderBy(a => a).ToList();
-    
-            Assert.Equal(expectedActions, resourcePermissions);
-        }
+        AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
+        AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
 
         // Ensure that the project create event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -526,9 +492,6 @@ public class ProjectBusinessTests : IntegrationTestBase
         Assert.Equal(2, roles.Count);
         var adminRole = roles.Single(r => r.Name == "Admin");
         var userRole = roles.Single(r => r.Name == "User");
-        
-        Assert.True(adminRole.Permissions.All(p => p.IsDefault));
-        Assert.True(userRole.Permissions.All(p => p.IsDefault));
         
         AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
         AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);

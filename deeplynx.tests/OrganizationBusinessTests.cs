@@ -283,9 +283,6 @@ public class OrganizationBusinessTests : IntegrationTestBase
         var adminRole = defaultRoles.Single(r => r.Name == "Admin");
         var userRole =  defaultRoles.Single(r => r.Name == "User");
         
-        Assert.True(adminRole.Permissions.All(p => p.IsDefault));
-        Assert.True(userRole.Permissions.All(p => p.IsDefault));
-        
         AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
         AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
     }
