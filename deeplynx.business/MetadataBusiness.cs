@@ -67,7 +67,7 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
 
-        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, organizationId, projectId);
     }
 
     /// <summary>
@@ -87,8 +87,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
     public async Task<MetadataResponseDto> CreateMetadataFromFile(
         long currentUserId, 
-        long projectId,
         long organizationId, 
+        long projectId,
         long dataSourceId, 
         IFormFile file)
     {
@@ -124,7 +124,7 @@ public class MetadataBusiness : IMetadataBusiness
             throw new JsonException($"Error reading JSON from file: {ex.Message}", ex);
         }
 
-        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, projectId, organizationId);
+        return await ParseMetadata(currentUserId, metadataRequestDto, dataSourceId, organizationId, projectId);
     }
 
     /// <summary>
@@ -140,8 +140,9 @@ public class MetadataBusiness : IMetadataBusiness
         long currentUserId,
         CreateMetadataRequestDto metadataRequestDto,
         long dataSourceId,
-        long projectId,
-        long organizationId)
+        long organizationId,
+        long projectId
+        )
     {
         var metadataResponseDto = new MetadataResponseDto();
 
@@ -346,6 +347,7 @@ public class MetadataBusiness : IMetadataBusiness
     ///     Bulk upserts classes and returns a mapping of class name to ID
     /// </summary>
     /// <param name="currentUserId"></param>
+    /// <param name="organizationId"></param>
     /// <param name="projectId"></param>
     /// <param name="classes"></param>
     /// <param name="metadataResponseDto"></param>
