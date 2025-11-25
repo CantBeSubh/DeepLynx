@@ -4,6 +4,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -36,6 +37,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns></returns>
     [HttpPost("query", Name = "api_query_timeseries")]
+    [Auth("read", "record")]
     public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(
         long organizationId, long projectId, long dataSourceId,
         [FromQuery] string fileType, [FromBody] TimeseriesQueryRequestDto request)
@@ -69,6 +71,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="file">Timeseries file</param>
     /// <returns>Record response DTO</returns>
     [HttpPost("upload", Name = "api_upload_timeseries_file")]
+    [Auth("write", "record")]
     public async Task<ActionResult<RecordResponseDto>> UploadFile(
         long organizationId, long projectId, long dataSourceId, IFormFile file)
     {
@@ -96,6 +99,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="request">Timeseries request DTO</param>
     /// <returns>{UploadId}</returns>
     [HttpPost("upload/start", Name = "api_start_timeseries_upload")]
+    [Auth("write", "record")]
     public async Task<IActionResult> StartUpload(
         long organizationId, long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
     {
@@ -124,6 +128,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="chunkNumber">Chunk number from form</param>
     /// <returns>{ChunkUploadStatus}</returns>
     [HttpPost("upload/chunk", Name = "api_upload_timeseries_chunk")]
+    [Auth("write", "record")]
     public async Task<IActionResult> UploadChunk(
         long organizationId, long projectId, long dataSourceId,
         IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
@@ -152,6 +157,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="request">Timeseries request DTO</param>
     /// <returns>{TimeseriesUploadRecord}</returns>
     [HttpPost("upload/complete", Name = "api_complete_timeseries_upload")]
+    [Auth("write", "record")]
     public async Task<ActionResult<RecordResponseDto>> CompleteUpload(
         long organizationId, long projectId, long dataSourceId,
         [FromBody] TimeseriesUploadCompleteRequestDto request)
@@ -183,6 +189,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="tableName">Name of the duckDB table on which the timeseries data is encoded</param>
     /// <returns></returns>
     [HttpPatch("append", Name = "api_append_timeseries_file")]
+    [Auth("write", "record")]
     public async Task<ActionResult<string>> AppendTimeseriesTable(
         long organizationId, long projectId, long dataSourceId, IFormFile file, string tableName)
     {
@@ -210,6 +217,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns></returns>
     [HttpGet("interpolate", Name = "api_interpolate_timeseries_rows")]
+    [Auth("read", "record")]
     public async Task<IActionResult> InterpolateRows(
         long organizationId, long projectId, long dataSourceId,
         [FromQuery] string tableName, [FromQuery] string rowNumber, [FromQuery] string fileType)
@@ -241,6 +249,7 @@ public class TimeseriesController : ControllerBase
     /// <param name="fileType">The type of file to convert query to</param>
     /// <returns></returns>
     [HttpGet("export", Name = "api_export_timeseries_table")]
+    [Auth("read", "record")]
     public async Task<IActionResult> ExportTimeseriesTable(
         long organizationId, long projectId, long dataSourceId, [FromQuery] string tableName, string fileType)
     {

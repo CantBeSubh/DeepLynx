@@ -2,6 +2,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -37,6 +38,7 @@ public class QueryController : ControllerBase
     /// <param name="projectIds">Project IDs in the organization to search across</param>
     /// <returns>List of historical record response DTOs</returns>
     [HttpGet("records", Name = "api_filter_records")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
         long organizationId, [FromQuery] string userQuery, [FromQuery] long[] projectIds)
     {
@@ -62,6 +64,7 @@ public class QueryController : ControllerBase
     /// <param name="projectIds">Project IDs in the organization to search across</param>
     /// <returns>List of historical record response DTOs</returns>
     [HttpPost("records/advanced", Name = "api_query_builder_records")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> QueryBuilder(
         long organizationId, [FromQuery] string? textSearch, [FromQuery] long[] projectIds,
         [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
@@ -86,6 +89,7 @@ public class QueryController : ControllerBase
     /// <param name="projectIds">Array of project ids</param>
     /// <returns>List of record response DTOs sorted by most recent</returns>
     [HttpGet("recent", Name = "api_get_recent_records")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords(
         long organizationId, [FromQuery] long[] projectIds)
     {
@@ -111,6 +115,7 @@ public class QueryController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>List of record response DTOs</returns>
     [HttpGet("multiproject", Name = "api_multiproject_records")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetMultiProjectRecords(
         long organizationId,
         [FromQuery] long[] projects,

@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -39,6 +40,7 @@ public class RelationshipController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
     /// <returns>A list of relationships for the given project.</returns>
     [HttpGet(Name = "api_get_all_relationships")]
+    [Auth("read", "relationship")]
     public async Task<ActionResult<IEnumerable<RelationshipResponseDto>>> GetAllRelationships(
         long organizationId,
         long projectId,
@@ -67,6 +69,7 @@ public class RelationshipController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
     /// <returns>The relationship associated with the given ID</returns>
     [HttpGet("{relationshipId:long}", Name = "api_get_a_relationship")]
+    [Auth("read", "relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
         long organizationId,
         long projectId,
@@ -99,6 +102,7 @@ public class RelationshipController : ControllerBase
     /// <param name="dto">The relationship request data transfer object containing relationship details</param>
     /// <returns>The created relationship</returns>
     [HttpPost(Name = "api_create_a_relationship")]
+    [Auth("write", "relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(
         long organizationId,
         long projectId,
@@ -126,6 +130,7 @@ public class RelationshipController : ControllerBase
     /// <param name="relationships">List of relationship request data transfer objects containing relationship details</param>
     /// <returns>The created relationships</returns>
     [HttpPost("bulk", Name = "api_create_many_relationships")]
+    [Auth("write", "relationship")]
     public async Task<ActionResult<List<RelationshipResponseDto>>> BulkCreateRelationships(
         long organizationId,
         long projectId,
@@ -156,6 +161,7 @@ public class RelationshipController : ControllerBase
     /// <param name="dto">The relationship request data transfer object containing updated relationship details</param>
     /// <returns>The updated relationship</returns>
     [HttpPut("{relationshipId:long}", Name = "api_update_a_relationship")]
+    [Auth("write", "relationship")]
     public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(
         long organizationId,
         long projectId,
@@ -186,6 +192,7 @@ public class RelationshipController : ControllerBase
     /// <param name="relationshipId">The ID of the relationship to delete</param>
     /// <returns>A message stating the relationship was successfully deleted.</returns>
     [HttpDelete("{relationshipId:long}", Name = "api_delete_a_relationship")]
+    [Auth("write", "relationship")]
     public async Task<IActionResult> DeleteRelationship(
         long organizationId,
         long projectId,
@@ -214,6 +221,7 @@ public class RelationshipController : ControllerBase
     /// <param name="archive">True to archive the relationship, false to unarchive it.</param>
     /// <returns>A message stating the relationship was successfully archived or unarchived.</returns>
     [HttpPatch("{relationshipId:long}", Name = "api_archive_relationship")]
+    [Auth("write", "relationship")]
     public async Task<IActionResult> ArchiveRelationship(
         long organizationId,
         long projectId,
