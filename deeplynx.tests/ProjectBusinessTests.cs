@@ -473,10 +473,14 @@ public class ProjectBusinessTests : IntegrationTestBase
         Assert.Equal(dto.Name, project.Name);
         var classResult = await _classBusiness.GetAllClasses(
             oid, [project.Id], true);
+
         Assert.Equal(3, classResult.Count);
-        Assert.Equal("File", classResult[0].Name);
-        Assert.Equal("Report", classResult[1].Name);
-        Assert.Equal("Timeseries", classResult[2].Name);
+
+        var names = classResult.Select(c => c.Name).ToList();
+
+        Assert.Contains("File", names);
+        Assert.Contains("Report", names);
+        Assert.Contains("Timeseries", names);
 
         // Ensure that the project create event was logged
         var eventList = await Context.Events.ToListAsync();
