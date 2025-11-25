@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { getRecordsByTags } from "@/app/lib/client_service/record_services.client";
+import {
+  archiveOrganizationTag,
+  getAllOrganizationTags,
+  updateOrganizationTag,
+} from "@/app/lib/client_service/tag_services.client";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
-import AttachTags, {
-  AttachTagsRecordsList,
-} from "./search_create_attach_edit-tag-page/AttachTags";
 import CreateTag, {
   CreateTagRecordsList,
 } from "./search_create_attach_edit-tag-page/CreateTag";
@@ -17,11 +19,6 @@ import EditTags, {
 import SearchTags, {
   SearchTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/SearchTags";
-import {
-  getAllOrganizationTags,
-  updateOrganizationTag,
-  archiveOrganizationTag,
-} from "@/app/lib/client_service/tag_services.client";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null

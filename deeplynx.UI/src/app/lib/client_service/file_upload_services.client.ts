@@ -25,7 +25,7 @@ export async function uploadFile({
 
   const form = new FormData();
   // include filename for broader adapter compatibility
-  form.append("file", file as any, (file as any).name ?? "upload.bin");
+  form.append("file", file, file.name ?? "upload.bin");
 
   if (name) form.append("name", name);
   if (description) form.append("description", description);

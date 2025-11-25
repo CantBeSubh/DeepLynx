@@ -53,28 +53,25 @@ export type GroupResponseDto = {
   memberCount?: number;
 }
 
-export type HistoricalRecordResponseDto = {
-  Id?: number;
-  Uri?: string;
-  Properties: string;
-  OriginalId?: string;
-  Name?: string;
-  Description?: string;
-  ClassId?: number;
-  ClassName?: string;
-  DataSourceId?: number;
-  DataSourceName?: string;
-  ObjectStorageId?: number;
-  ObjectStorageName?: string;
-  ProjectId: number;
-  ProjectName: string;
-  Tags?: string;
-  LastUpdatedAt?: Date;
-  LastUpdateBy?: string;
-  isArchived: boolean
-  CreatedBy?: string;
-  CreatedAt?: Date;
-  ArchivedAt?: Date;
+export interface HistoricalRecordResponseDto {
+  id: number;
+  uri?: string | null;
+  properties?: string | null;
+  originalId?: string | null;
+  name?: string | null;
+  description?: string | null;
+  classId?: number;
+  className?: string | null;
+  dataSourceId?: number;
+  dataSourceName: string;
+  objectStorageId?: number;
+  objectStorageName?: string | null;
+  projectId?: number;
+  projectName: string;
+  tags?: string | null;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: string | null;
+  isArchived: boolean;
 }
 
 export type RecordResponseDto = {

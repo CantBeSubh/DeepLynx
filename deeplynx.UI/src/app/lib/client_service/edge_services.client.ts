@@ -1,8 +1,8 @@
 'use client';
 
-import api from './client_service/api';
-import { EdgeResponseDto } from '../(home)/types/responseDTOs';
-import { CreateEdgeRequestDto, UpdateEdgeRequestDto } from '../(home)/types/requestDTOs';
+import { CreateEdgeRequestDto, UpdateEdgeRequestDto } from "@/app/(home)/types/requestDTOs";
+import { EdgeResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
 
 
 /**

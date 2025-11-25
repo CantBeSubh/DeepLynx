@@ -1,7 +1,9 @@
 // src/app/lib/permission_services.ts
-import api from './client_service/api';
-import { PermissionResponseDto } from '../(home)/types/responseDTOs';
-import { CreatePermissionRequestDto, UpdatePermissionRequestDto } from '../(home)/types/requestDTOs';
+
+import { CreatePermissionRequestDto, UpdatePermissionRequestDto } from "@/app/(home)/types/requestDTOs";
+import { PermissionResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
 
 /**
  * Get all permissions for a project

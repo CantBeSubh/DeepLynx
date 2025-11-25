@@ -1,14 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { fullTextSearch } from "@/app/lib/query_services.client";
-import { attachTagToRecord } from "@/app/lib/record_services.client";
-import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
-import toast from "react-hot-toast";
 import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
 import {
+  HistoricalRecordResponseDto,
   TagResponseDto,
-  RecordResponseDto,
 } from "@/app/(home)/types/responseDTOs";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/query_services.client";
+import React, { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -31,10 +29,7 @@ const parseTags = (
   return [];
 };
 
-type RecordWithParsedTags = Omit<
-  RecordResponseDto | FileViewerTableRow,
-  "tags"
-> & {
+type RecordWithParsedTags = Omit<HistoricalRecordResponseDto, "tags"> & {
   tags: TagResponseDto[];
 };
 
@@ -128,16 +123,16 @@ const AttachTags = ({
 };
 
 interface AttachTagsRecordsListProps {
-  projectId: string;
   selectedTagIds: Set<number>;
   onClearSelectedTags: () => void;
 }
 
 export const AttachTagsRecordsList = ({
-  projectId,
   selectedTagIds,
   onClearSelectedTags,
 }: AttachTagsRecordsListProps) => {
+  const { organization } = useOrganizationSession();
+
   const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
   const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
     []
@@ -150,39 +145,41 @@ export const AttachTagsRecordsList = ({
     new Set()
   );
 
+  const fetchRecentRecords = useCallback(async () => {
+    if (!organization?.organizationId) {
+      setRecords([]);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Pass empty array to get all recent records across organization
+      const recentRecords = await getRecentlyAddedRecords(
+        organization.organizationId as number,
+        []
+      );
+      const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
+        (record) => ({
+          ...record,
+          tags: parseTags(record.tags),
+        })
+      );
+      setRecords(recordsWithParsedTags);
+    } catch (error) {
+      console.error("Error fetching recent records:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [organization?.organizationId]);
+
   useEffect(() => {
-    const fetchRecentRecords = async () => {
-      if (!projectId || projectId === "0") {
-        setRecords([]);
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-        setRecords(recordsWithParsedTags);
-      } catch (error) {
-        console.error("Error fetching recent records:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRecentRecords();
-  }, [projectId]);
+  }, [fetchRecentRecords]);
 
   const performFullTextSearch = useCallback(
-    async (searchTerm: string, projectId: string) => {
-      if (!searchTerm.trim()) {
+    async (searchTerm: string) => {
+      if (!searchTerm.trim() || !organization?.organizationId) {
         setSearchResults([]);
         return;
       }
@@ -190,8 +187,12 @@ export const AttachTagsRecordsList = ({
       setSearchLoading(true);
 
       try {
-        //TODO: fix this
-        // const data = await fullTextSearch(searchTerm, [projectId]);
+        // TODO: Update to use organization-level fullTextSearch
+        // const data = await fullTextSearch(
+        //   organization.organizationId,
+        //   searchTerm,
+        //   []
+        // );
         // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
         //   (record) => ({
         //     ...record,
@@ -206,11 +207,11 @@ export const AttachTagsRecordsList = ({
         setSearchLoading(false);
       }
     },
-    []
+    [organization?.organizationId]
   );
 
   const handleSubmit = async () => {
-    await performFullTextSearch(searchTerm, projectId);
+    await performFullTextSearch(searchTerm);
   };
 
   const handleClearSearch = () => {
@@ -252,11 +253,11 @@ export const AttachTagsRecordsList = ({
 
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
-      //todo: Fix
+      // TODO: Update to organization-level attach endpoint
       // selectedRecordIds.forEach((recordId) => {
       //   selectedTagIds.forEach((tagId) => {
       //     attachPromises.push(
-      //       attachTagToRecord(Number(projectId), recordId, tagId)
+      //       attachTagToRecordOrganization(organization.organizationId, recordId, tagId)
       //     );
       //   });
       // });
@@ -270,20 +271,8 @@ export const AttachTagsRecordsList = ({
       setSelectedRecordIds(new Set());
       onClearSelectedTags();
 
-      if (searchResults.length > 0) {
-        await performFullTextSearch(searchTerm, projectId);
-      } else {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-        setRecords(recordsWithParsedTags);
-      }
+      // Refresh records
+      await fetchRecentRecords();
     } catch (error) {
       console.error("Error attaching tags:", error);
       toast.error("Failed to attach tags to some records");

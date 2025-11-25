@@ -1,4 +1,3 @@
-// src/app/(home)/components/RecentRecordsCard.tsx
 "use client";
 import {
   BarsArrowDownIcon,
@@ -6,11 +5,12 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
-import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import CatalogViewSkeleton from "./skeletons/catalogviewskeleton";
-import { RecentRecord } from "../types/types";
+import { HistoricalRecordResponseDto } from "../types/responseDTOs";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/query_services.client";
 
 interface Props {
   selectedProjects: string[];
@@ -25,18 +25,22 @@ const RecentRecordsCard: React.FC<Props> = ({
 }) => {
   const { t } = useLanguage();
   const router = useRouter();
+  const { organization } = useOrganizationSession();
 
-  const [records, setRecords] = useState<RecentRecord[]>([]);
+  const [records, setRecords] = useState<HistoricalRecordResponseDto[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // single select option (no separate direction)
   type SortOption = "nameAZ" | "nameZA" | "dateNew" | "dateOld";
   const [sortOption, setSortOption] = useState<SortOption>("nameAZ");
 
   const fetchRecentRecords = useCallback(async () => {
-    if (!selectedProjects || selectedProjects.length === 0) {
+    if (
+      !organization?.organizationId ||
+      !selectedProjects ||
+      selectedProjects.length === 0
+    ) {
       setRecords([]);
       setCurrentPage(1);
       return;
@@ -44,7 +48,12 @@ const RecentRecordsCard: React.FC<Props> = ({
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getRecentlyAddedRecords(selectedProjects);
+      // Convert string[] to number[]
+      const projectIds = selectedProjects.map((id) => Number(id));
+      const data = await getRecentlyAddedRecords(
+        organization.organizationId as number,
+        projectIds
+      );
       setRecords(Array.isArray(data) ? data : []);
       setCurrentPage(1);
     } catch (e) {
@@ -54,13 +63,12 @@ const RecentRecordsCard: React.FC<Props> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [selectedProjects]);
+  }, [organization?.organizationId, selectedProjects]);
 
   useEffect(() => {
     fetchRecentRecords();
   }, [fetchRecentRecords]);
 
-  // reset to first page whenever sort changes
   useEffect(() => {
     setCurrentPage(1);
   }, [sortOption]);
@@ -68,16 +76,16 @@ const RecentRecordsCard: React.FC<Props> = ({
   const sorted = useMemo(() => {
     const arr = [...records];
     arr.sort((a, b) => {
-      const dateA = new Date(a.lastUpdatedAt || a.createdAt).getTime();
-      const dateB = new Date(b.lastUpdatedAt || b.createdAt).getTime();
+      const dateA = new Date(a.lastUpdatedAt).getTime();
+      const dateB = new Date(b.lastUpdatedAt).getTime();
 
       switch (sortOption) {
         case "nameAZ":
-          return a.name.localeCompare(b.name, undefined, {
+          return (a.name ?? "").localeCompare(b.name ?? "", undefined, {
             sensitivity: "base",
           });
         case "nameZA":
-          return b.name.localeCompare(a.name, undefined, {
+          return (b.name ?? "").localeCompare(a.name ?? "", undefined, {
             sensitivity: "base",
           });
         case "dateNew":
@@ -123,7 +131,7 @@ const RecentRecordsCard: React.FC<Props> = ({
         <h2 className="text-lg font-semibold text-base-content">
           {t.translations.RECENTLY_ADDED_RECORDS}
         </h2>
-        <div className="flex items=cemter gap-1">
+        <div className="flex items-center gap-1">
           <div className="px-3 py-2 text-md font-semibold text-base-content/50">
             Sort By
           </div>
@@ -184,7 +192,7 @@ const RecentRecordsCard: React.FC<Props> = ({
               <span className="flex items-center gap-1">
                 <span>{t.translations.CLASS}: </span>
                 <span className="badge badge-sm badge-secondary">
-                  {record.className}
+                  {record.className ?? "Unknown"}
                 </span>
               </span>
 
@@ -192,7 +200,7 @@ const RecentRecordsCard: React.FC<Props> = ({
                 <span className="text-base-content/50">
                   {t.translations.LAST_EDIT}:
                 </span>{" "}
-                {formatDate(record.lastUpdatedAt ?? record.createdAt)}
+                {formatDate(record.lastUpdatedAt)}
               </span>
 
               <span>

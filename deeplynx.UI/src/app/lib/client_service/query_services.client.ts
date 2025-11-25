@@ -1,8 +1,10 @@
 // src/app/lib/query_services.client.ts
 "use client";
-import api from "./client_service/api";
-import { CustomQueryRequestDto } from '../(home)/types/requestDTOs';
-import { HistoricalRecordResponseDto, RecordResponseDto } from '../(home)/types/responseDTOs';
+
+import { CustomQueryRequestDto } from "@/app/(home)/types/requestDTOs";
+import { HistoricalRecordResponseDto, RecordResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
 
 /**
  * Full text search for records
@@ -78,7 +80,7 @@ export async function getRecentlyAddedRecords(
 ): Promise<HistoricalRecordResponseDto[]> {
     try {
         const projectIdsQuery = projectIds.map(id => `projectIds=${id}`).join('&');
-        const res = await api.get(
+        const res = await api.get<HistoricalRecordResponseDto[]>(
             `/organizations/${organizationId}/query/recent?${projectIdsQuery}`
         );
         return res.data;

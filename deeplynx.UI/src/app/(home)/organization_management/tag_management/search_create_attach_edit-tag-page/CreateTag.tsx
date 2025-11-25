@@ -1,11 +1,10 @@
 import {
   TagResponseDto,
-  RecordResponseDto,
+  HistoricalRecordResponseDto,
 } from "@/app/(home)/types/responseDTOs";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/query_services.client";
 import { createOrganizationTag } from "@/app/lib/client_service/tag_services.client";
-import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 
@@ -28,6 +27,10 @@ const parseTags = (
   }
 
   return [];
+};
+
+type RecordWithParsedTags = Omit<HistoricalRecordResponseDto, "tags"> & {
+  tags: TagResponseDto[];
 };
 
 interface CreateTagProps {
@@ -132,13 +135,6 @@ const CreateTag = ({
                     className="flex items-center px-3 py-2 hover:bg-base-200 rounded cursor-pointer"
                     onClick={() => handleTagToggle(tag.id)}
                   >
-                    {/* This is a checkbox to select recently created tag and attach to the recently added records, or searched records. */}
-                    {/* <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary"
-                      checked={selectedTagIds.has(tag.id)}
-                      onChange={() => handleTagToggle(tag.id)}
-                    /> */}
                     <span className="badge ml-2">{tag.name}</span>
                   </li>
                 ))}
@@ -158,12 +154,7 @@ interface CreateTagRecordsListProps {
 export const CreateTagRecordsList = ({
   selectedTagIds,
 }: CreateTagRecordsListProps) => {
-  type RecordWithParsedTags = Omit<
-    RecordResponseDto | FileViewerTableRow,
-    "tags"
-  > & {
-    tags: TagResponseDto[];
-  };
+  const { organization } = useOrganizationSession();
 
   const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
   const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
@@ -176,65 +167,70 @@ export const CreateTagRecordsList = ({
   const [selectedRecordIds, setSelectedRecordIds] = useState<Set<number>>(
     new Set()
   );
-  const { organization } = useOrganizationSession();
 
-  useEffect(() => {
-    const fetchRecentRecords = async () => {
-      if (!organization?.organizationId) {
-        setRecords([]);
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const recentRecords = await getRecentlyAddedRecords(
-          organization.organizationId as number
-        );
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-        setRecords(recordsWithParsedTags);
-      } catch (error) {
-        console.error("Error fetching recent records:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecentRecords();
-  }, [organization?.organizationId]);
-
-  const performFullTextSearch = useCallback(async (searchTerm: string) => {
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
+  const fetchRecentRecords = useCallback(async () => {
+    if (!organization?.organizationId) {
+      setRecords([]);
       return;
     }
 
-    setSearchLoading(true);
+    setLoading(true);
 
     try {
-      // TODO: Update to organization-level search endpoint
-      // const data = await fullTextSearchOrganization(organizationId, searchTerm);
-      // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
-      //   (record) => ({
-      //     ...record,
-      //     tags: parseTags(record.tags),
-      //   })
-      // );
-      // setSearchResults(resultsWithParsedTags);
+      const recentRecords = await getRecentlyAddedRecords(
+        organization.organizationId as number,
+        []
+      );
+      const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
+        (record) => ({
+          ...record,
+          tags: parseTags(record.tags),
+        })
+      );
+      setRecords(recordsWithParsedTags);
     } catch (error) {
-      console.error("Search error:", error);
-      setSearchResults([]);
+      console.error("Error fetching recent records:", error);
     } finally {
-      setSearchLoading(false);
+      setLoading(false);
     }
-  }, []);
+  }, [organization?.organizationId]);
+
+  useEffect(() => {
+    fetchRecentRecords();
+  }, [fetchRecentRecords]);
+
+  const performFullTextSearch = useCallback(
+    async (searchTerm: string) => {
+      if (!searchTerm.trim() || !organization?.organizationId) {
+        setSearchResults([]);
+        return;
+      }
+
+      setSearchLoading(true);
+
+      try {
+        // TODO: Update to organization-level search endpoint
+        // const data = await fullTextSearch(
+        //   organization.organizationId,
+        //   searchTerm,
+        //   []
+        // );
+        // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
+        //   (record) => ({
+        //     ...record,
+        //     tags: parseTags(record.tags),
+        //   })
+        // );
+        // setSearchResults(resultsWithParsedTags);
+      } catch (error) {
+        console.error("Search error:", error);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    [organization?.organizationId]
+  );
 
   const handleSubmit = async () => {
     await performFullTextSearch(searchTerm);
@@ -283,7 +279,7 @@ export const CreateTagRecordsList = ({
       // selectedRecordIds.forEach((recordId) => {
       //   selectedTagIds.forEach((tagId) => {
       //     attachPromises.push(
-      //       attachTagToRecordOrganization(organizationId, recordId, tagId)
+      //       attachTagToRecordOrganization(organization.organizationId, recordId, tagId)
       //     );
       //   });
       // });
@@ -296,22 +292,8 @@ export const CreateTagRecordsList = ({
 
       setSelectedRecordIds(new Set());
 
-      if (searchResults.length > 0) {
-        await performFullTextSearch(searchTerm);
-      } else {
-        const recentRecords = await getRecentlyAddedRecords(
-          organization?.organizationId as number
-        );
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-        setRecords(recordsWithParsedTags);
-      }
+      // Refresh records
+      await fetchRecentRecords();
     } catch (error) {
       console.error("Error attaching tags:", error);
       toast.error("Failed to attach tags to some records");
@@ -329,7 +311,7 @@ export const CreateTagRecordsList = ({
       style={{ height: "calc(90vh - 325px)" }}
     >
       <p className="text-base-content/70 text-sm">
-        To attach tags, that is done a the project portal
+        To attach tags, that is done at the project portal
       </p>
     </div>
   );

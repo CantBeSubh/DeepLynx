@@ -1,8 +1,8 @@
 'use client';
 
-import api from './client_service/api';
-import { CreateOauthApplicationRequestDto, UpdateOauthApplicationRequestDto } from '../(home)/types/requestDTOs';
-import { OauthApplicationResponseDto, OauthApplicationSecureResponseDto } from '../(home)/types/responseDTOs';
+import { CreateOauthApplicationRequestDto, UpdateOauthApplicationRequestDto } from "@/app/(home)/types/requestDTOs";
+import { OauthApplicationResponseDto, OauthApplicationSecureResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
 
 /**
  * Get all OAuth applications

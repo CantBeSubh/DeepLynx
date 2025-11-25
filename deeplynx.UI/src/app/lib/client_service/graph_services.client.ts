@@ -1,8 +1,8 @@
 // src/app/lib/graph_services.client.ts
 "use client";
 
-import { GraphResponseDto } from "../(home)/types/responseDTOs";
-import api from "./client_service/api";
+import { GraphResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
 
 export interface GraphQueryParams {
   recordId?: number;

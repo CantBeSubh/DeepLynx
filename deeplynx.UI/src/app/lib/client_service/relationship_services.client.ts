@@ -1,8 +1,10 @@
 // src/app/lib/relationship_services.client.ts
 
-import api from "./client_service/api";
-import { RelationshipResponseDto } from "../(home)/types/responseDTOs";
-import { CreateRelationshipRequestDto, UpdateRelationshipRequestDto } from "../(home)/types/requestDTOs";
+import { CreateRelationshipRequestDto, UpdateRelationshipRequestDto } from "@/app/(home)/types/requestDTOs";
+import { RelationshipResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
+
 
 /**
  * Get all relationships for a project

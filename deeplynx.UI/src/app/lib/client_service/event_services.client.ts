@@ -1,6 +1,7 @@
 'use client';
-import api from './client_service/api';
-import { EventResponseDto, PaginatedEventsResponseDto } from "../(home)/types/responseDTOs"
+
+import { PaginatedEventsResponseDto, EventResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
 
 export type EventFilterParams = {
     pageNumber?: number;

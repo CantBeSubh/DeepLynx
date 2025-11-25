@@ -1,5 +1,6 @@
-import api from './client_service/api';
-import { CreateTokenDto } from '../(home)/types/requestDTOs';
+import { CreateTokenDto } from "@/app/(home)/types/requestDTOs";
+import api from "./api";
+
 
 /**
  * Create a JWT token

@@ -14,14 +14,12 @@ import ProjectDropdown from "../../components/ProjectDropdown";
 
 import { useLanguage } from "@/app/contexts/Language";
 import {
-  AdjustmentsHorizontalIcon,
   ArrowUturnLeftIcon,
+  ChevronDownIcon,
   EyeIcon,
   QueueListIcon,
   TableCellsIcon,
-  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
-import { fullTextSearch } from "@/app/lib/query_services.client";
 
 /* ----------------------------- Types & utils ----------------------------- */
 
