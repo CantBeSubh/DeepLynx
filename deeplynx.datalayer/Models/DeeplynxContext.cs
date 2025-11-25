@@ -183,18 +183,37 @@ public partial class DeeplynxContext : DbContext
                 .HasDatabaseName("idx_data_sources_project_id");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
+            
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_data_sources_last_updated_by");
+            
+            entity.HasIndex(e => new { e.OrganizationId, e.Name })
+                .HasDatabaseName("unique_organization_data_source_name")
+                .IsUnique()
+                .HasFilter("project_id IS NULL");
+
+            entity.HasIndex(e => new { e.OrganizationId, e.ProjectId, e.Name })
+                .HasDatabaseName("unique_project_data_source_name")
+                .IsUnique()
+                .HasFilter("project_id IS NOT NULL");
+            
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.LastUpdatedDataSources)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
-            entity.HasOne(d => d.Project).WithMany(p => p.DataSources)
+            
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.DataSources)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("data_sources_project_id_fkey");
-            entity.HasOne(d => d.Organization).WithMany(o => o.DataSources)
+            
+            entity.HasOne(d => d.Organization)
+                .WithMany(o => o.DataSources)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("data_sources_organization_id_fkey");
         });
 

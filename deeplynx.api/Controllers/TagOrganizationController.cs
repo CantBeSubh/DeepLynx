@@ -10,17 +10,17 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Authorize]
 [Tags("Organization Management", "Tag")]
-public class OrganizationTagController : ControllerBase
+public class TagOrganizationController : ControllerBase
 {
     private readonly ITagBusiness _tagBusiness;
-    private readonly ILogger<ProjectTagController> _logger;
+    private readonly ILogger<TagProjectController> _logger;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="OrganizationTagController" /> class.
+    ///     Initializes a new instance of the <see cref="TagOrganizationController" /> class.
     /// </summary>
     /// <param name="tagBusiness">The business logic interface for handling tag operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public OrganizationTagController(ITagBusiness tagBusiness, ILogger<ProjectTagController> logger)
+    public TagOrganizationController(ITagBusiness tagBusiness, ILogger<TagProjectController> logger)
     {
         _tagBusiness = tagBusiness;
         _logger = logger;

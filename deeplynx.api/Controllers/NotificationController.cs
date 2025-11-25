@@ -12,7 +12,7 @@ namespace deeplynx.api.Controllers;
 [Authorize]
 public class NotificationController : ControllerBase
 {
-    private readonly ILogger<ClassController> _logger;
+    private readonly ILogger<ClassOrganizationController> _logger;
     private readonly INotificationBusiness _notificationBusiness;
 
     /// <summary>
@@ -20,7 +20,7 @@ public class NotificationController : ControllerBase
     /// </summary>
     /// <param name="notificationBusiness">The business logic interface for handling class operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public NotificationController(INotificationBusiness notificationBusiness, ILogger<ClassController> logger)
+    public NotificationController(INotificationBusiness notificationBusiness, ILogger<ClassOrganizationController> logger)
     {
         _notificationBusiness = notificationBusiness;
         _logger = logger;

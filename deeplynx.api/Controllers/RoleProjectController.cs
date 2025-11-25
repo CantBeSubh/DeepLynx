@@ -14,17 +14,17 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId}/projects/{projectId}/roles")]
 [Tags("Project Management", "Role")]
-public class ProjectRoleController : ControllerBase
+public class RoleProjectController : ControllerBase
 {
-    private readonly ILogger<ProjectRoleController> _logger;
+    private readonly ILogger<RoleProjectController> _logger;
     private readonly IRoleBusiness _roleBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ProjectRoleController" /> class
+    ///     Initializes a new instance of the <see cref="RoleProjectController" /> class
     /// </summary>
     /// <param name="roleBusiness">The business logic interface for handling Role operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public ProjectRoleController(IRoleBusiness roleBusiness, ILogger<ProjectRoleController> logger)
+    public RoleProjectController(IRoleBusiness roleBusiness, ILogger<RoleProjectController> logger)
     {
         _roleBusiness = roleBusiness;
         _logger = logger;
