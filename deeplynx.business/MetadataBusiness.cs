@@ -214,7 +214,7 @@ public class MetadataBusiness : IMetadataBusiness
             // load relationship, origin and destination IDs into classes before insert
             UpdateEdgesWithIds(edges, relMap, recordMap);
             metadataResponseDto.Edges =
-                await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, organizationId, edges);
+                await _edgeBusiness.BulkCreateEdges(currentUserId, organizationId, projectId, dataSourceId, edges);
         }
 
         return metadataResponseDto;
@@ -429,7 +429,7 @@ public class MetadataBusiness : IMetadataBusiness
         MetadataResponseDto metadataResponseDto)
     {
         var inserted =
-            await _recordBusiness.BulkCreateRecords(currentUserId, projectId, organizationId, dataSourceId, records);
+            await _recordBusiness.BulkCreateRecords(currentUserId, organizationId, projectId, dataSourceId, records);
         metadataResponseDto.Records = inserted;
         return inserted.ToDictionary(r => r.OriginalId, r => r.Id);
     }
