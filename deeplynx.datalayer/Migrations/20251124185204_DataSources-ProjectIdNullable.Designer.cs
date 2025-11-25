@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251124185204_DataSources-ProjectIdNullable")]
+    partial class DataSourcesProjectIdNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -360,16 +363,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex("ProjectId")
                         .HasDatabaseName("idx_data_sources_project_id");
-
-                    b.HasIndex("OrganizationId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("unique_organization_data_source_name")
-                        .HasFilter("project_id IS NULL");
-
-                    b.HasIndex("OrganizationId", "ProjectId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("unique_project_data_source_name")
-                        .HasFilter("project_id IS NOT NULL");
 
                     b.ToTable("data_sources", "deeplynx");
                 });
@@ -1209,10 +1202,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasDatabaseName("permissions_unique_project_resource_action")
                         .HasFilter("project_id IS NOT NULL");
 
-                    b.ToTable("permissions", "deeplynx", t =>
-                        {
-                            t.HasCheckConstraint("chk_default_permissions_no_org_project_label", "is_default = false OR (organization_id IS NULL AND project_id IS NULL AND label_id IS NULL)");
-                        });
+                    b.ToTable("permissions", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
@@ -1852,7 +1842,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
-                    b.Property<long?>("ProjectId")
+                    b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -1874,15 +1864,9 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex("ProjectId")
                         .HasDatabaseName("idx_tags_project_id");
 
-                    b.HasIndex("OrganizationId", "Name")
+                    b.HasIndex("ProjectId", "Name")
                         .IsUnique()
-                        .HasDatabaseName("unique_organization_tag_name")
-                        .HasFilter("project_id IS NULL");
-
-                    b.HasIndex("OrganizationId", "ProjectId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("unique_project_tag_name")
-                        .HasFilter("project_id IS NOT NULL");
+                        .HasDatabaseName("unique_tag_name");
 
                     b.ToTable("tags", "deeplynx");
                 });
@@ -2112,7 +2096,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("DataSources")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("data_sources_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");
@@ -2699,7 +2682,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
                         .WithMany("LastUpdatedTags")
                         .HasForeignKey("LastUpdatedBy")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Tags")
@@ -2712,6 +2695,7 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Tags")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("tags_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");

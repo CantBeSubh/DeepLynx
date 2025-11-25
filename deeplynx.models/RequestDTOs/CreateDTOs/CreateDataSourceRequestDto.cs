@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
@@ -10,4 +11,6 @@ public class CreateDataSourceRequestDto
     public string? Type { get; set; }
     public string? BaseUri { get; set; }
     public JsonObject? Config { get; set; }
+
+    [JsonPropertyName("default")] public bool Default { get; set; } = false;
 }
