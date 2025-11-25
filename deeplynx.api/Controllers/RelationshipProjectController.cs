@@ -19,16 +19,16 @@ namespace deeplynx.api.Controllers;
 [Tags("Project Management", "Relationship")]
 public class RelationshipProjectController : ControllerBase
 {
-    private readonly ILogger<RelationshipController> _logger;
+    private readonly ILogger<RelationshipProjectController> _logger;
     private readonly IRelationshipBusiness _relationshipBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="RelationshipController" /> class
+    ///     Initializes a new instance of the <see cref="RelationshipProjectController" /> class
     /// </summary>
     /// <param name="relationshipBusiness">The business logic interface for handling relationship operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
     public RelationshipProjectController(IRelationshipBusiness relationshipBusiness,
-        ILogger<RelationshipController> logger)
+        ILogger<RelationshipProjectController> logger)
     {
         _relationshipBusiness = relationshipBusiness;
         _logger = logger;

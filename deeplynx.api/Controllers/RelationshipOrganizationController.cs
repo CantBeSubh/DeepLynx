@@ -19,7 +19,7 @@ namespace deeplynx.api.Controllers;
 [Tags("Organization Management", "Relationship")]
 public class RelationshipOrganizationController : ControllerBase
 {
-    private readonly ILogger<RelationshipController> _logger;
+    private readonly ILogger<RelationshipOrganizationController> _logger;
     private readonly IRelationshipBusiness _relationshipBusiness;
 
     /// <summary>
@@ -28,7 +28,7 @@ public class RelationshipOrganizationController : ControllerBase
     /// <param name="relationshipBusiness">The business logic interface for handling relationship operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
     public RelationshipOrganizationController(IRelationshipBusiness relationshipBusiness,
-        ILogger<RelationshipController> logger)
+        ILogger<RelationshipOrganizationController> logger)
     {
         _relationshipBusiness = relationshipBusiness;
         _logger = logger;
