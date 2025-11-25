@@ -159,21 +159,18 @@ export async function archiveRole(
 // ===== Permission Operations =====
 
 /**
- * Get all permissions for a role
+ * Get all permissions for a role at the organization level
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
  * @param roleId - The ID of the role
  * @returns Promise with array of PermissionResponseDto
  */
-export async function getPermissionsByRole(
+export async function getOrgRolePermissions(
   organizationId: number,
-  projectId: number,
   roleId: number
 ): Promise<PermissionResponseDto[]> {
-  console.log("getPermissionsByRole called with:", { organizationId, projectId, roleId });
   try {
     const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}/permissions`
+      `/organizations/${organizationId}/roles/${roleId}/permissions`
     );
     return res.data;
   } catch (error) {

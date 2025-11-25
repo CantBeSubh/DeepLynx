@@ -5,7 +5,7 @@ import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import {
   archiveRole,
   createRole,
-  getPermissionsByRole,
+  getOrgRolePermissions,
   setPermissionsForRole,
   updateRole,
 } from "@/app/lib/client_service/role_services.client";
@@ -396,15 +396,14 @@ const RolesAndPermissions = ({
   const permissionCategories = groupPermissionsByResource();
   const currentRole = roles.find((r) => r.id === selectedRoleId);
 
-  // Fetch permissions for a role
   const fetchRolePermissions = async (roleId: number) => {
-    if (rolePermissions[roleId]) return; // Already fetched
+    if (rolePermissions[roleId]) return;
+    if (!organization?.organizationId) return;
 
     setIsLoadingPermissions(true);
     try {
-      const perms = await getPermissionsByRole(
-        organization?.organizationId as number,
-        project?.projectId as number,
+      const perms = await getOrgRolePermissions(
+        organization.organizationId as number,
         roleId
       );
       setRolePermissions((prev) => ({
@@ -418,16 +417,13 @@ const RolesAndPermissions = ({
     }
   };
 
-  // Add this function to fetch all permissions at once
   const fetchAllRolePermissions = async () => {
+    if (!organization?.organizationId) return;
+
     setIsLoadingPermissions(true);
     try {
       const promises = roles.map((role) =>
-        getPermissionsByRole(
-          organization?.organizationId as number,
-          project?.projectId as number,
-          role.id
-        )
+        getOrgRolePermissions(organization.organizationId as number, role.id)
           .then((perms) => ({ roleId: role.id, perms }))
           .catch((error) => {
             console.error(
