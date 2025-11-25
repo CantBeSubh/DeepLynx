@@ -74,15 +74,18 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log create Group event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = organizationId,
-            Operation = "create",
-            EntityType = "group",
-            EntityId = group.Id,
-            EntityName = group.Name,
-            Properties = JsonSerializer.Serialize(new { group.Name })
-        });
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organizationId, 
+            null, 
+            new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "group",
+                EntityId = group.Id,
+                EntityName = group.Name,
+                Properties = JsonSerializer.Serialize(new { group.Name }),
+            });
 
         return new GroupResponseDto
         {
@@ -154,15 +157,18 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log update Group event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = group.OrganizationId,
-            Operation = "update",
-            EntityType = "group",
-            EntityId = group.Id,
-            EntityName = group.Name,
-            Properties = JsonSerializer.Serialize(new { group.Name })
-        });
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            group.OrganizationId,
+            null,
+            new CreateEventRequestDto
+            {
+                Operation = "update",
+                EntityType = "group",
+                EntityId = group.Id,
+                EntityName = group.Name,
+                Properties = JsonSerializer.Serialize(new { group.Name }),
+            });
 
         return new GroupResponseDto
         {
@@ -197,15 +203,18 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log archive Group event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = group.OrganizationId,
-            Operation = "archive",
-            EntityType = "group",
-            EntityId = group.Id,
-            EntityName = group.Name,
-            Properties = JsonSerializer.Serialize(new { group.Name })
-        });
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            group.OrganizationId, 
+            null, 
+            new CreateEventRequestDto
+            {
+                Operation = "archive",
+                EntityType = "group",
+                EntityId = group.Id,
+                EntityName = group.Name,
+                Properties = JsonSerializer.Serialize(new { group.Name }),
+            });
 
         return true;
     }
@@ -229,17 +238,20 @@ public class GroupBusiness : IGroupBusiness
         group.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         group.LastUpdatedBy = currentUserId;
         await _context.SaveChangesAsync();
-
+        
         // Log unarchive Group event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = group.OrganizationId,
-            Operation = "unarchive",
-            EntityType = "group",
-            EntityId = group.Id,
-            EntityName = group.Name,
-            Properties = JsonSerializer.Serialize(new { group.Name })
-        });
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            group.OrganizationId, 
+            null, 
+            new CreateEventRequestDto
+            {
+                Operation = "unarchive",
+                EntityType = "group",
+                EntityId = group.Id,
+                EntityName = group.Name,
+                Properties = JsonSerializer.Serialize(new { group.Name }),
+            });
 
         return true;
     }
@@ -265,9 +277,12 @@ public class GroupBusiness : IGroupBusiness
         await _context.SaveChangesAsync();
 
         // Log delete Group event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            group.OrganizationId,
+            null,
+            new CreateEventRequestDto
         {
-            OrganizationId = organizationId,
             Operation = "delete",
             EntityType = "group",
             EntityId = groupId,

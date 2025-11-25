@@ -306,13 +306,11 @@ public class OrganizationBusinessTests : IntegrationTestBase
 
         // Ensure that the Organization create event was logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Single(eventList);
+        Assert.Equal(2, eventList.Count);
 
-        var actualEvent = eventList[0];
+        var orgEvent = eventList.Single(e => e.Operation == "create" && e.EntityType == "organization" && e.EntityId == result.Id);
 
-        Assert.Equal("create", actualEvent.Operation);
-        Assert.Equal("organization", actualEvent.EntityType);
-        Assert.Equal(result.Id, actualEvent.EntityId);
+        Assert.NotNull(orgEvent);
     }
 
     [Fact]

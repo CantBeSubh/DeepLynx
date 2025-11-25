@@ -409,16 +409,18 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
 
         // Log Record Create Event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(
+            currentUserId,
+            organizationId,
+            projectId,
+            new CreateEventRequestDto
         {
-            ProjectId = record.ProjectId,
             EntityType = "record",
             EntityId = record.Id,
             EntityName = record.Name,
             Operation = "create",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-            OrganizationId = organizationId
         });
 
         return new RecordResponseDto
@@ -520,29 +522,28 @@ public class RecordBusiness : IRecordBusiness
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
 
-        // returns the resulting upserted classes
-        var result = await _context.Database
-            .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
-            .ToListAsync();
-
-        // Log Event for all records created
-        var events = new List<CreateEventRequestDto>();
-        foreach (var record in result)
-            events.Add(new CreateEventRequestDto
-            {
-                Operation = "create",
-                EntityType = "record",
-                EntityId = record.Id,
-                EntityName = record.Name,
-                ProjectId = record.ProjectId,
-                Properties = "{}",
-                DataSourceId = record.DataSourceId,
-                OrganizationId = organizationId
-            });
-
-        await _eventBusiness.BulkCreateEvents(events, projectId);
-
-        return result;
+       // returns the resulting upserted classes
+       var result = await _context.Database
+           .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
+           .ToListAsync();
+       
+       // Log Event for all records created
+       var events = new List<CreateEventRequestDto> { };
+       foreach (var record in result)
+       {
+           events.Add(new CreateEventRequestDto
+                  {
+                      Operation = "create",
+                      EntityType = "record",
+                      EntityId = record.Id,
+                      EntityName = record.Name,
+                      Properties = "{}",
+                      DataSourceId = record.DataSourceId,
+                  });
+       }
+       await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
+       
+       return result;
     }
 
     /// <summary>
@@ -595,16 +596,14 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record soft delete event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "archive",
             EntityType = "record",
             EntityId = recordId,
             EntityName = returnedRecord.Name,
             DataSourceId = returnedRecord.DataSourceId,
             Properties = JsonSerializer.Serialize(new { returnedRecord.Name }),
-            OrganizationId = organizationId
         });
 
         return true;
@@ -660,16 +659,17 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record unarchive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, 
+            organizationId,
+            projectId,
+            new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "unarchive",
             EntityType = "record",
             EntityId = returnedRecord.Id,
             EntityName = returnedRecord.Name,
             DataSourceId = returnedRecord.DataSourceId,
             Properties = JsonSerializer.Serialize(new { returnedRecord.Name }),
-            OrganizationId = organizationId
         });
 
         return true;
@@ -702,16 +702,14 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
 
         // Log record delete event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "delete",
             EntityType = "record",
             EntityId = recordId,
             EntityName = recordName,
             DataSourceId = recordDataSourceId,
             Properties = JsonSerializer.Serialize(new { recordName }),
-            OrganizationId = organizationId
         });
 
         return true;
@@ -764,16 +762,14 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
 
         // Log Record Update Event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = returnedRecord.ProjectId,
             EntityType = "record",
             EntityId = returnedRecord.Id,
             EntityName = returnedRecord.Name,
             Operation = "update",
             Properties = "{}",
             DataSourceId = returnedRecord.DataSourceId,
-            OrganizationId = returnedRecord.OrganizationId
         });
 
         return new RecordResponseDto

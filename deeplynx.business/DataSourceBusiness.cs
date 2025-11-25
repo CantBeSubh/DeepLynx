@@ -204,12 +204,10 @@ public class DataSourceBusiness : IDataSourceBusiness
             await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
 
         await _context.SaveChangesAsync();
-
+            
         // Log DataSource Create Event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
-            OrganizationId = organizationId,
             Operation = "create",
             EntityType = "data_source",
             EntityId = dataSource.Id,
@@ -280,10 +278,8 @@ public class DataSourceBusiness : IDataSourceBusiness
 
             await _context.SaveChangesAsync();
 
-            await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
             {
-                ProjectId = projectId,
-                OrganizationId = organizationId,
                 Operation = "update",
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
@@ -377,10 +373,8 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _context.SaveChangesAsync();
 
         // Log dataSource archive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
-            OrganizationId = organizationId,
             Operation = "archive",
             EntityType = "data_source",
             EntityId = dataSource.Id,
@@ -421,10 +415,8 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _context.SaveChangesAsync();
 
         // Log dataSource unarchive event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
-            OrganizationId = organizationId,
             Operation = "unarchive",
             EntityType = "data_source",
             EntityId = dataSource.Id,
@@ -473,10 +465,8 @@ public class DataSourceBusiness : IDataSourceBusiness
                 await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
                 await _context.SaveChangesAsync();
 
-                await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+                await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
                 {
-                    OrganizationId = organizationId,
-                    ProjectId = projectId,
                     Operation = "update",
                     EntityType = "data_source",
                     EntityId = dataSource.Id,

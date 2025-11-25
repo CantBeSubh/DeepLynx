@@ -159,17 +159,20 @@ public class ClassBusiness : IClassBusiness
         await _context.SaveChangesAsync();
 
         // log event with class create details
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
-            Operation = "create",
-            EntityType = "class",
-            EntityId = newClass.Id,
-            EntityName = newClass.Name,
-            Properties = JsonSerializer.Serialize(new { newClass.Name })
-        });
-
+        await _eventBusiness.CreateEvent(
+            currentUserId,
+            organizationId, 
+            projectId,
+            new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "class",
+                EntityId = newClass.Id,
+                EntityName = newClass.Name, 
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {newClass.Name}),
+            });
+        
         return new ClassResponseDto
         {
             Id = newClass.Id,
@@ -256,21 +259,20 @@ public class ClassBusiness : IClassBusiness
             .ToListAsync();
 
         // for each created class Bulk log events
-        // TODO: instead, log a single "bulk create" event
-        // var events = new List<CreateEventRequestDto>();
-        // foreach (var item in result)
-        //     events.Add(new CreateEventRequestDto
-        //     {
-        //         ProjectId = projectId,
-        //         Operation = "create",
-        //         EntityType = "class",
-        //         EntityId = item.Id,
-        //         EntityName = item.Name,
-        //         DataSourceId = null,
-        //         Properties = JsonSerializer.Serialize(new { item.Name })
-        //     });
-        //
-        // await _eventBusiness.BulkCreateEvents(events, projectId);
+        var events = new List<CreateEventRequestDto> { };
+        foreach (var item in result)
+        {
+            events.Add(new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "class",
+                EntityId = item.Id,
+                EntityName = item.Name,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {item.Name}),
+            });
+        }
+        await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
 
         return result;
     }
@@ -312,18 +314,20 @@ public class ClassBusiness : IClassBusiness
         await _context.SaveChangesAsync();
 
         // log event with class update details
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
-            Operation = "update",
-            EntityType = "class",
-            EntityId = returnedClass.Id,
-            EntityName = returnedClass.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { returnedClass.Name })
-        });
-
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organizationId, 
+            projectId, 
+            new CreateEventRequestDto
+            {
+                Operation = "update",
+                EntityType = "class",
+                EntityId = returnedClass.Id,
+                EntityName = returnedClass.Name,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {returnedClass.Name}),
+            });
+        
         return new ClassResponseDto
         {
             Id = returnedClass.Id,
@@ -371,17 +375,20 @@ public class ClassBusiness : IClassBusiness
         await _context.SaveChangesAsync();
 
         // log event with class delete details
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
-            Operation = "delete",
-            EntityType = "class",
-            EntityId = classId,
-            EntityName = deletedName,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { deletedName })
-        });
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organizationId,
+            projectId,
+            new CreateEventRequestDto
+            {
+                Operation = "delete",
+                EntityType = "class",
+                EntityId = classId,
+                EntityName = deletedName,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new { deletedName })
+            }
+         );
 
         return true;
     }
@@ -442,16 +449,19 @@ public class ClassBusiness : IClassBusiness
             }
         }
 
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            ProjectId = projectId,
-            Operation = "archive",
-            EntityType = "class",
-            EntityId = returnedClass.Id,
-            EntityName = returnedClass.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { returnedClass.Name })
-        });
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organizationId, 
+            projectId,
+            new CreateEventRequestDto
+            {
+                Operation = "archive",
+                EntityType = "class",
+                EntityId = returnedClass.Id,
+                EntityName = returnedClass.Name,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new { returnedClass.Name }),
+            });
 
         return true;
     }
@@ -513,16 +523,20 @@ public class ClassBusiness : IClassBusiness
             }
         }
 
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            ProjectId = projectId,
-            Operation = "unarchive",
-            EntityType = "class",
-            EntityId = returnedClass.Id,
-            EntityName = returnedClass.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { returnedClass.Name })
-        });
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organizationId,
+            projectId,
+            new CreateEventRequestDto
+            {
+                Operation = "unarchive",
+                EntityType = "class",
+                EntityId = returnedClass.Id,
+                EntityName = returnedClass.Name,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new { returnedClass.Name }),
+            }
+        );
 
         return true;
     }

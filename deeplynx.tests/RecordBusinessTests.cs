@@ -750,23 +750,9 @@ public class RecordBusinessTests : IntegrationTestBase
         var recordCount = await Context.Records.CountAsync(r => r.ProjectId == pid);
         Assert.Equal(3, recordCount); // 1 from seed + 2 new
 
-        // Ensure that a record create event was logged for each record
+        // Ensure that a record create event was logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(2, eventList.Count);
-
-        var firstEvent = eventList[0];
-        Assert.Equal(pid, firstEvent.ProjectId);
-        Assert.Equal(result[0].Id, firstEvent.EntityId);
-        Assert.Equal("record", firstEvent.EntityType);
-        Assert.Equal("create", firstEvent.Operation);
-        Assert.Equal(result[0].DataSourceId, firstEvent.DataSourceId);
-
-        var secondEvent = eventList[1];
-        Assert.Equal(pid, secondEvent.ProjectId);
-        Assert.Equal(result[1].Id, secondEvent.EntityId);
-        Assert.Equal("record", secondEvent.EntityType);
-        Assert.Equal("create", secondEvent.Operation);
-        Assert.Equal(result[1].DataSourceId, secondEvent.DataSourceId);
+        Assert.Single(eventList); // One event is logged with the total bulk count in the properties
     }
 
     [Fact]

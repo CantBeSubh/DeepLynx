@@ -19,6 +19,7 @@ public class EventResponseDto
 
     [Column("organization_id")]
     public long? OrganizationId { get; set; }
+    public string OrganizationName { get; set; }
 
     [Column("data_source_id")]
     public long? DataSourceId { get; set; }

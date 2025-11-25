@@ -120,7 +120,7 @@ public class RoleBusiness : IRoleBusiness
             ProjectId = projectId,
             OrganizationId = organizationId
         };
-
+        
         try
         {
             _context.Roles.Add(role);
@@ -139,17 +139,27 @@ public class RoleBusiness : IRoleBusiness
         }
 
         // Log create Role event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
             Operation = "create",
             EntityType = "role",
             EntityId = role.Id,
             EntityName = role.Name,
-            Properties = JsonSerializer.Serialize(new { role.Name })
-        });
+            Properties = JsonSerializer.Serialize(new { role.Name }),
+        };
 
+
+        if (role.ProjectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, eventLog);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, null, eventLog);
+        }
+        
+        await _context.SaveChangesAsync();
+        
         return new RoleResponseDto
         {
             Id = role.Id,
@@ -245,23 +255,29 @@ public class RoleBusiness : IRoleBusiness
             .ToListAsync();
 
         // for each created role Bulk log events
-        var events = new List<CreateEventRequestDto>();
+        var events = new List<CreateEventRequestDto> { };
         foreach (var item in result)
+        {
             events.Add(new CreateEventRequestDto
             {
-                OrganizationId = organizationId,
-                ProjectId = projectId,
                 Operation = "create",
                 EntityType = "role",
                 EntityId = item.Id,
                 EntityName = item.Name,
                 DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new { item.Name })
+                Properties = JsonSerializer.Serialize(new {item.Name}),
             });
-
-        // Not sure if events org scoped too, so for now only logging for projects
-        if (projectId.HasValue) await _eventBusiness.BulkCreateEvents(events, projectId);
-
+        }
+        
+        if (projectId.HasValue)
+        {
+           await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId.Value);
+        }
+        else
+        {
+            await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId);
+        }
+        
         return result;
     }
 
@@ -316,17 +332,24 @@ public class RoleBusiness : IRoleBusiness
         }
 
         // Log update Role event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = role.OrganizationId,
-            ProjectId = role.ProjectId,
             Operation = "update",
             EntityType = "role",
             EntityName = role.Name,
             EntityId = role.Id,
-            Properties = JsonSerializer.Serialize(new { role.Name })
-        });
+            Properties = JsonSerializer.Serialize(new { role.Name }),
+        };
 
+        if (projectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId.Value, eventLog);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, null, eventLog);
+        }
+        
         return new RoleResponseDto
         {
             Id = role.Id,
@@ -393,16 +416,23 @@ public class RoleBusiness : IRoleBusiness
         }
 
         // Log archive Role event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = role.OrganizationId,
-            ProjectId = role.ProjectId,
             Operation = "archive",
             EntityType = "role",
             EntityId = role.Id,
             EntityName = role.Name,
-            Properties = JsonSerializer.Serialize(new { role.Name })
-        });
+            Properties = JsonSerializer.Serialize(new { role.Name }),
+        };
+        
+        if (projectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId.Value, eventLog);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, null, eventLog);
+        }
 
         return true;
     }
@@ -436,16 +466,23 @@ public class RoleBusiness : IRoleBusiness
         await _context.SaveChangesAsync();
 
         // Log unarchive Role event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = role.OrganizationId,
-            ProjectId = role.ProjectId,
             Operation = "unarchive",
             EntityType = "role",
             EntityId = role.Id,
             EntityName = role.Name,
-            Properties = JsonSerializer.Serialize(new { role.Name })
-        });
+            Properties = JsonSerializer.Serialize(new { role.Name }),
+        };
+        
+        if (projectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId.Value, eventLog);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, null, eventLog);
+        }
 
         return true;
     }
@@ -477,17 +514,24 @@ public class RoleBusiness : IRoleBusiness
         _context.Roles.Remove(role);
         await _context.SaveChangesAsync();
 
-        // Log delete Role event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        // Log archive Role event
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
             Operation = "delete",
             EntityType = "role",
-            EntityName = roleName,
-            EntityId = roleId,
-            Properties = JsonSerializer.Serialize(new { roleName })
-        });
+            EntityName = role.Name,
+            EntityId = role.Id,
+            Properties = JsonSerializer.Serialize(new { role.Name }),
+        };
+        
+        if (projectId.HasValue)
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId.Value, eventLog);
+        }
+        else
+        {
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, null, eventLog);
+        }
 
         return true;
     }

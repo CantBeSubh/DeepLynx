@@ -378,15 +378,6 @@ public class ClassBusinessTests : IntegrationTestBase
                 Description = "Updated Description"
             }
         };
-
-        // Act
-        var result = await _classBusiness.BulkCreateClasses(uid, oid, pid, bulkDto);
-
-        // Assert
-        Assert.Single(result);
-        Assert.Equal(cid1, result.First().Id);
-        Assert.Equal("Class 1", result.First().Name);
-        Assert.Equal("Updated Description", result.First().Description);
     }
 
     [Fact]

@@ -5,6 +5,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Text.Json;
 
 public class EventBusiness : IEventBusiness
 {
@@ -17,6 +18,7 @@ public class EventBusiness : IEventBusiness
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
+    /// <param name="notificationBusiness">Used for initiating notifications for subscribed users</param>
     public EventBusiness(
         DeeplynxContext context,
         ICacheBusiness cacheBusiness,
@@ -31,20 +33,28 @@ public class EventBusiness : IEventBusiness
     /// <summary>
     /// Retrieves all events without pagination.
     /// </summary>
-    /// <param name="projectId">Include events matching the projectId</param>
-    /// <param name="organizationId">Include events matching the organizationId</param>
+    /// <param name="projectId">Optional filter to only include events matching the projectId</param>
+    /// <param name="organizationId">Optional filter </param>
     /// <returns>List of all events matching the filter criteria</returns>
-    public async Task<List<EventResponseDto>> GetAllEvents(long? projectId, long? organizationId)
+    public async Task<List<EventResponseDto>> GetAllEvents(long? organizationId, long? projectId)
     {
         var eventQuery = _context.Events
+            .Include(e => e.Organization)
             .Include(e => e.Project)
             .Include(e => e.DataSource)
             .OrderByDescending(e => e.LastUpdatedAt)
             .AsQueryable();
 
-        if (projectId.HasValue) eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
+        if (organizationId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
+        }
+        else if (projectId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
+        }
 
-        if (organizationId.HasValue) eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
+        eventQuery = eventQuery.OrderByDescending(e => e.LastUpdatedAt);
 
         var items = await (from e in eventQuery
                 join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
@@ -63,8 +73,9 @@ public class EventBusiness : IEventBusiness
                     LastUpdatedAt = e.LastUpdatedAt,
                     LastUpdatedBy = e.LastUpdatedBy,
                     LastUpdatedByUserName = user != null ? user.Name : null,
-                    ProjectName = e.Project != null ? e.Project.Name : null,
-                    DataSourceName = e.DataSource != null ? e.DataSource.Name : null
+                    ProjectName = e.ProjectId != null ? e.Project.Name : null,
+                    DataSourceName = e.DataSourceId != null ? e.DataSource.Name : null,
+                    OrganizationName = e.OrganizationId != null ? e.Organization.Name : null
                 })
             .ToListAsync();
 
@@ -74,32 +85,30 @@ public class EventBusiness : IEventBusiness
     /// <summary>
     /// Retrieves all project events with pagination.
     /// </summary>
-    /// <param name="projectId">Include events matching the projectId</param>
-    /// <param name="organizationId">Include events matching the organizationId</param>
     /// <param name="queryDto">Filter criteria and pagination parameters</param>
+    /// <param name="organizationId">The id of the organization the events are a part of</param>
+    /// <param name="projectId">The id of the project the events are a part of</param>
     /// <returns>Paginated response containing events and pagination metadata</returns>
-    public async Task<PaginatedResponse<EventResponseDto>> QueryEvents(
-        long projectId,
-        long organizationId,
-        EventsQueryRequestDTO? queryDto)
+    public async Task<PaginatedResponse<EventResponseDto>> QueryAllEvents(
+        long organizationId, long? projectId, EventsQueryRequestDTO? queryDto)
     {
         var eventQuery = _context.Events
-            .Where(e => e.ProjectId == projectId && e.OrganizationId == organizationId)
+            .Include(e => e.Organization)
             .Include(e => e.Project)
             .Include(e => e.DataSource)
-            .OrderByDescending(e => e.LastUpdatedAt)
             .AsQueryable();
+        
+        eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId);
+        
+        if (projectId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
+        }
+
+        eventQuery = eventQuery.OrderByDescending(e => e.LastUpdatedAt);
 
         if (queryDto != null)
         {
-            if (!string.IsNullOrWhiteSpace(queryDto.projectName))
-            {
-                var searchTerm = queryDto.projectName.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    e.Project != null &&
-                    EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
-            }
-
             if (queryDto.lastUpdatedBy.HasValue)
             {
                 eventQuery = eventQuery.Where(e => e.LastUpdatedBy == queryDto.lastUpdatedBy.Value);
@@ -166,8 +175,9 @@ public class EventBusiness : IEventBusiness
                     LastUpdatedAt = e.LastUpdatedAt,
                     LastUpdatedBy = e.LastUpdatedBy,
                     LastUpdatedByUserName = user != null ? user.Name : null,
-                    ProjectName = e.Project != null ? e.Project.Name : null,
-                    DataSourceName = e.DataSource != null ? e.DataSource.Name : null
+                    ProjectName = e.ProjectId != null ? e.Project.Name : null,
+                    DataSourceName = e.DataSourceId != null ? e.DataSource.Name : null,
+                    OrganizationName = e.OrganizationId != null ? e.Organization.Name : null
                 })
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
@@ -185,37 +195,38 @@ public class EventBusiness : IEventBusiness
     /// <summary>
     /// Retrieves all project events for projects that the user is a member of, with pagination.
     /// </summary>
-    /// <param name="projectId">Include events matching the projectId</param>
-    /// <param name="organizationId">Include events matching the organizationId</param>
     /// <param name="queryDto">Filter criteria and pagination parameters</param>
     /// <returns>Paginated response containing events and pagination metadata</returns>
-    public async Task<PaginatedResponse<EventResponseDto>> QueryEventsByUser(
-        long userId, long projectId, long organizationId, EventsQueryRequestDTO? queryDto)
+    public async Task<PaginatedResponse<EventResponseDto>> QueryAuthorizedEvents(long currentUserId, 
+        long organizationId, long? projectId, EventsQueryRequestDTO? queryDto)
     {
+        var eventQuery = _context.Events
+            .Include(e => e.Organization)
+            .Include(e => e.Project)
+            .Include(e => e.DataSource)
+            .AsQueryable();
+        
+        // Get all project IDs the user has access to within this organization
         var userProjectIds = await _context.Projects
-            .Where(p => p.ProjectMembers.Any(pm =>
-                pm.UserId == userId ||
-                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
-            ))
+            .Where(p => p.OrganizationId == organizationId &&
+                   p.ProjectMembers.Any(pm =>
+                   pm.UserId == currentUserId ||
+                   (pm.GroupId.HasValue && pm.Group != null &&
+                   pm.Group.Users.Any(u => u.Id == currentUserId))
+                   ))
             .Select(p => p.Id)
             .ToListAsync();
 
-        if (!userProjectIds.Any())
-            return new PaginatedResponse<EventResponseDto>
-            {
-                Items = new List<EventResponseDto>(),
-                PageNumber = queryDto?.PageNumber ?? 1,
-                PageSize = queryDto?.GetValidatedPageSize() ?? 25,
-                TotalCount = 0
-            };
+       eventQuery = eventQuery.Where(e =>
+          (e.OrganizationId == organizationId) || 
+          (e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
+       );
 
-        var eventQuery = _context.Events
-            .Include(e => e.Project)
-            .Include(e => e.DataSource)
-            .Where(e => e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
-            .Where(e => e.ProjectId == projectId && e.OrganizationId == organizationId)
-            .OrderByDescending(e => e.LastUpdatedAt)
-            .AsQueryable();
+        if (projectId.HasValue) { 
+            eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);
+        }
+
+        eventQuery = eventQuery.OrderByDescending(e => e.LastUpdatedAt);
 
         if (queryDto != null)
         {
@@ -310,77 +321,192 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Retrieves all project events that the user is subscribed to.
+    /// Queries all events that the user is subscribed to at both organization and project levels.
+    /// Organization-level subscriptions (projectId is null) match all events in the organization.
+    /// Project-level subscriptions (projectId is not null) match only events in that specific project.
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscription belongs</param>
-    /// <param name="projectId">The ID of the project to which the subscription belongs</param>
-    public async Task<List<EventResponseDto>> GetAllEventsByUserProjectSubscriptions(long userId, long projectId)
+    /// <param name="currentUserId">The ID of the user to which the subscription belongs</param>
+    /// <param name="organizationId">The ID of the organization</param>
+    /// <param name="projectId">Optional ID of the project to filter events</param>
+    public async Task<PaginatedResponse<EventResponseDto>> QueryEventsBySubscriptions(long currentUserId,
+        long organizationId, long? projectId, EventsQueryRequestDTO? queryDto)
     {
-        var subscriptions = await _context.Set<Subscription>()
-            .Where(s => s.UserId == userId && s.ProjectId == projectId)
-            .ToListAsync();
+        var subscriptionsQuery = _context.Set<Subscription>()
+            .Where(s => s.UserId == currentUserId && s.OrganizationId == organizationId);
 
-        if (!subscriptions.Any()) return new List<EventResponseDto>();
+        if (projectId.HasValue)
+        {
+            subscriptionsQuery = subscriptionsQuery.Where(s =>
+                s.ProjectId == projectId.Value);
+        }
+        else
+        {
+            subscriptionsQuery = subscriptionsQuery.Where(s => s.ProjectId == null);
+        }
 
-        var sql = @"
-            SELECT DISTINCT e.*
-            FROM deeplynx.Events e
-            INNER JOIN deeplynx.Subscriptions s
-            ON s.project_id = e.project_id
-            AND s.user_id = @userId
-            AND s.project_id = @projectId
-            WHERE e.project_id = @projectId
-            AND ((s.entity_id = e.entity_id) OR s.entity_id IS NULL)
-            AND ((s.entity_type = e.entity_type) OR s.entity_type IS NULL)
-            AND ((s.data_source_id = e.data_source_id) OR s.data_source_id IS NULL)
-            AND ((s.operation = e.operation) OR s.operation IS NULL)";
+        var subscriptions = await subscriptionsQuery.ToListAsync();
 
-        var userIdParam = new NpgsqlParameter("userId", userId);
-        var projectIdParam = new NpgsqlParameter("projectId", projectId);
+        if (!subscriptions.Any())
+            return new PaginatedResponse<EventResponseDto>
+            {
+                Items = new List<EventResponseDto>(),
+                PageNumber = queryDto?.PageNumber ?? 1,
+                PageSize = queryDto?.GetValidatedPageSize() ?? 25,
+                TotalCount = 0
+            };
 
-        var events = await _context.Events
-            .FromSqlRaw(sql, userIdParam, projectIdParam)
+        string sql;
+
+        if (projectId.HasValue)
+        {
+            sql = @"
+                SELECT DISTINCT e.*
+                FROM deeplynx.events e
+                INNER JOIN deeplynx.subscriptions s
+                    ON s.user_id = @currentUserId
+                    AND s.project_id = @projectId
+                WHERE e.project_id = @projectId
+                    AND ((s.entity_id = e.entity_id) OR s.entity_id IS NULL)
+                    AND ((s.entity_type = e.entity_type) OR s.entity_type IS NULL)
+                    AND ((s.data_source_id = e.data_source_id) OR s.data_source_id IS NULL)
+                    AND ((s.operation = e.operation) OR s.operation IS NULL)";
+        }
+        else
+        {
+            sql = @"
+                SELECT DISTINCT e.*
+                FROM deeplynx.events e
+                INNER JOIN deeplynx.subscriptions s
+                    ON s.user_id = @currentUserId
+                    AND s.organization_id = @organizationId
+                    AND s.project_id IS NULL
+                WHERE e.organization_id = @organizationId
+                    AND ((s.entity_id = e.entity_id) OR s.entity_id IS NULL)
+                    AND ((s.entity_type = e.entity_type) OR s.entity_type IS NULL)
+                    AND ((s.data_source_id = e.data_source_id) OR s.data_source_id IS NULL)
+                    AND ((s.operation = e.operation) OR s.operation IS NULL)";
+        }
+
+        var currentUserIdParam = new NpgsqlParameter("currentUserId", currentUserId);
+        var organizationIdParam = new NpgsqlParameter("organizationId", organizationId);
+        var projectIdParam = new NpgsqlParameter("projectId", (object?)projectId ?? DBNull.Value);
+
+        var eventQuery = _context.Events
+            .FromSqlRaw(sql, currentUserIdParam, organizationIdParam, projectIdParam)
+            .Include(e => e.Organization)
             .Include(e => e.Project)
             .Include(e => e.DataSource)
-            .Select(e => new EventResponseDto
+            .AsQueryable();
+
+        if (queryDto != null)
+        {
+            if (queryDto.lastUpdatedBy.HasValue)
             {
-                Id = e.Id,
-                Operation = e.Operation,
-                EntityType = e.EntityType,
-                EntityId = e.EntityId,
-                EntityName = e.EntityName,
-                ProjectId = e.ProjectId,
-                OrganizationId = e.OrganizationId,
-                DataSourceId = e.DataSourceId,
-                Properties = e.Properties,
-                LastUpdatedAt = e.LastUpdatedAt,
-                LastUpdatedBy = e.LastUpdatedBy,
-                ProjectName = e.Project != null ? e.Project.Name : null,
-                DataSourceName = e.DataSource != null ? e.DataSource.Name : null
-            })
+                eventQuery = eventQuery.Where(e => e.LastUpdatedBy == queryDto.lastUpdatedBy.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryDto.projectName))
+            {
+                var searchTerm = queryDto.projectName.Trim();
+                eventQuery = eventQuery.Where(e =>
+                    e.Project != null &&
+                    EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryDto.operation))
+            {
+                var searchTerm = queryDto.operation.Trim();
+                eventQuery = eventQuery.Where(e =>
+                    EF.Functions.ILike(e.Operation, $"%{searchTerm}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryDto.entityType))
+            {
+                var searchTerm = queryDto.entityType.Trim();
+                eventQuery = eventQuery.Where(e =>
+                    EF.Functions.ILike(e.EntityType, $"%{searchTerm}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryDto.entityName))
+            {
+                var searchTerm = queryDto.entityName.Trim();
+                eventQuery = eventQuery.Where(e =>
+                    EF.Functions.ILike(e.EntityName, $"%{searchTerm}%"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryDto.dataSourceName))
+            {
+                var searchTerm = queryDto.dataSourceName.Trim();
+                eventQuery = eventQuery.Where(e =>
+                    e.DataSource != null &&
+                    EF.Functions.ILike(e.DataSource.Name, $"%{searchTerm}%"));
+            }
+
+            if (queryDto.startDate.HasValue)
+                eventQuery = eventQuery.Where(e => e.LastUpdatedAt >= queryDto.startDate.Value);
+
+            if (queryDto.endDate.HasValue)
+                eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= queryDto.endDate.Value);
+        }
+
+        eventQuery = eventQuery.OrderByDescending(e => e.LastUpdatedAt);
+
+        var totalCount = await eventQuery.CountAsync();
+
+        var pageNumber = queryDto?.PageNumber ?? 1;
+        var pageSize = queryDto?.GetValidatedPageSize() ?? 25;
+
+        var items = await (from e in eventQuery
+                join u in _context.Users on e.LastUpdatedBy equals u.Id into userGroup
+                from user in userGroup.DefaultIfEmpty()
+                select new EventResponseDto
+                {
+                    Id = e.Id,
+                    Operation = e.Operation,
+                    EntityType = e.EntityType,
+                    EntityId = e.EntityId,
+                    EntityName = e.EntityName,
+                    ProjectId = e.ProjectId,
+                    OrganizationId = e.OrganizationId,
+                    DataSourceId = e.DataSourceId,
+                    Properties = e.Properties,
+                    LastUpdatedAt = e.LastUpdatedAt,
+                    LastUpdatedBy = e.LastUpdatedBy,
+                    LastUpdatedByUserName = user != null ? user.Name : null,
+                    ProjectName = e.ProjectId != null ? e.Project.Name : null,
+                    DataSourceName = e.DataSourceId != null ? e.DataSource.Name : null,
+                    OrganizationName = e.OrganizationId != null ? e.Organization.Name : null
+                })
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return events;
+        return new PaginatedResponse<EventResponseDto>
+        {
+            Items = items,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 
     /// <summary>
     /// Creates a new Event based on the event data provided.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="projectId">The ID of the project to which the events belong</param>
-    /// <param name="organizationId">The ID of the organization to which the events belong</param>
     /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
-    public async Task<EventResponseDto> CreateEvent(
-        long currentUserId, CreateEventRequestDto dto, long? projectId, long? organizationId)
+    public async Task<EventResponseDto> CreateEvent(long currentUserId, long organizationId, long? projectId, CreateEventRequestDto dto)
     {
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
 
-        var project = projectId.HasValue
-            ? await _context.Projects.FindAsync(projectId.Value)
+        var project = projectId != null
+            ? await _context.Projects.FindAsync(projectId)
             : null;
+
+        var organization = await _context.Organizations.FindAsync(organizationId);
 
         var dataSource = dto.DataSourceId.HasValue
             ? await _context.DataSources.FindAsync(dto.DataSourceId.Value)
@@ -390,8 +516,8 @@ public class EventBusiness : IEventBusiness
         {
             Operation = dto.Operation,
             EntityType = dto.EntityType,
-            OrganizationId = organizationId ?? dto.OrganizationId,
-            ProjectId = projectId ?? dto.ProjectId,
+            OrganizationId = organizationId,
+            ProjectId = projectId,
             Properties = dto.Properties,
             LastUpdatedBy = currentUserId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -417,7 +543,8 @@ public class EventBusiness : IEventBusiness
             LastUpdatedAt = newEvent.LastUpdatedAt,
             LastUpdatedBy = newEvent.LastUpdatedBy,
             ProjectName = project?.Name,
-            DataSourceName = dataSource?.Name
+            DataSourceName = dataSource?.Name,
+            OrganizationName = organization?.Name
         };
 
         if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
@@ -427,67 +554,91 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Bulk creates Events based on the event data provided.
+    /// Creates a single Event for a bulk operation with the total count in properties.
     /// </summary>
-    /// <param name="projectId">The ID of the project to which the events belong</param>
-    /// <param name="organizationId">The ID of the organization to which the events belong</param>
-    /// <param name="events">A List of data transfer objects with details on the new event to be created.</param>
-    /// <returns>The list of new Events which were created.</returns>
-    public async Task<List<EventResponseDto>> BulkCreateEvents(
+    /// <param name="currentUserId">The id of the organization this event occurred in</param>
+    /// <param name="organizationId">The id of the organization this event occurred in</param>
+    /// <param name="events">A List of data transfer objects representing the bulk operation</param>
+    /// <param name="projectId">The ID of the project to which the event belongs</param>
+    /// <returns>The single Event created for the bulk operation.</returns>
+    public async Task<EventResponseDto> BulkCreateEvents(
+        long currentUserId,
         List<CreateEventRequestDto> events,
-        long? projectId,
-        long? organizationId
+        long organizationId,
+        long? projectId = null
     )
     {
-        foreach (var dto in events)
-        {
-            ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
-            ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-        }
+        if (!events.Any())
+            throw new ArgumentException("Events list cannot be empty");
 
-        var project = projectId.HasValue
+        var firstEvent = events.First();
+
+        ValidationHelper.ValidateTypes(firstEvent.EntityType, "EntityType");
+        ValidationHelper.ValidateTypes(firstEvent.Operation, "Operation");
+
+        var project = projectId != null
             ? await _context.Projects.FindAsync(projectId)
             : null;
-        var dataSource = events.First().DataSourceId != null
-            ? await _context.DataSources.FindAsync(events.First().DataSourceId)
+
+        var organization = await _context.Organizations.FindAsync(organizationId);
+
+        var dataSource = firstEvent.DataSourceId.HasValue
+            ? await _context.DataSources.FindAsync(firstEvent.DataSourceId.Value)
             : null;
 
-        var eventEntities = events.Select(dto => new Event
-        {
-            OrganizationId = organizationId ?? dto.OrganizationId,
-            ProjectId = projectId ?? dto.ProjectId,
-            Operation = dto.Operation,
-            EntityType = dto.EntityType,
-            EntityId = dto.EntityId,
-            EntityName = dto.EntityName,
-            Properties = dto.Properties,
-            DataSourceId = dto.DataSourceId,
-            LastUpdatedBy = UserContextStorage.UserId,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        }).ToList();
+        Dictionary<string, object> properties;
 
-        _context.Events.AddRange(eventEntities);
+        if (!string.IsNullOrWhiteSpace(firstEvent.Properties))
+        {
+            properties = JsonSerializer.Deserialize<Dictionary<string, object>>(firstEvent.Properties)
+                         ?? new Dictionary<string, object>();
+        }
+        else
+        {
+            properties = new Dictionary<string, object>();
+        }
+
+        properties["BulkCount"] = events.Count;
+
+        var propertiesJson = JsonSerializer.Serialize(properties);
+
+        var newEvent = new Event
+        {
+            OrganizationId = organizationId,
+            ProjectId = projectId,
+            Operation = firstEvent.Operation,
+            EntityType = firstEvent.EntityType,
+            EntityId = firstEvent.EntityId,
+            EntityName = firstEvent.EntityName,
+            Properties = propertiesJson,
+            DataSourceId = firstEvent.DataSourceId,
+            LastUpdatedBy = currentUserId,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+
+        _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
 
-        var response = eventEntities.Select(e => new EventResponseDto
+        var response = new EventResponseDto
         {
-            Id = e.Id,
-            Operation = e.Operation,
-            EntityType = e.EntityType,
-            EntityId = e.EntityId,
-            EntityName = e.EntityName,
-            ProjectId = e.ProjectId,
-            OrganizationId = e.OrganizationId,
-            DataSourceId = e.DataSourceId,
-            Properties = e.Properties,
-            LastUpdatedAt = e.LastUpdatedAt,
-            LastUpdatedBy = e.LastUpdatedBy,
+            Id = newEvent.Id,
+            Operation = newEvent.Operation,
+            EntityType = newEvent.EntityType,
+            EntityId = newEvent.EntityId,
+            EntityName = newEvent.EntityName,
+            ProjectId = newEvent.ProjectId,
+            OrganizationId = newEvent.OrganizationId,
+            DataSourceId = newEvent.DataSourceId,
+            Properties = newEvent.Properties,
+            LastUpdatedAt = newEvent.LastUpdatedAt,
+            LastUpdatedBy = newEvent.LastUpdatedBy,
             ProjectName = project?.Name,
-            DataSourceName = dataSource?.Name
-        }).ToList();
+            DataSourceName = dataSource?.Name,
+            OrganizationName = organization?.Name
+        };
 
         if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
-            await _notificationBusiness.SendBulkEventNotifications(response);
+            await _notificationBusiness.SendEventNotification(response);
 
         return response;
     }

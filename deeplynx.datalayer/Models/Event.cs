@@ -40,18 +40,19 @@ public partial class Event
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
     
-    [ForeignKey("OrganizationId")]
-    [InverseProperty("Events")]
-    public virtual Organization? Organization { get; set; }
-    
     [ForeignKey("ProjectId")]
     [InverseProperty("Events")]
     public virtual Project? Project { get; set; }
-    
+
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Events")]
+    public virtual Organization? Organization { get; set; }
+
     [ForeignKey("DataSourceId")]
     [InverseProperty("Events")]
     public virtual DataSource? DataSource { get; set; }
-    
+
+    [ForeignKey("LastUpdatedBy")] 
     [InverseProperty("LastUpdatedEvents")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

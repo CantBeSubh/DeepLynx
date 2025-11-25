@@ -4,8 +4,8 @@ public class SubscriptionResponseDto
 {
     public long Id { get; set; }
     public long UserId { get; set; }
-    public long OrganizationId { get; set; }
-    public long ProjectId { get; set; }
+    public long? OrganizationId {get; set;}
+    public long? ProjectId { get; set; }
     public long ActionId { get; set; }
     public string? Operation { get; set; }
     public long? DataSourceId { get; set; }

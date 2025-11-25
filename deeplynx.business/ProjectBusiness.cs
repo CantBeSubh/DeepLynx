@@ -154,19 +154,20 @@ public class ProjectBusiness : IProjectBusiness
         if (cachedProjectList.Count != _context.Projects.Count()) await RefreshProjectsCache();
 
         // Log create Project event
-        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
+        // Log create Project event
+        var eventLog = new CreateEventRequestDto
         {
-            OrganizationId = project.OrganizationId,
-            ProjectId = projectId,
             Operation = "create",
             EntityType = "project",
             EntityId = projectId,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name })
-        });
-
-        await SetProjectDefaults(userId, project.OrganizationId, projectId);
+            Properties = JsonSerializer.Serialize(new { project.Name }),
+        };
+        
+        await _eventBusiness.CreateEvent(userId, organizationId, projectId, eventLog);
+        
+        await SetProjectDefaults(userId, organizationId, projectId);
 
         return projectResponseDto;
     }
@@ -238,16 +239,14 @@ public class ProjectBusiness : IProjectBusiness
         await _context.SaveChangesAsync();
 
         // Log update Project event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, null, new CreateEventRequestDto
         {
-            ProjectId = project.Id,
-            OrganizationId = organizationId,
             Operation = "update",
             EntityType = "project",
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name })
+            Properties = JsonSerializer.Serialize(new { project.Name }),
         });
 
         var updatedProject = new ProjectResponseDto
@@ -371,10 +370,8 @@ public class ProjectBusiness : IProjectBusiness
             }
         }
 
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            OrganizationId = organizationId,
-            ProjectId = projectId,
             Operation = "archive",
             EntityType = "project",
             EntityId = project.Id,
@@ -485,17 +482,19 @@ public class ProjectBusiness : IProjectBusiness
                 await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
 
                 // Log the event
-                await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-                {
-                    ProjectId = projectId,
-                    OrganizationId = organizationId,
-                    Operation = "unarchive",
-                    EntityType = "project",
-                    EntityId = project.Id,
-                    EntityName = project.Name,
-                    DataSourceId = null,
-                    Properties = JsonSerializer.Serialize(new { project.Name })
-                });
+                await _eventBusiness.CreateEvent(
+                    currentUserId, 
+                    organizationId, 
+                    projectId, 
+                    new CreateEventRequestDto
+                    {
+                        Operation = "unarchive",
+                        EntityType = "project",
+                        EntityId = project.Id,
+                        EntityName = project.Name,
+                        DataSourceId = null,
+                        Properties = JsonSerializer.Serialize(new { project.Name }),
+                    });
 
                 return true;
             }

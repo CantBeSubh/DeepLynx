@@ -187,7 +187,7 @@ try
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
-    builder.Services.AddTransient<ISubscriptionBusiness, SubscriptionBusiness>();
+    // builder.Services.AddTransient<ISubscriptionBusiness, SubscriptionBusiness>();
     builder.Services.AddTransient<FileBusiness>();
     builder.Services.AddTransient<FileFilesystemBusiness>();
     builder.Services.AddTransient<FileAzureBusiness>();

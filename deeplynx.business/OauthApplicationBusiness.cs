@@ -135,16 +135,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _context.OauthApplications.Add(application);
         await _context.SaveChangesAsync();
 
-        // log create OAuth application event
-        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
-        {
-            Operation = "create",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
-
         return new OauthApplicationSecureResponseDto
         {
             Name = application.Name,
@@ -182,16 +172,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
 
-        // log update Oauth application event
-        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
-        {
-            Operation = "update",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
-
         return new OauthApplicationResponseDto
         {
             Id = application.Id,
@@ -227,16 +207,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
 
-        // log archive Oauth application event
-        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
-        {
-            Operation = "archive",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
-
         return true;
     }
 
@@ -260,16 +230,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
 
-        // log unarchive Oauth application event
-        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
-        {
-            Operation = "unarchive",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
-
         return true;
     }
     
@@ -286,24 +246,9 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         
         if (application == null || application.IsArchived)
             throw new KeyNotFoundException($"Oauth application with id {applicationId} not found");
-        
-        // grab event-relevant details before deletion
-        var appId = application.Id;
-        var appName = application.Name;
-        var appClientId = application.ClientId;
 
         _context.OauthApplications.Remove(application);
         await _context.SaveChangesAsync();
-        
-        // log delete Oauth application event
-        await _eventBusiness.CreateEvent(userId, new CreateEventRequestDto
-        {
-            Operation = "delete",
-            EntityType = "oauth_application",
-            EntityId = appId,
-            EntityName = appName,
-            Properties = JsonSerializer.Serialize(new { appName, appClientId })
-        });
 
         return true;
     }

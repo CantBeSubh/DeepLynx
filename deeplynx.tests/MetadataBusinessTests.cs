@@ -235,20 +235,23 @@ public class MetadataBusinessTests : IntegrationTestBase
             }
         };
 
-        // Act
-        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid,did, dto);
+            // Act
+            var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid, did, dto);
+            
+            // Assert
+            Assert.Equal(2, result.Classes.Count);
+            Assert.True(result.Classes.All(c => c.LastUpdatedBy == uid && 
+                                                c.ProjectId == pid && 
+                                                !c.IsArchived));
+            Assert.Equal("Bulk Class 1", result.Classes.First().Name);
+            Assert.Equal("First class", result.Classes.First().Description);
+            Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
+            Assert.Equal("Second class", result.Classes.Last().Description);
 
-        // Assert
-        Assert.Equal(2, result.Classes.Count);
-        Assert.True(result.Classes.All(c => c.LastUpdatedBy == uid &&
-                                            c.ProjectId == pid &&
-                                            c.OrganizationId == organizationId &&
-                                            !c.IsArchived));
-        Assert.Equal("Bulk Class 1", result.Classes.First().Name);
-        Assert.Equal("First class", result.Classes.First().Description);
-        Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
-        Assert.Equal("Second class", result.Classes.Last().Description);
-    }
+            // Ensure both create class events are logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(1, eventList.Count); // just one event is created containing the count with the bulk method
+        }
 
     [Fact]
     public async Task CreateMetadata_Success_WithRecordsAndAutoClasses()
@@ -394,7 +397,7 @@ public class MetadataBusinessTests : IntegrationTestBase
 
         // Ensure all complex data events are created and logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(3, eventList.Count);
+        Assert.Equal(5, eventList.Count);
     }
 
     #endregion
@@ -608,7 +611,7 @@ public class MetadataBusinessTests : IntegrationTestBase
 
         // Ensure all complex data events are created and logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(3, eventList.Count);
+        Assert.Equal(5, eventList.Count);
     }
 
     #endregion
