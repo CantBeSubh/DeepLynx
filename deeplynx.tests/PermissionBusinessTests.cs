@@ -152,9 +152,6 @@ public class PermissionBusinessTests : IntegrationTestBase
         {
             Name = "Default Permission with Project",
             Action = "write",
-            LabelId = lid,
-            ProjectId = pid,
-            OrganizationId = oid,
             IsDefault = true
         };
 
@@ -186,13 +183,12 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return all non-archived permissions for this organization
-        Assert.Equal(6, permissions.Count); // 6 non-archived permissions with oid
+        Assert.Equal(5, permissions.Count); // 6 non-archived permissions with oid
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
         Assert.Contains(permissions, p => p.Id == permid6);
         Assert.Contains(permissions, p => p.Id == permid7);
-        Assert.Contains(permissions, p => p.Id == permid8);
         Assert.DoesNotContain(permissions, p => p.Id == permid2); // archived
     }
 
@@ -204,13 +200,12 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return only permissions with lid and organizationId = oid
-        Assert.Equal(4, permissions.Count);
+        Assert.Equal(3, permissions.Count);
         Assert.All(permissions, p => Assert.Equal(lid, p.LabelId));
         Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
-        Assert.Contains(permissions, p => p.Id == permid8);
     }
     
 
@@ -222,14 +217,13 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return all non-archived permissions for this organization
-        Assert.Equal(6, permissions.Count);
+        Assert.Equal(5, permissions.Count);
         Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
         Assert.Contains(permissions, p => p.Id == permid6);
         Assert.Contains(permissions, p => p.Id == permid7);
-        Assert.Contains(permissions, p => p.Id == permid8);
     }
 
     [Fact]
@@ -240,14 +234,13 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return permissions matching all criteria
-        Assert.Equal(4, permissions.Count);
+        Assert.Equal(3, permissions.Count);
         Assert.All(permissions, p => Assert.Equal(pid, p.ProjectId));
         Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
         Assert.All(permissions, p => Assert.Equal(lid, p.LabelId));
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
-        Assert.Contains(permissions, p => p.Id == permid8);
     }
 
     [Fact]
@@ -650,7 +643,7 @@ public class PermissionBusinessTests : IntegrationTestBase
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _permissionBusiness.UpdatePermission(oid, pid, uid, permid8, dto));
 
-        Assert.Contains($"Permission with id {permid8} cannot be updated", exception.Message);
+        Assert.Contains($"Permission with id {permid8} not found", exception.Message);
 
         // Ensure that no event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -703,7 +696,7 @@ public class PermissionBusinessTests : IntegrationTestBase
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _permissionBusiness.ArchivePermission(oid, pid, uid, permid8));
 
-        Assert.Contains($"Permission with id {permid8} cannot be updated", exception.Message);
+        Assert.Contains($"Permission with id {permid8} not found", exception.Message);
 
         // Ensure that no event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -778,7 +771,7 @@ public class PermissionBusinessTests : IntegrationTestBase
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _permissionBusiness.UnarchivePermission(oid, pid, uid, permid8));
 
-        Assert.Contains($"Permission with id {permid8} cannot be updated", exception.Message);
+        Assert.Contains($"Permission with id {permid8} not found or is not archived", exception.Message);
 
         // Ensure that no event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -836,7 +829,7 @@ public class PermissionBusinessTests : IntegrationTestBase
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _permissionBusiness.DeletePermission(oid, pid, uid, permid8));
 
-        Assert.Contains($"Permission with id {permid8} cannot be deleted", exception.Message);
+        Assert.Contains($"Permission with id {permid8} not found", exception.Message);
 
         // Ensure that no event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -974,7 +967,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return only default permissions (no org or project)
-        Assert.Equal(2, permissions.Count);
+        Assert.Equal(3, permissions.Count);
         Assert.All(permissions, p => Assert.Null(p.OrganizationId));
         Assert.All(permissions, p => Assert.Null(p.ProjectId));
         Assert.Contains(permissions, p => p.Name == "Default Permission 1");
@@ -1007,7 +1000,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return only project-level permissions
-        Assert.True(permissions.Count >= 5); // Several project-level permissions exist
+        Assert.True(permissions.Count >= 4); // Several project-level permissions exist
         Assert.All(permissions, p => Assert.Equal(pid, p.ProjectId));
         Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
         
@@ -1144,7 +1137,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _permissionBusiness.UpdatePermission(oid, pid, uid, permid8, dto));
 
-        Assert.Contains($"Permission with id {permid8} cannot be updated", exception.Message);
+        Assert.Contains($"Permission with id {permid8} not found", exception.Message);
 
         // Verify it was not modified
         var unchangedPermission = await Context.Permissions.FindAsync(permid8);
@@ -1160,7 +1153,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _permissionBusiness.DeletePermission(oid, pid, uid, permid8));
 
-        Assert.Contains($"Permission with id {permid8} cannot be deleted", exception.Message);
+        Assert.Contains($"Permission with id {permid8} not found", exception.Message);
 
         // Verify it still exists
         var unchangedPermission = await Context.Permissions.FindAsync(permid8);
@@ -1175,7 +1168,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _permissionBusiness.ArchivePermission(oid, pid, uid, permid8));
 
-        Assert.Contains($"Permission with id {permid8} cannot be updated", exception.Message);
+        Assert.Contains($"Permission with id {permid8} not found", exception.Message);
 
         // Verify it remains unarchived
         var unchangedPermission = await Context.Permissions.FindAsync(permid8);
@@ -1208,8 +1201,8 @@ public class PermissionBusinessTests : IntegrationTestBase
         {
             Name = "Archived Default Permission",
             Action = "test",
-            OrganizationId = oid,
-            ProjectId = pid,
+            OrganizationId = null,
+            ProjectId = null,
             IsDefault = true,
             IsArchived = true
         };
@@ -1221,7 +1214,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _permissionBusiness.UnarchivePermission(oid, pid, uid, defaultPermId));
 
-        Assert.Contains($"Permission with id {defaultPermId} cannot be updated", exception.Message);
+        Assert.Contains($"Permission with id {defaultPermId} not found or is not archived", exception.Message);
 
         // Verify it remains archived
         var unchangedPermission = await Context.Permissions.FindAsync(defaultPermId);

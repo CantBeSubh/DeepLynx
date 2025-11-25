@@ -14,17 +14,17 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId}/projects/{projectId}/permissions")]
 [Tags("Project Management", "Permission")]
-public class PermissionController : ControllerBase
+public class PermissionProjectController : ControllerBase
 {
-    private readonly ILogger<PermissionController> _logger;
+    private readonly ILogger<PermissionProjectController> _logger;
     private readonly IPermissionBusiness _permissionBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="PermissionController" /> class
+    ///     Initializes a new instance of the <see cref="PermissionProjectController" /> class
     /// </summary>
     /// <param name="permissionBusiness">The business logic interface for handling Permission operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public PermissionController(IPermissionBusiness permissionBusiness, ILogger<PermissionController> logger)
+    public PermissionProjectController(IPermissionBusiness permissionBusiness, ILogger<PermissionProjectController> logger)
     {
         _permissionBusiness = permissionBusiness;
         _logger = logger;

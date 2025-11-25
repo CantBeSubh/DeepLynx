@@ -26,7 +26,7 @@ public partial class DataSource
     public string? Config { get; set; }
 
     [Column("project_id")]
-    public long ProjectId { get; set; }
+    public long? ProjectId { get; set; }
     
     [Column("organization_id")]
     public long OrganizationId { get; set; }

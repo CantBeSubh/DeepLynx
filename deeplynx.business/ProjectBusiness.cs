@@ -164,8 +164,6 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Add(project);
 
-        SetDefaultPermissions(project);
-
         await _context.SaveChangesAsync();
         var projectId = project.Id;
 
@@ -762,7 +760,7 @@ public class ProjectBusiness : IProjectBusiness
         };
         var cls = await _classBusiness.BulkCreateClasses(
             currentUserId, organizationId, projectId, defaultClasses);
-
+        
         // ===============================
         // CREATE DEFAULT DATA SOURCE
         // ===============================
@@ -772,7 +770,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
-        await _dataSourceBusiness.CreateDataSource(currentUserId, projectId, defaultDataSource, true);
+        await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, defaultDataSource);
 
         // ===============================
         // CREATE DEFAULT OBJECT STORAGE
@@ -780,7 +778,7 @@ public class ProjectBusiness : IProjectBusiness
         // TODO: project config should determine whether to do this (true by default)
         Env.Load("../.env");
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
-
+        
         var config = new JsonObject();
         if (defaultObjectStorageMethod == "filesystem")
         {
@@ -798,7 +796,7 @@ public class ProjectBusiness : IProjectBusiness
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            var awsConnectionString = 
+            var awsConnectionString =
                 Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
                 throw new NullReferenceException("AWS connection string not set");
             config["awsConnectionString"] = awsConnectionString;
@@ -808,7 +806,7 @@ public class ProjectBusiness : IProjectBusiness
             throw new NullReferenceException(
                 "Unknown object storage method, make sure your environment variables are correctly set");
         }
-
+        
         var objectStorageRequestDto = new CreateObjectStorageRequestDto
         {
             Name = "Instance Default",
@@ -816,7 +814,7 @@ public class ProjectBusiness : IProjectBusiness
         };
         await _objectStorageBusiness.CreateObjectStorage(
             currentUserId, organizationId, projectId, objectStorageRequestDto);
-
+        
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT
         // ===============================
@@ -838,8 +836,8 @@ public class ProjectBusiness : IProjectBusiness
         // TODO: project config should determine whether to do this (true by default)
         var defaultRoles = new List<CreateRoleRequestDto>
         {
-            new() { Name = "Admin" },
-            new() { Name = "User" }
+            new() { Name = "Admin", Description = "Project administrator with full permissions" },
+            new() { Name = "User",  Description = "Standard project user with limited permissions" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
@@ -852,24 +850,5 @@ public class ProjectBusiness : IProjectBusiness
             organizationId, projectId);
 
         await AddMemberToProject(projectId, adminRoleId, currentUserId, null);
-    }
-
-    private void SetDefaultPermissions(Project project)
-    {
-        var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
-
-        foreach (var defaultPermission in defaultPermissions)
-        {
-            var permission = new Permission
-            {
-                Name = defaultPermission.Name,
-                Resource = defaultPermission.Resource,
-                Action = defaultPermission.Action,
-                Description = defaultPermission.Description,
-                Project = project,
-                IsDefault = true
-            };
-            _context.Permissions.Add(permission);
-        }
     }
 }

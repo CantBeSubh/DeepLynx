@@ -64,7 +64,7 @@ public class FileBusiness
         }
         else
         {
-            var defaultDataSource = await _dataSourceBusiness.GetDefaultDataSource(projectId) ??
+            var defaultDataSource = await _dataSourceBusiness.GetDefaultDataSource(organizationId, projectId) ??
                                     throw new KeyNotFoundException("Default data source not found");
             realDataSourceId = defaultDataSource.Id;
         }

@@ -16,17 +16,17 @@ namespace deeplynx.api.Controllers;
 [Route("organizations/{organizationId}/classes")]
 [Authorize]
 [Tags("Organization Management", "Class")]
-public class OrganizationClassController : ControllerBase
+public class ClassOrganizationController : ControllerBase
 {
     private readonly IClassBusiness _classBusiness;
-    private readonly ILogger<ClassController> _logger;
+    private readonly ILogger<ClassOrganizationController> _logger;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="OrganizationClassController" /> class
+    ///     Initializes a new instance of the <see cref="ClassOrganizationController" /> class
     /// </summary>
     /// <param name="classBusiness">The business logic interface for handling class operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public OrganizationClassController(IClassBusiness classBusiness, ILogger<ClassController> logger)
+    public ClassOrganizationController(IClassBusiness classBusiness, ILogger<ClassOrganizationController> logger)
     {
         _classBusiness = classBusiness;
         _logger = logger;

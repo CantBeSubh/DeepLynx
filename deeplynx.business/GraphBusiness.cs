@@ -1,11 +1,7 @@
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace deeplynx.business;
 
@@ -32,87 +28,74 @@ public class GraphBusiness : IGraphBusiness
     /// <summary>
     ///     Retrieves all edges for a specific project and (optionally) datasource
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the record belongs</param>
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
     /// <param name="recordId">The ID of the record by which to filter edges</param>
     /// <param name="isOrigin">Indicates whether to find where recordId is origin or not</param>
     /// <param name="page">The ID of the record by which to filter edges</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <param name="pageSize">Max size of list to return</param>
     /// <returns>A list of edges based on the applied filters.</returns>
     public async Task<List<RelatedRecordsResponseDto>> GetEdgesByRecord(
+        long organizationId,
+        long projectId,
         long recordId,
         bool isOrigin,
         int page,
-        bool hideArchived,
         int pageSize)
     {
         if (page < 1) throw new ArgumentException("Page must be greater than 0");
 
         if (pageSize < 1 || pageSize > 100) throw new ArgumentException("Page size must be between 1 and 100");
 
-        var recordExists = await _context.Records.AnyAsync(record => record.Id == recordId);
+        var recordExists = await _context.Records
+            .AnyAsync(r => r.Id == recordId
+                           && r.OrganizationId == organizationId
+                           && r.ProjectId == projectId
+                           && !r.IsArchived);
+
         if (!recordExists) throw new KeyNotFoundException($"Record with id {recordId} not found");
 
         IQueryable<Edge> edgeQuery = _context.Edges
-            .Include(e => e.Destination)
-            .Include(e => e.Origin)
             .Include(e => e.Relationship);
 
         if (isOrigin)
-            edgeQuery = edgeQuery.Where(e => e.OriginId == recordId);
+            edgeQuery = edgeQuery
+                .Include(e => e.Destination)
+                .Where(e => e.OriginId == recordId && !e.Destination.IsArchived);
         else
-            edgeQuery = edgeQuery.Where(e => e.DestinationId == recordId);
-
-        // TODO: Add this query back when we want to filter all record edges by user access
-
-        // var userProjectIds = await _context.Projects.Where(p => 
-        //     p.ProjectMembers.Any(pm => 
-        //         pm.UserId == userId ||
-        //         (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
-        //     ))
-        //     .Select(p => p.Id)
-        //     .ToListAsync();
-        //
-        // if (!userProjectIds.Any())
-        // {
-        //     return new List<EdgeResponseDto>();
-        // }
-        //
-        // var edgeQuery = _context.Edges
-        //     .Where(e =>
-        //         userProjectIds.Contains(e.ProjectId) && 
-        //         (e.OriginId == recordId || e.DestinationId == recordId) && 
-        //         userProjectIds.Contains(e.Origin.ProjectId) && 
-        //         userProjectIds.Contains(e.Destination.ProjectId));
-
-        if (hideArchived) edgeQuery = edgeQuery.Where(e => !e.IsArchived);
+            edgeQuery = edgeQuery
+                .Include(e => e.Origin)
+                .Where(e => e.DestinationId == recordId && !e.Origin.IsArchived);
 
         return await edgeQuery
             .OrderBy(e => e.Id) // Important: Add consistent ordering for predictable pagination
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => new
+            .Select(e => new RelatedRecordsResponseDto
             {
-                Edge = e,
-                RelatedRecord = isOrigin ? e.Destination : e.Origin
-            })
-            .Select(x => new RelatedRecordsResponseDto
-            {
-                RelatedRecordName = x.RelatedRecord.Name,
-                RelatedRecordId = x.RelatedRecord.Id,
-                RelatedRecordProjectId = x.RelatedRecord.ProjectId,
-                RelationshipName = x.Edge.Relationship != null ? x.Edge.Relationship.Name : null
+                RelatedRecordName = isOrigin ? e.Destination.Name : e.Origin.Name,
+                RelatedRecordId = isOrigin ? e.Destination.Id : e.Origin.Id,
+                RelatedRecordProjectId = isOrigin ? e.Destination.ProjectId : e.Origin.ProjectId,
+                RelationshipName = e.Relationship != null ? e.Relationship.Name : null
             }).ToListAsync();
     }
 
     /// <summary>
     ///     Gets related records up to 3 levels deep
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the record belongs</param>
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
     /// <param name="recordId">The record Id to start</param>
     /// <param name="userId">The user accessing this info</param>
     /// <param name="depth">How many relationships away the user wants</param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public async Task<GraphResponse> GetGraphDataForRecord(long recordId, long userId, int depth)
+    public async Task<GraphResponse> GetGraphDataForRecord(
+        long organizationId,
+        long projectId,
+        long recordId,
+        long userId,
+        int depth)
     {
         if (depth > 3) throw new ArgumentException("Depth must be no more than 3");
 

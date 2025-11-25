@@ -15,17 +15,20 @@ public interface ISubscriptionBusiness
         long organizationId, 
         long? projectId,
         bool hideArchived);
+
     Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(
         long currentUserId, 
         long organizationId,
         long? projectId,
         List<CreateSubscriptionRequestDto>? dtos
         );
+
     Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
         long currentUserId, 
         long organizationId,
         long? projectId,
         List<UpdateSubscriptionRequestDto>? dtos);
+
     Task<bool> BulkDeleteSubscriptions(
         long currentUserId, 
         long organizationId, 

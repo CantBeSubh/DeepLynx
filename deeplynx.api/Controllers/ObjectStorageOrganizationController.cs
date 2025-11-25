@@ -13,22 +13,22 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve object storage information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/storages")]
+[Route("organizations/{organizationId}/storages")]
 [Authorize]
-[Tags("Project Management", "ObjectStorage")]
-public class ProjectObjectStorageController : ControllerBase
+[Tags("Organization Management", "ObjectStorage")]
+public class ObjectStorageOrganizationController : ControllerBase
 {
-    private readonly ILogger<ProjectObjectStorageController> _logger;
+    private readonly ILogger<ObjectStorageProjectController> _logger;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ProjectObjectStorageController" /> class
+    ///     Initializes a new instance of the <see cref="ObjectStorageOrganizationController" /> class
     /// </summary>
     /// <param name="objectStorageBusiness">The business logic interface for handling object storage operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public ProjectObjectStorageController(
+    public ObjectStorageOrganizationController(
         IObjectStorageBusiness objectStorageBusiness,
-        ILogger<ProjectObjectStorageController> logger)
+        ILogger<ObjectStorageProjectController> logger)
     {
         _objectStorageBusiness = objectStorageBusiness;
         _logger = logger;
@@ -37,20 +37,18 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Get All Object Storages
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project whose object storages are to be retrieved</param>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
-    /// <returns>A list of object storages for the given project.</returns>
-    [HttpGet(Name = "api_get_all_object_storages_project")]
+    /// <returns>A list of object storages for the given organization.</returns>
+    [HttpGet(Name = "api_get_all_object_storages_organization")]
     public async Task<ActionResult<IEnumerable<ObjectStorageResponseDto>>> GetAllObjectStorages(
         long organizationId,
-        long projectId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
             var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(
-                organizationId, projectId, hideArchived);
+                organizationId, null, hideArchived);
 
             return Ok(objectStorages);
         }
@@ -65,15 +63,13 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Get an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="objectStorageId">The ID of the object storage to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
     /// <returns>The object storage associated with the given ID</returns>
-    [HttpGet("{objectStorageId}", Name = "api_get_object_storage_project")]
+    [HttpGet("{objectStorageId}", Name = "api_get_object_storage_organization")]
     public async Task<ActionResult<ObjectStorageResponseDto>> GetObjectStorage(
         long organizationId,
-        long projectId,
         long objectStorageId,
         [FromQuery] bool hideArchived = true)
     {
@@ -81,7 +77,7 @@ public class ProjectObjectStorageController : ControllerBase
         {
             var objectStorage =
                 await _objectStorageBusiness.GetObjectStorage(
-                    organizationId, projectId, objectStorageId, hideArchived);
+                    organizationId, null, objectStorageId, hideArchived);
             return Ok(objectStorage);
         }
         catch (Exception ex)
@@ -95,21 +91,19 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Create an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="dto">The data transfer object containing object storage details</param>
     /// <returns>The created object storage</returns>
-    [HttpPost(Name = "api_create_object_storage_project")]
+    [HttpPost(Name = "api_create_object_storage_organization")]
     public async Task<ActionResult<ObjectStorageResponseDto>> CreateObjectStorage(
         long organizationId,
-        long projectId,
         [FromBody] CreateObjectStorageRequestDto dto)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
             var objectStorage = await _objectStorageBusiness.CreateObjectStorage(
-                currentUserId, organizationId, projectId, dto);
+                currentUserId, organizationId, null, dto);
             return Ok(objectStorage);
         }
         catch (Exception ex)
@@ -123,15 +117,13 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Update an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="objectStorageId">The ID of the object storage to update</param>
     /// <param name="dto">The data transfer object containing updated object storage details</param>
     /// <returns>The updated object storage</returns>
-    [HttpPut("{objectStorageId}", Name = "api_update_object_storage_project")]
+    [HttpPut("{objectStorageId}", Name = "api_update_object_storage_organization")]
     public async Task<ActionResult<ObjectStorageResponseDto>> UpdateObjectStorage(
         long organizationId,
-        long projectId,
         long objectStorageId,
         [FromBody] UpdateObjectStorageRequestDto dto)
     {
@@ -139,7 +131,7 @@ public class ProjectObjectStorageController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var objectStorage = await _objectStorageBusiness.UpdateObjectStorage(
-                currentUserId, organizationId, projectId, objectStorageId, dto);
+                currentUserId, organizationId, null, objectStorageId, dto);
             return Ok(objectStorage);
         }
         catch (Exception ex)
@@ -153,21 +145,19 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Delete an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="objectStorageId">The ID of the object storage to delete</param>
     /// <returns>A message stating the object storage was successfully deleted.</returns>
-    [HttpDelete("{objectStorageId}", Name = "api_delete_object_storage_project")]
+    [HttpDelete("{objectStorageId}", Name = "api_delete_object_storage_organization")]
     public async Task<ActionResult> DeleteObjectStorage(
         long organizationId,
-        long projectId,
         long objectStorageId)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
             await _objectStorageBusiness.DeleteObjectStorage(
-                currentUserId, organizationId, projectId, objectStorageId);
+                currentUserId, organizationId, null, objectStorageId);
             return Ok(new { message = $"Deleted object storage {objectStorageId}" });
         }
         catch (Exception ex)
@@ -181,15 +171,13 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Archive or Unarchive an Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="objectStorageId">The ID of the object storage to archive or unarchive</param>
     /// <param name="archive">True to archive the object storage, false to unarchive it.</param>
     /// <returns>A message stating the object storage was successfully archived or unarchived.</returns>
-    [HttpPatch("{objectStorageId}", Name = "api_archive_object_storage_project")]
+    [HttpPatch("{objectStorageId}", Name = "api_archive_object_storage_organization")]
     public async Task<ActionResult> ArchiveObjectStorage(
         long organizationId,
-        long projectId,
         long objectStorageId,
         [FromQuery] bool archive)
     {
@@ -199,12 +187,12 @@ public class ProjectObjectStorageController : ControllerBase
             if (archive)
             {
                 await _objectStorageBusiness.ArchiveObjectStorage(
-                    currentUserId, organizationId, projectId, objectStorageId);
+                    currentUserId, organizationId, null, objectStorageId);
                 return Ok(new { message = $"Archived object storage {objectStorageId}" });
             }
 
             await _objectStorageBusiness.UnarchiveObjectStorage(
-                currentUserId, organizationId, projectId, objectStorageId);
+                currentUserId, organizationId, null, objectStorageId);
             return Ok(new { message = $"Unarchived object storage {objectStorageId}" });
         }
         catch (Exception ex)
@@ -219,24 +207,22 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Get Default Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
-    /// <returns>The default object storage for the project</returns>
-    [HttpGet("default", Name = "api_get_default_object_storage_project")]
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
+    /// <returns>The default object storage for the organization</returns>
+    [HttpGet("default", Name = "api_get_default_object_storage_organization")]
     public async Task<ActionResult<ObjectStorageResponseDto>> GetDefaultObjectStorage(
-        long organizationId,
-        long projectId)
+        long organizationId)
     {
         try
         {
             var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(
-                organizationId, projectId);
+                organizationId, null);
             return Ok(defaultObjectStorage);
         }
         catch (Exception ex)
         {
             var message =
-                $"An error occurred while retrieving default object storage for project {projectId}: {ex}";
+                $"An error occurred while retrieving default object storage for organization {organizationId}: {ex}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -245,21 +231,19 @@ public class ProjectObjectStorageController : ControllerBase
     /// <summary>
     ///     Set Default Object Storage
     /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <param name="objectStorageId">The ID of the object storage to set as default</param>
     /// <returns>The updated object storage</returns>
-    [HttpPatch("{objectStorageId}/default", Name = "api_set_default_object_storage_project")]
+    [HttpPatch("{objectStorageId}/default", Name = "api_set_default_object_storage_organization")]
     public async Task<ActionResult<ObjectStorageResponseDto>> SetDefaultObjectStorage(
         long organizationId,
-        long projectId,
         long objectStorageId)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
             await _objectStorageBusiness.SetDefaultObjectStorage(
-                currentUserId, organizationId, projectId, objectStorageId);
+                currentUserId, organizationId, null, objectStorageId);
             return Ok(new { message = $"Set object storage {objectStorageId} as default" });
         }
         catch (Exception ex)

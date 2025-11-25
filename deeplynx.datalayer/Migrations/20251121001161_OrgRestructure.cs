@@ -10,6 +10,12 @@ namespace deeplynx.datalayer.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Drop triggers before making schema changes
+            migrationBuilder.Sql(@"
+        DROP TRIGGER IF EXISTS historical_records_trigger ON deeplynx.records;
+        DROP TRIGGER IF EXISTS historical_edges_trigger ON deeplynx.edges;
+    ");
+
             migrationBuilder.DropIndex(
                 name: "permissions_unique_org_label_action",
                 schema: "deeplynx",
@@ -195,17 +201,7 @@ namespace deeplynx.datalayer.Migrations
                 WHERE r.project_id = p.id
                   AND r.organization_id IS NULL;
             ");
-
-            // Permissions r weird so not doing this
-            // Backfill permissions (existing nullable column)
-            // migrationBuilder.Sql(@"
-            //     UPDATE deeplynx.permissions perm
-            //     SET organization_id = p.organization_id
-            //     FROM deeplynx.projects p
-            //     WHERE perm.project_id = p.id
-            //       AND perm.organization_id IS NULL;
-            // ");
-
+            
             // Backfill object_storages (existing nullable column)
             migrationBuilder.Sql(@"
                 UPDATE deeplynx.object_storages os
@@ -320,17 +316,6 @@ namespace deeplynx.datalayer.Migrations
                 oldClrType: typeof(long),
                 oldType: "bigint",
                 oldNullable: true);
-
-            // Permissions r weird so not doing this
-            // migrationBuilder.AlterColumn<long>(
-            //     name: "organization_id",
-            //     schema: "deeplynx",
-            //     table: "permissions",
-            //     type: "bigint",
-            //     nullable: false,
-            //     oldClrType: typeof(long),
-            //     oldType: "bigint",
-            //     oldNullable: true);
 
             migrationBuilder.AlterColumn<long>(
                 name: "organization_id",
@@ -661,11 +646,30 @@ namespace deeplynx.datalayer.Migrations
                 principalTable: "organizations",
                 principalColumn: "id",
                 onDelete: ReferentialAction.Cascade);
+            
+            migrationBuilder.Sql(@"
+        CREATE TRIGGER historical_records_trigger
+        AFTER INSERT OR UPDATE ON deeplynx.records
+        FOR EACH ROW
+        EXECUTE FUNCTION deeplynx.historical_records_trigger_func();
+    ");
+            
+            migrationBuilder.Sql(@"
+        CREATE TRIGGER historical_edges_trigger
+        AFTER INSERT OR UPDATE ON deeplynx.edges
+        FOR EACH ROW
+        EXECUTE FUNCTION deeplynx.historical_edges_trigger_func();
+    ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            // Drop triggers before making schema changes
+            migrationBuilder.Sql(@"
+        DROP TRIGGER IF EXISTS historical_records_trigger ON deeplynx.records;
+        DROP TRIGGER IF EXISTS historical_edges_trigger ON deeplynx.edges;
+    "); 
             migrationBuilder.DropForeignKey(
                 name: "actions_organization_id_fkey",
                 schema: "deeplynx",
@@ -969,6 +973,19 @@ namespace deeplynx.datalayer.Migrations
                 schema: "deeplynx",
                 table: "object_storages",
                 sql: "(project_id IS NOT NULL AND organization_id IS NULL) OR (project_id IS NULL AND organization_id IS NOT NULL)");
+            migrationBuilder.Sql(@"
+        CREATE TRIGGER historical_records_trigger
+        AFTER INSERT OR UPDATE ON deeplynx.records
+        FOR EACH ROW
+        EXECUTE FUNCTION deeplynx.historical_records_trigger_func();
+    ");
+            
+            migrationBuilder.Sql(@"
+        CREATE TRIGGER historical_edges_trigger
+        AFTER INSERT OR UPDATE ON deeplynx.edges
+        FOR EACH ROW
+        EXECUTE FUNCTION deeplynx.historical_edges_trigger_func();
+    ");
         }
     }
 }

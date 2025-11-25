@@ -13,17 +13,17 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Tags("Organization Management", "Permission")]
-public class OrganizationPermissionController : ControllerBase
+public class PermissionOrganizationController : ControllerBase
 {
-    private readonly ILogger<OrganizationPermissionController> _logger;
+    private readonly ILogger<PermissionOrganizationController> _logger;
     private readonly IPermissionBusiness _permissionBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="OrganizationPermissionController" /> class
+    ///     Initializes a new instance of the <see cref="PermissionOrganizationController" /> class
     /// </summary>
     /// <param name="permissionBusiness">The business logic interface for handling organization permission operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public OrganizationPermissionController(IPermissionBusiness permissionBusiness, ILogger<OrganizationPermissionController> logger)
+    public PermissionOrganizationController(IPermissionBusiness permissionBusiness, ILogger<PermissionOrganizationController> logger)
     {
         _permissionBusiness = permissionBusiness;
         _logger = logger;
