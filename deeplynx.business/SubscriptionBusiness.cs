@@ -91,6 +91,92 @@ public class SubscriptionBusiness : ISubscriptionBusiness
     }
 
     /// <summary>
+    ///     Bulk creates subscriptions
+    /// </summary>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscription belong</param>
+    /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
+    /// <returns>A list of created subscriptions</returns>
+    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long organizationId,
+        long projectId,
+        List<CreateSubscriptionRequestDto> dtos)
+    {
+        foreach (var dto in dtos)
+        {
+            ValidationHelper.ValidateModel(dto);
+
+            // Validate the Operation property if it is not null
+            if (dto.Operation != null) ValidationHelper.ValidateTypes(dto.Operation, "Operation");
+
+            // Ensure both EntityType and EntityId are either both not null or both null
+            if ((dto.EntityType != null && dto.EntityId != null) || (dto.EntityType == null && dto.EntityId == null))
+            {
+                if (dto.EntityType != null) ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
+            }
+            else
+            {
+                throw new ArgumentException("EntityType and EntityId must either both be null or both have values.");
+            }
+        }
+
+        // Bulk insert into subscriptions; if there is a conflict, do nothing
+        var sql = @"
+        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, organization_id, project_id, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived)
+        VALUES {0}
+        ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
+        RETURNING id, user_id, organization_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
+    ";
+
+        // Establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
+        {
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@lastUpdatedBy", currentUserId)
+        };
+
+        // Establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@p{i}_userId", currentUserId),
+            new NpgsqlParameter($"@p{i}_actionId", dto.ActionId),
+            new NpgsqlParameter($"@p{i}_operation", (object?)dto.Operation ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_organizationId", organizationId),
+            new NpgsqlParameter($"@p{i}_projectId", projectId),
+            new NpgsqlParameter($"@p{i}_dataSourceId", (object?)dto.DataSourceId ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_entityType", (object?)dto.EntityType ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_entityId", (object?)dto.EntityId ?? DBNull.Value)
+        }));
+
+        // Stringify the params and comma separate them
+        var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
+            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_organizationId, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @lastUpdatedBy, false)"));
+
+        // Put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+
+        // Returns the resulting inserted subscriptions
+        var result = await _context.Subscriptions
+            .FromSqlRaw(sql, parameters.ToArray())
+            .ToListAsync();
+
+        return result.Select(s => new SubscriptionResponseDto
+        {
+            Id = s.Id,
+            UserId = s.UserId,
+            ProjectId = s.ProjectId,
+            OrganizationId = s.OrganizationId,
+            ActionId = s.ActionId,
+            Operation = s.Operation,
+            DataSourceId = s.DataSourceId,
+            EntityType = s.EntityType,
+            EntityId = s.EntityId,
+            LastUpdatedAt = s.LastUpdatedAt,
+            LastUpdatedBy = s.LastUpdatedBy,
+            IsArchived = s.IsArchived
+        }).ToList();
+    }
+
+    /// <summary>
     ///     Bulk updates subscriptions
     /// </summary>
     /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
@@ -315,91 +401,5 @@ public class SubscriptionBusiness : ISubscriptionBusiness
             throw new InvalidOperationException("Some subscriptions were not unarchived because they do not exist.");
 
         return true;
-    }
-
-    /// <summary>
-    ///     Bulk creates subscriptions
-    /// </summary>
-    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
-    /// <param name="organizationId">The ID of the organization to which the subscription belong</param>
-    /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
-    /// <returns>A list of created subscriptions</returns>
-    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long organizationId,
-        long projectId,
-        List<CreateSubscriptionRequestDto> dtos)
-    {
-        foreach (var dto in dtos)
-        {
-            ValidationHelper.ValidateModel(dto);
-
-            // Validate the Operation property if it is not null
-            if (dto.Operation != null) ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-
-            // Ensure both EntityType and EntityId are either both not null or both null
-            if ((dto.EntityType != null && dto.EntityId != null) || (dto.EntityType == null && dto.EntityId == null))
-            {
-                if (dto.EntityType != null) ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
-            }
-            else
-            {
-                throw new ArgumentException("EntityType and EntityId must either both be null or both have values.");
-            }
-        }
-
-        // Bulk insert into subscriptions; if there is a conflict, do nothing
-        var sql = @"
-        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, organization_id, project_id, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived)
-        VALUES {0}
-        ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
-        RETURNING id, user_id, organization_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
-    ";
-
-        // Establish "constant" parameters
-        var parameters = new List<NpgsqlParameter>
-        {
-            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new("@lastUpdatedBy", currentUserId)
-        };
-
-        // Establish "dynamic" parameters (new for each dto in the list)
-        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
-        {
-            new NpgsqlParameter($"@p{i}_userId", currentUserId),
-            new NpgsqlParameter($"@p{i}_actionId", dto.ActionId),
-            new NpgsqlParameter($"@p{i}_operation", (object?)dto.Operation ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_organizationId", organizationId),
-            new NpgsqlParameter($"@p{i}_projectId", projectId),
-            new NpgsqlParameter($"@p{i}_dataSourceId", (object?)dto.DataSourceId ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_entityType", (object?)dto.EntityType ?? DBNull.Value),
-            new NpgsqlParameter($"@p{i}_entityId", (object?)dto.EntityId ?? DBNull.Value)
-        }));
-
-        // Stringify the params and comma separate them
-        var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_organizationId, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @lastUpdatedBy, false)"));
-
-        // Put everything together and execute the query
-        sql = string.Format(sql, valueTuples);
-
-        // Returns the resulting inserted subscriptions
-        var result = await _context.Subscriptions
-            .FromSqlRaw(sql, parameters.ToArray())
-            .ToListAsync();
-
-        return result.Select(s => new SubscriptionResponseDto
-        {
-            Id = s.Id,
-            UserId = s.UserId,
-            ProjectId = s.ProjectId,
-            OrganizationId = s.OrganizationId,
-            ActionId = s.ActionId,
-            Operation = s.Operation,
-            DataSourceId = s.DataSourceId,
-            EntityType = s.EntityType,
-            EntityId = s.EntityId,
-            LastUpdatedAt = s.LastUpdatedAt,
-            LastUpdatedBy = s.LastUpdatedBy,
-            IsArchived = s.IsArchived
-        }).ToList();
     }
 }
