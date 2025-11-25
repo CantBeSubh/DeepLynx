@@ -13,6 +13,7 @@ import {
   QuestionMarkCircleIcon,
   UserCircleIcon,
   UserGroupIcon,
+  CommandLineIcon
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,7 +27,7 @@ import { useRBAC } from "../rbac/useRBAC";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { OrganizationResponseDto } from "../types/responseDTOs";
 import { useSafeSession } from "@/app/hooks/useSafeSession";
-import { getAllOrganizations } from "@/app/lib/client_service/organization_services.client";
+import { getAllOrganizationsForUser } from "@/app/lib/client_service/organization_services.client";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
@@ -55,7 +56,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const fetchOrganizations = async () => {
       try {
         setLoadingOrgs(true);
-        const orgs = await getAllOrganizations(true);
+        const orgs = await getAllOrganizationsForUser(true);
         setOrganizations(orgs);
       } catch (error) {
         console.error("Failed to fetch organizations:", error);
@@ -181,11 +182,10 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <li key={org.id}>
                       <button
                         onClick={() => handleOrganizationSwitch(org)}
-                        className={`flex items-center justify-between ${
-                          organization?.organizationId === org.id
-                            ? "active bg-info/60 text-primary-content"
-                            : ""
-                        }`}
+                        className={`flex items-center justify-between ${organization?.organizationId === org.id
+                          ? "active bg-info/60 text-primary-content"
+                          : ""
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <AvatarCell name={org.name} size={8} />
@@ -281,6 +281,15 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </RoleGate>
               </li>
               <li className="mt-5">
+                <Link href={
+                  process.env.NEXT_PUBLIC_API_URL + '/scalar'
+                    ? `${process.env.NEXT_PUBLIC_API_URL + '/scalar'}`
+                    : "/scalar"
+                } prefetch={false}>
+                  <CommandLineIcon className="size-10" />
+                </Link>
+              </li>
+              <li className="mt-5">
                 <div className="relative">
                   <div
                     role="button"
@@ -358,9 +367,8 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18 ${
-            isMenuCollapsed ? "ml-40" : "ml-82"
-          }`}
+          className={`transition-all duration-300 w-full mt-18 ${isMenuCollapsed ? "ml-40" : "ml-82"
+            }`}
         >
           {children}
         </main>

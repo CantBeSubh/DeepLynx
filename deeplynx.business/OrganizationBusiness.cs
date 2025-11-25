@@ -13,8 +13,8 @@ public class OrganizationBusiness : IOrganizationBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly IRoleBusiness _roleBusiness;
     private readonly ILogger<OrganizationBusiness> _logger;
+    private readonly IRoleBusiness _roleBusiness;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="OrganizationBusiness" /> class.
@@ -59,6 +59,43 @@ public class OrganizationBusiness : IOrganizationBusiness
                 LastUpdatedBy = o.LastUpdatedBy,
                 IsArchived = o.IsArchived
             });
+    }
+
+    /// <summary>
+    ///     Retrieves organizations for current user
+    /// </summary>
+    /// <param name="hideArchived">Flag indicating whether to hide archived organizations from the result</param>
+    /// <param name="userId">ID of the User executing this method.</param>
+    /// <returns>A list of organizations</returns>
+    public async Task<IEnumerable<OrganizationResponseDto>> GetAllOrganizationsForUser(long userId,
+        bool hideArchived = true)
+    {
+        // First, get all organization IDs for the user
+        var organizationIds = await _context.OrganizationUsers
+            .Where(ou => ou.UserId == userId)
+            .Select(ou => ou.OrganizationId)
+            .ToListAsync();
+
+        // Then query organizations using those IDs
+        var query = _context.Organizations
+            .Where(o => organizationIds.Contains(o.Id));
+
+        if (hideArchived)
+        {
+            query = query.Where(o => !o.IsArchived);
+        }
+
+        return await query
+            .Select(o => new OrganizationResponseDto
+            {
+                Id = o.Id,
+                Name = o.Name,
+                Description = o.Description,
+                LastUpdatedAt = o.LastUpdatedAt,
+                LastUpdatedBy = o.LastUpdatedBy,
+                IsArchived = o.IsArchived
+            })
+            .ToListAsync();
     }
 
     /// <summary>
@@ -114,7 +151,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         _context.Organizations.Add(organization);
 
         await _context.SaveChangesAsync();
-        
+
         if (isDefault) await MakePreviousDefaultsFalse(organization.Id);
 
         await SetOrganizationDefaults(currentUserId, organization.Id);
@@ -378,6 +415,7 @@ public class OrganizationBusiness : IOrganizationBusiness
                 defaultOrg.DefaultOrg = false;
                 _context.Organizations.Update(defaultOrg);
             }
+
         await _context.SaveChangesAsync();
     }
 
@@ -391,7 +429,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, null, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
         var userRoleId = roles.Single(r => r.Name == "User").Id;
-        
+
         // set role permissions for admin and user
         await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions,
             organizationId, null);
