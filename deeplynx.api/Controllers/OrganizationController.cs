@@ -25,7 +25,7 @@ public class OrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     List all organizations
+    ///  List all organizations
     /// </summary>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
@@ -46,6 +46,31 @@ public class OrganizationController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+
+    /// <summary>
+    ///  List organizations for user
+    /// </summary>
+    /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
+    /// <returns></returns>
+    [HttpGet("user", Name = "api_get_organizations_for_user")]
+    public async Task<ActionResult<IEnumerable<OrganizationResponseDto>>> GetAllOrganizationsForUser(
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            var organizations = await _organizationBusiness
+                .GetAllOrganizationsForUser(currentUserId, hideArchived);
+            return Ok(organizations);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing organizations: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
 
     /// <summary>
     ///     Fetch Organization by ID
