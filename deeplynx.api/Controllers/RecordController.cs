@@ -339,7 +339,6 @@ public class RecordController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
     /// <param name="recordId">The ID of the record by which to filter edges</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
     /// <param name="isOrigin">Indicates whether to find where recordId is origin or not</param>
     /// <param name="page">Indicates the page number for pagination</param>
     /// <param name="pageSize">Indicates the page size for pagination</param>
@@ -351,12 +350,12 @@ public class RecordController : ControllerBase
         long recordId,
         [FromQuery] bool isOrigin,
         [FromQuery] int page,
-        [FromQuery] bool hideArchived = true,
         [FromQuery] int pageSize = 20)
     {
         try
         {
-            var edges = await _graphBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize);
+            var edges = await _graphBusiness.GetEdgesByRecord(
+                organizationId, projectId, recordId, isOrigin, page, pageSize);
             return Ok(edges);
         }
         catch (Exception exc)
@@ -384,7 +383,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var edges = await _graphBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth);
+            var edges = await _graphBusiness.GetGraphDataForRecord(
+                organizationId, projectId, recordId, UserContextStorage.UserId, depth);
             return Ok(edges);
         }
         catch (Exception exc)
