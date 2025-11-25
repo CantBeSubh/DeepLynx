@@ -547,78 +547,6 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    ///     Updates a record with new information
-    /// </summary>
-    /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="projectId">The ID of the project to which the record belongs</param>
-    /// <param name="recordId">The ID of the record to be updated</param>
-    /// <param name="dto">The data transfer object containing details on the record to be updated</param>
-    /// <returns>The newly updated metadata record</returns>
-    /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long currentUserId, long projectId,
-        long recordId,
-        UpdateRecordRequestDto dto)
-    {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        var record = await _context.Records.FindAsync(recordId);
-        if (record == null || record.ProjectId != projectId || record.IsArchived)
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-
-        var maxDepth = CalculateJsonMaxDepth(dto.Properties);
-        if (maxDepth > 3)
-            throw new Exception(
-                $"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
-
-        if (dto.ObjectStorageId != null) await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
-
-        record.Uri = dto.Uri ?? record.Uri;
-        record.Properties = dto.Properties != null ? dto.Properties.ToString() : record.Properties;
-        record.OriginalId = dto.OriginalId ?? record.OriginalId;
-        record.ObjectStorageId = dto.ObjectStorageId ?? record.ObjectStorageId;
-        record.Name = dto.Name ?? record.Name;
-        record.Description = dto.Description ?? record.Description;
-        record.ClassId = dto.ClassId ?? record.ClassId;
-        record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        record.LastUpdatedBy = currentUserId;
-        record.FileType = dto.FileType ?? record.FileType;
-
-        _context.Records.Update(record);
-        await _context.SaveChangesAsync();
-
-        // Log Record Update Event
-        await _eventBusiness.CreateEvent(currentUserId, 
-            record.OrganizationId,
-            projectId,
-            new CreateEventRequestDto
-        {
-            EntityType = "record",
-            EntityId = record.Id,
-            EntityName = record.Name,
-            Operation = "update",
-            Properties = "{}",
-            DataSourceId = record.DataSourceId,
-        });
-        
-        return new RecordResponseDto
-        {
-            Id = record.Id,
-            Description = record.Description,
-            Uri = record.Uri,
-            Properties = record.Properties,
-            ObjectStorageId = record.ObjectStorageId,
-            OriginalId = record.OriginalId,
-            Name = record.Name,
-            ClassId = record.ClassId,
-            DataSourceId = record.DataSourceId,
-            ProjectId = record.ProjectId,
-            LastUpdatedBy = record.LastUpdatedBy,
-            LastUpdatedAt = record.LastUpdatedAt,
-            IsArchived = record.IsArchived,
-            FileType = record.FileType
-        };
-    }
-
-    /// <summary>
     ///     Archive a metadata record.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
@@ -668,16 +596,14 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record soft delete event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "archive",
             EntityType = "record",
             EntityId = recordId,
             EntityName = returnedRecord.Name,
             DataSourceId = returnedRecord.DataSourceId,
             Properties = JsonSerializer.Serialize(new { returnedRecord.Name }),
-            OrganizationId = organizationId
         });
 
         return true;
@@ -744,7 +670,6 @@ public class RecordBusiness : IRecordBusiness
             EntityName = returnedRecord.Name,
             DataSourceId = returnedRecord.DataSourceId,
             Properties = JsonSerializer.Serialize(new { returnedRecord.Name }),
-            OrganizationId = organizationId
         });
 
         return true;
@@ -777,16 +702,14 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
 
         // Log record delete event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
             Operation = "delete",
             EntityType = "record",
             EntityId = recordId,
             EntityName = recordName,
             DataSourceId = recordDataSourceId,
             Properties = JsonSerializer.Serialize(new { recordName }),
-            OrganizationId = organizationId
         });
 
         return true;
@@ -839,16 +762,14 @@ public class RecordBusiness : IRecordBusiness
         await _context.SaveChangesAsync();
 
         // Log Record Update Event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = returnedRecord.ProjectId,
             EntityType = "record",
             EntityId = returnedRecord.Id,
             EntityName = returnedRecord.Name,
             Operation = "update",
             Properties = "{}",
             DataSourceId = returnedRecord.DataSourceId,
-            OrganizationId = returnedRecord.OrganizationId
         });
 
         return new RecordResponseDto

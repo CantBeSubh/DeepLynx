@@ -779,7 +779,7 @@ public class ProjectBusinessTests : IntegrationTestBase
 
         var actualEvent = eventList[0];
 
-        Assert.Equal(pid, actualEvent.ProjectId);
+        Assert.Equal(oid, actualEvent.OrganizationId);
         Assert.Equal("project", actualEvent.EntityType);
         Assert.Equal(pid, actualEvent.EntityId);
         Assert.Equal("update", actualEvent.Operation);

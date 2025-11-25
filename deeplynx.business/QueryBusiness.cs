@@ -360,8 +360,12 @@ public class QueryBusiness : IQueryBusiness
         var query = _context.HistoricalRecords
             .Where(r => r.OrganizationId == organizationId && !r.IsArchived);
 
-        if (projectIds != null && projectIds.Length > 0)
+        if (projectIds.Length > 0)
             query = query.Where(r => projectIds.Contains(r.ProjectId));
+        else
+        {
+            return new List<HistoricalRecordResponseDto>();
+        }
 
         var records = await query
             .GroupBy(r => r.RecordId)

@@ -376,10 +376,8 @@ public class EdgeBusiness : IEdgeBusiness
         await _context.SaveChangesAsync();
 
         // log edge delete event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
-            ProjectId = projectId,
-            OrganizationId = organizationId,
             Operation = "delete",
             EntityType = "edge",
             EntityId = edgeId,
@@ -426,7 +424,7 @@ public class EdgeBusiness : IEdgeBusiness
             projectId, 
             new CreateEventRequestDto
             {
-                Operation = "delete",
+                Operation = "archive",
                 EntityType = "edge",
                 EntityId = edgeId,
                 DataSourceId = edge.DataSourceId,
