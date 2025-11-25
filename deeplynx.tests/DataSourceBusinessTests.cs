@@ -581,7 +581,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateDataSource_NullConfig_UpdatesWithNullConfig()
+    public async Task UpdateDataSource_NullConfig_UpdatesWithEmptyConfig()
     {
         // Arrange
         var dto = new UpdateDataSourceRequestDto
@@ -595,7 +595,9 @@ public class DataSourceBusinessTests : IntegrationTestBase
         var result = await _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did, dto);
 
         // Assert
-        Assert.Null(result.Config);
+        Assert.NotNull(result.Config);
+        Assert.Empty(result.Config);
+        Assert.Equal(0, result.Config.Count);
 
         // Ensure that datasource update event was logged
         var eventList = await Context.Events.ToListAsync();
