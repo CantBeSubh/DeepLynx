@@ -3,6 +3,7 @@ using deeplynx.helpers.Context;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -41,6 +42,7 @@ public class FileController : ControllerBase
     /// <param name="file">The file to upload</param>
     /// <returns>Record response DTO containing file information</returns>
     [HttpPost(Name = "api_upload_file")]
+    [Auth("write", "file")]
     public async Task<ActionResult<RecordResponseDto>> UploadFile(
         long organizationId,
         long projectId,
@@ -73,6 +75,7 @@ public class FileController : ControllerBase
     /// <param name="file">The file to replace the old one</param>
     /// <returns>Record response DTO containing updated file information</returns>
     [HttpPut("{recordId}", Name = "api_update_file")]
+    [Auth("write", "file")]
     public async Task<ActionResult<RecordResponseDto>> UpdateFile(
         long organizationId,
         long projectId,
@@ -102,6 +105,7 @@ public class FileController : ControllerBase
     /// <param name="recordId">The ID of the record that contains file information</param>
     /// <returns>The file stream for download</returns>
     [HttpGet("{recordId}", Name = "api_download_file")]
+    [Auth("read", "file")]
     public async Task<IActionResult> DownloadFile(
         long organizationId,
         long projectId,
@@ -128,6 +132,7 @@ public class FileController : ControllerBase
     /// <param name="recordId">The ID of the record that contains file information</param>
     /// <returns>A message stating the file was successfully deleted.</returns>
     [HttpDelete("{recordId}", Name = "api_delete_file")]
+    [Auth("write", "file")]
     public async Task<IActionResult> DeleteFile(
         long organizationId,
         long projectId,

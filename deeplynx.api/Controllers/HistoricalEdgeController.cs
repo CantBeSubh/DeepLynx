@@ -2,6 +2,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -41,6 +42,7 @@ public class HistoricalEdgeController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
     /// <returns>A list of historical edges based on the applied filters.</returns>
     [HttpGet(Name = "api_get_all_historical_edges")]
+    [Auth("read", "edge")]
     public async Task<ActionResult<IEnumerable<HistoricalEdgeResponseDto>>> GetAllHistoricalEdges(
         long organizationId,
         long projectId,
@@ -72,6 +74,7 @@ public class HistoricalEdgeController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
     /// <returns>The historical edge at the specified point in time</returns>
     [HttpGet("{edgeId:long}", Name = "api_get_historical_edge_by_id")]
+    [Auth("read", "edge")]
     public async Task<ActionResult<HistoricalEdgeResponseDto>> GetHistoricalEdgeById(
         long organizationId,
         long projectId,
@@ -104,6 +107,7 @@ public class HistoricalEdgeController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
     /// <returns>The historical edge at the specified point in time</returns>
     [HttpGet("by-relationship", Name = "api_get_historical_edge_by_relationship")]
+    [Auth("read", "edge")]
     public async Task<ActionResult<HistoricalEdgeResponseDto>> GetHistoricalEdgeByRelationship(
         long organizationId,
         long projectId,
@@ -136,6 +140,7 @@ public class HistoricalEdgeController : ControllerBase
     /// <param name="edgeId">The ID of the edge for which to retrieve history</param>
     /// <returns>A list of all previous versions of the edge</returns>
     [HttpGet("{edgeId:long}/history", Name = "api_get_edge_history_by_id")]
+    [Auth("read", "edge")]
     public async Task<ActionResult<IEnumerable<HistoricalEdgeResponseDto>>> GetEdgeHistoryById(
         long organizationId,
         long projectId,
@@ -163,6 +168,7 @@ public class HistoricalEdgeController : ControllerBase
     /// <param name="destinationId">The destination ID of the edge for which to retrieve history</param>
     /// <returns>A list of all previous versions of the edge</returns>
     [HttpGet("by-relationship/history", Name = "api_get_edge_history_by_relationship")]
+    [Auth("read", "edge")]
     public async Task<ActionResult<IEnumerable<HistoricalEdgeResponseDto>>> GetEdgeHistoryByRelationship(
         long organizationId,
         long projectId,

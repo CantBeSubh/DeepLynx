@@ -2,6 +2,7 @@ using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -30,6 +31,7 @@ public class OrganizationController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
     [HttpGet(Name = "api_get_all_organizations")]
+    [Auth("read", "organization")]
     public async Task<ActionResult<IEnumerable<OrganizationResponseDto>>> GetAllOrganizations(
         [FromQuery] bool hideArchived = true)
     {
@@ -79,6 +81,7 @@ public class OrganizationController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
     [HttpGet("{organizationId}", Name = "api_get_organization")]
+    [Auth("read", "organization")]
     public async Task<ActionResult<OrganizationResponseDto>> GetOrganization(
         long organizationId, [FromQuery] bool hideArchived = true)
     {
@@ -101,6 +104,7 @@ public class OrganizationController : ControllerBase
     /// <param name="dto">Data structure of organization to create</param>
     /// <returns></returns>
     [HttpPost(Name = "api_create_organization")]
+    [Auth("write", "organization")]
     public async Task<ActionResult<OrganizationResponseDto>> CreateOrganization(
         [FromBody] CreateOrganizationRequestDto dto)
     {
@@ -125,6 +129,7 @@ public class OrganizationController : ControllerBase
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
     [HttpPut("{organizationId}", Name = "api_update_organization")]
+    [Auth("write", "organization")]
     public async Task<ActionResult<OrganizationResponseDto>> UpdateOrganization(
         long organizationId,
         [FromBody] UpdateOrganizationRequestDto dto)
@@ -149,6 +154,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of the organization to hard delete</param>
     /// <returns></returns>
     [HttpDelete("{organizationId}", Name = "api_delete_organization")]
+    [Auth("write", "organization")]
     public async Task<ActionResult> DeleteOrganization(long organizationId)
     {
         try
@@ -171,6 +177,7 @@ public class OrganizationController : ControllerBase
     /// <param name="archive">True to archive the organization, false to unarchive it.</param>
     /// <returns>A message stating the organization was successfully archived or unarchived.</returns>
     [HttpPatch("{organizationId}", Name = "api_archive_organization")]
+    [Auth("write", "organization")]
     public async Task<IActionResult> ArchiveOrganization(
         long organizationId,
         [FromQuery] bool archive)
@@ -204,6 +211,7 @@ public class OrganizationController : ControllerBase
     /// <param name="isAdmin"></param>
     /// <returns></returns>
     [HttpPost("{organizationId}/user", Name = "api_add_user_to_organization")]
+    [Auth("write", "organization")]
     public async Task<ActionResult> AddUserToOrganization(
         long organizationId,
         [FromQuery] long userId,
@@ -230,6 +238,7 @@ public class OrganizationController : ControllerBase
     /// <param name="isAdmin">isAdmin status</param>
     /// <returns></returns>
     [HttpPut("{organizationId}/admin", Name = "api_update_organization_admin_status")]
+    [Auth("write", "organization")]
     public async Task<ActionResult> SetOrganizationAdminStatus(
         long organizationId,
         [FromQuery] long userId,
@@ -256,6 +265,7 @@ public class OrganizationController : ControllerBase
     /// <param name="userId">ID of user to be removed</param>
     /// <returns></returns>
     [HttpDelete("{organizationId}/user", Name = "api_remove_user_from_organization")]
+    [Auth("write", "organization")]
     public async Task<ActionResult> RemoveUserFromOrganization(
         long organizationId,
         [FromQuery] long userId)

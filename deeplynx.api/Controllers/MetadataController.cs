@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -33,6 +34,11 @@ public class MetadataController : ControllerBase
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="metadataRequestDto">The metadata data transfer object containing metadata details.</param>
     [HttpPost(Name = "api_create_metadata")]
+    [Auth("write", "class")]
+    [Auth("write", "relationship")]
+    [Auth("write", "tag")]
+    [Auth("write", "record")]
+    [Auth("write", "edge")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(
         long organizationId,
         long projectId,
@@ -64,6 +70,11 @@ public class MetadataController : ControllerBase
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="file">The .json file that contains the metadata.</param>
     [HttpPost("file", Name = "api_create_metadata_from_file")]
+    [Auth("write", "class")]
+    [Auth("write", "relationship")]
+    [Auth("write", "tag")]
+    [Auth("write", "record")]
+    [Auth("write", "edge")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadataFromFile(
         long organizationId,
         long projectId,

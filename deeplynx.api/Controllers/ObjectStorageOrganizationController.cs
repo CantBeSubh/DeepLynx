@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -41,6 +42,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
     /// <returns>A list of object storages for the given organization.</returns>
     [HttpGet(Name = "api_get_all_object_storages_organization")]
+    [Auth("read", "object_storage")]
     public async Task<ActionResult<IEnumerable<ObjectStorageResponseDto>>> GetAllObjectStorages(
         long organizationId,
         [FromQuery] bool hideArchived = true)
@@ -68,6 +70,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
     /// <returns>The object storage associated with the given ID</returns>
     [HttpGet("{objectStorageId}", Name = "api_get_object_storage_organization")]
+    [Auth("read", "object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> GetObjectStorage(
         long organizationId,
         long objectStorageId,
@@ -95,6 +98,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="dto">The data transfer object containing object storage details</param>
     /// <returns>The created object storage</returns>
     [HttpPost(Name = "api_create_object_storage_organization")]
+    [Auth("write", "object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> CreateObjectStorage(
         long organizationId,
         [FromBody] CreateObjectStorageRequestDto dto)
@@ -122,6 +126,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="dto">The data transfer object containing updated object storage details</param>
     /// <returns>The updated object storage</returns>
     [HttpPut("{objectStorageId}", Name = "api_update_object_storage_organization")]
+    [Auth("write", "object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> UpdateObjectStorage(
         long organizationId,
         long objectStorageId,
@@ -149,6 +154,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="objectStorageId">The ID of the object storage to delete</param>
     /// <returns>A message stating the object storage was successfully deleted.</returns>
     [HttpDelete("{objectStorageId}", Name = "api_delete_object_storage_organization")]
+    [Auth("write", "object_storage")]
     public async Task<ActionResult> DeleteObjectStorage(
         long organizationId,
         long objectStorageId)
@@ -176,6 +182,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="archive">True to archive the object storage, false to unarchive it.</param>
     /// <returns>A message stating the object storage was successfully archived or unarchived.</returns>
     [HttpPatch("{objectStorageId}", Name = "api_archive_object_storage_organization")]
+    [Auth("write", "object_storage")]
     public async Task<ActionResult> ArchiveObjectStorage(
         long organizationId,
         long objectStorageId,
@@ -210,6 +217,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the object storage belongs</param>
     /// <returns>The default object storage for the organization</returns>
     [HttpGet("default", Name = "api_get_default_object_storage_organization")]
+    [Auth("read", "object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> GetDefaultObjectStorage(
         long organizationId)
     {
@@ -235,6 +243,7 @@ public class ObjectStorageOrganizationController : ControllerBase
     /// <param name="objectStorageId">The ID of the object storage to set as default</param>
     /// <returns>The updated object storage</returns>
     [HttpPatch("{objectStorageId}/default", Name = "api_set_default_object_storage_organization")]
+    [Auth("write", "object_storage")]
     public async Task<ActionResult<ObjectStorageResponseDto>> SetDefaultObjectStorage(
         long organizationId,
         long objectStorageId)
