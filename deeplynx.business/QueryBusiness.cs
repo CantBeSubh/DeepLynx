@@ -353,37 +353,42 @@ public class QueryBusiness : IQueryBusiness
     /// <param name="organizationId"> Orginization Id of projects</param>
     /// <param name="projectIds">An array of project ids</param>
     /// <returns>An array of records</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long organizationId,
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(
+        long organizationId,
         long[] projectIds)
     {
-        var records = _context.HistoricalRecords
-            .Where(p => projectIds.Contains(p.ProjectId) && p.OrganizationId == organizationId)
-            .Where(r => !r.IsArchived)
+        var query = _context.HistoricalRecords
+            .Where(r => r.OrganizationId == organizationId && !r.IsArchived);
+
+        if (projectIds != null && projectIds.Length > 0)
+            query = query.Where(r => projectIds.Contains(r.ProjectId));
+
+        var records = await query
             .GroupBy(r => r.RecordId)
             .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
-            .ToList();
+            .ToListAsync();
 
-        return records
-            .Select(r => new HistoricalRecordResponseDto
-            {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                Description = r.Description,
-                LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                LastUpdatedAt = r.LastUpdatedAt
-            });
+        return records.Select(r => new HistoricalRecordResponseDto
+        {
+            Id = r.RecordId,
+            Uri = r.Uri,
+            Properties = r.Properties,
+            OriginalId = r.OriginalId,
+            Name = r.Name,
+            ClassId = r.ClassId,
+            ClassName = r.ClassName,
+            DataSourceId = r.DataSourceId,
+            DataSourceName = r.DataSourceName,
+            ProjectId = r.ProjectId,
+            ProjectName = r.ProjectName,
+            Tags = r.Tags,
+            Description = r.Description,
+            LastUpdatedBy = r.LastUpdatedBy,
+            IsArchived = r.IsArchived,
+            LastUpdatedAt = r.LastUpdatedAt
+        });
     }
+
 
 
     /// <summary>

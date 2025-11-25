@@ -191,6 +191,7 @@ export const CreateTagRecordsList = ({
   const [selectedRecordIds, setSelectedRecordIds] = useState<Set<number>>(
     new Set()
   );
+  const { organization } = useOrganizationSession();
 
   useEffect(() => {
     const fetchRecentRecords = async () => {
@@ -202,7 +203,9 @@ export const CreateTagRecordsList = ({
       setLoading(true);
 
       try {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
+        const recentRecords = await getRecentlyAddedRecords(
+          organization?.organizationId as number
+        );
         const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
           (record: RecordResponseDto) => ({
             ...record,
@@ -314,7 +317,9 @@ export const CreateTagRecordsList = ({
       if (searchResults.length > 0) {
         await performFullTextSearch(searchTerm, projectId);
       } else {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
+        const recentRecords = await getRecentlyAddedRecords(
+          organization?.organizationId as number
+        );
         const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
           (record: RecordResponseDto) => ({
             ...record,

@@ -1,6 +1,7 @@
-import api from "./client_service/api";
-import { ObjectStorageResponseDto } from "../(home)/types/responseDTOs";
-import { CreateObjectStorageRequestDto, UpdateObjectStorageRequestDto } from "../(home)/types/requestDTOs";
+import { CreateObjectStorageRequestDto, UpdateObjectStorageRequestDto } from "@/app/(home)/types/requestDTOs";
+import { ObjectStorageResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
 
 /**
  * Get all object storages for a project

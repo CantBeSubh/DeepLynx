@@ -1,63 +1,59 @@
 // src/app/lib/file_upload_services.client.ts
 
-import api from "./client_service/api";
-import { UploadFileArgs } from "../(home)/types/types";
-import { RecordResponseDto } from "../(home)/types/responseDTOs";
+import { RecordResponseDto } from "@/app/(home)/types/responseDTOs";
+import { UploadFileArgs } from "@/app/(home)/types/types";
+import api from "./api";
+
+
 
 export async function uploadFile({
   organizationId,
   projectId,
-  dataSourceId,
-  objectStorageId,
   file,
+  dataSourceId,      // optional per docs
+  objectStorageId,   // optional per docs
   name,
   description,
-  properties,
-  tags,
+  properties,        // object or string? if object, we stringify below
+  tags,              // array? we stringify below unless your API expects tags[i].name format
   originalId,
   classId,
 }: UploadFileArgs) {
-  if (!organizationId || !projectId || !dataSourceId || !objectStorageId || !file) {
-    throw new Error("organizationId, projectId, dataSourceId, objectStorageId, and file are required");
+  if (!organizationId || !projectId || !file) {
+    throw new Error("organizationId, projectId, and file are required");
   }
 
   const form = new FormData();
-  form.append("file", file);
+  // include filename for broader adapter compatibility
+  form.append("file", file as any, (file as any).name ?? "upload.bin");
 
-  // Add metadata to FormData if provided
-  if (name) {
-    form.append("name", name);
-  }
-
-  if (description) {
-    form.append("description", description);
-  }
+  if (name) form.append("name", name);
+  if (description) form.append("description", description);
 
   if (properties) {
-    form.append("properties", JSON.stringify(properties));
+    // backend expects a string? stringify objects
+    form.append(
+      "properties",
+      typeof properties === "string" ? properties : JSON.stringify(properties)
+    );
   }
 
   if (tags && tags.length > 0) {
+    // same note: if backend expects structured fields, adjust accordingly
     form.append("tags", JSON.stringify(tags));
   }
 
-  if (originalId) {
-    form.append("originalId", originalId);
-  }
+  if (originalId) form.append("originalId", originalId);
+  if (classId != null) form.append("classId", String(classId));
 
-  if (classId) {
-    form.append("classId", String(classId));
-  }
+  const params: Record<string, number> = {};
+  if (dataSourceId != null) params.dataSourceId = Number(dataSourceId);
+  if (objectStorageId != null) params.objectStorageId = Number(objectStorageId);
 
   const { data } = await api.post<RecordResponseDto>(
     `/organizations/${organizationId}/projects/${projectId}/files`,
     form,
-    {
-      params: {
-        dataSourceId: Number(dataSourceId),
-        objectStorageId: Number(objectStorageId),
-      },
-    }
+    { params }
   );
 
   return data;

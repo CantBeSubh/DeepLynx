@@ -1,7 +1,7 @@
 // src/app/lib/user_services.client.ts
 "use client";
 
-import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
+import { RecordResponseDto, UserResponseDto } from "@/app/(home)/types/responseDTOs";
 import api from "./api";
 
 /** ---- Browser calls (with session cookies) ---- */
@@ -56,16 +56,28 @@ export async function getDataOverview(userId: string) {
   }
 }
 
-export async function getRecentlyAddedRecords(projectIds: string[]) {
-  try {
-    const params = new URLSearchParams();
-    projectIds.forEach((id) => params.append("projectId", id));
-    const res = await api.get(`/users/GetRecentlyAddedRecords?${params.toString()}`);
-    return res.data;
-  } catch (error) {
-    console.error("API call failed:", error);
-    throw error;
+export async function getRecentlyAddedRecords(
+  organizationId: number,
+  projectIds?: Array<number | string>
+): Promise<RecordResponseDto[]> {
+  if (!organizationId) {
+    throw new Error("organizationId is required");
   }
+
+  const baseUrl = `/organizations/${organizationId}/query/recent`;
+
+  // Build ?projectIds=...&projectIds=... if provided
+  const qs =
+    projectIds && projectIds.length
+      ? (() => {
+          const params = new URLSearchParams();
+          projectIds.forEach((id) => params.append("projectIds", String(id)));
+          return `?${params.toString()}`;
+        })()
+      : "";
+
+  const { data } = await api.get<RecordResponseDto[]>(`${baseUrl}${qs}`);
+  return data;
 }
 
 

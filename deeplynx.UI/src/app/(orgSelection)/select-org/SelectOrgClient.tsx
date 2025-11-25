@@ -7,9 +7,11 @@ import { CreateOrganizationRequestDto } from "@/app/(home)/types/requestDTOs";
 import { OrganizationResponseDto } from "@/app/(home)/types/responseDTOs";
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { getAllOrganizations } from "@/app/lib/organization_services.client";
-import { createOrganization } from "@/app/lib/organization_services.client";
-import { getAllProjects } from "@/app/lib/projects_services.client";
+import {
+  getAllOrganizations,
+  createOrganization,
+} from "@/app/lib/client_service/organization_services.client";
+import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
 import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import {
   ArrowRightIcon,
