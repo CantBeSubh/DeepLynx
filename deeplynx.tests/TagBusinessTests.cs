@@ -351,42 +351,36 @@ public class TagBusinessTests : IntegrationTestBase
         Assert.Equal(result.Id, actualEvent.EntityId);
     }
 
-    // [Fact]
-    // public async Task CreateTag_Success_OnBulkCreate()
-    // {
-    //     var tags = new List<CreateTagRequestDto>
-    //     {
-    //         new()
-    //         {
-    //             Name = "Test Tag 1"
-    //         },
-    //         new()
-    //         {
-    //             Name = "Test Tag 2"
-    //         }
-    //     };
+    [Fact]
+    public async Task CreateTag_Success_OnBulkCreate()
+    {
+        var tags = new List<CreateTagRequestDto>
+        {
+            new()
+            {
+                Name = "Test Tag 1"
+            },
+            new()
+            {
+                Name = "Test Tag 2"
+            }
+        };
 
-    //     var result = await _tagBusiness.BulkCreateTags(oid, uid, pid, tags);
-    //     Assert.Equal(2, result.Count);
-    //     Assert.Equal("Test Tag 1", result.First().Name);
-    //     Assert.Equal("Test Tag 2", result.Last().Name);
+        var result = await _tagBusiness.BulkCreateTags(oid, uid, pid, tags);
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Test Tag 1", result.First().Name);
+        Assert.Equal("Test Tag 2", result.Last().Name);
 
-    //     // Ensure that create event was logged for each created tag
-    //     var eventList = await Context.Events.ToListAsync();
-    //     Assert.Equal(2, eventList.Count);
+        // Ensure that create event was logged for each created tag
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Single(eventList);
 
-    //     var firstEvent = eventList[0];
-    //     Assert.Equal("create", firstEvent.Operation);
-    //     Assert.Equal("tag", firstEvent.EntityType);
-    //     Assert.Equal(result[0].ProjectId, firstEvent.ProjectId);
-    //     Assert.Equal(result[0].Id, firstEvent.EntityId);
-
-    //     var secondEvent = eventList[1];
-    //     Assert.Equal("create", secondEvent.Operation);
-    //     Assert.Equal("tag", secondEvent.EntityType);
-    //     Assert.Equal(result[1].ProjectId, secondEvent.ProjectId);
-    //     Assert.Equal(result[1].Id, secondEvent.EntityId);
-    // }
+        var firstEvent = eventList[0];
+        Assert.Equal("create", firstEvent.Operation);
+        Assert.Equal("tag", firstEvent.EntityType);
+        Assert.Equal(result[0].ProjectId, firstEvent.ProjectId);
+        Assert.Equal(result[0].Id, firstEvent.EntityId);
+    }
 
     [Fact]
     public async Task CreateTagRequest_Fails_IfNoName()

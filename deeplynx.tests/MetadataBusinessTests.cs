@@ -397,7 +397,7 @@ public class MetadataBusinessTests : IntegrationTestBase
 
         // Ensure all complex data events are created and logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(3, eventList.Count);
+        Assert.Equal(5, eventList.Count);
     }
 
     #endregion
@@ -611,7 +611,7 @@ public class MetadataBusinessTests : IntegrationTestBase
 
         // Ensure all complex data events are created and logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(3, eventList.Count);
+        Assert.Equal(5, eventList.Count);
     }
 
     #endregion

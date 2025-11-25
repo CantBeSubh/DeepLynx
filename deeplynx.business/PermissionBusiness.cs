@@ -149,19 +149,19 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log create Permission event
-        // await _eventBusiness.CreateEvent(
-        //     currentUserId, 
-        //     organizationId, 
-        //     projectId, 
-        //     new CreateEventRequestDto
-        //     {
-        //         Operation = "create",
-        //         EntityType = "permission",
-        //         EntityId = permission.Id,
-        //         EntityName = permission.Name,
-        //         Properties = JsonSerializer.Serialize(new { permission.Name })
-        //     }
-        // );
+        await _eventBusiness.CreateEvent(
+            currentUserId, 
+            organizationId, 
+            projectId, 
+            new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "permission",
+                EntityId = permission.Id,
+                EntityName = permission.Name,
+                Properties = JsonSerializer.Serialize(new { permission.Name })
+            }
+        );
 
         return new PermissionResponseDto
         {
@@ -183,6 +183,8 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     ///     Update an existing user-defined permission
     /// </summary>
+    /// <param name="organizationId">ID of the Organization to which the permission resides.</param>
+    /// <param name="projectId">ID of the Project to which the permission resides.</param>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">ID of the permission to be updated</param>
     /// <param name="dto">New information on the permission</param>
@@ -215,18 +217,18 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log update Permission event
-        // await _eventBusiness.CreateEvent(
-        //     currentUserId,
-        //     permission.OrganizationId, 
-        //     permission.ProjectId,
-        //     new CreateEventRequestDto
-        //     {
-        //         Operation = "update",
-        //         EntityType = "permission",
-        //         EntityId = permission.Id,
-        //         EntityName = permission.Name,
-        //         Properties = JsonSerializer.Serialize(new { permission.Name })
-        //     });
+        await _eventBusiness.CreateEvent(
+            currentUserId,
+            organizationId,
+            projectId,
+            new CreateEventRequestDto
+            {
+                Operation = "update",
+                EntityType = "permission",
+                EntityId = permission.Id,
+                EntityName = permission.Name,
+                Properties = JsonSerializer.Serialize(new { permission.Name })
+            });
 
         return new PermissionResponseDto
         {
@@ -248,6 +250,8 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     ///     Archive a permission
     /// </summary>
+    /// <param name="organizationId">ID of the Organization to which the permission resides.</param>
+    /// <param name="projectId">ID of the Project to which the permission resides.</param>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">The ID of the permission to be archived</param>
     /// <returns>Boolean true upon success</returns>
@@ -273,14 +277,14 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log archive Permission event
-        // await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
-        // {
-        //     Operation = "archive",
-        //     EntityType = "permission",
-        //     EntityId = permission.Id,
-        //     EntityName = permission.Name,
-        //     Properties = JsonSerializer.Serialize(new { permission.Name })
-        // });
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        {
+            Operation = "archive",
+            EntityType = "permission",
+            EntityId = permission.Id,
+            EntityName = permission.Name,
+            Properties = JsonSerializer.Serialize(new { permission.Name })
+        });
 
         return true;
     }
@@ -288,6 +292,8 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     ///     Unarchive a permission
     /// </summary>
+    /// <param name="organizationId">ID of the Organization to which the permission resides.</param>
+    /// <param name="projectId">ID of the Project to which the permission resides.</param>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">The ID of the permission to be unarchived</param>
     /// <returns>Boolean true upon success</returns>
@@ -313,14 +319,14 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log unarchive Permission event
-        // await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
-        // {
-        //     Operation = "unarchive",
-        //     EntityType = "permission",
-        //     EntityId = permission.Id,
-        //     EntityName = permission.Name,
-        //     Properties = JsonSerializer.Serialize(new { permission.Name })
-        // });
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        {
+            Operation = "unarchive",
+            EntityType = "permission",
+            EntityId = permission.Id,
+            EntityName = permission.Name,
+            Properties = JsonSerializer.Serialize(new { permission.Name })
+        });
 
         return true;
     }
@@ -328,6 +334,9 @@ public class PermissionBusiness : IPermissionBusiness
     /// <summary>
     ///     Delete a permission
     /// </summary>
+    /// <param name="organizationId">ID of the Organization to which the permission resides.</param>
+    /// <param name="projectId">ID of the Project to which the permission resides.</param>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="permissionId">The ID of the permission to be deleted</param>
     /// <returns>Boolean true upon success</returns>
     /// <exception cref="KeyNotFoundException">Returned if the permission is not found or is uneditable</exception>
@@ -349,14 +358,14 @@ public class PermissionBusiness : IPermissionBusiness
         await _context.SaveChangesAsync();
 
         // Log delete Permission event
-        // await _eventBusiness.CreateEvent(currentUserId, permission.OrganizationId, permission.ProjectId, new CreateEventRequestDto
-        // {
-        //     Operation = "delete",
-        //     EntityType = "permission",
-        //     EntityId = permission.Id,
-        //     EntityName = permission.Name,
-        //     Properties = JsonSerializer.Serialize(new { permission.Name })
-        // });
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        {
+            Operation = "delete",
+            EntityType = "permission",
+            EntityId = permission.Id,
+            EntityName = permission.Name,
+            Properties = JsonSerializer.Serialize(new { permission.Name })
+        });
 
         return true;
     }
