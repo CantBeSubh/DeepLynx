@@ -3,19 +3,16 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import {
-  createRecord,
-} from "@/app/lib/record_services.client";
-import { CreateRecordPayload } from "../types/types";
-import {
-  getAllDataSources,
-} from "@/app/lib/data_source_services.client";
+
 import { DataSourceResponseDto } from "../types/responseDTOs";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
 import { ProjectResponseDto } from "../types/responseDTOs";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { CreateRecordRequestDto } from "../types/requestDTOs";
+import { getAllDataSources } from "@/app/lib/client_service/data_source_services.client";
+import { createRecord } from "@/app/lib/client_service/record_services.client";
+import { CreateRecordPayload } from "../types/types";
 type JsonValue = Record<string, unknown>;
 
 type Props = {
@@ -55,7 +52,6 @@ const AddRecordModal: React.FC<Props> = ({
   const [propertiesText, setPropertiesText] = useState("");
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
   const { organization, hasLoaded } = useOrganizationSession();
-
 
   // Optional fields
   const [objectStorageId, setObjectStorageId] = useState<string>("");
@@ -188,7 +184,7 @@ const AddRecordModal: React.FC<Props> = ({
       original_id: abbreviation,
       properties: JSON.stringify(props),
       class_id: classId,
-    }
+    };
 
     if (objectStorageIdNum !== undefined)
       payload.object_storage_id = objectStorageIdNum;
@@ -199,7 +195,12 @@ const AddRecordModal: React.FC<Props> = ({
       payload.sensitivity_labels = sensitivity_labels;
 
     try {
-      await createRecord(organization!.organizationId as number, selectedProjectId, selectedDataSourceId, dto);
+      await createRecord(
+        organization!.organizationId as number,
+        selectedProjectId,
+        selectedDataSourceId,
+        dto
+      );
       toast.success(t.translations.RECORD_CREATED_SECCESSFULLY);
       resetForm();
       onClose();
@@ -225,7 +226,10 @@ const AddRecordModal: React.FC<Props> = ({
         setDsLoading(true);
         setDsError(null);
         setSelectedDataSourceId(undefined);
-        const list = await getAllDataSources(organization?.organizationId as number, selectedProjectId);
+        const list = await getAllDataSources(
+          organization?.organizationId as number,
+          selectedProjectId
+        );
         if (!cancelled) setDataSources(list ?? []);
       } catch (err: unknown) {
         const fallback = t.translations.FAILED_TO_LOAD_DATA_SOURCE;

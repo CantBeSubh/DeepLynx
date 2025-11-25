@@ -2,31 +2,34 @@
 
 "use client";
 
-import React, { useState } from "react";
-import { GroupResponseDto, UserResponseDto } from "../../types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import {
-  createGroup,
-  updateGroup,
-  deleteGroup,
   addUserToGroup,
-  removeUserFromGroup,
+  archiveGroup,
+  createGroup,
+  deleteGroup,
   getGroupMembers,
-} from "@/app/lib/group_services.client";
+  removeUserFromGroup,
+  updateGroup,
+} from "@/app/lib/client_service/group_services.client";
 import {
-  TrashIcon,
-  PencilIcon,
-  UserGroupIcon,
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
+  CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  CheckIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  UserGroupIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import AvatarCell from "../../components/Avatar";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { CreateGroupRequestDto, UpdateGroupRequestDto } from "../../types/requestDTOs";
+import AvatarCell from "../../components/Avatar";
+import {
+  CreateGroupRequestDto,
+  UpdateGroupRequestDto,
+} from "../../types/requestDTOs";
+import { GroupResponseDto, UserResponseDto } from "../../types/responseDTOs";
 
 interface InlineGroupsTableProps {
   initialGroups: GroupResponseDto[];
@@ -76,27 +79,37 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   );
   const { organization, hasLoaded } = useOrganizationSession();
 
-
-  // Fetch members for a group
+  // Fetch members (allow refetch; remove cache guard)
   const fetchGroupMembers = async (groupId: string | number) => {
-    // Check if we already have the members cached
-    if (groupMembers.has(groupId)) {
-      return;
-    }
-
-    const newLoadingMembers = new Set(loadingMembers).add(groupId);
-    setLoadingMembers(newLoadingMembers);
-
+    setLoadingMembers((prev) => new Set(prev).add(groupId));
     try {
-      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
-      setGroupMembers(new Map(groupMembers).set(groupId, members));
+      const members = await getGroupMembers(
+        organization?.organizationId as number,
+        groupId as number
+      );
+
+      // cache members (functional)
+      setGroupMembers((prev) => {
+        const copy = new Map(prev);
+        copy.set(groupId, members);
+        return copy;
+      });
+
+      // sync memberCount (functional)
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, memberCount: members.length } : g
+        )
+      );
     } catch (err) {
       console.error("Failed to fetch group members:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch members");
     } finally {
-      const updatedLoadingMembers = new Set(loadingMembers);
-      updatedLoadingMembers.delete(groupId);
-      setLoadingMembers(updatedLoadingMembers);
+      setLoadingMembers((prev) => {
+        const copy = new Set(prev);
+        copy.delete(groupId);
+        return copy;
+      });
     }
   };
 
@@ -138,8 +151,8 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
     const dto: CreateGroupRequestDto = {
       name: newGroupName,
-      description: newGroupDescription
-    }
+      description: newGroupDescription,
+    };
     try {
       const newGroup = await createGroup(organizationId as number, dto);
       setGroups([...groups, newGroup]);
@@ -166,10 +179,14 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
     const dto: UpdateGroupRequestDto = {
       name: editName,
-      description: editDescription
-    }
+      description: editDescription,
+    };
     try {
-      const updatedGroup = await updateGroup(organization?.organizationId as number, groupId as number, dto);
+      const updatedGroup = await updateGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        dto
+      );
       setGroups(groups.map((g) => (g.id === groupId ? updatedGroup : g)));
       setEditingGroup(null);
       setEditName("");
@@ -181,69 +198,96 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
-  // Delete single group
-  const handleDeleteGroup = async (groupId: string | number) => {
-    if (!confirm("Are you sure you want to delete this group?")) return;
+  // Archive single group (instead of delete)
+  const handleArchiveGroup = async (groupId: string | number) => {
+    if (!confirm("Archive this group? You can unarchive it later.")) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      await deleteGroup(organization?.organizationId as number, groupId as number);
-      setGroups(groups.filter((g) => g.id !== groupId));
-      if (expandedGroup === groupId) {
-        setExpandedGroup(null);
-      }
-      // Clear cached members
-      const newGroupMembers = new Map(groupMembers);
-      newGroupMembers.delete(groupId);
-      setGroupMembers(newGroupMembers);
+      await archiveGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        true
+      );
+
+      setGroups((prev) =>
+        prev.map((g) => (g.id === groupId ? { ...g, isArchived: true } : g))
+      );
+
+      setSelectedGroups((prev) => {
+        const copy = new Set(prev);
+        copy.delete(groupId);
+        return copy;
+      });
+      if (expandedGroup === groupId) setExpandedGroup(null);
+
+      toast.success("Group archived");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete group");
+      setError(err instanceof Error ? err.message : "Failed to archive group");
+      toast.error("Failed to archive group");
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete multiple groups
-  const handleDeleteSelected = async () => {
+  // Archive multiple groups
+  const handleArchiveSelected = async () => {
     if (selectedGroups.size === 0) return;
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedGroups.size} group(s)?`
-      )
-    )
-      return;
+    if (!confirm(`Archive ${selectedGroups.size} group(s)?`)) return;
 
     setLoading(true);
     setError(null);
+
+    // optimistic: mark selected as archived
+    const selected = new Set(selectedGroups);
+    setGroups((prev) =>
+      prev.map((g) => (selected.has(g.id) ? { ...g, isArchived: true } : g))
+    );
 
     try {
       await Promise.all(
-        Array.from(selectedGroups).map((id) => deleteGroup(organization?.organizationId as number, id as number))
+        Array.from(selected).map((id) =>
+          archiveGroup(
+            organization?.organizationId as number,
+            id as number,
+            true
+          )
+        )
       );
-      setGroups(groups.filter((g) => !selectedGroups.has(g.id)));
       setSelectedGroups(new Set());
+      toast.success("Groups archived");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete groups");
+      // revert all selected on failure
+      setGroups((prev) =>
+        prev.map((g) => (selected.has(g.id) ? { ...g, isArchived: false } : g))
+      );
+      setError(err instanceof Error ? err.message : "Failed to archive groups");
+      toast.error("Failed to archive groups");
     } finally {
       setLoading(false);
     }
   };
 
-  // Add member to group
   const handleAddMember = async (
     groupId: string | number,
     userId: string | number
   ) => {
     setLoading(true);
     setError(null);
-
     try {
-      await addUserToGroup(organization?.organizationId as number, groupId as number, userId as number);
-      // Refetch members after adding
-      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
-      setGroupMembers(new Map(groupMembers).set(groupId, members));
+      await addUserToGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        userId as number
+      );
+
+      // refetch + cache + sync count
+      await fetchGroupMembers(groupId);
+
+      // optional: immediate optimistic bump (kept if you want snappier UX)
+      // setGroups(prev => prev.map(g => g.id === groupId ? { ...g, memberCount: (g.memberCount ?? 0) + 1 } : g));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add member");
     } finally {
@@ -251,19 +295,21 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
-  // Remove member from group
   const handleRemoveMember = async (
     groupId: string | number,
     userId: string | number
   ) => {
     setLoading(true);
     setError(null);
-
     try {
-      await removeUserFromGroup(organization?.organizationId as number, groupId as number, userId as number);
-      // Refetch members after removing
-      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
-      setGroupMembers(new Map(groupMembers).set(groupId, members));
+      await removeUserFromGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        userId as number
+      );
+
+      // refetch + cache + sync count
+      await fetchGroupMembers(groupId);
       toast.success("Removed member");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove member");
@@ -422,7 +468,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                 <th className="w-32">
                   {selectedGroups.size > 0 && (
                     <button
-                      onClick={handleDeleteSelected}
+                      onClick={handleArchiveSelected}
                       className="btn btn-ghost btn-sm text-error"
                       disabled={loading}
                     >
@@ -457,8 +503,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                     <React.Fragment key={group.id}>
                       {/* Main Row */}
                       <tr
-                        className={`hover cursor-pointer ${expandedGroup === group.id ? "bg-base-200" : ""
-                          }`}
+                        className={`hover cursor-pointer ${
+                          expandedGroup === group.id ? "bg-base-200" : ""
+                        }`}
                         onClick={() => toggleExpand(group.id)}
                       >
                         <td onClick={(e) => e.stopPropagation()}>
@@ -477,7 +524,8 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                           <div className="flex items-center gap-2">
                             <UserGroupIcon className="size-6" />
                             <span className="badge badge-ghost">
-                              {group.memberCount}
+                              {groupMembers.get(group.id)?.length ??
+                                group.memberCount}
                             </span>
                           </div>
                         </td>
@@ -495,7 +543,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                             </button>
                             <button
                               className="btn btn-ghost btn-sm"
-                              onClick={() => handleDeleteGroup(group.id)}
+                              onClick={() => handleArchiveGroup(group.id)}
                               disabled={loading}
                             >
                               <TrashIcon className="size-6 text-error" />

@@ -2,20 +2,21 @@
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
-import { useSession } from "next-auth/react";
-import AvatarCell from "../components/Avatar";
-import ThemeToggle from "../components/ThemeToggle";
-import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import toast from "react-hot-toast";
 import {
   createApiKey,
   deleteApiKey,
   getAllKeysByUser,
-} from "@/app/lib/settings_services.client";
-import { useCallback, useEffect, useState } from "react";
+} from "@/app/lib/client_service/settings_services.client";
+import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import AvatarCell from "../components/Avatar";
 import UserSettingsSkeleton from "../components/skeletons/usersettingsskeleton";
+import ThemeToggle from "../components/ThemeToggle";
 import ToastInfoModal from "../components/ToastInfoModal";
+
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage();
   const { data: session } = useSession();

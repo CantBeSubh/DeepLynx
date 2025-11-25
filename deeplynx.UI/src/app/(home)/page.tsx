@@ -1,6 +1,6 @@
 // app/(home)/page.tsx
 import HomeDashboardClient from "./HomeDashboardClient";
-import { getAllProjectsServer } from "../lib/projects_services.server";
+import { getAllProjectsServer } from "../lib/server_service/projects_services.server";
 import { ProjectResponseDto } from "./types/responseDTOs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -44,7 +44,10 @@ export default async function Page() {
   // Fetch projects filtered by organization
   let projects: ProjectResponseDto[] = [];
   try {
-    const apiProjects = await getAllProjectsServer(organizationId as number, true);
+    const apiProjects = await getAllProjectsServer(
+      organizationId as number,
+      true
+    );
     projects = apiProjects.map(mapToProjectResponseDtos);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);

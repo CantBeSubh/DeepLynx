@@ -14,7 +14,7 @@ import Image from "next/image";
 import {
   getCurrentUser,
   getLocalDevUser,
-} from "@/app/lib/user_services.client";
+} from "@/app/lib/client_service/user_services.client";
 import { UserResponseDto } from "../types/responseDTOs";
 import { useSafeSession } from "@/app/hooks/useSafeSession";
 

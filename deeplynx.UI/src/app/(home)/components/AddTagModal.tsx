@@ -4,9 +4,9 @@
 import React, { useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import type { Tag } from "@/app/(home)/types/types";
-import { createTag } from "@/app/lib/tag_services.client";
 import { TagResponseDto } from "@/app/(home)/types/responseDTOs";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { createTag } from "@/app/lib/client_service/tag_services.client";
 
 type Props = {
   isOpen: boolean;
@@ -24,7 +24,6 @@ const AddTagModal: React.FC<Props> = ({
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { organization, hasLoaded } = useOrganizationSession();
-
 
   // Required fields
   const [name, setName] = useState("");
@@ -49,7 +48,11 @@ const AddTagModal: React.FC<Props> = ({
     };
 
     try {
-      const newTag = await createTag(organization?.organizationId as number, projectId, payload); // Capture the returned tag
+      const newTag = await createTag(
+        organization?.organizationId as number,
+        projectId,
+        payload
+      ); // Capture the returned tag
 
       // Call the callback with the newly created tag
       if (onTagCreated && newTag) {

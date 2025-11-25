@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { sendEmail } from "@/app/lib/notification_services.client";
+import { sendEmail } from "@/app/lib/client_service/notification_services.client";
 
 interface AddSysUserProps {
   isOpen: boolean;
@@ -44,7 +44,11 @@ const AddSysUser = ({ isOpen, onClose }: AddSysUserProps) => {
               <button type="button" className="btn" onClick={onClose}>
                 {t.translations.CANCEL}
               </button>
-              <button type="submit" className="btn btn-primary" onClick={handleInvite}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                onClick={handleInvite}
+              >
                 {t.translations.INVITE}
               </button>
             </div>
