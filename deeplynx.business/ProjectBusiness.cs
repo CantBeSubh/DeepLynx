@@ -66,23 +66,20 @@ public class ProjectBusiness : IProjectBusiness
     ///     Retrieves all projects
     /// </summary>
     /// <param name="userId">ID of user querying projects</param>
-    /// <param name="organizationId">(Optional)Organization ID within which to constrain returned projects</param>
+    /// <param name="organizationId">(Required)Organization ID within which to constrain returned projects</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>A list of projects</returns>
-    /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
     public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(
         long userId,
-        long? organizationId,
+        long organizationId,
         bool hideArchived = true)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) throw new ArgumentException($"User with id {userId} not found.");
 
-        var projectQuery = _context.Projects.AsQueryable();
-
-        if (hideArchived) projectQuery = projectQuery.Where(p => !p.IsArchived);
-
-        if (organizationId.HasValue) projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
+        var projectQuery = _context.Projects
+            .Where(p => p.OrganizationId == organizationId
+                        && (!hideArchived || !p.IsArchived));
 
         if (!user.IsSysAdmin)
             projectQuery = projectQuery.Where(p =>
@@ -92,9 +89,7 @@ public class ProjectBusiness : IProjectBusiness
                 )
             );
 
-        var projects = await projectQuery.ToListAsync();
-        return projects
-            .Select(p => new ProjectResponseDto
+        return await projectQuery.Select(p => new ProjectResponseDto
             {
                 Id = p.Id,
                 Name = p.Name,
@@ -104,38 +99,8 @@ public class ProjectBusiness : IProjectBusiness
                 LastUpdatedBy = p.LastUpdatedBy,
                 IsArchived = p.IsArchived,
                 OrganizationId = p.OrganizationId
-            });
-    }
-
-    /// <summary>
-    ///     Retrieves a specific project by ID
-    /// </summary>
-    /// <param name="projectId">The ID by which to retrieve the project</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
-    /// <returns>The given project to return</returns>
-    /// <exception cref="KeyNotFoundException">Returned if project not found or is archived</exception>
-    public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived = true)
-    {
-        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-
-        // If no projects are cached update the Cache
-        if (cachedProjectList == null || !cachedProjectList.Any())
-        {
-            await RefreshProjectsCache();
-            cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-
-            if (cachedProjectList == null) cachedProjectList = new List<ProjectResponseDto>();
-        }
-
-        var cachedProject = cachedProjectList.FirstOrDefault(p => p.Id == projectId);
-
-        if (hideArchived && cachedProject != null)
-            if (cachedProject.IsArchived)
-                cachedProject = null;
-
-        if (cachedProject == null) throw new KeyNotFoundException($"Project with id {projectId} not found");
-
-        return cachedProject;
+            })
+            .ToListAsync();
     }
 
     /// <summary>
@@ -148,8 +113,6 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<ProjectResponseDto> CreateProject(
         long userId, long organizationId, CreateProjectRequestDto dto)
     {
-        await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
-        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId);
         ValidationHelper.ValidateModel(dto);
 
         var project = new Project
@@ -209,18 +172,61 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
+    ///     Retrieves a specific project by ID
+    /// </summary>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID by which to retrieve the project</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
+    /// <returns>The given project to return</returns>
+    /// <exception cref="KeyNotFoundException">Returned if project not found or is archived</exception>
+    public async Task<ProjectResponseDto> GetProject(long organizationId, long projectId, bool hideArchived = true)
+    {
+        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+
+        // If no projects are cached update the Cache
+        if (cachedProjectList == null || !cachedProjectList.Any())
+        {
+            await RefreshProjectsCache();
+            cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+
+            if (cachedProjectList == null) cachedProjectList = new List<ProjectResponseDto>();
+        }
+
+        var cachedProject =
+            cachedProjectList.FirstOrDefault(p => p.Id == projectId && p.OrganizationId == organizationId);
+
+        if (hideArchived && cachedProject != null)
+            if (cachedProject.IsArchived)
+                cachedProject = null;
+
+        if (cachedProject == null) throw new KeyNotFoundException($"Project with id {projectId} not found");
+
+        return cachedProject;
+    }
+
+    /// <summary>
     ///     Updates an existing project by ID
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to update</param>
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project was not found.</exception>
-    public async Task<ProjectResponseDto> UpdateProject(long currentUserId, long projectId, UpdateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> UpdateProject(long currentUserId, long organizationId, long projectId,
+        UpdateProjectRequestDto dto)
     {
-        var project = await _context.Projects.FindAsync(projectId);
+        ValidationHelper.ValidateModel(dto);
 
-        if (project == null || project.IsArchived) throw new KeyNotFoundException("Project not found.");
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId
+                        && p.OrganizationId == organizationId
+                        && !p.IsArchived)
+            .FirstOrDefaultAsync();
+
+        if (project == null)
+            throw new KeyNotFoundException(
+                $"Project with id {projectId} not found or does not belong to the specified organization context");
 
         project.Name = dto.Name ?? project.Name;
         project.Description = dto.Description ?? project.Description;
@@ -235,6 +241,7 @@ public class ProjectBusiness : IProjectBusiness
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
             ProjectId = project.Id,
+            OrganizationId = organizationId,
             Operation = "update",
             EntityType = "project",
             EntityId = project.Id,
@@ -278,15 +285,22 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     ///     Delete a project by id.
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
     /// <param name="projectId">ID of the project to delete.</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
-    public async Task<bool> DeleteProject(long projectId)
+    public async Task<bool> DeleteProject(long currentUserId, long organizationId, long projectId)
     {
-        var project = await _context.Projects.FindAsync(projectId);
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId
+                        && p.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
 
         if (project == null)
             throw new KeyNotFoundException($"Project with id {projectId} not found.");
+
+        var projectName = project.Name;
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();
@@ -313,16 +327,20 @@ public class ProjectBusiness : IProjectBusiness
     ///     Archive (soft delete) a project by id. This also archives downstream dependents.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
     /// <param name="projectId">ID of the project to archive.</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
-    public async Task<bool> ArchiveProject(long currentUserId, long projectId)
+    public async Task<bool> ArchiveProject(long currentUserId, long organizationId, long projectId)
     {
-        var project = await _context.Projects.FindAsync(projectId);
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId
+                        && p.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
 
         if (project == null || project.IsArchived)
-            throw new KeyNotFoundException("Project not found.");
+            throw new KeyNotFoundException($"Project with id {projectId} not found or is already archived");
 
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
@@ -355,6 +373,7 @@ public class ProjectBusiness : IProjectBusiness
 
         await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
         {
+            OrganizationId = organizationId,
             ProjectId = projectId,
             Operation = "archive",
             EntityType = "project",
@@ -367,6 +386,7 @@ public class ProjectBusiness : IProjectBusiness
         var projectResponse = new ProjectResponseDto
         {
             Id = project.Id,
+            OrganizationId = organizationId,
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
@@ -399,13 +419,17 @@ public class ProjectBusiness : IProjectBusiness
     ///     Unarchive a project by id. This also unarchives downstream dependents.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
     /// <param name="projectId">ID of the project to unarchive.</param>
     /// <returns>Boolean true when successfully unarchived.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if unarchive action fails.</exception>
-    public async Task<bool> UnarchiveProject(long currentUserId, long projectId)
+    public async Task<bool> UnarchiveProject(long currentUserId, long organizationId, long projectId)
     {
-        var project = await _context.Projects.FindAsync(projectId);
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId
+                        && p.OrganizationId == organizationId)
+            .FirstOrDefaultAsync();
 
         if (project == null || !project.IsArchived)
             throw new KeyNotFoundException("Project not found or is not archived.");
@@ -434,6 +458,7 @@ public class ProjectBusiness : IProjectBusiness
                 var projectResponse = new ProjectResponseDto
                 {
                     Id = project.Id,
+                    OrganizationId = organizationId,
                     Name = project.Name,
                     Description = project.Description,
                     Abbreviation = project.Abbreviation,
@@ -463,6 +488,7 @@ public class ProjectBusiness : IProjectBusiness
                 await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
                 {
                     ProjectId = projectId,
+                    OrganizationId = organizationId,
                     Operation = "unarchive",
                     EntityType = "project",
                     EntityId = project.Id,
@@ -485,35 +511,42 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     ///     Retrieves project stats
     /// </summary>
+    /// <param name="organizationId">Name of the organization to which the project belongs</param>
+    /// <param name="projectId">ID of the project to check stats for</param>
     /// <returns>A list of project stats</returns>
-    public async Task<ProjectStatResponseDto> GetProjectStats(long projectId)
+    public async Task<ProjectStatResponseDto> GetProjectStats(long organizationId, long projectId)
     {
         // "classes": number, “dataRecords”: number, “connections”: number 
-        var classes = _context.Classes
-            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
-        var records = _context.Records
-            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
-        var datasources = _context.DataSources
-            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
+        var classesTask = _context.Classes
+            .Where(p => !p.IsArchived && p.ProjectId == projectId && p.OrganizationId == organizationId)
+            .CountAsync();
 
-        var response = new ProjectStatResponseDto
+        var recordsTask = _context.Records
+            .Where(p => !p.IsArchived && p.ProjectId == projectId && p.OrganizationId == organizationId)
+            .CountAsync();
+
+        var datasourcesTask = _context.DataSources
+            .Where(p => !p.IsArchived && p.ProjectId == projectId && p.OrganizationId == organizationId)
+            .CountAsync();
+
+        // Wait for all three to complete
+        await Task.WhenAll(classesTask, recordsTask, datasourcesTask);
+
+        return new ProjectStatResponseDto
         {
-            classes = classes,
-            records = records,
-            datasources = datasources
+            classes = await classesTask,
+            records = await recordsTask,
+            datasources = await datasourcesTask
         };
-        return response;
     }
 
     /// <summary>
     ///     List the users and groups in a given project, along with their roles
     /// </summary>
-    /// <param name="projectId"></param>
+    /// <param name="projectId">ID of the project to get members for</param>
     /// <returns></returns>
     public async Task<IEnumerable<ProjectMemberResponseDto>> GetProjectMembers(long projectId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
         var users = _context.ProjectMembers
             .Where(pm => pm.ProjectId == projectId && pm.UserId != null)
             .Select(pm => new ProjectMemberResponseDto
@@ -550,7 +583,8 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>False if user or group already exists in project</returns>
     /// <exception cref="ArgumentException">Returned if none or both of userID/groupID supplied</exception>
     /// <exception cref="KeyNotFoundException">Returned if user, group, role or project not found</exception>
-    public async Task<bool> AddMemberToProject(long projectId, long? roleId, long? userId, long? groupId)
+    public async Task<bool> AddMemberToProject(long projectId, long? roleId, long? userId,
+        long? groupId)
     {
         // ensure one and only one of userID or groupID is supplied
         if (!userId.HasValue && !groupId.HasValue)
@@ -608,7 +642,8 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>True if user or group role adjusted</returns>
     /// <exception cref="ArgumentException">Returned if none or both of userID/groupID supplied</exception>
     /// <exception cref="KeyNotFoundException">Returned if member doesn't exist in project</exception>
-    public async Task<bool> UpdateProjectMemberRole(long projectId, long roleId, long? userId, long? groupId)
+    public async Task<bool> UpdateProjectMemberRole(long projectId, long roleId, long? userId,
+        long? groupId)
     {
         // ensure one and only one of userID or groupID is supplied
         if (!userId.HasValue && !groupId.HasValue)
@@ -754,7 +789,7 @@ public class ProjectBusiness : IProjectBusiness
         };
         var cls = await _classBusiness.BulkCreateClasses(
             currentUserId, organizationId, projectId, defaultClasses);
-        
+
         // ===============================
         // CREATE DEFAULT DATA SOURCE
         // ===============================
@@ -772,7 +807,7 @@ public class ProjectBusiness : IProjectBusiness
         // TODO: project config should determine whether to do this (true by default)
         Env.Load("../.env");
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
-        
+
         var config = new JsonObject();
         if (defaultObjectStorageMethod == "filesystem")
         {
@@ -800,7 +835,7 @@ public class ProjectBusiness : IProjectBusiness
             throw new NullReferenceException(
                 "Unknown object storage method, make sure your environment variables are correctly set");
         }
-        
+
         var objectStorageRequestDto = new CreateObjectStorageRequestDto
         {
             Name = "Instance Default",
@@ -808,7 +843,7 @@ public class ProjectBusiness : IProjectBusiness
         };
         await _objectStorageBusiness.CreateObjectStorage(
             currentUserId, organizationId, projectId, objectStorageRequestDto);
-        
+
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT
         // ===============================
@@ -831,7 +866,7 @@ public class ProjectBusiness : IProjectBusiness
         var defaultRoles = new List<CreateRoleRequestDto>
         {
             new() { Name = "Admin", Description = "Project administrator with full permissions" },
-            new() { Name = "User",  Description = "Standard project user with limited permissions" }
+            new() { Name = "User", Description = "Standard project user with limited permissions" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;

@@ -880,7 +880,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var deletedResult = await _projectBusiness.ArchiveProject(uid1, pid);
+        var deletedResult = await _projectBusiness.ArchiveProject(uid1, oid, pid);
 
         // procedure is not traced by entity framework
         //this forces EF to sync to db on next query

@@ -67,7 +67,7 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            var project = await _projectBusiness.GetProject(projectId, hideArchived);
+            var project = await _projectBusiness.GetProject(organizationId, projectId, hideArchived);
             return Ok(project);
         }
         catch (Exception exc)
@@ -119,7 +119,7 @@ public class ProjectController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var project = await _projectBusiness.UpdateProject(currentUserId, projectId, dto);
+            var project = await _projectBusiness.UpdateProject(currentUserId, organizationId, projectId, dto);
             return Ok(project);
         }
         catch (Exception exc)
@@ -141,7 +141,8 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            await _projectBusiness.DeleteProject(projectId);
+            var currentUserId = UserContextStorage.UserId;
+            await _projectBusiness.DeleteProject(currentUserId, organizationId, projectId);
             return Ok(new { message = $"Deleted project {projectId}" });
         }
         catch (Exception exc)
@@ -170,11 +171,11 @@ public class ProjectController : ControllerBase
             var userId = UserContextStorage.UserId;
             if (archive)
             {
-                await _projectBusiness.ArchiveProject(userId, projectId);
+                await _projectBusiness.ArchiveProject(userId, organizationId, projectId);
                 return Ok(new { message = $"Archived project {projectId}" });
             }
 
-            await _projectBusiness.UnarchiveProject(userId, projectId);
+            await _projectBusiness.UnarchiveProject(userId, organizationId, projectId);
             return Ok(new { message = $"Unarchived project {projectId}" });
         }
         catch (Exception exc)
@@ -197,7 +198,7 @@ public class ProjectController : ControllerBase
     {
         try
         {
-            var stats = await _projectBusiness.GetProjectStats(projectId);
+            var stats = await _projectBusiness.GetProjectStats(organizationId, projectId);
             return Ok(stats);
         }
         catch (Exception exc)

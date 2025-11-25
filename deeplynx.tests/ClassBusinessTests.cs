@@ -443,7 +443,7 @@ public class ClassBusinessTests : IntegrationTestBase
         var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<DbUpdateException>(() => 
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
             _classBusiness.CreateClass(uid, oid, pid, dto));
 
         var eventList = await Context.Events.ToListAsync();
@@ -764,7 +764,7 @@ public class ClassBusinessTests : IntegrationTestBase
         var beforeArchive = DateTime.UtcNow;
 
         // Act
-        var result = await _projectBusiness.ArchiveProject(uid, pid);
+        var result = await _projectBusiness.ArchiveProject(uid, oid, pid);
         Assert.True(result);
 
         // Force EF to sync with database
