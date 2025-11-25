@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -40,6 +41,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
     /// <returns>A list of data sources for the given project.</returns>
     [HttpGet(Name = "api_get_all_data_sources_for_project")]
+    [Auth("read", "data_source")]
     public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
         long projectId,
         [FromQuery] bool hideArchived = true)
@@ -66,6 +68,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
     /// <returns>The data source associated with the given ID</returns>
     [HttpGet("{dataSourceId}", Name = "api_get_a_data_source_for_project")]
+    [Auth("read", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
         long projectId,
         long dataSourceId,
@@ -92,6 +95,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <returns>The default data source for the project</returns>
     [HttpGet("default", Name = "api_get_default_data_source_for_project")]
+    [Auth("read", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> GetDefaultDataSource(
         long projectId)
     {
@@ -116,6 +120,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="dto">The data transfer object containing data source details</param>
     /// <returns>The created data source</returns>
     [HttpPost(Name = "api_create_a_data_source_for_project")]
+    [Auth("write", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(
         long projectId,
         [FromBody] CreateDataSourceRequestDto dto)
@@ -143,6 +148,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="dto">The data transfer object containing updated data source details</param>
     /// <returns>The newly updated data source</returns>
     [HttpPut("{dataSourceId}", Name = "api_update_a_data_source_for_project")]
+    [Auth("write", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
         long projectId,
         long dataSourceId,
@@ -171,6 +177,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="dataSourceId">The ID of the data source to delete</param>
     /// <returns>A message stating the data source was successfully deleted.</returns>
     [HttpDelete("{dataSourceId}", Name = "api_delete_a_data_source_for_project")]
+    [Auth("write", "data_source")]
     public async Task<IActionResult> DeleteDataSource(
         long dataSourceId,
         long projectId)
@@ -197,6 +204,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="archive">True to archive the data source, false to unarchive it.</param>
     /// <returns>A message stating the data source was successfully archived or unarchived.</returns>
     [HttpPatch("{dataSourceId}", Name = "api_archive_data_source_for_project")]
+    [Auth("write", "data_source")]
     public async Task<IActionResult> ArchiveDataSource(
         long projectId,
         long dataSourceId,

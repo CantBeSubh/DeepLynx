@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -39,6 +40,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>List of class response DTOs</returns>
     [HttpGet(Name = "api_get_all_classes_project")]
+    [Auth("read", "class")]
     public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
         long projectId,
         [FromQuery] bool hideArchived = true)
@@ -66,6 +68,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>Class response DTO</returns>
     [HttpGet("{classId}", Name = "api_get_a_class_project")]
+    [Auth("read", "class")]
     public async Task<ActionResult<ClassResponseDto>> GetClass(
         long projectId,
         long classId,
@@ -93,6 +96,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="dto">The request DTO for classes</param>
     /// <returns>Class response DTOs</returns>
     [HttpPost(Name = "api_create_a_class_project")]
+    [Auth("write", "class")]
     public async Task<ActionResult<ClassResponseDto>> CreateClass(
         long projectId,
         [FromBody] CreateClassRequestDto dto)
@@ -120,6 +124,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="classes">List of request DTOs for classes</param>
     /// <returns>Bulk class response DTOs</returns>
     [HttpPost("bulk", Name = "api_create_many_classes_project")]
+    [Auth("write", "class")]
     public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
         long projectId,
         [FromBody] List<CreateClassRequestDto> classes)
@@ -149,6 +154,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="dto">The request DTO for the class</param>
     /// <returns>Class response DTO</returns>
     [HttpPut("{classId}", Name = "api_update_a_class_project")]
+    [Auth("write", "class")]
     public async Task<ActionResult<ClassResponseDto>> UpdateClass(
         long projectId,
         long classId,
@@ -177,6 +183,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="classId">The ID of the class to delete.</param>
     /// <returns>A message stating the class was successfully deleted.</returns>
     [HttpDelete("{classId}", Name = "api_delete_a_class_project")]
+    [Auth("write", "class")]
     public async Task<IActionResult> DeleteClass(
         long projectId,
         long classId)
@@ -205,6 +212,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="archive">True to archive the class, false to unarchive it.</param>
     /// <returns>A message stating the class was successfully archived or unarchived.</returns>
     [HttpPatch("{classId}", Name = "api_archive_class_project")]
+    [Auth("write", "class")]
     public async Task<IActionResult> ArchiveClass(
         long projectId,
         long classId,

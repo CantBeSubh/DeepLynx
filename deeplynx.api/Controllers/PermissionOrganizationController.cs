@@ -2,6 +2,7 @@ using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -30,13 +31,14 @@ public class PermissionOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Permissions 
+    ///     Get All Permissions
     /// </summary>
     /// <param name="organizationId">(Optional)The ID of the organization to which the project belongs. If not supplied, will get all defaults.</param>
     /// <param name="labelId">Optional sensitivity label ID to filter permissions</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
     /// <returns>A list of permissions for the given organization/project.</returns>
     [HttpGet("organizations/permissions", Name = "api_get_all_organization_permissions")]
+    [Auth("read", "permission")]
     public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetAllPermissions(
         [FromQuery] long? organizationId,
         [FromQuery] long? labelId = null,
@@ -65,6 +67,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
     /// <returns>The permission associated with the given ID</returns>
     [HttpGet("organizations/{organizationId}/permissions/{permissionId}", Name = "api_get_organization_permission")]
+    [Auth("read", "permission")]
     public async Task<ActionResult<PermissionResponseDto>> GetPermission(
         long organizationId,
         long permissionId,
@@ -90,6 +93,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="dto">The data transfer object containing permission details</param>
     /// <returns>The created permission</returns>
     [HttpPost("organizations/{organizationId}/permissions", Name = "api_create_organization_permission")]
+    [Auth("write", "permission")]
     public async Task<ActionResult<PermissionResponseDto>> CreatePermission(
         long organizationId,
         [FromBody] CreatePermissionRequestDto dto)
@@ -99,7 +103,7 @@ public class PermissionOrganizationController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             var permission =
                 await _permissionBusiness.CreatePermission(currentUserId, dto, null,
-                    organizationId); 
+                    organizationId);
             return Ok(permission);
         }
         catch (Exception exc)
@@ -118,6 +122,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="dto">The data transfer object containing updated permission details</param>
     /// <returns>The updated permission</returns>
     [HttpPut("organizations/{organizationId}/permissions/{permissionId}", Name = "api_update_organization_permission")]
+    [Auth("write", "permission")]
     public async Task<ActionResult<PermissionResponseDto>> UpdatePermission(
         long organizationId,
         long permissionId,
@@ -144,6 +149,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="permissionId">The ID of the permission to delete</param>
     /// <returns>A message stating the permission was successfully deleted.</returns>
     [HttpDelete("organizations/{organizationId}/permissions/{permissionId}", Name = "api_delete_organization_permission")]
+    [Auth("write", "permission")]
     public async Task<ActionResult> DeletePermission(
         long organizationId,
         long permissionId)
@@ -170,6 +176,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="archive">True to archive the permission, false to unarchive it.</param>
     /// <returns>A message stating the permission was successfully archived or unarchived.</returns>
     [HttpPatch("organizations/{organizationId}/permissions/{permissionId}", Name = "api_archive_organization_permission")]
+    [Auth("write", "permission")]
     public async Task<IActionResult> ArchivePermission(
         long organizationId,
         long permissionId,
