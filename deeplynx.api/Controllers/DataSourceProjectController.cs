@@ -16,18 +16,18 @@ namespace deeplynx.api.Controllers;
 [Route("projects/{projectId}/datasources")]
 [Authorize]
 [Tags("Project Management", "DataSource")]
-public class ProjectDataSourceController : ControllerBase
+public class DataSourceProjectController : ControllerBase
 {
     private readonly IDataSourceBusiness _dataSourceBusiness;
-    private readonly ILogger<ProjectDataSourceController> _logger;
+    private readonly ILogger<DataSourceProjectController> _logger;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ProjectDataSourceController" /> class
+    ///     Initializes a new instance of the <see cref="DataSourceProjectController" /> class
     /// </summary>
     /// <param name="dataSourceBusiness">The business logic interface for handling data source operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public ProjectDataSourceController(IDataSourceBusiness dataSourceBusiness,
-        ILogger<ProjectDataSourceController> logger)
+    public DataSourceProjectController(IDataSourceBusiness dataSourceBusiness,
+        ILogger<DataSourceProjectController> logger)
     {
         _dataSourceBusiness = dataSourceBusiness;
         _logger = logger;
