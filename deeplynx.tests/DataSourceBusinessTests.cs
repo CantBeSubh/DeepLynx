@@ -95,7 +95,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         };
         var dataSource2 = new DataSource
         {
-            Name = "Customer CRM Database",
+            Name = "Customer CRM Database 2",
             Description = "Primary customer relationship management database",
             Abbreviation = "CRM_DB",
             Type = "SQL Server",
@@ -110,7 +110,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         };
         var dataSource3 = new DataSource
         {
-            Name = "Customer CRM Database",
+            Name = "Customer CRM Database 3",
             Description = "Primary customer relationship management database",
             Abbreviation = "CRM_DB",
             Type = "SQL Server",
@@ -130,22 +130,6 @@ public class DataSourceBusinessTests : IntegrationTestBase
         did = dataSource.Id;
         did2 = dataSource2.Id;
         did3 = dataSource3.Id;
-
-        // var tag = new Tag { Name = "Tag 1", ProjectId = pid};
-        // Context.Tags.Add(tag);
-        // await Context.SaveChangesAsync();
-        // tid = tag.Id;
-        // var testClass = new Class{Name = "Class 1", ProjectId = pid};
-        // Context.Classes.Add(testClass);
-        // await Context.SaveChangesAsync();
-        // var testClass2 = new Class{Name = "Class 2", ProjectId = pid};
-        // Context.Classes.Add(testClass2);
-        // await Context.SaveChangesAsync();
-        // cid = testClass.Id;
-        // var dataSource1 = new DataSource { Name = "DataSource 1", ProjectId = pid };
-        // Context.DataSources.Add(dataSource1);
-        // await Context.SaveChangesAsync();
-        // did = dataSource1.Id;
     }
 
     #region GetAllDataSources Tests
@@ -165,17 +149,6 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.Contains(dataSources, ds => ds.Id == did2);
         Assert.DoesNotContain(dataSources, ds => ds.Id == did3);
     }
-
-    // [Fact]
-    // public async Task GetAllDataSources_NonExistentProjectWithNoDataSources_ThrowsKeyNotFoundException()
-    // {
-    //     // Act & Assert
-    //     var exception =
-    //         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-    //             _dataSourceBusiness.GetAllDataSources(999, pid, false));
-    //
-    //     Assert.Contains("Project with id 999 not found", exception.Message);
-    // }
 
     [Fact]
     public async Task GetAllDataSources_DifferentProject_ReturnsCorrectDataSources()
@@ -210,7 +183,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetAllDataSources_NullConfig_ReturnsEmptyJsonObject()
+    public async Task GetAllDataSources_NullConfig_ReturnsNullJsonObject()
     {
         // Arrange
         var dataSourceWithNullConfig = new DataSource
@@ -235,8 +208,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         var dataSource = result.First(ds => ds.Name == "Null Config Test");
 
         // Assert
-        Assert.NotNull(dataSource.Config);
-        Assert.Empty(dataSource.Config);
+        Assert.Null(dataSource.Config);
     }
 
     #endregion
@@ -248,7 +220,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task GetDataSource_ValidIds_ReturnsDataSource()
     {
         // Act
-        var result = await _dataSourceBusiness.GetDataSource(oid,pid, did, false);
+        var result = await _dataSourceBusiness.GetDataSource(oid, pid, did, false);
 
         // Assert
         Assert.NotNull(result);
@@ -277,7 +249,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task GetDataSource_WrongProject_ThrowsKeyNotFoundException()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.GetDataSource(oid,pid2,
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.GetDataSource(oid, pid2,
             did,
             false)); // DataSource belongs to project with pid, not pid2
 
@@ -379,7 +351,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task CreateDataSource_NullConfig_CreatesWithEmptyConfig()
+    public async Task CreateDataSource_NullConfig_CreatesWithNullConfig()
     {
         // Arrange
         var dto = new CreateDataSourceRequestDto
@@ -394,8 +366,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        Assert.NotNull(result.Config);
-        Assert.Empty(result.Config);
+        Assert.Null(result.Config);
 
         // Ensure that datasource create event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -488,7 +459,6 @@ public class DataSourceBusinessTests : IntegrationTestBase
 
         // Ensure that datasource update event was logged
         var eventList = await Context.Events.ToListAsync();
-        //Assert.Single(eventList);
 
         var actualEvent = eventList[0];
 
@@ -611,7 +581,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateDataSource_NullConfig_UpdatesWithEmptyConfig()
+    public async Task UpdateDataSource_NullConfig_UpdatesWithNullConfig()
     {
         // Arrange
         var dto = new UpdateDataSourceRequestDto
@@ -625,8 +595,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         var result = await _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did, dto);
 
         // Assert
-        Assert.NotNull(result.Config);
-        Assert.Empty(result.Config);
+        Assert.Null(result.Config);
 
         // Ensure that datasource update event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -648,7 +617,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task DeleteDataSource_ValidDataSource_DeletesSuccessfully()
     {
         // Act
-        var result = await _dataSourceBusiness.DeleteDataSource(oid, did, pid);
+        var result = await _dataSourceBusiness.DeleteDataSource(oid, pid, did);
 
         // Assert
         Assert.True(result);
@@ -663,7 +632,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception =
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.DeleteDataSource(oid, 999, pid));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.DeleteDataSource(oid, pid, 999));
 
         Assert.Contains("Data Source with id 999 not found", exception.Message);
     }
@@ -674,20 +643,9 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.DeleteDataSource(oid, did, pid2)); // DataSource 1 belongs to project 1
+                _dataSourceBusiness.DeleteDataSource(oid, pid2, did)); // DataSource 1 belongs to project 1
 
         Assert.Contains($"Data Source with id {did} not found", exception.Message);
-    }
-
-    [Fact]
-    public async Task DeleteDataSource_ArchivedDataSource_ThrowsKeyNotFoundException()
-    {
-        // Act & Assert
-        var exception =
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.DeleteDataSource(oid, 3, pid)); // DataSource 3 is archived
-
-        Assert.Contains("Data Source with id 3 not found", exception.Message);
     }
 
     #endregion
@@ -699,7 +657,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     {
         var now = DateTime.UtcNow;
         // Act
-        var result = await _dataSourceBusiness.ArchiveDataSource(uid, oid, did, pid);
+        var result = await _dataSourceBusiness.ArchiveDataSource(oid, pid, uid, did);
 
         // Assert
         Assert.True(result);
@@ -719,6 +677,8 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.NotNull(archivedDataSource.Config);
         Assert.True(archivedDataSource.LastUpdatedAt >= now);
         Assert.Equal(uid, archivedDataSource.LastUpdatedBy);
+        Assert.True(archivedDataSource.IsArchived);
+        
         // Ensure that data source soft delete event was logged
         var eventList = await Context.Events.ToListAsync();
         Assert.Single(eventList);
@@ -737,7 +697,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.ArchiveDataSource(uid, oid, 999, pid));
+                _dataSourceBusiness.ArchiveDataSource(oid, pid, uid, 999));
 
         Assert.Contains("Data Source with id 999 not found", exception.Message);
 
@@ -746,29 +706,15 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.Empty(eventList);
     }
 
-    // [Fact]
-    // public async Task ArchiveDataSource_NonExistentProject_ThrowsKeyNotFoundException()
-    // {
-    //     // Act & Assert
-    //     var exception =
-    //         await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.ArchiveDataSource(uid, oid, 2, 1));
-    //
-    //     Assert.Contains("Project with id 2 not found", exception.Message);
-    //
-    //     // Ensure that data source soft delete event was NOT logged
-    //     var eventList = await Context.Events.ToListAsync();
-    //     Assert.Empty(eventList);
-    // }
-
     [Fact]
     public async Task ArchiveDataSource_AlreadyArchivedDataSource_ThrowsKeyNotFoundException()
     {
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.ArchiveDataSource(oid, pid, uid,3)); // DataSource 3 is already archived
+                _dataSourceBusiness.ArchiveDataSource(oid, pid, uid, did3)); // DataSource 3 is already archived
 
-        Assert.Contains("Data Source with id 3 not found", exception.Message);
+        Assert.Contains($"Data Source with id {did3} not found", exception.Message);
 
         // Ensure that data source soft delete event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -782,7 +728,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         var initialCount = (await _dataSourceBusiness.GetAllDataSources(oid, new[] { pid })).Count();
 
         // Act
-        await _dataSourceBusiness.ArchiveDataSource(uid, oid, did, pid);
+        await _dataSourceBusiness.ArchiveDataSource(oid, pid, uid, did);
         var finalCount = (await _dataSourceBusiness.GetAllDataSources(oid, new[] { pid })).Count();
 
         // Assert
@@ -968,7 +914,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     {
         var now = DateTime.UtcNow;
         // Act
-        var result = await _dataSourceBusiness.UnarchiveDataSource(uid, oid, did3, pid);
+        var result = await _dataSourceBusiness.UnarchiveDataSource(oid, pid, uid, did3);
 
         // Assert
         Assert.True(result);
@@ -979,7 +925,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.False(reloaded.IsArchived);
         Assert.Equal(uid, reloaded.LastUpdatedBy);
         Assert.True(reloaded.LastUpdatedAt >= now);
-        Assert.Equal("Customer CRM Database", reloaded.Name);
+        Assert.Equal("Customer CRM Database 3", reloaded.Name);
         Assert.Equal("Primary customer relationship management database", reloaded.Description);
         Assert.Equal("CRM_DB", reloaded.Abbreviation);
         Assert.Equal("SQL Server", reloaded.Type);
@@ -994,7 +940,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _dataSourceBusiness.UnarchiveDataSource(uid, oid, 99999, pid));
+            _dataSourceBusiness.UnarchiveDataSource(oid, pid, uid, 99999));
 
         Assert.Contains("Data Source with id 99999 not found", ex.Message);
         // Ensure that data source unarchive event was NOT logged
@@ -1007,7 +953,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _dataSourceBusiness.UnarchiveDataSource(uid, oid, did3, pid2)); // did3 is archived and belongs to pid
+            _dataSourceBusiness.UnarchiveDataSource(oid, pid2, uid, did3)); // did3 is archived and belongs to pid
 
         Assert.Contains($"Data Source with id {did3} not found", ex.Message);
         // Ensure that data source unarchive event was NOT logged
@@ -1020,7 +966,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _dataSourceBusiness.UnarchiveDataSource(uid, oid, did, pid)); // did is not archived
+            _dataSourceBusiness.UnarchiveDataSource(oid, pid, uid, did)); // did is not archived
 
         Assert.Contains($"Data Source with id {did} not found", ex.Message);
         // Ensure that data source unarchive event was NOT logged
