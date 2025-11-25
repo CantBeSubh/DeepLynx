@@ -120,7 +120,7 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
             Name = "Class 2",
             ProjectId = pid2,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid,  OrganizationId = organizationId
+            LastUpdatedBy = uid, OrganizationId = organizationId
         };
         Context.Classes.Add(testClass);
         Context.Classes.Add(testClass2);
@@ -175,7 +175,8 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
             Name = "Destination 3",
             Description = "Destination Description 3",
             OriginalId = "dest3",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified), OrganizationId = organizationId
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         Context.Records.Add(destinationRecord);
         Context.Records.Add(destinationRecord3);
@@ -353,8 +354,8 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
             RelationshipId = (int)relationshipId
         };
 
-        await _edgeBusiness.UpdateEdge(uid, pid, organizationId, dto, eid, null, null);
-        await _edgeBusiness.UpdateEdge(uid, pid, organizationId, dto2, eid2, null, null);
+        await _edgeBusiness.UpdateEdge(uid, organizationId, pid, dto, eid, null, null);
+        await _edgeBusiness.UpdateEdge(uid, organizationId, pid, dto2, eid2, null, null);
 
         // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
@@ -387,7 +388,7 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
     public async Task GetAllHistoricalEdges_ExcludesArchivedHistoricalEdgesByDefault()
     {
         // Arrange
-        await _edgeBusiness.ArchiveEdge(uid, pid, organizationId, eid, null, null);
+        await _edgeBusiness.ArchiveEdge(uid,  organizationId, pid,eid, null, null);
         Context.ChangeTracker.Clear();
 
         // Act
@@ -404,7 +405,7 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
     public async Task GetAllHistoricalEdges_InlcudesArchivedHistoricalEdges()
     {
         // Arrange
-        await _edgeBusiness.ArchiveEdge(uid, pid, organizationId, eid, null, null);
+        await _edgeBusiness.ArchiveEdge(uid, organizationId, pid, eid, null, null);
 
         // Add this line to force EF to reload from database
         Context.ChangeTracker.Clear();
@@ -427,8 +428,8 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
     public async Task GetHistoricalEdges_ReturnsEmptyListWhenNoEdges()
     {
         // Arrange
-        await _edgeBusiness.DeleteEdge(pid, organizationId, eid, null, null);
-        await _edgeBusiness.DeleteEdge(pid, organizationId, eid2, null, null);
+        await _edgeBusiness.DeleteEdge(uid, organizationId, pid, eid, null, null);
+        await _edgeBusiness.DeleteEdge(uid, organizationId, pid, eid2, null, null);
 
         // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
@@ -478,8 +479,8 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
             DestinationId = (int)destinationRecordId2,
             RelationshipId = (int)relationshipId
         };
-        await _edgeBusiness.UpdateEdge(uid, pid, organizationId, dto, eid, null, null);
-        await _edgeBusiness.ArchiveEdge(uid, pid, organizationId, eid, null, null);
+        await _edgeBusiness.UpdateEdge(uid, organizationId, pid, dto, eid, null, null);
+        await _edgeBusiness.ArchiveEdge(uid, organizationId, pid, eid, null, null);
 
         // Act
         var edgeHistory = await _historicalEdgeBusiness.GetHistoryForEdge(organizationId, eid, null, null);
@@ -521,7 +522,7 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
             DestinationId = (int)destinationRecordId2,
             RelationshipId = (int)relationshipId
         };
-        await _edgeBusiness.UpdateEdge(uid, pid, organizationId, dto, eid, null, null);
+        await _edgeBusiness.UpdateEdge(uid, organizationId, pid, dto, eid, null, null);
 
         // Act
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(organizationId, eid, null, null, null);
@@ -543,11 +544,12 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
             DestinationId = (int)destinationRecordId2,
             RelationshipId = (int)relationshipId
         };
-        await _edgeBusiness.UpdateEdge(uid, pid, organizationId, dto, eid, null, null);
-        await _edgeBusiness.ArchiveEdge(uid, pid, organizationId, eid, null, null);
+        await _edgeBusiness.UpdateEdge(uid, organizationId, pid, dto, eid, null, null);
+        await _edgeBusiness.ArchiveEdge(uid, organizationId, pid, eid, null, null);
 
         // Act
-        var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(organizationId, eid, null, null, null, false);
+        var historicalEdge =
+            await _historicalEdgeBusiness.GetHistoricalEdge(organizationId, eid, null, null, null, false);
 
         // Assert
         Assert.NotNull(historicalEdge);
@@ -568,10 +570,11 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
             DestinationId = (int)destinationRecordId2,
             RelationshipId = (int)relationshipId
         };
-        await _edgeBusiness.UpdateEdge(uid, pid, organizationId, dto, eid, null, null);
+        await _edgeBusiness.UpdateEdge(uid, organizationId, pid,dto, eid, null, null);
 
         // Act
-        var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(organizationId, eid, null, null, pointInTime);
+        var historicalEdge =
+            await _historicalEdgeBusiness.GetHistoricalEdge(organizationId, eid, null, null, pointInTime);
 
         // Assert
         Assert.NotNull(historicalEdge);
@@ -584,7 +587,7 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
     public async Task GetHistoricalEdge_ReturnsArchivedHistoricalEdge_WhenEdgeIsArchived()
     {
         // Arrange
-        await _edgeBusiness.ArchiveEdge(uid, pid, organizationId, eid, null, null);
+        await _edgeBusiness.ArchiveEdge(uid, organizationId, pid,eid, null, null);
 
         // Act
         var historicalEdge = () => _historicalEdgeBusiness.GetHistoricalEdge(organizationId, eid, null, null, null);

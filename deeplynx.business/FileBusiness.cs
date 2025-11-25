@@ -42,10 +42,10 @@ public class FileBusiness
     ///     Uploads file using specified object storage method
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="projectId">Id of the project to which the file belongs</param>
+    /// <param name="projectId">ID of the project to which the file belongs</param>
     /// <param name="organizationId">ID of the Organization to which the project belongs</param>
-    /// <param name="dataSourceId">Id of the data source to which the file belongs</param>
-    /// <param name="objectStorageId">Id of the object storage method to use</param>
+    /// <param name="dataSourceId">ID of the data source to which the file belongs</param>
+    /// <param name="objectStorageId">ID of the object storage method to use</param>
     /// <param name="file">file to upload</param>
     public async Task<RecordResponseDto> UploadFile(
         long currentUserId,
@@ -124,13 +124,13 @@ public class FileBusiness
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Id of the project to which the file belongs</param>
-    /// <param name="recordId">Id of record that contains the info of the file to replace</param>
+    /// <param name="projectId">ID of the project to which the file belongs</param>
+    /// <param name="recordId">ID of record that contains the info of the file to replace</param>
     /// <param name="file">file to update to</param>
     public async Task<RecordResponseDto> UpdateFile(long currentUserId, long organizationId, long projectId,
         long recordId, IFormFile file)
     {
-        var record = await _recordBusiness.GetRecord(projectId, recordId, true);
+        var record = await _recordBusiness.GetRecord(organizationId, projectId, recordId, true);
         if (file == null || file.Length == 0) throw new ArgumentException("File is required and cannot be empty.");
 
         if (record.ObjectStorageId == null) throw new KeyNotFoundException("Record needs an object storage id");
@@ -153,18 +153,19 @@ public class FileBusiness
             Uri = uri,
             FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
         };
-        return await _recordBusiness.UpdateRecord(currentUserId, projectId, recordId, updateRecordRequest);
+        return await _recordBusiness.UpdateRecord(currentUserId, organizationId, projectId, recordId,
+            updateRecordRequest);
     }
 
     /// <summary>
     ///     Downloads file
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Id of the project to which the file belongs</param>
-    /// <param name="recordId">Id of record that contains the info of the file to download</param>
+    /// <param name="projectId">ID of the project to which the file belongs</param>
+    /// <param name="recordId">ID of record that contains the info of the file to download</param>
     public async Task<FileStreamResult> DownloadFile(long organizationId, long projectId, long recordId)
     {
-        var record = await _recordBusiness.GetRecord(projectId, recordId, true);
+        var record = await _recordBusiness.GetRecord(organizationId, projectId, recordId, true);
         if (record.ObjectStorageId == null) throw new KeyNotFoundException("Record needs an object storage id");
         var objectStorage =
             await _objectStorageBusiness.GetObjectStorage(organizationId, projectId, record.ObjectStorageId.Value,
@@ -176,12 +177,13 @@ public class FileBusiness
     /// <summary>
     ///     Deletes a file
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
-    /// <param name="projectId">Id of the project to which the file belongs</param>
-    /// <param name="recordId">Id of record that contains the info of the file to delete</param>
-    public async Task<bool> DeleteFile(long organizationId, long projectId, long recordId)
+    /// <param name="projectId">ID of the project to which the file belongs</param>
+    /// <param name="recordId">ID of record that contains the info of the file to delete</param>
+    public async Task<bool> DeleteFile(long currentUserId, long organizationId, long projectId, long recordId)
     {
-        var record = await _recordBusiness.GetRecord(projectId, recordId, true);
+        var record = await _recordBusiness.GetRecord(organizationId, projectId, recordId, true);
         if (record == null) throw new KeyNotFoundException("Record not found");
         if (record.ObjectStorageId == null) throw new KeyNotFoundException("Record needs an object storage id");
         var objectStorage =
@@ -189,6 +191,6 @@ public class FileBusiness
                 true);
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
         await fileBusiness.DeleteFile(record);
-        return await _recordBusiness.DeleteRecord(projectId, recordId);
+        return await _recordBusiness.DeleteRecord(currentUserId, organizationId, projectId, recordId);
     }
 }
