@@ -105,7 +105,7 @@ public class FileController : ControllerBase
     /// <param name="recordId">The ID of the record that contains file information</param>
     /// <returns>The file stream for download</returns>
     [HttpGet("{recordId}", Name = "api_download_file")]
-    [Auth("write", "file")]
+    [Auth("read", "file")]
     public async Task<IActionResult> DownloadFile(
         long organizationId,
         long projectId,
