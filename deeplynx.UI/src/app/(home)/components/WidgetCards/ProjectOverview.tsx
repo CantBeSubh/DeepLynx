@@ -1,7 +1,7 @@
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { getProjectStats } from "@/app/lib/projects_services.client";
+import { getProjectStats } from "@/app/lib/client_service/projects_services.client";
 import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
@@ -24,7 +24,10 @@ const ProjectOverviewWidget = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await getProjectStats(organization?.organizationId as number, project?.projectId as number);
+        const data = await getProjectStats(
+          organization?.organizationId as number,
+          project?.projectId as number
+        );
         setStats({
           classes: data.classes,
           records: data.records,

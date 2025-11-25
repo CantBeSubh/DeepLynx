@@ -1,22 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useLanguage } from "@/app/contexts/Language";
-import Tabs from "@/app/(home)/components/Tabs";
-import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
-import { useRouter, useSearchParams } from "next/navigation";
-import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from "@/app/(home)/components/ProjectDropdownSingleSelect";
-import { getProjectMembers } from "@/app/lib/projects_services.client";
-import { getAllRoles } from "@/app/lib/role_services.client";
+import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import ProjectSettingsMemberSkeleton from "@/app/(home)/components/skeletons/projectsettingsmemberskeleton";
+import Tabs from "@/app/(home)/components/Tabs";
 import {
-  ProjectResponseDto,
-  ProjectMembersDto,
-  RoleResponseDto,
   ProjectMemberResponseDto,
+  ProjectResponseDto,
+  RoleResponseDto,
 } from "@/app/(home)/types/responseDTOs";
+import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getProjectMembers } from "@/app/lib/client_service/projects_services.client";
+import { getAllRoles } from "@/app/lib/client_service/role_services.client";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
 interface ProjectSettingsProps {
   projects: ProjectResponseDto[];
   initialProject: ProjectResponseDto | null;
@@ -37,16 +36,19 @@ export default function ProjectSettingsClient({
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     initialProject?.id.toString() || null
   );
-  const [projectMembers, setProjectMembers] = useState<ProjectMemberResponseDto[]>([]);
+  const [projectMembers, setProjectMembers] = useState<
+    ProjectMemberResponseDto[]
+  >([]);
 
   const [roles, setRoles] = useState<RoleResponseDto[]>([]);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
   const { organization } = useOrganizationSession();
 
-
   useEffect(() => {
     const fetchRoles = async () => {
-      const rolesData = await getAllRoles(organization?.organizationId as number, Number(selectedProjectId),
+      const rolesData = await getAllRoles(
+        organization?.organizationId as number,
+        Number(selectedProjectId)
       );
       setRoles(rolesData);
     };
@@ -58,7 +60,10 @@ export default function ProjectSettingsClient({
 
     (async () => {
       try {
-        const users = await getProjectMembers(organization?.organizationId as number, Number(selectedProjectId));
+        const users = await getProjectMembers(
+          organization?.organizationId as number,
+          Number(selectedProjectId)
+        );
         setProjectMembers(users);
         setIsMembersLoading(false);
       } catch (err) {
@@ -69,7 +74,10 @@ export default function ProjectSettingsClient({
 
   const refreshMembers = async () => {
     if (selectedProjectId) {
-      const users = await getProjectMembers(organization?.organizationId as number, Number(selectedProjectId));
+      const users = await getProjectMembers(
+        organization?.organizationId as number,
+        Number(selectedProjectId)
+      );
       setProjectMembers(users);
     }
   };

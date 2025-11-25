@@ -1,12 +1,12 @@
 // src/app/(home)/data_catalog/DataCatalogClient.tsx
 "use client";
 
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
-import { fullTextSearch } from "@/app/lib/query_services.client";
+import SearchBar from "@/app/(home)/components/SearchBar";
 import { useLanguage } from "@/app/contexts/Language";
 import {
   EyeIcon,
@@ -14,11 +14,10 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import SearchBar from "@/app/(home)/components/SearchBar";
+import AddRecordModal from "../components/AddRecordModal";
+import ListView from "../components/ListView";
 import ProjectDropdown from "../components/ProjectDropdown";
 import RecentRecordsCard from "../components/RecentRecordsCard";
-import ListView from "../components/ListView";
-import AddRecordModal from "../components/AddRecordModal";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -173,8 +172,8 @@ export default function DataCatalogClient({
       selectedProjects.length > 0
         ? selectedProjects[0]
         : initialSelectedProjectsRef.current.length > 0
-          ? initialSelectedProjectsRef.current[0]
-          : null;
+        ? initialSelectedProjectsRef.current[0]
+        : null;
 
     if (projectToSet && projectToSet !== "ALL") {
       const selectedProject = projects.find(
@@ -288,15 +287,17 @@ export default function DataCatalogClient({
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="h-7 w-7" />
               </button>
               <button
-                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="h-7 w-7" />

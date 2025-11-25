@@ -1,32 +1,24 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getRecordsByTags } from "@/app/lib/client_service/record_services.client";
 import {
-  getAllTags,
-  updateTag,
-  deleteTag,
-} from "@/app/lib/tag_services.client";
-import { getRecordsByTags } from "@/app/lib/record_services.client";
+  archiveOrganizationTag,
+  getAllOrganizationTags,
+  updateOrganizationTag,
+} from "@/app/lib/client_service/tag_services.client";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import SearchTags, {
-  SearchTagsRecordsList,
-} from "./search_create_attach_edit-tag-page/SearchTags";
+import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
 import CreateTag, {
   CreateTagRecordsList,
 } from "./search_create_attach_edit-tag-page/CreateTag";
-import AttachTags, {
-  AttachTagsRecordsList,
-} from "./search_create_attach_edit-tag-page/AttachTags";
 import EditTags, {
   EditTagsNameFields,
 } from "./search_create_attach_edit-tag-page/EditTags";
-import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
-import {
-  TagResponseDto,
-  ProjectResponseDto,
-  RecordResponseDto,
-} from "../../types/responseDTOs";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import SearchTags, {
+  SearchTagsRecordsList,
+} from "./search_create_attach_edit-tag-page/SearchTags";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -49,19 +41,7 @@ const parseTags = (
   return [];
 };
 
-interface Props {
-  initialProjects: ProjectResponseDto[];
-  initialSelectedProject?: ProjectResponseDto | null;
-}
-
-const TagManagementClient = ({
-  initialProjects,
-  initialSelectedProject,
-}: Props) => {
-  const [projects] = useState<ProjectResponseDto[]>(initialProjects);
-  const [selectedProject, setSelectedProject] = useState<string>(
-    initialSelectedProject?.id?.toString() || ""
-  );
+const TagManagementClient = () => {
   const [selectedMenuItem, setSelectedMenuItems] = useState("Search Tags");
   const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [filteredTags, setFilteredTags] = useState<TagResponseDto[]>([]);
@@ -74,16 +54,15 @@ const TagManagementClient = ({
   >([]);
   const [isSearchingByTags, setIsSearchingByTags] = useState(false);
 
-  const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
+  const menuItems = ["Search Tags", "Create Tag", "Edit Tags"];
   const { organization } = useOrganizationSession();
-
 
   useEffect(() => {
     setSelectedTagIds(new Set());
   }, [selectedMenuItem]);
 
   const refetchTags = useCallback(async () => {
-    if (!selectedProject) {
+    if (!organization?.organizationId) {
       setTags([]);
       setFilteredTags([]);
       return;
@@ -93,7 +72,9 @@ const TagManagementClient = ({
     setError(null);
 
     try {
-      const allTags = await getAllTags(organization?.organizationId as number, Number(selectedProject));
+      const allTags = await getAllOrganizationTags(
+        organization.organizationId as number
+      );
       setTags(allTags);
       setFilteredTags(allTags);
     } catch (error) {
@@ -102,15 +83,11 @@ const TagManagementClient = ({
     } finally {
       setLoading(false);
     }
-  }, [selectedProject]);
+  }, [organization?.organizationId]);
 
   useEffect(() => {
     refetchTags();
   }, [refetchTags]);
-
-  const handleProjectChange = useCallback((newProjectId: string) => {
-    setSelectedProject(newProjectId);
-  }, []);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -126,9 +103,14 @@ const TagManagementClient = ({
   }, [searchQuery, tags]);
 
   const handleSearchByTags = async (tagIds: number[]) => {
+    // TODO: Update to organization-level endpoint
     setIsSearchingByTags(true);
     try {
-      const records = await getRecordsByTags(organization?.organizationId as number, Number(selectedProject), tagIds);
+      const records = await getRecordsByTags(
+        organization?.organizationId as number,
+        0, // TODO: Remove projectId dependency
+        tagIds
+      );
 
       if (records.length === 0) {
         toast.error("No records found with these tags");
@@ -147,7 +129,8 @@ const TagManagementClient = ({
 
       setRecordsFromTagSearch(recordsWithParsedTags);
       toast.success(
-        `Found ${records.length} record${records.length !== 1 ? "s" : ""
+        `Found ${records.length} record${
+          records.length !== 1 ? "s" : ""
         } with selected tags`
       );
     } catch (error) {
@@ -172,23 +155,53 @@ const TagManagementClient = ({
 
   const handleUpdateTag = async (tagId: number, newName: string) => {
     try {
-      await updateTag(organization?.organizationId as number, Number(selectedProject), tagId, { name: newName });
+      await updateOrganizationTag(
+        organization?.organizationId as number,
+        tagId,
+        {
+          name: newName,
+        }
+      );
       await refetchTags();
+      toast.success("Tag updated successfully");
     } catch (error) {
       console.error("Error updating tag:", error);
+      toast.error("Failed to update tag");
       throw error;
     }
   };
 
-  const handleDeleteTag = async (tagId: number) => {
+  const handleArchiveTag = async (tagId: number) => {
     try {
-      await deleteTag(organization?.organizationId as number, Number(selectedProject), tagId);
+      await archiveOrganizationTag(
+        organization?.organizationId as number,
+        tagId,
+        true
+      );
       const newSelected = new Set(selectedTagIds);
       newSelected.delete(tagId);
       setSelectedTagIds(newSelected);
       await refetchTags();
+      toast.success("Tag archived successfully");
     } catch (error) {
-      console.error("Error deleting tag:", error);
+      console.error("Error archiving tag:", error);
+      toast.error("Failed to archive tag");
+      throw error;
+    }
+  };
+
+  const handleUnarchiveTag = async (tagId: number) => {
+    try {
+      await archiveOrganizationTag(
+        organization?.organizationId as number,
+        tagId,
+        false
+      );
+      await refetchTags();
+      toast.success("Tag unarchived successfully");
+    } catch (error) {
+      console.error("Error unarchiving tag:", error);
+      toast.error("Failed to unarchive tag");
       throw error;
     }
   };
@@ -207,19 +220,12 @@ const TagManagementClient = ({
           access controls. These settings will propagate to all projects within
           the organization.
         </p>
-        <div className="mt-4">
-          <ProjectDropdownSingleSelect
-            projects={projects}
-            onSelectionChange={handleProjectChange}
-            defaultSelectedId={selectedProject}
-          />
-        </div>
       </div>
 
       {/* Main Content Grid with Height Constraint */}
       <div
         className="grid grid-cols-[20%_40%_40%] p-6 gap-6 transition-all"
-        style={{ height: "calc(100vh - 23rem)" }}
+        style={{ height: "calc(100vh - 20rem)" }}
       >
         {/* Left Menu */}
         <div className="card shadow-xl rounded-lg p-6 overflow-y-auto">
@@ -228,10 +234,11 @@ const TagManagementClient = ({
               <li
                 key={item}
                 onClick={() => setSelectedMenuItems(item)}
-                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-bold ${selectedMenuItem === item
-                  ? "bg-info/50 text-info-content"
-                  : "hover:bg-base-200"
-                  }`}
+                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-bold ${
+                  selectedMenuItem === item
+                    ? "bg-info/50 text-info-content"
+                    : "hover:bg-base-200"
+                }`}
               >
                 {item}
               </li>
@@ -251,19 +258,18 @@ const TagManagementClient = ({
               onSearchChange={setSearchQuery}
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
-              projectId={selectedProject}
               onSearchByTags={handleSearchByTags}
+              projectId={""}
             />
           )}
           {selectedMenuItem === "Create Tag" && (
             <CreateTag
-              projectId={selectedProject}
               onTagCreated={refetchTags}
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
             />
           )}
-          {selectedMenuItem === "Attach Tags" && (
+          {/* {selectedMenuItem === "Attach Tags" && (
             <AttachTags
               loading={loading}
               error={error}
@@ -274,7 +280,7 @@ const TagManagementClient = ({
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
             />
-          )}
+          )} */}
           {selectedMenuItem === "Edit Tags" && (
             <EditTags
               loading={loading}
@@ -293,33 +299,30 @@ const TagManagementClient = ({
         <div className="card shadow-xl rounded-lg p-6 overflow-y-auto">
           {selectedMenuItem === "Search Tags" && (
             <SearchTagsRecordsList
-              projectId={selectedProject}
               selectedTagIds={selectedTagIds}
               onClearSelectedTags={() => setSelectedTagIds(new Set())}
               recordsFromTagSearch={recordsFromTagSearch}
               isSearchingByTags={isSearchingByTags}
               onClearSearch={handleClearSearch}
               onRefreshSearch={handleRefreshSearch}
+              projectId={""}
             />
           )}
           {selectedMenuItem === "Create Tag" && (
-            <CreateTagRecordsList
-              projectId={selectedProject}
-              selectedTagIds={selectedTagIds}
-            />
+            <CreateTagRecordsList selectedTagIds={selectedTagIds} />
           )}
-          {selectedMenuItem === "Attach Tags" && (
+          {/* {selectedMenuItem === "Attach Tags" && (
             <AttachTagsRecordsList
-              projectId={selectedProject}
               selectedTagIds={selectedTagIds}
               onClearSelectedTags={() => setSelectedTagIds(new Set())}
+              projectId={""}
             />
-          )}
+          )} */}
           {selectedMenuItem === "Edit Tags" && (
             <EditTagsNameFields
               selectedTags={selectedTags}
               onUpdateTag={handleUpdateTag}
-              onDeleteTag={handleDeleteTag}
+              onArchiveTag={handleArchiveTag}
             />
           )}
         </div>

@@ -65,12 +65,7 @@ const OrganizationManagementClient = ({
     },
     {
       label: "Tags and Security Labels",
-      content: (
-        <TagManagementClient
-          initialProjects={initialProjects}
-          initialSelectedProject={initialSelectedProject}
-        />
-      ),
+      content: <TagManagementClient />,
     },
     {
       label: "Settings",

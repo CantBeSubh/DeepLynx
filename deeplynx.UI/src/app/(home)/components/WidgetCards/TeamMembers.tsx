@@ -3,7 +3,7 @@ import { peopleData } from "@/app/(home)/dummy_data/data";
 import { Column, TeamMember } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { getAllUsers } from "@/app/lib/user_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";

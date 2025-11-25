@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { ProjectResponseDto } from "../../types/responseDTOs";
 import { FileViewerTableRow } from "../../types/types";
 import AllRecordsClient from "./AllRecordsClient";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { auth } from "../../../../../auth";
 
 export default async function Page({
@@ -17,7 +17,8 @@ export default async function Page({
   const initialSearch = typeof params.search === "string" ? params.search : "";
   // Get organization ID - prioritize cookie over session for real-time updates
   const cookieStore = await cookies();
-  const orgSessionCookie = cookieStore.get("organizationSession"); let organizationId: number | undefined;
+  const orgSessionCookie = cookieStore.get("organizationSession");
+  let organizationId: number | undefined;
 
   if (orgSessionCookie) {
     try {
@@ -36,7 +37,9 @@ export default async function Page({
   }
 
   // Keep SSR for projects (fast initial render, no client flash)
-  const projects = (await getAllProjectsServer(organizationId as number)) as ProjectResponseDto[];
+  const projects = (await getAllProjectsServer(
+    organizationId as number
+  )) as ProjectResponseDto[];
   const initialProjects = projects.map((p) => ({
     id: String(p.id),
     name: p.name,

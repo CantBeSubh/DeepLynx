@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import {
-  attachTagToRecord,
-  unattachTagFromRecord,
-} from "@/app/lib/record_services.client";
 import { TagResponseDto } from "../types/responseDTOs";
 import AddTagModal from "./AddTagModal";
 import { useLanguage } from "@/app/contexts/Language";
 import toast from "react-hot-toast";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import {
+  unattachTagFromRecord,
+  attachTagToRecord,
+} from "@/app/lib/client_service/record_services.client";
 
 interface TagButtonProps {
   tags: TagResponseDto[];
@@ -38,7 +38,6 @@ const TagButton: React.FC<TagButtonProps> = ({
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const { t } = useLanguage();
   const { organization, hasLoaded } = useOrganizationSession();
-
 
   useEffect(() => {
     setTempSelectedIds(selectedIds);
@@ -73,11 +72,21 @@ const TagButton: React.FC<TagButtonProps> = ({
       newSelectionIds = tempSelectedIds
         .map(String)
         .filter((selectedId) => selectedId !== id);
-      await unattachTagFromRecord(organization?.organizationId as number, projectId, recordId, Number(id));
+      await unattachTagFromRecord(
+        organization?.organizationId as number,
+        projectId,
+        recordId,
+        Number(id)
+      );
     } else {
       newSelectionIds = [...tempSelectedIds.map(String), id];
       try {
-        await attachTagToRecord(organization?.organizationId as number, projectId, recordId, Number(id));
+        await attachTagToRecord(
+          organization?.organizationId as number,
+          projectId,
+          recordId,
+          Number(id)
+        );
       } catch (error) {
         console.error("Error attaching tag to record:", error);
       }
@@ -95,7 +104,12 @@ const TagButton: React.FC<TagButtonProps> = ({
 
     // Automatically attach it to the record
     try {
-      await attachTagToRecord(organization?.organizationId as number, projectId, recordId, Number(newTag.id));
+      await attachTagToRecord(
+        organization?.organizationId as number,
+        projectId,
+        recordId,
+        Number(newTag.id)
+      );
 
       // Update selection state
       const newSelectionIds = [

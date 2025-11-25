@@ -1,23 +1,21 @@
 "use client";
-import { TagResponseDto } from "../../types/responseDTOs";
-import React, { useEffect, useMemo, useState } from "react";
-import { CustomQueryRequestDto } from "../../types/requestDTOs";
-import { HistoricalRecordResponseDto } from "../../types/responseDTOs";
-import { FileViewerTableRow, QueryBuilderQuery } from "@/app/(home)/types/types";
-import ProjectDropdown from "../../components/ProjectDropdown";
-import { translations } from "@/app/lib/translations";
-import AdvancedSearchBar from "../../components/AdvancedSearchBar";
-import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  FileViewerTableRow,
+  QueryBuilderQuery,
+} from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { translations } from "@/app/lib/translations";
+import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useEffect, useMemo, useState } from "react";
+import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { DatePicker } from "../../components/DatePicker";
-import { fullTextSearch } from "@/app/lib/query_services.client";
-import { getAllClasses } from "@/app/lib/class_services client";
-import { getAllDataSources } from "@/app/lib/data_source_services.client";
-import { getAllTags } from "@/app/lib/tag_services.client";
-import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
-import { ClassResponseDto } from "../../types/responseDTOs";
-import { DataSourceResponseDto } from "../../types/responseDTOs";
+import ProjectDropdown from "../../components/ProjectDropdown";
+import {
+  ClassResponseDto,
+  DataSourceResponseDto,
+  TagResponseDto,
+} from "../../types/responseDTOs";
 type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
@@ -29,27 +27,43 @@ type Props = {
   queriedRecords: FileViewerTableRow[];
 };
 
-
-
 const newId = () => Math.random().toString(36).slice(2, 10);
-const emptyRow = (): QueryBuilderQuery => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "", jsonKey: "", jsonValue: "" } });
+const emptyRow = (): QueryBuilderQuery => ({
+  id: newId(),
+  query: {
+    connector: "",
+    filter: "",
+    operator: "",
+    value: "",
+    jsonKey: "",
+    jsonValue: "",
+  },
+});
 
 export default function QueryBuilderClient({
   initialProjects,
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR"], //TODO: Add NOT
-  filters = [{ name: "Class", value: "class_name" }, { name: "Tag", value: "tags" }, { name: "Original Data ID", value: "original_id" }, { name: "Time Range", value: "last_updated_at" }, { name: "Data Source", value: "data_source_name" }, { name: "Properties", value: "properties" }],
+  filters = [
+    { name: "Class", value: "class_name" },
+    { name: "Tag", value: "tags" },
+    { name: "Original Data ID", value: "original_id" },
+    { name: "Time Range", value: "last_updated_at" },
+    { name: "Data Source", value: "data_source_name" },
+    { name: "Properties", value: "properties" },
+  ],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = [],
-  queriedRecords
+  queriedRecords,
 }: Props) {
-
   const locale = "en";
   const t = translations[locale];
 
   const [projects] = useState(initialProjects);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(initialSelectedProjects);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(
+    initialSelectedProjects
+  );
   const [classes, setClasses] = useState<ClassResponseDto[]>([]);
   const [datasources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [tags, setTags] = useState<TagResponseDto[]>([]);
@@ -57,12 +71,15 @@ export default function QueryBuilderClient({
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
-  const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(queriedRecords);
+  const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(
+    queriedRecords
+  );
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
-  const [activeFilters, setActiveFilters] = useState<Array<{ id: number; term: string }>>([]);
+  const [activeFilters, setActiveFilters] = useState<
+    Array<{ id: number; term: string }>
+  >([]);
   const [rows, setRows] = useState<QueryBuilderQuery[]>([emptyRow()]);
   const { project, hasLoaded } = useProjectSession();
-
 
   const currentProjectId = useMemo<string>(() => {
     const firstProjectId = projects.length > 0 ? String(projects[0].id) : "";
@@ -77,17 +94,17 @@ export default function QueryBuilderClient({
   }, [projects, selectedProjects]);
 
   const addRow = () => setRows((r) => [...r, emptyRow()]);
-  const removeRow = (id: string) => setRows((r) => (r.length > 1 ? r.filter((x) => x.id !== id) : r));
+  const removeRow = (id: string) =>
+    setRows((r) => (r.length > 1 ? r.filter((x) => x.id !== id) : r));
   const updateRow = (id: string, patch: Partial<QueryBuilderQuery>) =>
-    setRows((r) => r.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    setRows((r) =>
+      r.map((row) => (row.id === id ? { ...row, ...patch } : row))
+    );
   const reset = () => {
     setRows([emptyRow()]);
     setQueriedRecords(null);
-    setSearchTerm("")
-  }
-
-
-
+    setSearchTerm("");
+  };
 
   useEffect(() => {
     async function loadClasses() {
@@ -149,16 +166,21 @@ export default function QueryBuilderClient({
   }, [hasLoaded, currentProjectId, selectedProjects]);
 
   const hasValidQueries = (): boolean => {
-    const queryDtos = rows.map(r => r.query);
-    return queryDtos.some(query => {
-      return (query.filter !== "") || (query.operator !== "") || (query.value !== "") || (query.jsonKey !== "") || (query.jsonValue !== "");
+    const queryDtos = rows.map((r) => r.query);
+    return queryDtos.some((query) => {
+      return (
+        query.filter !== "" ||
+        query.operator !== "" ||
+        query.value !== "" ||
+        query.jsonKey !== "" ||
+        query.jsonValue !== ""
+      );
     });
   };
 
-
   const handleSubmit = async () => {
     try {
-      const queryDtos = rows.map(r => r.query);
+      const queryDtos = rows.map((r) => r.query);
       if (hasValidQueries()) {
         // const data = await queryBuilder(queryDtos, searchTerm, selectedProjects);
         // if (data) {
@@ -171,11 +193,9 @@ export default function QueryBuilderClient({
         // }
       }
     } catch (error) {
-      console.error("Failed to send query")
+      console.error("Failed to send query");
     }
-
   };
-
 
   return (
     <div>
@@ -197,7 +217,10 @@ export default function QueryBuilderClient({
         </div>
       </div>
       <div className="gap-4 mb-4 pt-4 pl-8 w-full">
-        <div className="text-info-content p-4 text-xl"> {t.translations.ADDITIONAL_FILTERS}</div>
+        <div className="text-info-content p-4 text-xl">
+          {" "}
+          {t.translations.ADDITIONAL_FILTERS}
+        </div>
         <div className="shadow-md rounded-md mr-6">
           <div className="flex justify-between p-8 gap-7 ">
             {/* Advanced Search */}
@@ -293,9 +316,7 @@ export default function QueryBuilderClient({
                         {/* Operator */}
                         <select
                           className="select select-sm select-bordered w-full"
-                          value={
-                            row.query.operator
-                          }
+                          value={row.query.operator}
                           onChange={(e) =>
                             updateRow(row.id, {
                               query: {
@@ -304,7 +325,6 @@ export default function QueryBuilderClient({
                               },
                             })
                           }
-
                         >
                           <option value="" disabled>
                             {t.translations.OPERATOR}
@@ -317,10 +337,21 @@ export default function QueryBuilderClient({
                                 return opt === "KEY_VALUE";
                               }
                               if (row.query.filter === "last_updated_at") {
-                                return opt === "<" || opt === ">" || opt === '='; // only show < or >
+                                return (
+                                  opt === "<" || opt === ">" || opt === "="
+                                ); // only show < or >
                               }
-                              if (row.query.filter === "class_name" || row.query.filter === "original_id" || row.query.filter === "data_source_name" || row.query.filter === "tags") {
-                                return opt !== "<" && opt !== ">" && opt !== 'KEY_VALUE'; // hide < and >
+                              if (
+                                row.query.filter === "class_name" ||
+                                row.query.filter === "original_id" ||
+                                row.query.filter === "data_source_name" ||
+                                row.query.filter === "tags"
+                              ) {
+                                return (
+                                  opt !== "<" &&
+                                  opt !== ">" &&
+                                  opt !== "KEY_VALUE"
+                                ); // hide < and >
                               }
                               return true; // otherwise allow all
                             })
@@ -333,9 +364,10 @@ export default function QueryBuilderClient({
 
                         {/* Text input for Property Field; select for others (except Time Range) */}
                         {/* Value */}
-                        {row.query.filter !== "last_updated_at" && (
-                          (row.query.filter === "properties" || row.query.filter === "original_id") ? (
-                            (row.query.filter === "properties") ? (
+                        {row.query.filter !== "last_updated_at" &&
+                          (row.query.filter === "properties" ||
+                          row.query.filter === "original_id" ? (
+                            row.query.filter === "properties" ? (
                               <div className="grid grid-cols-2 gap-2 w-full">
                                 <input
                                   type="text"
@@ -372,31 +404,40 @@ export default function QueryBuilderClient({
                                 type="text"
                                 className="input input-sm input-bordered w-full"
                                 value={row.query.value ?? ""}
-                                onChange={(e) => updateRow(row.id, {
-                                  query: {
-                                    ...row.query,
-                                    value: e.target.value
-                                  },
-                                })}
+                                onChange={(e) =>
+                                  updateRow(row.id, {
+                                    query: {
+                                      ...row.query,
+                                      value: e.target.value,
+                                    },
+                                  })
+                                }
                                 placeholder={t.translations.VALUE}
                               />
-                            )) : (
+                            )
+                          ) : (
                             <select
                               className="select select-sm select-bordered w-full"
                               value={row.query.value}
-                              onChange={(e) => updateRow(row.id, {
-                                query: {
-                                  ...row.query,
-                                  value: e.target.value,
-                                },
-                              })}
+                              onChange={(e) =>
+                                updateRow(row.id, {
+                                  query: {
+                                    ...row.query,
+                                    value: e.target.value,
+                                  },
+                                })
+                              }
                               disabled={
-                                (row.query.filter === "class_name" && isLoadingClasses) ||
-                                (row.query.filter === "data_source_name" && isLoadingDataSources) ||
+                                (row.query.filter === "class_name" &&
+                                  isLoadingClasses) ||
+                                (row.query.filter === "data_source_name" &&
+                                  isLoadingDataSources) ||
                                 (row.query.filter === "tags" && isLoadingTags)
                               }
                             >
-                              <option value="" disabled>{t.translations.VALUE}</option>
+                              <option value="" disabled>
+                                {t.translations.VALUE}
+                              </option>
 
                               {row.query.filter === "class_name" ? (
                                 classes.length ? (
@@ -407,7 +448,9 @@ export default function QueryBuilderClient({
                                   ))
                                 ) : (
                                   <option disabled value="">
-                                    {isLoadingClasses ? "Loading classes..." : "No classes found"}
+                                    {isLoadingClasses
+                                      ? "Loading classes..."
+                                      : "No classes found"}
                                   </option>
                                 )
                               ) : row.query.filter === "data_source_name" ? (
@@ -419,7 +462,9 @@ export default function QueryBuilderClient({
                                   ))
                                 ) : (
                                   <option disabled value="">
-                                    {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
+                                    {isLoadingDataSources
+                                      ? "Loading datasources..."
+                                      : "No datasources found"}
                                   </option>
                                 )
                               ) : row.query.filter === "tags" ? (
@@ -431,7 +476,9 @@ export default function QueryBuilderClient({
                                   ))
                                 ) : (
                                   <option disabled value="">
-                                    {isLoadingTags ? "Loading tags..." : "No tags found"}
+                                    {isLoadingTags
+                                      ? "Loading tags..."
+                                      : "No tags found"}
                                   </option>
                                 )
                               ) : (
@@ -442,20 +489,20 @@ export default function QueryBuilderClient({
                                 ))
                               )}
                             </select>
-                          )
-                        )}
+                          ))}
 
                         {/* Time Range*/}
                         {row.query.filter === "last_updated_at" ? (
                           <DatePicker
                             row={row}
-                            onChange={(dateTime: string) =>
-                              updateRow(row.id, {
-                                query: {
-                                  ...row.query,
-                                  value: dateTime,
-                                },
-                              }) // store datetime in row.value
+                            onChange={
+                              (dateTime: string) =>
+                                updateRow(row.id, {
+                                  query: {
+                                    ...row.query,
+                                    value: dateTime,
+                                  },
+                                }) // store datetime in row.value
                             }
                           />
                         ) : null}
@@ -480,15 +527,19 @@ export default function QueryBuilderClient({
                               className="btn btn-outline btn-sm"
                               onClick={addRow}
                             >
-                              <PlusIcon className="w-4 h-4" /> {t.translations.FILTER}
+                              <PlusIcon className="w-4 h-4" />{" "}
+                              {t.translations.FILTER}
                             </button>
-                            <button onClick={reset} className="btn btn-error btn-outline btn-sm">
-                              <XMarkIcon className="w-4 h-4" />{t.translations.DELETE_ALL_FILTERS}
+                            <button
+                              onClick={reset}
+                              className="btn btn-error btn-outline btn-sm"
+                            >
+                              <XMarkIcon className="w-4 h-4" />
+                              {t.translations.DELETE_ALL_FILTERS}
                             </button>
                           </div>
                         )}
                       </div>
-
                     </div>
                   ))}
                 </div>
@@ -514,20 +565,23 @@ export default function QueryBuilderClient({
                 </button>
               </div>
             </div> */}
-
-
           </div>
           {/* Submit search */}
           <div className="grid justify-items-start p-4">
-            <button onClick={handleSubmit} className="btn btn-primary btn-sm" disabled={!searchTerm && !hasValidQueries()}>{t.translations.SEARCH_RECORDS}
+            <button
+              onClick={handleSubmit}
+              className="btn btn-primary btn-sm"
+              disabled={!searchTerm && !hasValidQueries()}
+            >
+              {t.translations.SEARCH_RECORDS}
             </button>
           </div>
         </div>
       </div>
       {records && records?.length > 0 ? (
         <ListView data={records} />
-      ) : (records &&
-        <div className="p-10">{t.translations.NO_RECORDS}</div>
+      ) : (
+        records && <div className="p-10">{t.translations.NO_RECORDS}</div>
       )}
     </div>
   );

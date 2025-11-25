@@ -49,7 +49,7 @@ public class EdgeController : ControllerBase
     {
         try
         {
-            var edges = await _edgeBusiness.GetAllEdges(projectId, dataSourceId, hideArchived);
+            var edges = await _edgeBusiness.GetAllEdges(organizationId, projectId, dataSourceId, hideArchived);
             return Ok(edges);
         }
         catch (Exception exc)
@@ -77,7 +77,7 @@ public class EdgeController : ControllerBase
     {
         try
         {
-            var edge = await _edgeBusiness.GetEdge(projectId, organizationId, edgeId, null, null, hideArchived);
+            var edge = await _edgeBusiness.GetEdge(organizationId, projectId, edgeId, null, null, hideArchived);
             return Ok(edge);
         }
         catch (Exception exc)
@@ -107,7 +107,7 @@ public class EdgeController : ControllerBase
     {
         try
         {
-            var edge = await _edgeBusiness.GetEdge(projectId, organizationId, null, originId, destinationId,
+            var edge = await _edgeBusiness.GetEdge(organizationId, projectId, null, originId, destinationId,
                 hideArchived);
             return Ok(edge);
         }
@@ -138,7 +138,7 @@ public class EdgeController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var createdEdge =
-                await _edgeBusiness.CreateEdge(currentUserId, projectId, dataSourceId, organizationId, edge);
+                await _edgeBusiness.CreateEdge(currentUserId, organizationId, projectId, dataSourceId, edge);
             return Ok(createdEdge);
         }
         catch (Exception exc)
@@ -167,7 +167,7 @@ public class EdgeController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var createdEdges =
-                await _edgeBusiness.BulkCreateEdges(currentUserId, projectId, dataSourceId, organizationId, edges);
+                await _edgeBusiness.BulkCreateEdges(currentUserId, organizationId, projectId, dataSourceId, edges);
             return Ok(createdEdges);
         }
         catch (Exception exc)
@@ -197,7 +197,7 @@ public class EdgeController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var updatedEdge =
-                await _edgeBusiness.UpdateEdge(currentUserId, projectId, organizationId, dto, edgeId, null, null);
+                await _edgeBusiness.UpdateEdge(currentUserId, organizationId, projectId, dto, edgeId, null, null);
             return Ok(updatedEdge);
         }
         catch (Exception exc)
@@ -229,7 +229,7 @@ public class EdgeController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var updatedEdge =
-                await _edgeBusiness.UpdateEdge(currentUserId, projectId, organizationId, dto, null, originId,
+                await _edgeBusiness.UpdateEdge(currentUserId, organizationId, projectId, dto, null, originId,
                     destinationId);
             return Ok(updatedEdge);
         }
@@ -257,7 +257,8 @@ public class EdgeController : ControllerBase
     {
         try
         {
-            await _edgeBusiness.DeleteEdge(projectId, organizationId, edgeId, null, null);
+            var currentUserId = UserContextStorage.UserId;
+            await _edgeBusiness.DeleteEdge(currentUserId, organizationId, projectId, edgeId, null, null);
             return Ok(new { message = $"Deleted edge {edgeId}" });
         }
         catch (Exception exc)
@@ -285,7 +286,9 @@ public class EdgeController : ControllerBase
     {
         try
         {
-            var edgeId = await _edgeBusiness.DeleteEdge(projectId, organizationId, null, originId, destinationId);
+            var currentUserId = UserContextStorage.UserId;
+            var edgeId = await _edgeBusiness.DeleteEdge(currentUserId, organizationId, projectId, null, originId,
+                destinationId);
             return Ok(new { message = $"Deleted edge {edgeId}" });
         }
         catch (Exception exc)
@@ -321,7 +324,7 @@ public class EdgeController : ControllerBase
                 return Ok(new { message = $"Archived edge {edgeId}" });
             }
 
-            await _edgeBusiness.UnarchiveEdge(currentUserId, projectId, organizationId, edgeId, null, null);
+            await _edgeBusiness.UnarchiveEdge(currentUserId, organizationId, projectId, edgeId, null, null);
             return Ok(new { message = $"Unarchived edge {edgeId}" });
         }
         catch (Exception exc)
@@ -361,7 +364,7 @@ public class EdgeController : ControllerBase
                 return Ok(new { message = $"Archived edge {edgeId}" });
             }
 
-            edgeId = await _edgeBusiness.UnarchiveEdge(currentUserId, projectId, organizationId, null, originId,
+            edgeId = await _edgeBusiness.UnarchiveEdge(currentUserId, organizationId, projectId, null, originId,
                 destinationId);
             return Ok(new { message = $"Unarchived edge {edgeId}" });
         }

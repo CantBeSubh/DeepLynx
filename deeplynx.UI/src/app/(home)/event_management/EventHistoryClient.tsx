@@ -1,30 +1,28 @@
-
 "use client";
 
-import Link from 'next/link';
+import Link from "next/link";
 import React, { useState, useEffect, useCallback } from "react";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import { Column } from "@/app/(home)/types/types";
-import GenericTableSkeleton from "@/app/(home)/components/skeletons/generictableskeleton"
-import {
-  getAllEventsPaginated,
-  EventFilterParams,
-} from "@/app/lib/event_services.client";
+import GenericTableSkeleton from "@/app/(home)/components/skeletons/generictableskeleton";
 import {
   EventResponseDto,
   PaginatedEventsResponseDto,
 } from "../types/responseDTOs";
-import { useOrganizationSession } from '@/app/contexts/OrganizationSessionProvider';
-import { useProjectSession } from '@/app/contexts/ProjectSessionProvider';
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import {
+  EventFilterParams,
+  getAllEventsPaginated,
+} from "@/app/lib/client_service/event_services.client";
 
 const EventsHistoryClient = () => {
-
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
   const getThirtyDaysAgo = () => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
 
   const [data, setData] = useState<EventResponseDto[]>([]);
@@ -34,34 +32,58 @@ const EventsHistoryClient = () => {
     totalCount: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<EventFilterParams>({ startDate: getThirtyDaysAgo(), });
+  const [filters, setFilters] = useState<EventFilterParams>({
+    startDate: getThirtyDaysAgo(),
+  });
   const { organization, hasLoaded } = useOrganizationSession();
   const { project, setProject } = useProjectSession();
-
-
 
   type FilterConfig = {
     key: string;
     label: string;
     placeholder?: string;
-    type?: 'text' | 'select' | 'date' | 'datetime-local';
+    type?: "text" | "select" | "date" | "datetime-local";
     options?: { value: string; label: string }[];
   };
 
   const filterConfig: FilterConfig[] = [
-    { key: 'startDate', label: 'Start Date', type: 'date' },
-    { key: 'endDate', label: 'End Date', type: 'date' },
-    { key: 'projectName', label: 'Project Name', placeholder: 'Filter by project name...' },
-    { key: 'lastUpdatedBy', label: 'Last Updated By', placeholder: 'Filter by user...' },
-    { key: 'operation', label: 'Operation', placeholder: 'Filter by operation...' },
-    { key: 'entityType', label: 'Entity Type', placeholder: 'Filter by entity type...' },
-    { key: 'entityName', label: 'Entity Name', placeholder: 'Filter by entity name...' },
-    { key: 'dataSourceName', label: 'Data Source', placeholder: 'Filter by data source...' }
+    { key: "startDate", label: "Start Date", type: "date" },
+    { key: "endDate", label: "End Date", type: "date" },
+    {
+      key: "projectName",
+      label: "Project Name",
+      placeholder: "Filter by project name...",
+    },
+    {
+      key: "lastUpdatedBy",
+      label: "Last Updated By",
+      placeholder: "Filter by user...",
+    },
+    {
+      key: "operation",
+      label: "Operation",
+      placeholder: "Filter by operation...",
+    },
+    {
+      key: "entityType",
+      label: "Entity Type",
+      placeholder: "Filter by entity type...",
+    },
+    {
+      key: "entityName",
+      label: "Entity Name",
+      placeholder: "Filter by entity name...",
+    },
+    {
+      key: "dataSourceName",
+      label: "Data Source",
+      placeholder: "Filter by data source...",
+    },
   ];
 
   // Handler for when filters change
   const handleFilterChange = (newFilters: EventFilterParams) => {
-    console.log('Filters applied:', newFilters);
+    console.log("Filters applied:", newFilters);
     setFilters(newFilters);
   };
 
@@ -70,11 +92,15 @@ const EventsHistoryClient = () => {
     async (pageNumber: number, pageSize: number) => {
       setLoading(true);
       try {
-        const result: PaginatedEventsResponseDto = await getAllEventsPaginated(organization?.organizationId as number, project?.projectId as number, {
-          pageNumber,
-          pageSize,
-          ...filters,
-        });
+        const result: PaginatedEventsResponseDto = await getAllEventsPaginated(
+          organization?.organizationId as number,
+          project?.projectId as number,
+          {
+            pageNumber,
+            pageSize,
+            ...filters,
+          }
+        );
 
         setData(result.items);
         setPagination({
@@ -121,7 +147,7 @@ const EventsHistoryClient = () => {
       cell: (row) => {
         const date = new Date(row.lastUpdatedAt ? row.lastUpdatedAt : "");
         return date.toLocaleString();
-      }
+      },
     },
     {
       header: "User",
@@ -186,7 +212,7 @@ const EventsHistoryClient = () => {
 
   return (
     <div>
-      <div className='bg-base-200/50 border-b border-base-300/30 pt-4 px-8'>
+      <div className="bg-base-200/50 border-b border-base-300/30 pt-4 px-8">
         <h1 className="text-2xl my-6 font-bold text-info-content">
           Event History
         </h1>
@@ -219,7 +245,7 @@ const EventsHistoryClient = () => {
             onPageSizeChange={handlePageSizeChange}
             bordered={false}
             searchBar={true}
-            filterPlaceholder='Search this page...'
+            filterPlaceholder="Search this page..."
             rowsPerPage={rowsPerPage}
             setRowsPerPage={setRowsPerPage}
             filters={filterConfig}

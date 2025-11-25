@@ -3,14 +3,17 @@ import GenericTable from "../../components/GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { Column } from "../../types/types";
 import { TrashIcon, PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { getAllUsers, deleteUser } from "@/app/lib/user_services.client";
+import {
+  getAllUsers,
+  deleteUser,
+} from "@/app/lib/client_service/user_services.client";
 import EditSysUser from "../../components/SiteManagementPortal/EditSysUser";
 import MemberManagementUserSkeleton from "../../components/skeletons/membermanagementuserskeleton";
 import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
 import InviteUserModal from "./InviteUserModal";
 import toast from "react-hot-toast";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { sendEmail } from "@/app/lib/notification_services.client";
+import { sendEmail } from "@/app/lib/client_service/notification_services.client";
 
 interface Props {
   members: UserResponseDto[];

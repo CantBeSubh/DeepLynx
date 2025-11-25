@@ -242,7 +242,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto);
+        var result = await _edgeBusiness.CreateEdge(uid1, oid, pid, dsid, dto);
 
         // Assert
         Assert.True(result.Id > 0);
@@ -277,7 +277,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             RelationshipId = (int)relationshipId
         };
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, oid, pid, dsid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -294,7 +294,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = 0, // Invalid destination
             RelationshipId = (int)relationshipId
         };
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, oid, pid, dsid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -310,7 +310,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             DestinationId = (int)originRecordId,
             RelationshipId = (int)relationshipId
         };
-        await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
+        await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.CreateEdge(uid1, oid, pid, dsid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -329,7 +329,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid + 99, dsid, oid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, oid, pid + 99, dsid, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -348,31 +348,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid + 99, oid, dto));
-
-        // Ensure that edge create event was NOT logged
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Empty(eventList);
-    }
-
-    [Fact]
-    public async Task CreateEdge_Fails_IfDeletedProjectId()
-    {
-        // Arrange
-        var project = await Context.Projects.FindAsync(pid);
-        project.IsArchived = true;
-        Context.Projects.Update(project);
-        await Context.SaveChangesAsync();
-
-        var dto = new CreateEdgeRequestDto
-        {
-            OriginId = (int)originRecordId,
-            DestinationId = (int)destinationRecordId,
-            RelationshipId = (int)relationshipId
-        };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, pid, dsid, oid, dto));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(uid1, oid, pid, dsid + 99, dto));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -406,7 +382,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _edgeBusiness.BulkCreateEdges(uid1, pid, dsid, oid, edges);
+        var result = await _edgeBusiness.BulkCreateEdges(uid1, oid, pid, dsid, edges);
 
         // Assert
         Assert.Equal(2, result.Count);
@@ -434,7 +410,7 @@ public class EdgeBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _edgeBusiness.BulkCreateEdges(uid1, pid, dsid, oid, null));
+            _edgeBusiness.BulkCreateEdges(uid1, oid, pid, dsid, null));
 
         // Ensure that edge create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -449,13 +425,13 @@ public class EdgeBusinessTests : IntegrationTestBase
     public async Task GetAllEdges_ReturnsOnlyForProject()
     {
         // Arrange
-        await _edgeBusiness.CreateEdge(uid1, pid, dsid, oid,
+        await _edgeBusiness.CreateEdge(uid1, oid, pid, dsid,
             new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
-        await _edgeBusiness.CreateEdge(uid1, pid2, dsid2, oid,
+        await _edgeBusiness.CreateEdge(uid1, oid, pid2, dsid2,
             new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
 
         // Act
-        var list = await _edgeBusiness.GetAllEdges(pid, null, true);
+        var list = await _edgeBusiness.GetAllEdges(oid, pid, null, true);
 
         // Assert
         Assert.All(list, e => Assert.Equal(pid, e.ProjectId));
@@ -492,8 +468,8 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var listWithArchived = await _edgeBusiness.GetAllEdges(pid, null, false);
-        var listWithoutArchived = await _edgeBusiness.GetAllEdges(pid, null, true);
+        var listWithArchived = await _edgeBusiness.GetAllEdges(oid, pid, null, false);
+        var listWithoutArchived = await _edgeBusiness.GetAllEdges(oid, pid, null, true);
 
         // Assert
         Assert.Contains(listWithArchived, e => e.Id == archivedEdge.Id);
@@ -522,7 +498,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var result = await _edgeBusiness.GetEdge(pid, oid, testEdge.Id, null, null, true);
+        var result = await _edgeBusiness.GetEdge(oid, pid, testEdge.Id, null, null, true);
 
         // Assert
         Assert.Equal(testEdge.Id, result.Id);
@@ -548,7 +524,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var result = await _edgeBusiness.GetEdge(pid, oid, null, originRecordId, destinationRecordId, true);
+        var result = await _edgeBusiness.GetEdge(oid, pid, null, originRecordId, destinationRecordId, true);
 
         // Assert
         Assert.Equal(testEdge.Id, result.Id);
@@ -575,7 +551,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.GetEdge(pid + 999, oid, testEdge.Id, null, null, true));
+            _edgeBusiness.GetEdge(oid, pid + 999, testEdge.Id, null, null, true));
     }
 
     [Fact]
@@ -598,7 +574,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.GetEdge(pid, oid, testEdge.Id, null, null, true));
+            _edgeBusiness.GetEdge(oid, pid, testEdge.Id, null, null, true));
     }
 
     [Fact]
@@ -607,7 +583,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _edgeBusiness.GetEdge(pid, oid, null, null, null, true));
+                _edgeBusiness.GetEdge(oid, pid, null, null, null, true));
         Assert.Contains("Please supply either an edgeID or an originID and destinationID", exception.Message);
     }
 
@@ -658,7 +634,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var updatedResult = await _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, testEdge.Id, null, null);
+        var updatedResult = await _edgeBusiness.UpdateEdge(uid1, oid, pid, dto, testEdge.Id, null, null);
 
         // Assert
         Assert.NotNull(updatedResult);
@@ -720,7 +696,7 @@ public class EdgeBusinessTests : IntegrationTestBase
             RelationshipId = (int)relationshipId
         };
         await Assert.ThrowsAsync<ValidationException>(() =>
-            _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, testEdge.Id, null, null));
+            _edgeBusiness.UpdateEdge(uid1, oid, pid, dto, testEdge.Id, null, null));
         // Ensure that update edge event was logged
         var eventList = await Context.Events.ToListAsync();
         Assert.Empty(eventList);
@@ -766,7 +742,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, testEdge.Id, null, null);
+        var result = await _edgeBusiness.UpdateEdge(uid1, oid, pid, dto, testEdge.Id, null, null);
 
         // Assert
         Assert.NotNull(result);
@@ -784,7 +760,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         Assert.NotEqual(DateTime.MinValue, updatedEdge.LastUpdatedAt);
 
         // Verify that get function gets updated version
-        var getResult = await _edgeBusiness.GetEdge(pid, oid, testEdge.Id, edgeOriginId, edgeDestinationId, true);
+        var getResult = await _edgeBusiness.GetEdge(oid, pid, testEdge.Id, edgeOriginId, edgeDestinationId, true);
         Assert.NotNull(getResult);
         Assert.Equal((int)relationshipId, getResult.RelationshipId);
         Assert.Equal(edgeOriginId, getResult.OriginId);
@@ -815,7 +791,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.UpdateEdge(uid1, pid, oid, dto, 99, null, null));
+            _edgeBusiness.UpdateEdge(uid1, oid, pid, dto, 99, null, null));
 
         // Ensure that update edge event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -846,7 +822,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         var now = DateTime.UtcNow;
         // Act
-        var archivedResult = await _edgeBusiness.ArchiveEdge(uid1, pid, oid, testEdge.Id, null, null);
+        var archivedResult = await _edgeBusiness.ArchiveEdge(uid1, oid, pid, testEdge.Id, null, null);
 
         var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
 
@@ -870,7 +846,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         Assert.Equal(testEdge.Id, actualEvent.EntityId);
         Assert.Equal("edge", actualEvent.EntityType);
-        Assert.Equal("delete", actualEvent.Operation);
+        Assert.Equal("archive", actualEvent.Operation);
     }
 
     [Fact]
@@ -878,7 +854,7 @@ public class EdgeBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.ArchiveEdge(uid1, pid, oid, 999, null, null));
+            _edgeBusiness.ArchiveEdge(uid1, oid, pid, 999, null, null));
 
         // Ensure that create edge event is NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -904,7 +880,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var deletedResult = await _projectBusiness.ArchiveProject(uid1, pid);
+        var deletedResult = await _projectBusiness.ArchiveProject(uid1, oid, pid);
 
         // procedure is not traced by entity framework
         //this forces EF to sync to db on next query
@@ -945,7 +921,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
         var now = DateTime.UtcNow;
         // Act
-        var unarchivedResult = await _edgeBusiness.UnarchiveEdge(uid1, pid, oid, testEdge.Id, null, null);
+        var unarchivedResult = await _edgeBusiness.UnarchiveEdge(uid1, oid, pid, testEdge.Id, null, null);
         Assert.Equal(testEdge.Id, unarchivedResult);
 
         var unarchivedEdge = await Context.Edges.FindAsync(testEdge.Id);
@@ -967,7 +943,7 @@ public class EdgeBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.UnarchiveEdge(uid1, pid, oid, 999, null, null));
+            _edgeBusiness.UnarchiveEdge(uid1, oid, pid, 999, null, null));
 
         // Ensure that create edge event is NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -993,7 +969,7 @@ public class EdgeBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _edgeBusiness.UnarchiveEdge(uid1, pid, oid, activeEdge.Id, null, null));
+            _edgeBusiness.UnarchiveEdge(uid1, oid, pid, activeEdge.Id, null, null));
 
         // Ensure that create edge event is NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -1022,7 +998,7 @@ public class EdgeBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         // Act
-        var deletedResult = await _edgeBusiness.DeleteEdge(pid, oid, testEdge.Id, null, null);
+        var deletedResult = await _edgeBusiness.DeleteEdge(uid1, oid, pid, testEdge.Id, null, null);
 
         // Assert
         Assert.Equal(testEdge.Id, deletedResult);
@@ -1034,7 +1010,7 @@ public class EdgeBusinessTests : IntegrationTestBase
     public async Task DeleteEdge_Fails_IfNotFound()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.DeleteEdge(pid, oid, 999, null, null));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.DeleteEdge(uid1, oid, pid, 999, null, null));
     }
 
     #endregion

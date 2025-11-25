@@ -56,7 +56,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId, hideArchived, fileType);
+            var records =
+                await _recordBusiness.GetAllRecords(organizationId, projectId, dataSourceId, hideArchived, fileType);
             return Ok(records);
         }
         catch (Exception exc)
@@ -84,7 +85,7 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var records = await _recordBusiness.GetRecordsByTags(projectId, tagIds, hideArchived);
+            var records = await _recordBusiness.GetRecordsByTags(organizationId, projectId, tagIds, hideArchived);
             return Ok(records);
         }
         catch (Exception exc)
@@ -112,7 +113,7 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var record = await _recordBusiness.GetRecord(projectId, recordId, hideArchived);
+            var record = await _recordBusiness.GetRecord(organizationId, projectId, recordId, hideArchived);
             return Ok(record);
         }
         catch (Exception exc)
@@ -142,7 +143,7 @@ public class RecordController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var record =
-                await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, dataSourceId, dto);
+                await _recordBusiness.CreateRecord(currentUserId, organizationId, projectId, dataSourceId, dto);
             return Ok(record);
         }
         catch (Exception exc)
@@ -172,7 +173,7 @@ public class RecordController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var newRecords =
-                await _recordBusiness.BulkCreateRecords(currentUserId, projectId, organizationId, dataSourceId,
+                await _recordBusiness.BulkCreateRecords(currentUserId, organizationId, projectId, dataSourceId,
                     records);
             return Ok(newRecords);
         }
@@ -202,7 +203,7 @@ public class RecordController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var updated = await _recordBusiness.UpdateRecord(currentUserId, projectId, recordId, dto);
+            var updated = await _recordBusiness.UpdateRecord(currentUserId, organizationId, projectId, recordId, dto);
             return Ok(updated);
         }
         catch (Exception exc)
@@ -228,7 +229,8 @@ public class RecordController : ControllerBase
     {
         try
         {
-            await _recordBusiness.DeleteRecord(projectId, recordId);
+            var currentUserId = UserContextStorage.UserId;
+            await _recordBusiness.DeleteRecord(currentUserId, organizationId, projectId, recordId);
             return Ok(new { message = $"Deleted record {recordId}" });
         }
         catch (Exception exc)
@@ -259,11 +261,11 @@ public class RecordController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _recordBusiness.ArchiveRecord(currentUserId, projectId, organizationId, recordId);
+                await _recordBusiness.ArchiveRecord(currentUserId, organizationId, projectId, recordId);
                 return Ok(new { message = $"Archived record {recordId}" });
             }
 
-            await _recordBusiness.UnarchiveRecord(currentUserId, projectId, organizationId, recordId);
+            await _recordBusiness.UnarchiveRecord(currentUserId, organizationId, projectId, recordId);
             return Ok(new { message = $"Unarchived record {recordId}" });
         }
         catch (Exception exc)
@@ -292,7 +294,7 @@ public class RecordController : ControllerBase
     {
         try
         {
-            await _recordBusiness.AttachTag(projectId, recordId, tagId);
+            await _recordBusiness.AttachTag(organizationId, projectId, recordId, tagId);
             return Ok(new { message = $"Tag {tagId} attached to record {recordId}" });
         }
         catch (Exception exc)
@@ -320,7 +322,7 @@ public class RecordController : ControllerBase
     {
         try
         {
-            await _recordBusiness.UnattachTag(projectId, recordId, tagId);
+            await _recordBusiness.UnattachTag(organizationId, projectId, recordId, tagId);
             return Ok(new { message = $"Tag {tagId} unattached from record {recordId}" });
         }
         catch (Exception exc)
