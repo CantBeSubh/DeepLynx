@@ -228,7 +228,7 @@ const AddRecordModal: React.FC<Props> = ({
         setSelectedDataSourceId(undefined);
         const list = await getAllDataSources(
           organization?.organizationId as number,
-          selectedProjectId
+          [selectedProjectId]
         );
         if (!cancelled) setDataSources(list ?? []);
       } catch (err: unknown) {
