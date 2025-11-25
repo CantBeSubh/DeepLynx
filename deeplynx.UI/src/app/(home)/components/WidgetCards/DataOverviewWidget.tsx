@@ -1,5 +1,5 @@
 import { useLanguage } from "@/app/contexts/Language";
-import { getDataOverview } from "@/app/lib/user_services.client";
+import { getDataOverview } from "@/app/lib/client_service/user_services.client";
 import {
   ArrowsRightLeftIcon,
   CircleStackIcon,

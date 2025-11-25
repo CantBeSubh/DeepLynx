@@ -1,15 +1,12 @@
-import { createTag } from "@/app/lib/tag_services.client";
-import React, { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { attachTagToRecord } from "@/app/lib/record_services.client";
 import {
   TagResponseDto,
-  RecordResponseDto,
+  HistoricalRecordResponseDto,
 } from "@/app/(home)/types/responseDTOs";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
-import { fullTextSearch } from "@/app/lib/query_services.client";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/query_services.client";
+import { createOrganizationTag } from "@/app/lib/client_service/tag_services.client";
+import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -32,15 +29,17 @@ const parseTags = (
   return [];
 };
 
+type RecordWithParsedTags = Omit<HistoricalRecordResponseDto, "tags"> & {
+  tags: TagResponseDto[];
+};
+
 interface CreateTagProps {
-  projectId: string;
   onTagCreated: () => Promise<void>;
   selectedTagIds: Set<number>;
   setSelectedTagIds: React.Dispatch<React.SetStateAction<Set<number>>>;
 }
 
 const CreateTag = ({
-  projectId,
   onTagCreated,
   selectedTagIds,
   setSelectedTagIds,
@@ -51,15 +50,14 @@ const CreateTag = ({
   const [createdTags, setCreatedTags] = useState<TagResponseDto[]>([]);
   const { organization } = useOrganizationSession();
 
-
   const handleCreateTag = async () => {
     if (!tagName.trim()) {
       setError("Tag name cannot be empty");
       return;
     }
 
-    if (!projectId || projectId === "0") {
-      setError("Invalid project selected");
+    if (!organization?.organizationId) {
+      setError("No organization selected");
       return;
     }
 
@@ -67,7 +65,10 @@ const CreateTag = ({
     setError(null);
 
     try {
-      const newTag = await createTag(organization?.organizationId as number, Number(projectId), { name: tagName });
+      const newTag = await createOrganizationTag(
+        organization.organizationId as number,
+        { name: tagName }
+      );
       setTagName("");
       toast.success("Tag Created");
       setCreatedTags((prev) => [...prev, newTag]);
@@ -91,8 +92,6 @@ const CreateTag = ({
     setSelectedTagIds(newSelected);
   };
 
-  const isProjectSelected = projectId && projectId !== "0";
-
   return (
     <div className="w-[70%] mx-auto">
       <div>
@@ -103,28 +102,19 @@ const CreateTag = ({
           className="input input-bordered w-full mb-4"
           value={tagName}
           onChange={(e) => setTagName(e.target.value)}
-          disabled={loading || !isProjectSelected}
+          disabled={loading}
           onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              !loading &&
-              tagName.trim() &&
-              isProjectSelected
-            ) {
+            if (e.key === "Enter" && !loading && tagName.trim()) {
               handleCreateTag();
             }
           }}
         />
-        {!isProjectSelected && (
-          <p className="text-primary text-sm mb-2">
-            Please select a project first
-          </p>
-        )}
+        {error && <p className="text-error text-sm mb-2">{error}</p>}
         <div className="flex justify-end mb-6">
           <button
             className="btn btn-primary"
             onClick={handleCreateTag}
-            disabled={loading || !tagName.trim() || !isProjectSelected}
+            disabled={loading || !tagName.trim()}
           >
             {loading ? "Creating..." : "Create Tag"}
           </button>
@@ -145,12 +135,6 @@ const CreateTag = ({
                     className="flex items-center px-3 py-2 hover:bg-base-200 rounded cursor-pointer"
                     onClick={() => handleTagToggle(tag.id)}
                   >
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary"
-                      checked={selectedTagIds.has(tag.id)}
-                      onChange={() => handleTagToggle(tag.id)}
-                    />
                     <span className="badge ml-2">{tag.name}</span>
                   </li>
                 ))}
@@ -164,20 +148,13 @@ const CreateTag = ({
 };
 
 interface CreateTagRecordsListProps {
-  projectId: string;
   selectedTagIds: Set<number>;
 }
 
 export const CreateTagRecordsList = ({
-  projectId,
   selectedTagIds,
 }: CreateTagRecordsListProps) => {
-  type RecordWithParsedTags = Omit<
-    RecordResponseDto | FileViewerTableRow,
-    "tags"
-  > & {
-    tags: TagResponseDto[];
-  };
+  const { organization } = useOrganizationSession();
 
   const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
   const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
@@ -191,39 +168,40 @@ export const CreateTagRecordsList = ({
     new Set()
   );
 
+  const fetchRecentRecords = useCallback(async () => {
+    if (!organization?.organizationId) {
+      setRecords([]);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const recentRecords = await getRecentlyAddedRecords(
+        organization.organizationId as number,
+        []
+      );
+      const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
+        (record) => ({
+          ...record,
+          tags: parseTags(record.tags),
+        })
+      );
+      setRecords(recordsWithParsedTags);
+    } catch (error) {
+      console.error("Error fetching recent records:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [organization?.organizationId]);
+
   useEffect(() => {
-    const fetchRecentRecords = async () => {
-      if (!projectId || projectId === "0") {
-        setRecords([]);
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-        setRecords(recordsWithParsedTags);
-      } catch (error) {
-        console.error("Error fetching recent records:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRecentRecords();
-  }, [projectId]);
+  }, [fetchRecentRecords]);
 
   const performFullTextSearch = useCallback(
-    async (searchTerm: string, projectId: string) => {
-      if (!searchTerm.trim()) {
+    async (searchTerm: string) => {
+      if (!searchTerm.trim() || !organization?.organizationId) {
         setSearchResults([]);
         return;
       }
@@ -231,8 +209,12 @@ export const CreateTagRecordsList = ({
       setSearchLoading(true);
 
       try {
-        //TODO: fix when reaady
-        // const data = await fullTextSearch(searchTerm, [projectId]);
+        // TODO: Update to organization-level search endpoint
+        // const data = await fullTextSearch(
+        //   organization.organizationId,
+        //   searchTerm,
+        //   []
+        // );
         // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
         //   (record) => ({
         //     ...record,
@@ -247,11 +229,11 @@ export const CreateTagRecordsList = ({
         setSearchLoading(false);
       }
     },
-    []
+    [organization?.organizationId]
   );
 
   const handleSubmit = async () => {
-    await performFullTextSearch(searchTerm, projectId);
+    await performFullTextSearch(searchTerm);
   };
 
   const handleClearSearch = () => {
@@ -293,11 +275,11 @@ export const CreateTagRecordsList = ({
 
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
-      //TODO: you know the drill
+      // TODO: Update to organization-level attach endpoint
       // selectedRecordIds.forEach((recordId) => {
       //   selectedTagIds.forEach((tagId) => {
       //     attachPromises.push(
-      //       attachTagToRecord(Number(projectId), recordId, tagId)
+      //       attachTagToRecordOrganization(organization.organizationId, recordId, tagId)
       //     );
       //   });
       // });
@@ -310,20 +292,8 @@ export const CreateTagRecordsList = ({
 
       setSelectedRecordIds(new Set());
 
-      if (searchResults.length > 0) {
-        await performFullTextSearch(searchTerm, projectId);
-      } else {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-        setRecords(recordsWithParsedTags);
-      }
+      // Refresh records
+      await fetchRecentRecords();
     } catch (error) {
       console.error("Error attaching tags:", error);
       toast.error("Failed to attach tags to some records");
@@ -337,125 +307,136 @@ export const CreateTagRecordsList = ({
 
   return (
     <div
-      className="w-[85%] mx-auto flex flex-col"
+      className="w-[85%] mx-auto flex items-center justify-center"
       style={{ height: "calc(90vh - 325px)" }}
     >
-      <div className="gap-2 mb-4">
-        <h3 className="font-bold mb-4">Search Records</h3>
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            placeholder="Search Record"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="input input-bordered flex-1"
-          />
-          <button
-            className="btn btn-primary"
-            onClick={handleSubmit}
-            disabled={searchLoading || !searchTerm.trim()}
-          >
-            {searchLoading ? "Searching..." : "Search"}
-          </button>
-          {searchResults.length > 0 && (
-            <button
-              className="btn btn-outline btn-error"
-              onClick={handleClearSearch}
-            >
-              Clear
-            </button>
-          )}
-        </div>
-        {selectedRecordIds.size > 0 && (
-          <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
-            <span className="text-sm">
-              {selectedRecordIds.size} record(s) selected •{" "}
-              {selectedTagIds.size} tag(s) to attach
-            </span>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={handleAttachTags}
-              disabled={attachLoading || selectedTagIds.size === 0}
-            >
-              {attachLoading ? "Attaching..." : "Attach Tags"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <h3 className="font-bold mb-4">
-          {isSearching ? "Search Results" : "Recently Added Records"}
-        </h3>
-
-        {(searchLoading || loading) && (
-          <p className="text-sm">Loading records...</p>
-        )}
-
-        {!searchLoading && !loading && displayRecords.length === 0 && (
-          <p className="text-base-content/70 text-sm">
-            {isSearching
-              ? "No records found matching your search"
-              : "No recent records found"}
-          </p>
-        )}
-
-        {!searchLoading && !loading && displayRecords.length > 0 && (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <p className="text-sm text-base-content/70 mb-2">
-              {displayRecords.length} record
-              {displayRecords.length !== 1 ? "s" : ""}
-            </p>
-            <ul className="space-y-2 overflow-y-auto flex-1">
-              {displayRecords.map((record, index) => (
-                <li
-                  key={record.id || index}
-                  className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
-                >
-                  <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary mt-1"
-                      checked={
-                        record.id !== null && selectedRecordIds.has(record.id)
-                      }
-                      onChange={() => handleRecordToggle(record.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold">{record.name}</div>
-
-                      {record.tags && record.tags.length > 0 && (
-                        <div className="flex gap-1 flex-wrap mt-1">
-                          {record.tags.map((tag) => (
-                            <span
-                              className="badge badge-outline badge-secondary badge-sm"
-                              key={tag.id}
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {record.lastUpdatedAt && (
-                        <div className="text-xs text-base-content/60 mt-1">
-                          Last Updated:{" "}
-                          {new Date(record.lastUpdatedAt).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+      <p className="text-base-content/70 text-sm">
+        To attach tags, that is done at the project portal
+      </p>
     </div>
   );
+
+  // return (
+  //   <div
+  //     className="w-[85%] mx-auto flex flex-col"
+  //     style={{ height: "calc(90vh - 325px)" }}
+  //   >
+  //     <div className="gap-2 mb-4">
+  //       <h3 className="font-bold mb-4">Search Records</h3>
+  //       <div className="flex gap-2 mb-4">
+  //         <input
+  //           type="text"
+  //           placeholder="Search Record"
+  //           value={searchTerm}
+  //           onChange={(e) => setSearchTerm(e.target.value)}
+  //           onKeyDown={handleKeyPress}
+  //           className="input input-bordered flex-1"
+  //         />
+  //         <button
+  //           className="btn btn-primary"
+  //           onClick={handleSubmit}
+  //           disabled={searchLoading || !searchTerm.trim()}
+  //         >
+  //           {searchLoading ? "Searching..." : "Search"}
+  //         </button>
+  //         {searchResults.length > 0 && (
+  //           <button
+  //             className="btn btn-outline btn-error"
+  //             onClick={handleClearSearch}
+  //           >
+  //             Clear
+  //           </button>
+  //         )}
+  //       </div>
+  //       {selectedRecordIds.size > 0 && (
+  //         <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
+  //           <span className="text-sm">
+  //             {selectedRecordIds.size} record(s) selected •{" "}
+  //             {selectedTagIds.size} tag(s) to attach
+  //           </span>
+  //           <button
+  //             className="btn btn-secondary btn-sm"
+  //             onClick={handleAttachTags}
+  //             disabled={attachLoading || selectedTagIds.size === 0}
+  //           >
+  //             {attachLoading ? "Attaching..." : "Attach Tags"}
+  //           </button>
+  //         </div>
+  //       )}
+  //     </div>
+
+  //     <div className="flex-1 flex flex-col overflow-hidden">
+  //       <h3 className="font-bold mb-4">
+  //         {isSearching ? "Search Results" : "Recently Added Records"}
+  //       </h3>
+
+  //       {(searchLoading || loading) && (
+  //         <p className="text-sm">Loading records...</p>
+  //       )}
+
+  //       {!searchLoading && !loading && displayRecords.length === 0 && (
+  //         <p className="text-base-content/70 text-sm">
+  //           {isSearching
+  //             ? "No records found matching your search"
+  //             : "No recent records found"}
+  //         </p>
+  //       )}
+
+  //       {!searchLoading && !loading && displayRecords.length > 0 && (
+  //         <div className="flex-1 flex flex-col overflow-hidden">
+  //           <p className="text-sm text-base-content/70 mb-2">
+  //             {displayRecords.length} record
+  //             {displayRecords.length !== 1 ? "s" : ""}
+  //           </p>
+  //           <ul className="space-y-2 overflow-y-auto flex-1">
+  //             {displayRecords.map((record, index) => (
+  //               <li
+  //                 key={record.id || index}
+  //                 className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
+  //               >
+  //                 <div className="flex items-start gap-2">
+  //                   <input
+  //                     type="checkbox"
+  //                     className="checkbox checkbox-primary mt-1"
+  //                     checked={
+  //                       record.id !== null && selectedRecordIds.has(record.id)
+  //                     }
+  //                     onChange={() => handleRecordToggle(record.id)}
+  //                     onClick={(e) => e.stopPropagation()}
+  //                   />
+
+  //                   <div className="flex-1">
+  //                     <div className="text-sm font-semibold">{record.name}</div>
+
+  //                     {record.tags && record.tags.length > 0 && (
+  //                       <div className="flex gap-1 flex-wrap mt-1">
+  //                         {record.tags.map((tag) => (
+  //                           <span
+  //                             className="badge badge-outline badge-secondary badge-sm"
+  //                             key={tag.id}
+  //                           >
+  //                             {tag.name}
+  //                           </span>
+  //                         ))}
+  //                       </div>
+  //                     )}
+
+  //                     {record.lastUpdatedAt && (
+  //                       <div className="text-xs text-base-content/60 mt-1">
+  //                         Last Updated:{" "}
+  //                         {new Date(record.lastUpdatedAt).toLocaleDateString()}
+  //                       </div>
+  //                     )}
+  //                   </div>
+  //                 </div>
+  //               </li>
+  //             ))}
+  //           </ul>
+  //         </div>
+  //       )}
+  //     </div>
+  //   </div>
+  // );
 };
 
 export default CreateTag;

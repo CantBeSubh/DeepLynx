@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SearchBar from "@/app/(home)/components/SearchBar";
 import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { queryRecords } from "@/app/lib/filter_services.client";
+import { queryRecords } from "@/app/lib/client_service/filter_services.client";
 
 import GridView from "../../components/GridView";
 import ListView from "../../components/ListView";
@@ -14,14 +14,12 @@ import ProjectDropdown from "../../components/ProjectDropdown";
 
 import { useLanguage } from "@/app/contexts/Language";
 import {
-  AdjustmentsHorizontalIcon,
   ArrowUturnLeftIcon,
+  ChevronDownIcon,
   EyeIcon,
   QueueListIcon,
   TableCellsIcon,
-  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
-import { fullTextSearch } from "@/app/lib/query_services.client";
 
 /* ----------------------------- Types & utils ----------------------------- */
 
@@ -156,8 +154,8 @@ export default function DataCatalogClient({
         selectedNums.length === projects.length
           ? results
           : results.filter((r: FileViewerTableRow) =>
-            selectedNums.includes(Number(r.projectId))
-          );
+              selectedNums.includes(Number(r.projectId))
+            );
 
       setTableData(scoped);
       setActiveFilters((prev) => [...prev, newFilter]);
@@ -383,8 +381,9 @@ export default function DataCatalogClient({
             </div>
 
             <button
-              className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
-                }`}
+              className={`btn btn-sm ${
+                viewMode === "list" ? "btn-primary" : "btn-ghost"
+              }`}
               onClick={() => setViewMode("list")}
               title="List view"
             >
@@ -392,8 +391,9 @@ export default function DataCatalogClient({
             </button>
 
             <button
-              className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
-                }`}
+              className={`btn btn-sm ${
+                viewMode === "table" ? "btn-primary" : "btn-ghost"
+              }`}
               onClick={() => setViewMode("table")}
               title="Table view"
             >
@@ -416,8 +416,9 @@ export default function DataCatalogClient({
                     {visibleCols.length - 1}/{ALL_COLUMNS.length - 1}
                   </span>
                   <ChevronDownIcon
-                    className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""
-                      }`}
+                    className={`h-4 w-4 transition-transform ${
+                      open ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
 

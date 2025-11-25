@@ -214,7 +214,6 @@ public class GroupController : ControllerBase
     /// <param name="organizationId">ID of the organization to which the group belongs</param>
     /// <param name="groupId">ID of the group</param>
     /// <param name="userId">ID of the user to be added</param>
-    /// <returns></returns>
     [HttpPost("{groupId}/users", Name = "api_add_user_to_group")]
     public async Task<ActionResult> AddUserToGroup(
         long organizationId,
@@ -223,7 +222,7 @@ public class GroupController : ControllerBase
     {
         try
         {
-            await _groupBusiness.AddUserToGroup(organizationId, groupId, userId);
+            await _groupBusiness.AddUserToGroup(userId, organizationId, groupId);
             return Ok(new { message = $"Added user {userId} to group {groupId}" });
         }
         catch (Exception exc)
@@ -233,6 +232,7 @@ public class GroupController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+
 
     /// <summary>
     ///     Remove user from group
@@ -249,7 +249,7 @@ public class GroupController : ControllerBase
     {
         try
         {
-            await _groupBusiness.RemoveUserFromGroup(organizationId, groupId, userId);
+            await _groupBusiness.RemoveUserFromGroup(userId, organizationId, groupId);
             return Ok(new { message = $"Removed user {userId} from group {groupId}" });
         }
         catch (Exception exc)

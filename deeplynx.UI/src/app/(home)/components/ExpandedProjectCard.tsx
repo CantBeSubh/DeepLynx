@@ -1,22 +1,20 @@
 // src/app/(home)/components/ExpandableProjectCard.tsx
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
-import { getProjectStats } from "@/app/lib/projects_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getProjectStats } from "@/app/lib/client_service/projects_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
   RectangleGroupIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import Image from "next/image";
+import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { peopleData } from "../dummy_data/data";
-import { getAllUsers } from "@/app/lib/user_services.client";
-import AvatarCell from "./Avatar";
-import { format } from "date-fns";
 import { ProjectResponseDto } from "../types/responseDTOs";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import AvatarCell from "./Avatar";
 
 interface Props {
   project: ProjectResponseDto;
@@ -27,7 +25,6 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
   const router = useRouter();
   const { t } = useLanguage();
   const { organization, hasLoaded } = useOrganizationSession();
-
 
   const [stats, setStats] = useState<{
     classes: number;
@@ -41,7 +38,10 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
 
     const fetchStats = async () => {
       try {
-        const data = await getProjectStats(organization?.organizationId as number, project.id as number);
+        const data = await getProjectStats(
+          organization?.organizationId as number,
+          project.id as number
+        );
         setStats({
           classes: data.classes,
           records: data.records,

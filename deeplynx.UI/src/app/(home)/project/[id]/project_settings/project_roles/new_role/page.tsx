@@ -1,5 +1,5 @@
 import React from "react";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { notFound } from "next/navigation";
 
 type ProjectDTO = { id: number | string; name: string };

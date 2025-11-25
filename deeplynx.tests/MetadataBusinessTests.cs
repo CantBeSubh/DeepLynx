@@ -267,7 +267,7 @@ public class MetadataBusinessTests : IntegrationTestBase
                     OriginalId = "rec-001",
                     ClassName = "Auto Class",
                     Description = "Test Description",
-                    Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
+                    Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject, 
                 }
             }
         };

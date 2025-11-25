@@ -1,10 +1,10 @@
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { createProject } from "@/app/lib/projects_services.client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CreateProjectRequestDto } from "../types/requestDTOs";
+import { createProject } from "@/app/lib/client_service/projects_services.client";
 
 interface CreateProjectsModalProps {
   isOpen: boolean; // Indicates whether the modal is open
@@ -31,7 +31,6 @@ const CreateProject = ({
   const router = useRouter();
   const { organization, hasLoaded } = useOrganizationSession();
 
-
   const handleSubmit = async () => {
     let data;
     if (isLoading) return;
@@ -39,8 +38,8 @@ const CreateProject = ({
     const dto: CreateProjectRequestDto = {
       name: name,
       abbreviation: abbreviation,
-      description: description
-    }
+      description: description,
+    };
     try {
       data = await createProject(organization?.organizationId as number, dto);
 
@@ -68,9 +67,7 @@ const CreateProject = ({
       }, 2000);
     } finally {
       setIsLoading(false);
-      router.push(
-        `/project/${data?.id}`
-      )
+      router.push(`/project/${data?.id}`);
     }
   };
 
@@ -123,12 +120,19 @@ const CreateProject = ({
                 >
                   {t.translations.CANCEL}
                 </button>
-                <button type="submit" disabled={isLoading} aria-busy={isLoading} className="btn btn-primary">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  aria-busy={isLoading}
+                  className="btn btn-primary"
+                >
                   {isLoading ? (
                     <>
                       <span className="spinner" aria-hidden="true" />
                     </>
-                  ) : (t.translations.CREATE)}
+                  ) : (
+                    t.translations.CREATE
+                  )}
                 </button>
               </div>
             </form>

@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
+import {
+  RecordResponseDto,
+  TagResponseDto,
+} from "@/app/(home)/types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import {
   attachTagToRecord,
   unattachTagFromRecord,
-} from "@/app/lib/record_services.client";
-import toast from "react-hot-toast";
+} from "@/app/lib/client_service/record_services.client";
 import { LinkSlashIcon } from "@heroicons/react/24/outline";
-import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
-import {
-  TagResponseDto,
-  RecordResponseDto,
-} from "@/app/(home)/types/responseDTOs";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 
 export const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -59,7 +59,6 @@ const SearchTags = ({
   onSearchByTags,
 }: Props) => {
   const [searchLoading, setSearchLoading] = useState(false);
-
 
   const handleTagToggle = (tagId: number) => {
     const newSelected = new Set(selectedTagIds);
@@ -155,7 +154,8 @@ const SearchTags = ({
             {searchLoading ? (
               <span className="loading loading-spinner loading-sm"></span>
             ) : (
-              `Search Records with ${selectedTagIds.size} Tag${selectedTagIds.size > 1 ? "s" : ""
+              `Search Records with ${selectedTagIds.size} Tag${
+                selectedTagIds.size > 1 ? "s" : ""
               }`
             )}
           </button>
@@ -193,7 +193,6 @@ export const SearchTagsRecordsList = ({
     useState<RecordResponseDto | null>(null);
   const [unattachLoading, setUnattachLoading] = useState(false);
   const { organization, hasLoaded } = useOrganizationSession();
-
 
   const handleRecordToggle = (recordId: number | null) => {
     if (recordId === null) return;
@@ -297,7 +296,8 @@ export const SearchTagsRecordsList = ({
 
       tagsToRemove.forEach((tagId) => {
         unattachPromises.push(
-          unattachTagFromRecord(organization?.organizationId as number,
+          unattachTagFromRecord(
+            organization?.organizationId as number,
             Number(projectId),
             recordToUnattach.id as number,
             tagId
@@ -308,7 +308,8 @@ export const SearchTagsRecordsList = ({
       await Promise.all(unattachPromises);
 
       toast.success(
-        `Successfully removed ${tagsToRemove.length} tag${tagsToRemove.length !== 1 ? "s" : ""
+        `Successfully removed ${tagsToRemove.length} tag${
+          tagsToRemove.length !== 1 ? "s" : ""
         } from "${recordToUnattach.name}"`
       );
 
@@ -384,10 +385,11 @@ export const SearchTagsRecordsList = ({
                               tag.id !== null && selectedTagIds.has(tag.id);
                             return (
                               <span
-                                className={`badge badge-sm ${isSearchedTag
-                                  ? "badge-secondary"
-                                  : "badge-outline badge-secondary"
-                                  }`}
+                                className={`badge badge-sm ${
+                                  isSearchedTag
+                                    ? "badge-secondary"
+                                    : "badge-outline badge-secondary"
+                                }`}
                                 key={tag.id}
                               >
                                 {tag.name}

@@ -1,5 +1,6 @@
 import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
 import { TagResponseDto } from "@/app/(home)/types/responseDTOs";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 
@@ -97,21 +98,21 @@ const EditTags = ({
 interface EditTagsNameFieldsProps {
   selectedTags: TagResponseDto[];
   onUpdateTag: (tagId: number, newName: string) => Promise<void>;
-  onDeleteTag: (tagId: number) => Promise<void>;
+  onArchiveTag: (tagId: number) => Promise<void>;
 }
 
 export const EditTagsNameFields = ({
   selectedTags,
   onUpdateTag,
-  onDeleteTag,
+  onArchiveTag,
 }: EditTagsNameFieldsProps) => {
   const [editedNames, setEditedNames] = useState<Map<number, string>>(
     new Map()
   );
   const [savingAll, setSavingAll] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [tagToDelete, setTagToDelete] = useState<TagResponseDto | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [tagToArchive, setTagToArchive] = useState<TagResponseDto | null>(null);
+  const [archiving, setArchiving] = useState(false);
 
   React.useEffect(() => {
     const initialNames = new Map<number, string>();
@@ -193,29 +194,29 @@ export const EditTagsNameFields = ({
     toast.success("All changes reset");
   };
 
-  const handleOpenDeleteModal = (tag: TagResponseDto) => {
-    setTagToDelete(tag);
-    setIsDeleteModalOpen(true);
+  const handleOpenArchiveModal = (tag: TagResponseDto) => {
+    setTagToArchive(tag);
+    setIsArchiveModalOpen(true);
   };
 
-  const handleCloseDeleteModal = () => {
-    setIsDeleteModalOpen(false);
-    setTagToDelete(null);
+  const handleCloseArchiveModal = () => {
+    setIsArchiveModalOpen(false);
+    setTagToArchive(null);
   };
 
-  const handleDeleteTag = async () => {
-    if (!tagToDelete) return;
+  const handleArchiveTag = async () => {
+    if (!tagToArchive) return;
 
-    setDeleting(true);
+    setArchiving(true);
     try {
-      await onDeleteTag(tagToDelete.id);
-      toast.success(`Tag "${tagToDelete.name}" deleted successfully`);
-      handleCloseDeleteModal();
+      await onArchiveTag(tagToArchive.id);
+      toast.success(`Tag "${tagToArchive.name}" archived successfully`);
+      handleCloseArchiveModal();
     } catch (error) {
-      console.error("Error deleting tag:", error);
-      toast.error(`Failed to delete tag "${tagToDelete.name}"`);
+      console.error("Error archiving tag:", error);
+      toast.error(`Failed to archive tag "${tagToArchive.name}"`);
     } finally {
-      setDeleting(false);
+      setArchiving(false);
     }
   };
 
@@ -272,12 +273,12 @@ export const EditTagsNameFields = ({
                   )}
                 </div>
                 <button
-                  className="btn btn-error btn-sm"
-                  onClick={() => handleOpenDeleteModal(tag)}
+                  className="btn btn-warning btn-sm"
+                  onClick={() => handleOpenArchiveModal(tag)}
                   disabled={savingAll}
-                  title="Delete this tag"
+                  title="Archive this tag"
                 >
-                  Delete
+                  Archive
                 </button>
               </div>
 
@@ -325,39 +326,39 @@ export const EditTagsNameFields = ({
         </div>
       )}
 
-      {isDeleteModalOpen && tagToDelete && (
+      {isArchiveModalOpen && tagToArchive && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Delete Tag</h3>
+            <h3 className="font-bold text-lg">Archive Tag</h3>
             <p className="py-4">
-              Are you sure you want to delete the tag{" "}
-              <span className="font-semibold">"{tagToDelete.name}"</span>?
+              Are you sure you want to archive the tag{" "}
+              <span className="font-semibold">"{tagToArchive.name}"</span>?
             </p>
-            <p className="text-sm text-warning">
-              ⚠️ This action cannot be undone. The tag will be removed from all
-              records.
+            <p className="text-sm flex items-center gap-2">
+              <InformationCircleIcon className="size-6" /> Archived tags can be
+              restored later if needed.
             </p>
 
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
-                onClick={handleCloseDeleteModal}
-                disabled={deleting}
+                onClick={handleCloseArchiveModal}
+                disabled={archiving}
               >
                 Cancel
               </button>
               <button
-                className="btn btn-error"
-                onClick={handleDeleteTag}
-                disabled={deleting}
+                className="btn btn-warning"
+                onClick={handleArchiveTag}
+                disabled={archiving}
               >
-                {deleting ? (
+                {archiving ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    Deleting...
+                    Archiving...
                   </>
                 ) : (
-                  "Delete Tag"
+                  "Archive Tag"
                 )}
               </button>
             </div>

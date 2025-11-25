@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { getAllUsers } from "@/app/lib/user_services.client";
-import { addMemberToProject } from "@/app/lib/projects_services.client";
-import { getAllRoles } from "@/app/lib/role_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
+import { getAllRoles } from "@/app/lib/client_service/role_services.client";
 import {
   RoleResponseDto,
   UserResponseDto,
 } from "@/app/(home)/types/responseDTOs";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { addMemberToProject } from "@/app/lib/client_service/projects_services.client";
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -28,8 +28,6 @@ const AddProjectMember = ({
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
   const { organization, hasLoaded } = useOrganizationSession();
-
-
 
   useEffect(() => {
     if (isOpen) {
@@ -68,7 +66,11 @@ const AddProjectMember = ({
       const user = users.find((u) => u.id === selectedUser);
       if (user) {
         try {
-          await addMemberToProject(projectId, selectedUser, selectedRole || undefined);
+          await addMemberToProject(
+            projectId,
+            selectedUser,
+            selectedRole || undefined
+          );
           onMemberAdded();
           onClose();
         } catch (error) {

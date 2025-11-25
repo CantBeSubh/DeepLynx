@@ -4,7 +4,7 @@ import { auth } from "../../../../auth";
 import { ProjectResponseDto } from "../types/responseDTOs";
 import { FileViewerTableRow } from "../types/types";
 import DataCatalogClient from "./DataCatalogClient";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 
 export default async function Page({
   searchParams,
