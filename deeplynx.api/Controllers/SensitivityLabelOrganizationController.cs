@@ -7,21 +7,21 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers;
 
 [ApiController]
-[Route("projects/{projectId}/labels")]
+[Route("organizations/{organizationId}/labels")]
 [Authorize]
-[Tags("Project Management", "Sensitivity Label")]
-public class ProjectSensitivityLabelController : ControllerBase
+[Tags("Organization Management", "Sensitivity Label")]
+public class SensitivityLabelOrganizationController : ControllerBase
 {
-    private readonly ILogger<SensitivityLabelController> _logger;
+    private readonly ILogger<SensitivityLabelOrganizationController> _logger;
     private readonly ISensitivityLabelBusiness _sensitivityLabelBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ProjectSensitivityLabelController" /> class
+    ///     Initializes a new instance of the <see cref="SensitivityLabelOrganizationController" /> class
     /// </summary>
     /// <param name="sensitivityLabelBusiness">The business logic interface for handling Sensitivity Label operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public ProjectSensitivityLabelController(ISensitivityLabelBusiness sensitivityLabelBusiness,
-        ILogger<SensitivityLabelController> logger)
+    public SensitivityLabelOrganizationController(ISensitivityLabelBusiness sensitivityLabelBusiness,
+        ILogger<SensitivityLabelOrganizationController> logger)
     {
         _sensitivityLabelBusiness = sensitivityLabelBusiness;
         _logger = logger;
@@ -30,19 +30,20 @@ public class ProjectSensitivityLabelController : ControllerBase
     /// <summary>
     ///     List Sensitivity Labels
     /// </summary>
-    /// <param name="projectId">ID of the project across which to search</param>
+    /// <param name="organizationId">ID of the organization across which to search</param>
+    /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
     /// <returns></returns>
-    [HttpGet(Name = "api_get_all_sensitivity_labels_project")]
+    [HttpGet(Name = "api_get_all_sensitivity_labels_organization")]
     public async Task<ActionResult<IEnumerable<SensitivityLabelResponseDto>>> GetAllSensitivityLabels(
-        long projectId,
+        long organizationId,
+        [FromQuery] long[]? projectIds,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var organizationId = UserContextStorage.OrganizationId;
             var labels = await _sensitivityLabelBusiness
-                .GetAllSensitivityLabels([projectId], organizationId,
+                .GetAllSensitivityLabels(projectIds, organizationId,
                     hideArchived); //setting project ID null for now to circumvent xor logic
             return Ok(labels);
         }
@@ -57,19 +58,18 @@ public class ProjectSensitivityLabelController : ControllerBase
     /// <summary>
     ///     Fetch Sensitivity Label by ID
     /// </summary>
-    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">ID of sensitivity label</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
     /// <returns></returns>
-    [HttpGet("{labelId}", Name = "api_get_sensitivity_label_project")]
+    [HttpGet("{labelId}", Name = "api_get_sensitivity_label_organization")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> GetSensitivityLabel(
-        long projectId,
+        long organizationId,
         long labelId, [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var organizationId = UserContextStorage.OrganizationId;
-            var label = await _sensitivityLabelBusiness.GetSensitivityLabel(labelId, projectId, organizationId,
+            var label = await _sensitivityLabelBusiness.GetSensitivityLabel(labelId, null, organizationId,
                 hideArchived);
             return Ok(label);
         }
@@ -84,19 +84,18 @@ public class ProjectSensitivityLabelController : ControllerBase
     /// <summary>
     ///     Create a Sensitivity Label
     /// </summary>
-    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="dto">Data structure of sensitivity label to create</param>
     /// <returns></returns>
-    [HttpPost(Name = "api_create_sensitivity_label_project")]
+    [HttpPost(Name = "api_create_sensitivity_label_organization")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> CreateSensitivityLabel(
-        long projectId,
+        long organizationId,
         [FromBody] CreateSensitivityLabelRequestDto dto)
     {
         try
         {
-            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
-            var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, projectId,
+            var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, null,
                 organizationId);
             return Ok(label);
         }
@@ -111,21 +110,20 @@ public class ProjectSensitivityLabelController : ControllerBase
     /// <summary>
     ///     Update a Sensitivity Label
     /// </summary>
-    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">ID of the sensitivity label</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("{labelId}", Name = "api_update_sensitivity_label_project")]
+    [HttpPut("{labelId}", Name = "api_update_sensitivity_label_organization")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> UpdateSensitivityLabel(
-        long projectId,
+        long organizationId,
         long labelId,
         [FromBody] UpdateSensitivityLabelRequestDto dto)
     {
         try
         {
-            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
-            var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, projectId,
+            var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, null,
                 organizationId, dto);
             return Ok(label);
         }
@@ -140,19 +138,18 @@ public class ProjectSensitivityLabelController : ControllerBase
     /// <summary>
     ///     Delete a Sensitivity Label
     /// </summary>
-    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">ID of the sensitivity label to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label_project")]
+    [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label_organization")]
     public async Task<ActionResult> DeleteSensitivityLabel(
-        long projectId,
+        long organizationId,
         long labelId)
     {
         try
         {
-            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
-            await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId, projectId, organizationId);
+            await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId, null, organizationId);
             return Ok(new { message = $"Deleted sensitivity label {labelId}" });
         }
         catch (Exception exc)
@@ -166,28 +163,27 @@ public class ProjectSensitivityLabelController : ControllerBase
     /// <summary>
     ///     Archive or Unarchive a Sensitivity Label
     /// </summary>
-    /// <param name="projectId">ID of the project to which the label belongs</param>
+    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">The ID of the sensitivity label to archive or unarchive.</param>
     /// <param name="archive">True to archive the label, false to unarchive it.</param>
     /// <returns>A message stating the label was successfully archived or unarchived.</returns>
-    [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label_project")]
+    [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label_organization")]
     public async Task<IActionResult> ArchiveSensitivityLabel(
-        long projectId,
+        long organizationId,
         long labelId,
         [FromQuery] bool archive)
     {
         try
         {
-            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _sensitivityLabelBusiness.ArchiveSensitivityLabel(currentUserId, labelId, projectId,
+                await _sensitivityLabelBusiness.ArchiveSensitivityLabel(currentUserId, labelId, null,
                     organizationId);
                 return Ok(new { message = $"Archived sensitivity label {labelId}" });
             }
 
-            await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(currentUserId, labelId, projectId,
+            await _sensitivityLabelBusiness.UnarchiveSensitivityLabel(currentUserId, labelId, null,
                 organizationId);
             return Ok(new { message = $"Unarchived sensitivity label {labelId}" });
         }
