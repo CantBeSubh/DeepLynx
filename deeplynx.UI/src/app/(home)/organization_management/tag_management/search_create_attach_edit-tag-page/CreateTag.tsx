@@ -132,12 +132,13 @@ const CreateTag = ({
                     className="flex items-center px-3 py-2 hover:bg-base-200 rounded cursor-pointer"
                     onClick={() => handleTagToggle(tag.id)}
                   >
-                    <input
+                    {/* This is a checkbox to select recently created tag and attach to the recently added records, or searched records. */}
+                    {/* <input
                       type="checkbox"
                       className="checkbox checkbox-primary"
                       checked={selectedTagIds.has(tag.id)}
                       onChange={() => handleTagToggle(tag.id)}
-                    />
+                    /> */}
                     <span className="badge ml-2">{tag.name}</span>
                   </li>
                 ))}
@@ -324,125 +325,136 @@ export const CreateTagRecordsList = ({
 
   return (
     <div
-      className="w-[85%] mx-auto flex flex-col"
+      className="w-[85%] mx-auto flex items-center justify-center"
       style={{ height: "calc(90vh - 325px)" }}
     >
-      <div className="gap-2 mb-4">
-        <h3 className="font-bold mb-4">Search Records</h3>
-        <div className="flex gap-2 mb-4">
-          <input
-            type="text"
-            placeholder="Search Record"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="input input-bordered flex-1"
-          />
-          <button
-            className="btn btn-primary"
-            onClick={handleSubmit}
-            disabled={searchLoading || !searchTerm.trim()}
-          >
-            {searchLoading ? "Searching..." : "Search"}
-          </button>
-          {searchResults.length > 0 && (
-            <button
-              className="btn btn-outline btn-error"
-              onClick={handleClearSearch}
-            >
-              Clear
-            </button>
-          )}
-        </div>
-        {selectedRecordIds.size > 0 && (
-          <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
-            <span className="text-sm">
-              {selectedRecordIds.size} record(s) selected •{" "}
-              {selectedTagIds.size} tag(s) to attach
-            </span>
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={handleAttachTags}
-              disabled={attachLoading || selectedTagIds.size === 0}
-            >
-              {attachLoading ? "Attaching..." : "Attach Tags"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <h3 className="font-bold mb-4">
-          {isSearching ? "Search Results" : "Recently Added Records"}
-        </h3>
-
-        {(searchLoading || loading) && (
-          <p className="text-sm">Loading records...</p>
-        )}
-
-        {!searchLoading && !loading && displayRecords.length === 0 && (
-          <p className="text-base-content/70 text-sm">
-            {isSearching
-              ? "No records found matching your search"
-              : "No recent records found"}
-          </p>
-        )}
-
-        {!searchLoading && !loading && displayRecords.length > 0 && (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <p className="text-sm text-base-content/70 mb-2">
-              {displayRecords.length} record
-              {displayRecords.length !== 1 ? "s" : ""}
-            </p>
-            <ul className="space-y-2 overflow-y-auto flex-1">
-              {displayRecords.map((record, index) => (
-                <li
-                  key={record.id || index}
-                  className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
-                >
-                  <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary mt-1"
-                      checked={
-                        record.id !== null && selectedRecordIds.has(record.id)
-                      }
-                      onChange={() => handleRecordToggle(record.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold">{record.name}</div>
-
-                      {record.tags && record.tags.length > 0 && (
-                        <div className="flex gap-1 flex-wrap mt-1">
-                          {record.tags.map((tag) => (
-                            <span
-                              className="badge badge-outline badge-secondary badge-sm"
-                              key={tag.id}
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {record.lastUpdatedAt && (
-                        <div className="text-xs text-base-content/60 mt-1">
-                          Last Updated:{" "}
-                          {new Date(record.lastUpdatedAt).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
+      <p className="text-base-content/70 text-sm">
+        To attach tags, that is done a the project portal
+      </p>
     </div>
   );
+
+  // return (
+  //   <div
+  //     className="w-[85%] mx-auto flex flex-col"
+  //     style={{ height: "calc(90vh - 325px)" }}
+  //   >
+  //     <div className="gap-2 mb-4">
+  //       <h3 className="font-bold mb-4">Search Records</h3>
+  //       <div className="flex gap-2 mb-4">
+  //         <input
+  //           type="text"
+  //           placeholder="Search Record"
+  //           value={searchTerm}
+  //           onChange={(e) => setSearchTerm(e.target.value)}
+  //           onKeyDown={handleKeyPress}
+  //           className="input input-bordered flex-1"
+  //         />
+  //         <button
+  //           className="btn btn-primary"
+  //           onClick={handleSubmit}
+  //           disabled={searchLoading || !searchTerm.trim()}
+  //         >
+  //           {searchLoading ? "Searching..." : "Search"}
+  //         </button>
+  //         {searchResults.length > 0 && (
+  //           <button
+  //             className="btn btn-outline btn-error"
+  //             onClick={handleClearSearch}
+  //           >
+  //             Clear
+  //           </button>
+  //         )}
+  //       </div>
+  //       {selectedRecordIds.size > 0 && (
+  //         <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
+  //           <span className="text-sm">
+  //             {selectedRecordIds.size} record(s) selected •{" "}
+  //             {selectedTagIds.size} tag(s) to attach
+  //           </span>
+  //           <button
+  //             className="btn btn-secondary btn-sm"
+  //             onClick={handleAttachTags}
+  //             disabled={attachLoading || selectedTagIds.size === 0}
+  //           >
+  //             {attachLoading ? "Attaching..." : "Attach Tags"}
+  //           </button>
+  //         </div>
+  //       )}
+  //     </div>
+
+  //     <div className="flex-1 flex flex-col overflow-hidden">
+  //       <h3 className="font-bold mb-4">
+  //         {isSearching ? "Search Results" : "Recently Added Records"}
+  //       </h3>
+
+  //       {(searchLoading || loading) && (
+  //         <p className="text-sm">Loading records...</p>
+  //       )}
+
+  //       {!searchLoading && !loading && displayRecords.length === 0 && (
+  //         <p className="text-base-content/70 text-sm">
+  //           {isSearching
+  //             ? "No records found matching your search"
+  //             : "No recent records found"}
+  //         </p>
+  //       )}
+
+  //       {!searchLoading && !loading && displayRecords.length > 0 && (
+  //         <div className="flex-1 flex flex-col overflow-hidden">
+  //           <p className="text-sm text-base-content/70 mb-2">
+  //             {displayRecords.length} record
+  //             {displayRecords.length !== 1 ? "s" : ""}
+  //           </p>
+  //           <ul className="space-y-2 overflow-y-auto flex-1">
+  //             {displayRecords.map((record, index) => (
+  //               <li
+  //                 key={record.id || index}
+  //                 className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
+  //               >
+  //                 <div className="flex items-start gap-2">
+  //                   <input
+  //                     type="checkbox"
+  //                     className="checkbox checkbox-primary mt-1"
+  //                     checked={
+  //                       record.id !== null && selectedRecordIds.has(record.id)
+  //                     }
+  //                     onChange={() => handleRecordToggle(record.id)}
+  //                     onClick={(e) => e.stopPropagation()}
+  //                   />
+
+  //                   <div className="flex-1">
+  //                     <div className="text-sm font-semibold">{record.name}</div>
+
+  //                     {record.tags && record.tags.length > 0 && (
+  //                       <div className="flex gap-1 flex-wrap mt-1">
+  //                         {record.tags.map((tag) => (
+  //                           <span
+  //                             className="badge badge-outline badge-secondary badge-sm"
+  //                             key={tag.id}
+  //                           >
+  //                             {tag.name}
+  //                           </span>
+  //                         ))}
+  //                       </div>
+  //                     )}
+
+  //                     {record.lastUpdatedAt && (
+  //                       <div className="text-xs text-base-content/60 mt-1">
+  //                         Last Updated:{" "}
+  //                         {new Date(record.lastUpdatedAt).toLocaleDateString()}
+  //                       </div>
+  //                     )}
+  //                   </div>
+  //                 </div>
+  //               </li>
+  //             ))}
+  //           </ul>
+  //         </div>
+  //       )}
+  //     </div>
+  //   </div>
+  // );
 };
 
 export default CreateTag;

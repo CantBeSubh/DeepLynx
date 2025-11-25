@@ -57,7 +57,7 @@ const TagManagementClient = () => {
   >([]);
   const [isSearchingByTags, setIsSearchingByTags] = useState(false);
 
-  const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
+  const menuItems = ["Search Tags", "Create Tag", "Edit Tags"];
   const { organization } = useOrganizationSession();
 
   useEffect(() => {
@@ -272,7 +272,7 @@ const TagManagementClient = () => {
               setSelectedTagIds={setSelectedTagIds}
             />
           )}
-          {selectedMenuItem === "Attach Tags" && (
+          {/* {selectedMenuItem === "Attach Tags" && (
             <AttachTags
               loading={loading}
               error={error}
@@ -283,7 +283,7 @@ const TagManagementClient = () => {
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
             />
-          )}
+          )} */}
           {selectedMenuItem === "Edit Tags" && (
             <EditTags
               loading={loading}
@@ -311,9 +311,9 @@ const TagManagementClient = () => {
               projectId={""}
             />
           )}
-          {/* {selectedMenuItem === "Create Tag" && (
+          {selectedMenuItem === "Create Tag" && (
             <CreateTagRecordsList selectedTagIds={selectedTagIds} />
-          )} */}
+          )}
           {/* {selectedMenuItem === "Attach Tags" && (
             <AttachTagsRecordsList
               selectedTagIds={selectedTagIds}
