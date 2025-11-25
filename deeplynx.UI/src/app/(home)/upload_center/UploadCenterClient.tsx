@@ -187,7 +187,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       try {
         const dataSource = await getAllDataSources(
           organization?.organizationId as number,
-          Number(projectId)
+          [Number(projectId)]
         );
         setDataSources(dataSource);
         if (dataSource.length === 1) {
