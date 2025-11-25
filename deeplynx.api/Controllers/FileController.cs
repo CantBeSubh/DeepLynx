@@ -135,7 +135,8 @@ public class FileController : ControllerBase
     {
         try
         {
-            await _fileBusiness.DeleteFile(organizationId, projectId, recordId);
+            var currentUserId = UserContextStorage.UserId;
+            await _fileBusiness.DeleteFile(currentUserId, organizationId, projectId, recordId);
             return Ok(new { message = $"Deleted record {recordId} and its file" });
         }
         catch (Exception exc)
