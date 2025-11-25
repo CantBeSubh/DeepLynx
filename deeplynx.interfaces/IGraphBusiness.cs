@@ -1,11 +1,12 @@
-using System.Linq.Expressions;
-using deeplynx.datalayer.Models;
 using deeplynx.models;
 
 namespace deeplynx.interfaces;
 
 public interface IGraphBusiness
 {
-    Task<List<RelatedRecordsResponseDto>> GetEdgesByRecord(long recordId, bool isOrigin, int page, bool hideArchived, int pageSize);
-    Task<GraphResponse> GetGraphDataForRecord(long recordId, long userId, int depth);
+    Task<List<RelatedRecordsResponseDto>> GetEdgesByRecord(
+        long organizationId, long projectId, long recordId, bool isOrigin, int page, int pageSize);
+
+    Task<GraphResponse> GetGraphDataForRecord(
+        long organizationId, long projectId, long recordId, long userId, int depth);
 }

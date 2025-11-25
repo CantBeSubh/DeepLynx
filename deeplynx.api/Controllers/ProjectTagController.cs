@@ -9,17 +9,18 @@ namespace deeplynx.api.Controllers;
 [Route("organizations/{organizationId}/projects/{projectId}/tags")]
 [ApiController]
 [Authorize]
-public class TagController : ControllerBase
+[Tags("Project Management", "Tag")]
+public class ProjectTagController : ControllerBase
 {
-    private readonly ILogger<TagController> _logger;
+    private readonly ILogger<ProjectTagController> _logger;
     private readonly ITagBusiness _tagBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="TagController" /> class.
+    ///     Initializes a new instance of the <see cref="ProjectTagController" /> class.
     /// </summary>
     /// <param name="tagBusiness">The business logic interface for handling tag operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public TagController(ITagBusiness tagBusiness, ILogger<TagController> logger)
+    public ProjectTagController(ITagBusiness tagBusiness, ILogger<ProjectTagController> logger)
     {
         _tagBusiness = tagBusiness;
         _logger = logger;
@@ -32,13 +33,13 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project whose tags are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    [HttpGet(Name = "api_get_all_tags")]
+    [HttpGet(Name = "api_get_all_tags_project")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
         long organizationId, long projectId, [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(projectId, hideArchived);
+            var tags = await _tagBusiness.GetAllTags(organizationId, [projectId], hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -57,48 +58,21 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
-    [HttpGet("{tagId}", Name = "api_get_a_tag")]
+    [HttpGet("{tagId}", Name = "api_get_a_tag_project")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
-        long organizationId, long projectId, long tagId,
+        long organizationId,
+        long projectId,
+        long tagId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var tag = await _tagBusiness.GetTag(projectId, tagId, hideArchived);
+            var tag = await _tagBusiness.GetTag(organizationId, projectId, tagId, hideArchived);
             return Ok(tag);
         }
         catch (Exception exception)
         {
             var message = $"An error occurred while retrieving tag {tagId}: {exception}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    ///     Get All Tags (Multi Project)
-    /// </summary>
-    /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
-    /// <param name="projectId">The ID of the project whose tags are to be retrieved</param>
-    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
-    /// <returns>A list of tags for the given project.</returns>
-    [HttpGet("multiproject", Name = "api_get_all_tags_multi_project")]
-    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTagsMultiProject(
-        long organizationId,
-        long projectId,
-        [FromQuery] long[] projectIds,
-        [FromQuery] bool hideArchived = true)
-    {
-        try
-        {
-            var tags = await _tagBusiness.GetAllTagsMultiProject(
-                projectIds, hideArchived);
-            return Ok(tags);
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while listing all tags: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -111,7 +85,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
-    [HttpPost(Name = "api_create_a_tag")]
+    [HttpPost(Name = "api_create_a_tag_project")]
     public async Task<ActionResult<TagResponseDto>> CreateTag(
         long organizationId, long projectId,
         [FromBody] CreateTagRequestDto tagRequestDto)
@@ -119,7 +93,7 @@ public class TagController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var createdTag = await _tagBusiness.CreateTag(currentUserId, projectId, tagRequestDto);
+            var createdTag = await _tagBusiness.CreateTag(currentUserId, organizationId, projectId, tagRequestDto);
             return Ok(createdTag);
         }
         catch (Exception exception)
@@ -137,15 +111,16 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
-    [HttpPost("bulk", Name = "api_create_many_tags")]
+    [HttpPost("bulk", Name = "api_create_many_tags_project")]
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
-        long organizationId, long projectId,
+        long organizationId,
+        long projectId,
         [FromBody] List<CreateTagRequestDto> tagRequestDto)
     {
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(currentUserId, projectId, tagRequestDto);
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(currentUserId, organizationId, projectId, tagRequestDto);
             return Ok(bulkTagResponseDto);
         }
         catch (Exception exception)
@@ -157,14 +132,14 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a tag
+    /// Update a tag
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
-    [HttpPut("{tagId}", Name = "api_update_a_tag")]
+    [HttpPut("{tagId}", Name = "api_update_a_tag_project")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(
         long organizationId, long projectId, long tagId,
         [FromBody] UpdateTagRequestDto tagRequestDto)
@@ -172,7 +147,7 @@ public class TagController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var updatedTag = await _tagBusiness.UpdateTag(currentUserId, projectId, tagId, tagRequestDto);
+            var updatedTag = await _tagBusiness.UpdateTag(currentUserId, organizationId, projectId, tagId, tagRequestDto);
             return Ok(updatedTag);
         }
         catch (Exception exception)
@@ -190,13 +165,13 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
-    [HttpDelete("{tagId}", Name = "api_delete_a_tag")]
+    [HttpDelete("{tagId}", Name = "api_delete_a_tag_project")]
     public async Task<IActionResult> DeleteTag(
         long organizationId, long projectId, long tagId)
     {
         try
         {
-            await _tagBusiness.DeleteTag(projectId, tagId);
+            await _tagBusiness.DeleteTag(organizationId, projectId, tagId);
             return Ok(new { message = "Tag deleted successfully" });
         }
         catch (Exception exception)
@@ -215,7 +190,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to archive or unarchive.</param>
     /// <param name="archive">True to archive the tag, false to unarchive it.</param>
     /// <returns>A message stating the tag was successfully archived or unarchived.</returns>
-    [HttpPatch("{tagId}", Name = "api_archive_tag")]
+    [HttpPatch("{tagId}", Name = "api_archive_tag_project")]
     public async Task<IActionResult> ArchiveTag(
         long organizationId,
         long projectId,
@@ -227,11 +202,11 @@ public class TagController : ControllerBase
             var userId = UserContextStorage.UserId;
             if (archive)
             {
-                await _tagBusiness.ArchiveTag(userId, projectId, tagId);
+                await _tagBusiness.ArchiveTag(organizationId, userId, projectId, tagId);
                 return Ok(new { message = $"Archived tag {tagId}" });
             }
 
-            await _tagBusiness.UnarchiveTag(userId, projectId, tagId);
+            await _tagBusiness.UnarchiveTag(organizationId, userId, projectId, tagId);
             return Ok(new { message = $"Unarchived tag {tagId}" });
         }
         catch (Exception exc)

@@ -1,24 +1,26 @@
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/labels")]
+[Route("projects/{projectId}/labels")]
+[Authorize]
 [Tags("Project Management", "Sensitivity Label")]
-public class SensitivityLabelController : ControllerBase
+public class ProjectSensitivityLabelController : ControllerBase
 {
     private readonly ILogger<SensitivityLabelController> _logger;
     private readonly ISensitivityLabelBusiness _sensitivityLabelBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SensitivityLabelController" /> class
+    ///     Initializes a new instance of the <see cref="ProjectSensitivityLabelController" /> class
     /// </summary>
     /// <param name="sensitivityLabelBusiness">The business logic interface for handling Sensitivity Label operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public SensitivityLabelController(ISensitivityLabelBusiness sensitivityLabelBusiness,
+    public ProjectSensitivityLabelController(ISensitivityLabelBusiness sensitivityLabelBusiness,
         ILogger<SensitivityLabelController> logger)
     {
         _sensitivityLabelBusiness = sensitivityLabelBusiness;
@@ -29,17 +31,16 @@ public class SensitivityLabelController : ControllerBase
     ///     List Sensitivity Labels
     /// </summary>
     /// <param name="projectId">ID of the project across which to search</param>
-    /// <param name="organizationId">ID of the organization across which to search</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
     /// <returns></returns>
-    [HttpGet(Name = "api_get_all_sensitivity_labels")]
+    [HttpGet(Name = "api_get_all_sensitivity_labels_project")]
     public async Task<ActionResult<IEnumerable<SensitivityLabelResponseDto>>> GetAllSensitivityLabels(
-        long organizationId,
         long projectId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var labels = await _sensitivityLabelBusiness
                 .GetAllSensitivityLabels([projectId], organizationId,
                     hideArchived); //setting project ID null for now to circumvent xor logic
@@ -56,18 +57,18 @@ public class SensitivityLabelController : ControllerBase
     /// <summary>
     ///     Fetch Sensitivity Label by ID
     /// </summary>
-    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="projectId">ID of the project to which the label belongs</param>
     /// <param name="labelId">ID of sensitivity label</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
     /// <returns></returns>
-    [HttpGet("{labelId}", Name = "api_get_sensitivity_label")]
+    [HttpGet("{labelId}", Name = "api_get_sensitivity_label_project")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> GetSensitivityLabel(
-        long organizationId, long projectId,
+        long projectId,
         long labelId, [FromQuery] bool hideArchived = true)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var label = await _sensitivityLabelBusiness.GetSensitivityLabel(labelId, projectId, organizationId,
                 hideArchived);
             return Ok(label);
@@ -83,18 +84,17 @@ public class SensitivityLabelController : ControllerBase
     /// <summary>
     ///     Create a Sensitivity Label
     /// </summary>
-    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="projectId">ID of the project to which the label belongs</param>
     /// <param name="dto">Data structure of sensitivity label to create</param>
     /// <returns></returns>
-    [HttpPost(Name = "api_create_sensitivity_label")]
+    [HttpPost(Name = "api_create_sensitivity_label_project")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> CreateSensitivityLabel(
-        long organizationId,
         long projectId,
         [FromBody] CreateSensitivityLabelRequestDto dto)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             var label = await _sensitivityLabelBusiness.CreateSensitivityLabel(currentUserId, dto, projectId,
                 organizationId);
@@ -111,20 +111,19 @@ public class SensitivityLabelController : ControllerBase
     /// <summary>
     ///     Update a Sensitivity Label
     /// </summary>
-    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="projectId">ID of the project to which the label belongs</param>
     /// <param name="labelId">ID of the sensitivity label</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("{labelId}", Name = "api_update_sensitivity_label")]
+    [HttpPut("{labelId}", Name = "api_update_sensitivity_label_project")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> UpdateSensitivityLabel(
-        long organizationId,
         long projectId,
         long labelId,
         [FromBody] UpdateSensitivityLabelRequestDto dto)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             var label = await _sensitivityLabelBusiness.UpdateSensitivityLabel(currentUserId, labelId, projectId,
                 organizationId, dto);
@@ -141,18 +140,17 @@ public class SensitivityLabelController : ControllerBase
     /// <summary>
     ///     Delete a Sensitivity Label
     /// </summary>
-    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="projectId">ID of the project to which the label belongs</param>
     /// <param name="labelId">ID of the sensitivity label to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label")]
+    [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label_project")]
     public async Task<ActionResult> DeleteSensitivityLabel(
-        long organizationId,
         long projectId,
         long labelId)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             await _sensitivityLabelBusiness.DeleteSensitivityLabel(currentUserId, labelId, projectId, organizationId);
             return Ok(new { message = $"Deleted sensitivity label {labelId}" });
@@ -168,20 +166,19 @@ public class SensitivityLabelController : ControllerBase
     /// <summary>
     ///     Archive or Unarchive a Sensitivity Label
     /// </summary>
-    /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="projectId">ID of the project to which the label belongs</param>
     /// <param name="labelId">The ID of the sensitivity label to archive or unarchive.</param>
     /// <param name="archive">True to archive the label, false to unarchive it.</param>
     /// <returns>A message stating the label was successfully archived or unarchived.</returns>
-    [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label")]
+    [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label_project")]
     public async Task<IActionResult> ArchiveSensitivityLabel(
-        long organizationId,
         long projectId,
         long labelId,
         [FromQuery] bool archive)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
