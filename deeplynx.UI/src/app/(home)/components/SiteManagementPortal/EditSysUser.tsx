@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { updateUser } from "@/app/lib/user_services.client";
+import { updateUser } from "@/app/lib/client_service/user_services.client";
 import { setOrganizationAdminStatus } from "@/app/lib/organization_services.client";
 
 interface EditSysUserProps {
@@ -8,12 +8,18 @@ interface EditSysUserProps {
   onClose: () => void;
   userId: number;
   userName: string;
-  // currentAdminStatus: boolean; //need to add backend 
+  // currentAdminStatus: boolean; //need to add backend
   onUserUpdated: () => void;
 }
 
 // Main EditSysUser component
-const EditSysUser = ({ isOpen, onClose, userId, userName, onUserUpdated }: EditSysUserProps) => {
+const EditSysUser = ({
+  isOpen,
+  onClose,
+  userId,
+  userName,
+  onUserUpdated,
+}: EditSysUserProps) => {
   const { t } = useLanguage();
   const [name, setName] = useState(userName);
   // const [isAdmin, setIsAdmin] = useState(currentAdminStatus);
@@ -77,7 +83,11 @@ const EditSysUser = ({ isOpen, onClose, userId, userName, onUserUpdated }: EditS
               <button type="button" className="btn" onClick={onClose}>
                 {t.translations.CANCEL}
               </button>
-              <button type="submit" className="btn btn-primary" onClick={handleUpdate}>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                onClick={handleUpdate}
+              >
                 {t.translations.SAVE}
               </button>
             </div>

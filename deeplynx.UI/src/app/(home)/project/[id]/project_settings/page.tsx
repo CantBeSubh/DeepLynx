@@ -1,5 +1,5 @@
 import React from "react";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import ProjectSettingsClient from "./ProjectSettingsClient";
 import { notFound, redirect } from "next/navigation";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
@@ -13,7 +13,7 @@ function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
     lastUpdatedAt: p.lastUpdatedAt,
     lastUpdatedBy: p.lastUpdatedBy ?? "",
     isArchived: p.isArchived,
-    organizationId: p.organizationId
+    organizationId: p.organizationId,
   };
 }
 
@@ -41,9 +41,12 @@ export default async function Page({ params }: Props) {
     redirect("/select-org");
   }
 
-
-  const ProjectResponseDtos = (await getAllProjectsServer(organizationId as number)) as ProjectResponseDto[];
-  const initialProjects = ProjectResponseDtos.map((p) => toProjectResponseDtos(p));
+  const ProjectResponseDtos = (await getAllProjectsServer(
+    organizationId as number
+  )) as ProjectResponseDto[];
+  const initialProjects = ProjectResponseDtos.map((p) =>
+    toProjectResponseDtos(p)
+  );
   const initialProject = initialProjects.find((p) => p.id == id);
 
   if (initialProject == undefined) return notFound();

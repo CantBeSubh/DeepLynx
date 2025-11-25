@@ -6,7 +6,7 @@ import {
   ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import CatalogViewSkeleton from "./skeletons/catalogviewskeleton";

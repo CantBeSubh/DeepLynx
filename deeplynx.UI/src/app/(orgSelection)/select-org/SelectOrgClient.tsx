@@ -10,7 +10,7 @@ import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvid
 import { getAllOrganizations } from "@/app/lib/organization_services.client";
 import { createOrganization } from "@/app/lib/organization_services.client";
 import { getAllProjects } from "@/app/lib/projects_services.client";
-import { getAllUsers } from "@/app/lib/user_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import {
   ArrowRightIcon,
   Cog6ToothIcon,

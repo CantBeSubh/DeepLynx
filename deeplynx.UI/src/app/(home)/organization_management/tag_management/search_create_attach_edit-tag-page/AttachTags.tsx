@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { fullTextSearch } from "@/app/lib/query_services.client";
 import { attachTagToRecord } from "@/app/lib/record_services.client";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
 import toast from "react-hot-toast";
 import SimpleFilterInput from "@/app/(home)/components/SimpleFilterComponent";
 import {
@@ -190,7 +190,7 @@ export const AttachTagsRecordsList = ({
       setSearchLoading(true);
 
       try {
-        //TODO: fix this 
+        //TODO: fix this
         // const data = await fullTextSearch(searchTerm, [projectId]);
         // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
         //   (record) => ({

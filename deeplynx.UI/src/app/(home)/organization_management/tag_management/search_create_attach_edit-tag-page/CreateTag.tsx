@@ -8,7 +8,7 @@ import {
 } from "@/app/(home)/types/responseDTOs";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { fullTextSearch } from "@/app/lib/query_services.client";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 const parseTags = (
@@ -51,7 +51,6 @@ const CreateTag = ({
   const [createdTags, setCreatedTags] = useState<TagResponseDto[]>([]);
   const { organization } = useOrganizationSession();
 
-
   const handleCreateTag = async () => {
     if (!tagName.trim()) {
       setError("Tag name cannot be empty");
@@ -67,7 +66,11 @@ const CreateTag = ({
     setError(null);
 
     try {
-      const newTag = await createTag(organization?.organizationId as number, Number(projectId), { name: tagName });
+      const newTag = await createTag(
+        organization?.organizationId as number,
+        Number(projectId),
+        { name: tagName }
+      );
       setTagName("");
       toast.success("Tag Created");
       setCreatedTags((prev) => [...prev, newTag]);

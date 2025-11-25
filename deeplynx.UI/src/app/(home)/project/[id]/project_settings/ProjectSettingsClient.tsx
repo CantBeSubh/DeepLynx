@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from "@/app/(home)/components/ProjectDropdownSingleSelect";
 import { getProjectMembers } from "@/app/lib/projects_services.client";
-import { getAllRoles } from "@/app/lib/role_services.client";
+import { getAllRoles } from "@/app/lib/client_service/role_services.client";
 import ProjectSettingsMemberSkeleton from "@/app/(home)/components/skeletons/projectsettingsmemberskeleton";
 import {
   ProjectResponseDto,
@@ -37,16 +37,19 @@ export default function ProjectSettingsClient({
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     initialProject?.id.toString() || null
   );
-  const [projectMembers, setProjectMembers] = useState<ProjectMemberResponseDto[]>([]);
+  const [projectMembers, setProjectMembers] = useState<
+    ProjectMemberResponseDto[]
+  >([]);
 
   const [roles, setRoles] = useState<RoleResponseDto[]>([]);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
   const { organization } = useOrganizationSession();
 
-
   useEffect(() => {
     const fetchRoles = async () => {
-      const rolesData = await getAllRoles(organization?.organizationId as number, Number(selectedProjectId),
+      const rolesData = await getAllRoles(
+        organization?.organizationId as number,
+        Number(selectedProjectId)
       );
       setRoles(rolesData);
     };
@@ -58,7 +61,10 @@ export default function ProjectSettingsClient({
 
     (async () => {
       try {
-        const users = await getProjectMembers(organization?.organizationId as number, Number(selectedProjectId));
+        const users = await getProjectMembers(
+          organization?.organizationId as number,
+          Number(selectedProjectId)
+        );
         setProjectMembers(users);
         setIsMembersLoading(false);
       } catch (err) {
@@ -69,7 +75,10 @@ export default function ProjectSettingsClient({
 
   const refreshMembers = async () => {
     if (selectedProjectId) {
-      const users = await getProjectMembers(organization?.organizationId as number, Number(selectedProjectId));
+      const users = await getProjectMembers(
+        organization?.organizationId as number,
+        Number(selectedProjectId)
+      );
       setProjectMembers(users);
     }
   };

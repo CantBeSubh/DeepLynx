@@ -24,9 +24,9 @@ import { signOut } from "next-auth/react";
 import { RoleGate } from "../rbac/RBACComponents";
 import { useRBAC } from "../rbac/useRBAC";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { getAllOrganizations } from "@/app/lib/organization_services.client";
 import { OrganizationResponseDto } from "../types/responseDTOs";
 import { useSafeSession } from "@/app/hooks/useSafeSession";
+import { getAllOrganizations } from "@/app/lib/client_service/organization_services.client";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();

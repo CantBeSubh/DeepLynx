@@ -1,6 +1,6 @@
 import React from "react";
 import TagManagementClient from "./TagManagementClient";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { ProjectResponseDto } from "../../types/responseDTOs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -31,7 +31,9 @@ const TagManagementPage = async ({
     redirect("/select-org");
   }
   // Keep SSR for projects (fast initial render, no client flash)
-  const projects = (await getAllProjectsServer(organizationId as number)) as ProjectResponseDto[];
+  const projects = (await getAllProjectsServer(
+    organizationId as number
+  )) as ProjectResponseDto[];
 
   // Find the initial selected project or use the first one
   const initialSelectedProject = fromProject

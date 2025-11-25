@@ -1,9 +1,9 @@
 // src/app/(home)/organization_management/page.tsx
 
-import { getAllGroups } from "@/app/lib/group_services.server";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-import { getAllUsersServer } from "@/app/lib/user_services.server";
-import { getAllRolesServer } from "@/app/lib/role_services.server"; // Add this import
+import { getAllGroups } from "@/app/lib/server_service/group_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
+import { getAllUsersServer } from "@/app/lib/server_service/user_services.server";
+import { getAllRolesServer } from "@/app/lib/server_service/role_services.server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { mapToProjectResponseDtos } from "../page";
@@ -15,7 +15,7 @@ import {
   PermissionResponseDto,
 } from "../types/responseDTOs";
 import OrganizationManagmentClient from "./OrganizationManagementClient";
-import { getAllPermissionsServer } from "@/app/lib/permissions_services.server";
+import { getAllPermissionsServer } from "@/app/lib/server_service/permissions_services.server";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +49,10 @@ const OrganizationManagementPage = async ({
   // Fetch projects filtered by organization
   let projects: ProjectResponseDto[] = [];
   try {
-    const apiProjects = await getAllProjectsServer(organizationId as number, true);
+    const apiProjects = await getAllProjectsServer(
+      organizationId as number,
+      true
+    );
     projects = apiProjects.map(mapToProjectResponseDtos);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);
@@ -64,25 +67,33 @@ const OrganizationManagementPage = async ({
     console.error("getAllGroups failed:", error);
   }
 
-  // Fetch roles filtered by organization
-  const roles: RoleResponseDto[] = [];
-  try {
-    // const apiRoles = await getAllRolesServer(organizationId as number);
-    // roles = apiRoles;
-  } catch (error) {
-    console.error("getAllRolesServer failed:", error);
-  }
+  // Fetch roles and permissions in parallel
+  let roles: RoleResponseDto[] = [];
+  let permissions: PermissionResponseDto[] = [];
 
-  // Fetch permissions filtered by organization
-  const permissions: PermissionResponseDto[] = [];
   try {
-    // const apiPermissions = await getAllPermissionsServer({
-    //   organizationId: Number(organizationId),
-    //   hideArchived: true,
-    // });
-    // permissions = apiPermissions;
+    const [rolesArrays, permissionsArrays] = await Promise.all([
+      Promise.all(
+        projects.map((project) =>
+          getAllRolesServer(Number(organizationId), Number(project.id))
+        )
+      ),
+      Promise.all(
+        projects.map((project) =>
+          getAllPermissionsServer(
+            Number(organizationId),
+            Number(project.id),
+            undefined,
+            true
+          )
+        )
+      ),
+    ]);
+
+    roles = rolesArrays.flat();
+    permissions = permissionsArrays.flat();
   } catch (error) {
-    console.error("getAllPermissionsServer failed:", error);
+    console.error("Failed to fetch roles or permissions:", error);
   }
 
   // Fetch users filtered by organization

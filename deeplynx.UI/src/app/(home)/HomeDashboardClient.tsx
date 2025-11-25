@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "../contexts/Language";
-import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 import { format } from "date-fns";
@@ -21,6 +20,7 @@ import { useOrganizationSession } from "../contexts/OrganizationSessionProvider"
 import { useRBAC } from "./rbac/useRBAC";
 import { useSafeSession } from "../hooks/useSafeSession";
 import { useProjectSession } from "../contexts/ProjectSessionProvider";
+import { getAllProjects } from "../lib/client_service/projects_services.client";
 
 type Props = { initialProjects: ProjectResponseDto[] };
 
@@ -55,7 +55,10 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
 
     isRefreshing.current = true;
     try {
-      const data = await getAllProjects(organization.organizationId as number, true);
+      const data = await getAllProjects(
+        organization.organizationId as number,
+        true
+      );
       setProjects(data);
     } catch (err) {
       console.error("Failed to refresh projects:", err);
