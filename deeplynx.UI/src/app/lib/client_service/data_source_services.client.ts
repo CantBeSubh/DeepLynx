@@ -6,21 +6,21 @@ import api from "./api";
 
 
 /**
- * Get all data sources for a project
+ * Get all data sources for an organization
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
+ * @param projectIds - Optional array of project IDs to filter by
  * @param hideArchived - Flag to hide archived data sources (default: true)
  * @returns Promise with array of DataSourceResponseDto
  */
 export const getAllDataSources = async (
   organizationId: number,
-  projectId: number,
+  projectIds?: number[],
   hideArchived: boolean = true
 ): Promise<DataSourceResponseDto[]> => {
   try {
     const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/datasources`,
-      { params: { hideArchived } }
+      `/organizations/${organizationId}/datasources`,
+      { params: { projectIds, hideArchived } }
     );
     return res.data;
   } catch (error) {
@@ -30,48 +30,20 @@ export const getAllDataSources = async (
 };
 
 /**
- * Get all data sources from multiple projects
- * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project (required for route)
- * @param projectIds - Array of project IDs to retrieve data sources from
- * @param hideArchived - Flag to hide archived data sources (default: true)
- * @returns Promise with array of DataSourceResponseDto
- */
-export const getAllDataSourcesMultiProject = async (
-  organizationId: number,
-  projectId: number,
-  projectIds: number[],
-  hideArchived: boolean = true
-): Promise<DataSourceResponseDto[]> => {
-  try {
-    const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/datasources/multiproject`,
-      { params: { projectIds, hideArchived } }
-    );
-    return res.data;
-  } catch (error) {
-    console.error("Error getting data sources from multiple projects:", error);
-    throw error;
-  }
-};
-
-/**
  * Get a specific data source
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
  * @param dataSourceId - The ID of the data source
  * @param hideArchived - Flag to hide archived data sources (default: true)
  * @returns Promise with DataSourceResponseDto
  */
 export const getDataSource = async (
   organizationId: number,
-  projectId: number,
   dataSourceId: number,
   hideArchived: boolean = true
 ): Promise<DataSourceResponseDto> => {
   try {
     const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/datasources/${dataSourceId}`,
+      `/organizations/${organizationId}/datasources/${dataSourceId}`,
       { params: { hideArchived } }
     );
     return res.data;
@@ -93,7 +65,8 @@ export const getDefaultDataSource = async (
 ): Promise<DataSourceResponseDto> => {
   try {
     const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/datasources/default`
+      `/organizations/${organizationId}/datasources/default`,
+      { params: { projectId } }
     );
     return res.data;
   } catch (error) {
@@ -105,18 +78,16 @@ export const getDefaultDataSource = async (
 /**
  * Create a new data source
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
  * @param dto - The data source creation request DTO
  * @returns Promise with DataSourceResponseDto
  */
 export const createDataSource = async (
   organizationId: number,
-  projectId: number,
   dto: CreateDataSourceRequestDto
 ): Promise<DataSourceResponseDto> => {
   try {
     const res = await api.post(
-      `/organizations/${organizationId}/projects/${projectId}/datasources`,
+      `/organizations/${organizationId}/datasources`,
       dto
     );
     return res.data;
@@ -129,20 +100,18 @@ export const createDataSource = async (
 /**
  * Update a data source
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
  * @param dataSourceId - The ID of the data source to update
  * @param dto - The data source update request DTO
  * @returns Promise with DataSourceResponseDto
  */
 export const updateDataSource = async (
   organizationId: number,
-  projectId: number,
   dataSourceId: number,
   dto: UpdateDataSourceRequestDto
 ): Promise<DataSourceResponseDto> => {
   try {
     const res = await api.put(
-      `/organizations/${organizationId}/projects/${projectId}/datasources/${dataSourceId}`,
+      `/organizations/${organizationId}/datasources/${dataSourceId}`,
       dto
     );
     return res.data;
@@ -155,18 +124,16 @@ export const updateDataSource = async (
 /**
  * Delete a data source
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
  * @param dataSourceId - The ID of the data source to delete
  * @returns Promise with success message
  */
 export const deleteDataSource = async (
   organizationId: number,
-  projectId: number,
   dataSourceId: number
 ): Promise<{ message: string }> => {
   try {
     const res = await api.delete(
-      `/organizations/${organizationId}/projects/${projectId}/datasources/${dataSourceId}`
+      `/organizations/${organizationId}/datasources/${dataSourceId}`
     );
     return res.data;
   } catch (error) {
@@ -178,20 +145,18 @@ export const deleteDataSource = async (
 /**
  * Archive or unarchive a data source
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
  * @param dataSourceId - The ID of the data source to archive/unarchive
  * @param archive - True to archive, false to unarchive
  * @returns Promise with success message
  */
 export const archiveDataSource = async (
   organizationId: number,
-  projectId: number,
   dataSourceId: number,
   archive: boolean
 ): Promise<{ message: string }> => {
   try {
     const res = await api.patch(
-      `/organizations/${organizationId}/projects/${projectId}/datasources/${dataSourceId}`,
+      `/organizations/${organizationId}/datasources/${dataSourceId}`,
       null,
       { params: { archive } }
     );
@@ -203,24 +168,24 @@ export const archiveDataSource = async (
 };
 
 /**
- * Set a data source as the default for the project
+ * Set a data source as the default for a project
  * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project
  * @param dataSourceId - The ID of the data source to set as default
+ * @param projectId - The ID of the project
  * @param isDefault - True to set as default (default: true)
  * @returns Promise with DataSourceResponseDto
  */
 export const setDefaultDataSource = async (
   organizationId: number,
-  projectId: number,
   dataSourceId: number,
+  projectId: number,
   isDefault: boolean = true
 ): Promise<DataSourceResponseDto> => {
   try {
     const res = await api.patch(
-      `/organizations/${organizationId}/projects/${projectId}/datasources/${dataSourceId}/default`,
+      `/organizations/${organizationId}/datasources/${dataSourceId}/default`,
       null,
-      { params: { isDefault } }
+      { params: { projectId, isDefault } }
     );
     return res.data;
   } catch (error) {
