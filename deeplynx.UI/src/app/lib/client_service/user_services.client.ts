@@ -1,6 +1,7 @@
 // src/app/lib/user_services.client.ts
 "use client";
 
+import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
 import api from "./api";
 
 /** ---- Browser calls (with session cookies) ---- */
@@ -67,11 +68,20 @@ export async function getRecentlyAddedRecords(projectIds: string[]) {
   }
 }
 
-export async function updateUser(userId: number, name?: string) {
+
+
+export async function updateUser(
+  userId: number,
+  data: {
+    name?: string | null;
+    username?: string | null;
+    isArchived?: boolean | null;
+    projectId?: number | null;
+    isActive?: boolean | null;
+  }
+): Promise<UserResponseDto> {
   try {
-    const res = await api.put(`/users/UpdateUser/${userId}`, {
-      name,
-    });
+    const res = await api.put<UserResponseDto>(`/users/${userId}`, data);
     return res.data;
   } catch (error) {
     console.error("API call failed:", error);
