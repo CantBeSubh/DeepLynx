@@ -124,10 +124,10 @@ public class RoleBusinessTests : IntegrationTestBase
         mid = projectMember.Id;
 
         // Create permissions
-        var permission1 = new Permission { Name = "Permission 1", Action = "read", Resource = "test" };
-        var permission2 = new Permission { Name = "Permission 2", Action = "write", Resource = "test" };
-        var permission3 = new Permission { Name = "Permission 3", Action = "execute", Resource = "test2" };
-        var permission4 = new Permission { Name = "Permission 4", Action = "glorbulon", Resource = "test" };
+        var permission1 = new Permission { Name = "Permission 1", Action = "read", Resource = "test", IsDefault = true};
+        var permission2 = new Permission { Name = "Permission 2", Action = "write", Resource = "test", IsDefault = true};
+        var permission3 = new Permission { Name = "Permission 3", Action = "execute", Resource = "test2", IsDefault = true};
+        var permission4 = new Permission { Name = "Permission 4", Action = "glorbulon", Resource = "test", IsDefault = true};
         Context.Permissions.AddRange(permission1, permission2, permission3, permission4);
         await Context.SaveChangesAsync();
         permid1 = permission1.Id;

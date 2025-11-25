@@ -16,6 +16,7 @@ namespace deeplynx.tests;
 public class OrganizationBusinessTests : IntegrationTestBase
 {
     private EventBusiness _eventBusiness = null!;
+    private RoleBusiness _roleBusiness = null!;
     private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     private Mock<ILogger<OrganizationBusiness>> _mockLoggerOrg = null!;
     private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
@@ -41,11 +42,12 @@ public class OrganizationBusinessTests : IntegrationTestBase
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
         _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+        _roleBusiness = new RoleBusiness(Context, _cacheBusiness, _eventBusiness);
 
         // org business and dependencies
         _mockLoggerOrg = new Mock<ILogger<OrganizationBusiness>>();
         _organizationBusiness = new OrganizationBusiness(
-            Context, _eventBusiness, _mockLoggerOrg.Object);
+            Context, _eventBusiness, _roleBusiness, _mockLoggerOrg.Object);
     }
 
     #region OrganizationResponseDto Tests
@@ -198,121 +200,91 @@ public class OrganizationBusinessTests : IntegrationTestBase
 
     #region CreateOrganization Tests
 
-        [Fact]
-        public async Task CreateOrganization_Success_ReturnsCorrectValues()
+    [Fact]
+    public async Task CreateOrganization_Success_ReturnsCorrectValues()
+    {
+        // Arrange
+        var dto = new CreateOrganizationRequestDto
         {
-            // Arrange
-            var dto = new CreateOrganizationRequestDto
-            {
-                Name = "New Test Organization",
-                Description = "New Test Organization Description",
-            };
-            
-            var now =  DateTime.UtcNow;
-            
-            // Act
-            var result = await _organizationBusiness.CreateOrganization(uid, dto);
+            Name = "New Test Organization",
+            Description = "New Test Organization Description",
+        };
+        
+        var now =  DateTime.UtcNow;
+        
+        // Act
+        var result = await _organizationBusiness.CreateOrganization(uid, dto);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
-            Assert.Equal(dto.Name, result.Name);
-            Assert.Equal(dto.Description, result.Description);
-            Assert.False(result.DefaultOrg);
-            Assert.False(result.IsArchived);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(uid, result.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Id > 0);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.False(result.DefaultOrg);
+        Assert.False(result.IsArchived);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // verify org was actually created in database
         var createdOrg = await Context.Organizations.FindAsync(result.Id);
         Assert.NotNull(createdOrg);
         Assert.Equal(dto.Name, createdOrg.Name);
     }
-
+    
     [Fact]
-    public async Task CreateOrganization_Success_CreatesDefaultPermissions()
+    public async Task CreateOrganization_Success_CreatesDefaultRolesWithCorrectPermissions()
     {
+        
+        var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
+    
+        foreach (var defaultPermission in defaultPermissions)
+        {
+            var permission = new Permission
+            {
+                Name = defaultPermission.Name,
+                Resource = defaultPermission.Resource,
+                Action = defaultPermission.Action,
+                Description = defaultPermission.Description,
+                IsDefault = true
+            };
+            Context.Permissions.Add(permission);
+        }
+        
+        await Context.SaveChangesAsync();
+        
         // Arrange
         var dto = new CreateOrganizationRequestDto
         {
             Name = "New Test Organization",
-            Description = "New Test Organization Description"
+            Description = "New Test Organization Description",
         };
-
-        // Verify no permissions exist before creating org
-        var permissionsBeforeCount = await Context.Permissions.CountAsync();
-
+        
+        var now =  DateTime.UtcNow;
+        
         // Act
         var result = await _organizationBusiness.CreateOrganization(uid, dto);
 
         // Assert
         Assert.NotNull(result);
+        Assert.True(result.Id > 0);
         Assert.Equal(dto.Name, result.Name);
         Assert.Equal(dto.Description, result.Description);
+        Assert.False(result.DefaultOrg);
         Assert.False(result.IsArchived);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
-        // Verify org was actually created in database
+        // verify org was actually created in database
         var createdOrg = await Context.Organizations.FindAsync(result.Id);
         Assert.NotNull(createdOrg);
         Assert.Equal(dto.Name, createdOrg.Name);
-
-        // Verify default permissions were created
-        var defaultPermissions = await Context.Permissions.Where(p => p.IsDefault).ToListAsync();
-        Assert.True(defaultPermissions.Count > 0);
-        Assert.True(defaultPermissions.All(p => p.IsDefault));
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultPermissions.Count);
-
-        // Verify the count increased by the expected amount
-        var permissionsAfterCount = await Context.Permissions.CountAsync();
-        Assert.Equal(permissionsBeforeCount + DefaultPermissions.AllDefaultPermissions.Count, permissionsAfterCount);
-    }
-
-    [Fact]
-    public async Task CreateOrganization_Success_DoesNotDuplicateExistingDefaultPermissions()
-    {
-        // Arrange
-        // First, create an organization which will create the default permissions
-        var firstDto = new CreateOrganizationRequestDto
-        {
-            Name = "First Organization",
-            Description = "First org to create default permissions"
-        };
-
-        var firstOrg = await _organizationBusiness.CreateOrganization(uid, firstDto);
-
-        // Get the count of permissions after first org creation
-        var permissionsAfterFirstOrg = await Context.Permissions.CountAsync();
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, permissionsAfterFirstOrg);
-
-        // Act - Create a second organization
-        var secondDto = new CreateOrganizationRequestDto
-        {
-            Name = "Second Organization",
-            Description = "Second org should not duplicate permissions"
-        };
-
-        var secondOrg = await _organizationBusiness.CreateOrganization(uid, secondDto);
-
-        // Assert
-        Assert.NotNull(secondOrg);
-
-        // Verify no additional permissions were created
-        var permissionsAfterSecondOrg = await Context.Permissions.CountAsync();
-        Assert.Equal(permissionsAfterFirstOrg, permissionsAfterSecondOrg);
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, permissionsAfterSecondOrg);
-
-        // Verify all default permissions still exist and are not duplicated
-        var defaultPermissions = await Context.Permissions.Where(p => p.IsDefault).ToListAsync();
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultPermissions.Count);
-
-        // Verify each permission exists exactly once
-        foreach (var defaultPerm in DefaultPermissions.AllDefaultPermissions)
-        {
-            var matchingPerms = defaultPermissions
-                .Where(p => p.Resource == defaultPerm.Resource && p.Action == defaultPerm.Action)
-                .ToList();
-            Assert.Single(matchingPerms);
-        }
+        
+        var defaultRoles = await Context.Roles.Where(r => r.OrganizationId == result.Id).Include(r => r.Permissions).ToListAsync();
+        var adminRole = defaultRoles.Single(r => r.Name == "Admin");
+        var userRole =  defaultRoles.Single(r => r.Name == "User");
+        
+        AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
+        AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
     }
 
     [Fact]
@@ -1059,4 +1031,33 @@ public class OrganizationBusinessTests : IntegrationTestBase
     }
 
     #endregion
+    
+    private void AssertRolePermissions(
+        Role role, 
+        Dictionary<string, string[]> expectedPermissions)
+    {
+        // All permissions should be marked as default
+        Assert.True(
+            role.Permissions.All(p => p.IsDefault),
+            $"Role '{role.Name}' has permissions not marked as default"
+        );
+
+        // Verify permission count
+        var expectedCount = expectedPermissions.Sum(kvp => kvp.Value.Length);
+        Assert.Equal(expectedCount, role.Permissions.Count);
+
+        // Verify each resource type has the correct actions
+        foreach (var (resource, expectedActions) in expectedPermissions)
+        {
+            var actualActions = role.Permissions
+                .Where(p => p.Resource == resource)
+                .Select(p => p.Action)
+                .OrderBy(a => a)
+                .ToList();
+
+            var sortedExpectedActions = expectedActions.OrderBy(a => a).ToList();
+
+            Assert.Equal(sortedExpectedActions, actualActions);
+        }
+    }
 }

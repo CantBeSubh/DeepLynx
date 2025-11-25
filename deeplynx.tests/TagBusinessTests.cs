@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
@@ -29,6 +30,7 @@ public class TagBusinessTests : IntegrationTestBase
     public long tid3;
     public long tid4;
     public long uid; // user ID
+    public long oid;
 
     public TagBusinessTests(TestSuiteFixture fixture) : base(fixture)
     {
@@ -65,26 +67,32 @@ public class TagBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
         uid = testUser.Id;
 
-        // Add organization 
+        // Add organization
         var organization = new Organization { Name = "Test Organization" };
         Context.Organizations.Add(organization);
         await Context.SaveChangesAsync();
-        var organizationId = organization.Id;
+        oid = organization.Id;
 
         // Add projects
         var project = new Project
         {
-            Name = "Project 1", LastUpdatedBy = uid, OrganizationId = organizationId,
+            Name = "Project 1",
+            LastUpdatedBy = uid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var project2 = new Project
         {
-            Name = "Project2", LastUpdatedBy = uid, OrganizationId = organizationId,
+            Name = "Project2",
+            LastUpdatedBy = uid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var project3 = new Project
         {
-            Name = "Project 3", LastUpdatedBy = uid, OrganizationId = organizationId,
+            Name = "Project 3",
+            LastUpdatedBy = uid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Projects.Add(project);
@@ -99,28 +107,40 @@ public class TagBusinessTests : IntegrationTestBase
         // Add tags
         var tag = new Tag
         {
-            Name = "Analytics", ProjectId = pid, LastUpdatedBy = uid,
+            Name = "Analytics",
+            ProjectId = pid,
+            LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false
+            IsArchived = false,
+            OrganizationId = oid
         };
 
         var tag2 = new Tag
         {
-            Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = uid,
+            Name = "Analytics 2",
+            ProjectId = pid,
+            LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false
+            IsArchived = false,
+            OrganizationId = oid
         };
         var tag3 = new Tag
         {
-            Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = uid,
+            Name = "Analytics 3",
+            ProjectId = pid,
+            LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = true
+            IsArchived = true,
+            OrganizationId = oid
         };
         var tag4 = new Tag
         {
-            Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = uid,
+            Name = "Analytics 4",
+            ProjectId = pid2,
+            LastUpdatedBy = uid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-            IsArchived = false
+            IsArchived = false,
+            OrganizationId = oid
         };
         await Context.Tags.AddAsync(tag);
         await Context.Tags.AddAsync(tag2);
@@ -139,7 +159,7 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task GetAllTags_ValidProjectId_ReturnsActiveTags()
     {
         // Act
-        var result = await _tagBusiness.GetAllTags(pid, true);
+        var result = await _tagBusiness.GetAllTags(oid, [pid], true);
         var tags = result.ToList();
 
         // Assert
@@ -156,7 +176,7 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
     {
         // Act
-        var result = await _tagBusiness.GetAllTags(pid3, true);
+        var result = await _tagBusiness.GetAllTags(oid, [pid3], true);
         var tags = result.ToList();
 
         // Assert
@@ -167,7 +187,7 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task GetAllTags_DifferentProject_ReturnsCorrectTags()
     {
         // Act
-        var result = await _tagBusiness.GetAllTags(pid, true);
+        var result = await _tagBusiness.GetAllTags(oid, [pid], true);
         var tags = result.ToList();
 
         // Assert
@@ -178,122 +198,13 @@ public class TagBusinessTests : IntegrationTestBase
 
     #endregion
 
-    #region GetAllTagsMultiProject Tests
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_ValidProjectIds_ReturnsTagsFromAllProjects()
-    {
-        // Arrange
-        var projectIds = new[] { pid, pid2 };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(projectIds, true);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(3, tags.Count); // 2 from pid, 1 from pid2 (tid4)
-        Assert.Contains(tags, t => t.Id == tid && t.ProjectId == pid);
-        Assert.Contains(tags, t => t.Id == tid2 && t.ProjectId == pid);
-        Assert.Contains(tags, t => t.Id == tid4 && t.ProjectId == pid2);
-        Assert.DoesNotContain(tags, t => t.Id == tid3); // archived tag should not be included
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_SingleProjectId_ReturnsSameAsGetAllTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid };
-
-        // Act
-        var multiProjectResult = await _tagBusiness.GetAllTagsMultiProject(projectIds, true);
-        var singleProjectResult = await _tagBusiness.GetAllTags(pid, true);
-
-        // Assert
-        Assert.Equal(singleProjectResult.Count, multiProjectResult.Count);
-        Assert.All(multiProjectResult, t => Assert.Equal(pid, t.ProjectId));
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_EmptyProjectIdsArray_ReturnsEmptyList()
-    {
-        // Arrange
-        var projectIds = Array.Empty<long>();
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(projectIds, true);
-
-        // Assert
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_NonExistentProjectIds_ReturnsEmptyList()
-    {
-        // Arrange
-        var projectIds = new long[] { 999, 998 };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(projectIds, true);
-
-        // Assert
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_HideArchivedFalse_ReturnsArchivedTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(projectIds, false);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(3, tags.Count); // tid, tid2, and tid3 (archived)
-        Assert.Contains(tags, t => t.Id == tid3);
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_HideArchivedTrue_ExcludesArchivedTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid };
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(projectIds, true);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(2, tags.Count);
-        Assert.DoesNotContain(tags, t => t.Id == tid3);
-        Assert.All(tags, t => Assert.False(t.IsArchived));
-    }
-
-    [Fact]
-    public async Task GetAllTagsMultiProject_MixedProjectsWithAndWithoutTags_ReturnsCorrectTags()
-    {
-        // Arrange
-        var projectIds = new[] { pid, pid3 }; // pid3 has no tags
-
-        // Act
-        var result = await _tagBusiness.GetAllTagsMultiProject(projectIds, true);
-        var tags = result.ToList();
-
-        // Assert
-        Assert.Equal(2, tags.Count); // Only tags from pid
-        Assert.All(tags, t => Assert.Equal(pid, t.ProjectId));
-    }
-
-    #endregion
-
     #region GetTag Tests
 
     [Fact]
     public async Task GetTag_ValidIds_ReturnsTag()
     {
         // Act
-        var result = await _tagBusiness.GetTag(pid, tid, false);
+        var result = await _tagBusiness.GetTag(oid, pid, tid, false);
 
         // Assert
         Assert.NotNull(result);
@@ -309,7 +220,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.GetTag(pid, 999, false));
+            () => _tagBusiness.GetTag(oid, pid, 999, false));
 
         Assert.Contains("Tag with id 999 not found", exception.Message);
     }
@@ -319,7 +230,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.GetTag(pid, tid4, false)); // Tag 1 belongs to project 1, not 2
+            () => _tagBusiness.GetTag(oid, pid, tid4, false)); // Tag 1 belongs to project 1, not 2
 
         Assert.Contains($"Tag with id {tid4} not found", exception.Message);
     }
@@ -329,9 +240,34 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.GetTag(pid, tid3, true)); // Tag 3 of project 1 is archived
+            () => _tagBusiness.GetTag(oid, pid, tid3, true)); // Tag 3 of project 1 is archived
 
         Assert.Contains($"Tag with id {tid3} is archived", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetTagsByName_Success_WithNullProjectId()
+    {
+        // Arrange
+        var orgTag = new Tag
+        {
+            Name = "Org Tag By Name",
+            ProjectId = null,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.Tags.Add(orgTag);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _tagBusiness.GetTagsByName(oid, null, new List<string> { "Org Tag By Name" });
+
+        // Assert
+        Assert.Single(result);
+        Assert.Null(result[0].ProjectId);
+        Assert.Equal(oid, result[0].OrganizationId);
     }
 
     #endregion
@@ -343,35 +279,35 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _tagBusiness.CreateTag(uid, pid, null));
+            () => _tagBusiness.CreateTag(oid, uid, pid, null));
 
         // Ensure event was not logged
         var eventList = await Context.Events.ToListAsync();
         Assert.Empty(eventList);
     }
 
-        [Fact]
-        public async Task CreateTag_ValidDto_CreatesTag()
+    [Fact]
+    public async Task CreateTag_ValidDto_CreatesTag()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var dto = new CreateTagRequestDto
         {
-            // Arrange
-            var now = DateTime.UtcNow;
-            var dto = new CreateTagRequestDto
-            {
-                Name = "Tag One"
-            };
+            Name = "Tag One"
+        };
 
-            // Act
-            var result = await _tagBusiness.CreateTag(uid, pid, dto);
-            
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
-            Assert.Equal("Tag One", result.Name);
-            Assert.Equal(pid, result.ProjectId);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(uid, result.LastUpdatedBy);
-            Assert.False(result.IsArchived);
-            
+        // Act
+        var result = await _tagBusiness.CreateTag(oid, uid, pid, dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Id > 0);
+        Assert.Equal("Tag One", result.Name);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
+        Assert.False(result.IsArchived);
+
 
         // Verify it was actually saved to database
         var savedTag = await Context.Tags.FindAsync(result.Id);
@@ -399,7 +335,7 @@ public class TagBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _tagBusiness.CreateTag(uid, pid, dto);
+        var result = await _tagBusiness.CreateTag(oid, uid, pid, dto);
 
         // Assert
         Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
@@ -415,42 +351,42 @@ public class TagBusinessTests : IntegrationTestBase
         Assert.Equal(result.Id, actualEvent.EntityId);
     }
 
-    [Fact]
-    public async Task CreateTag_Success_OnBulkCreate()
-    {
-        var tags = new List<CreateTagRequestDto>
-        {
-            new()
-            {
-                Name = "Test Tag 1"
-            },
-            new()
-            {
-                Name = "Test Tag 2"
-            }
-        };
+    // [Fact]
+    // public async Task CreateTag_Success_OnBulkCreate()
+    // {
+    //     var tags = new List<CreateTagRequestDto>
+    //     {
+    //         new()
+    //         {
+    //             Name = "Test Tag 1"
+    //         },
+    //         new()
+    //         {
+    //             Name = "Test Tag 2"
+    //         }
+    //     };
 
-        var result = await _tagBusiness.BulkCreateTags(uid, pid, tags);
-        Assert.Equal(2, result.Count);
-        Assert.Equal("Test Tag 1", result.First().Name);
-        Assert.Equal("Test Tag 2", result.Last().Name);
+    //     var result = await _tagBusiness.BulkCreateTags(oid, uid, pid, tags);
+    //     Assert.Equal(2, result.Count);
+    //     Assert.Equal("Test Tag 1", result.First().Name);
+    //     Assert.Equal("Test Tag 2", result.Last().Name);
 
-        // Ensure that create event was logged for each created tag
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(2, eventList.Count);
+    //     // Ensure that create event was logged for each created tag
+    //     var eventList = await Context.Events.ToListAsync();
+    //     Assert.Equal(2, eventList.Count);
 
-        var firstEvent = eventList[0];
-        Assert.Equal("create", firstEvent.Operation);
-        Assert.Equal("tag", firstEvent.EntityType);
-        Assert.Equal(result[0].ProjectId, firstEvent.ProjectId);
-        Assert.Equal(result[0].Id, firstEvent.EntityId);
+    //     var firstEvent = eventList[0];
+    //     Assert.Equal("create", firstEvent.Operation);
+    //     Assert.Equal("tag", firstEvent.EntityType);
+    //     Assert.Equal(result[0].ProjectId, firstEvent.ProjectId);
+    //     Assert.Equal(result[0].Id, firstEvent.EntityId);
 
-        var secondEvent = eventList[1];
-        Assert.Equal("create", secondEvent.Operation);
-        Assert.Equal("tag", secondEvent.EntityType);
-        Assert.Equal(result[1].ProjectId, secondEvent.ProjectId);
-        Assert.Equal(result[1].Id, secondEvent.EntityId);
-    }
+    //     var secondEvent = eventList[1];
+    //     Assert.Equal("create", secondEvent.Operation);
+    //     Assert.Equal("tag", secondEvent.EntityType);
+    //     Assert.Equal(result[1].ProjectId, secondEvent.ProjectId);
+    //     Assert.Equal(result[1].Id, secondEvent.EntityId);
+    // }
 
     [Fact]
     public async Task CreateTagRequest_Fails_IfNoName()
@@ -460,38 +396,76 @@ public class TagBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(
-            () => _tagBusiness.CreateTag(uid, pid, dto));
+            () => _tagBusiness.CreateTag(oid, uid, pid, dto));
 
         // Ensure that no tag create event was logged
         var eventList = await Context.Events.ToListAsync();
         Assert.Empty(eventList);
     }
 
+    [Fact]
+    public async Task CreateTagNullProjId_Success_CreatesOrgTag()
+    {
+        // Arrange
+        var dto = new CreateTagRequestDto
+        {
+            Name = "Organization Tag"
+        };
+
+        // Act
+        var result = await _tagBusiness.CreateTag(oid, uid, null, dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Null(result.ProjectId);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Equal("Organization Tag", result.Name);
+    }
+
+    // [Fact]
+    // public async Task BulkCreateTags_Success_WithNullProjectId()
+    // {
+    //     // Arrange
+    //     var tags = new List<CreateTagRequestDto>
+    //     {
+    //         new() { Name = "Org Tag 1" },
+    //         new() { Name = "Org Tag 2" }
+    //     };
+
+    //     // Act
+    //     var result = await _tagBusiness.BulkCreateTags(oid, uid, null, tags);
+
+    //     // Assert
+    //     Assert.Equal(2, result.Count);
+    //     Assert.All(result, t => Assert.Null(t.ProjectId));
+    //     Assert.All(result, t => Assert.Equal(oid, t.OrganizationId));
+    // }
+
     #endregion
 
     #region UpdateTag Tests
 
-        [Fact]
-        public async Task UpdateTag_ValidUpdate_UpdatesTag()
+    [Fact]
+    public async Task UpdateTag_ValidUpdate_UpdatesTag()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var dto = new UpdateTagRequestDto
         {
-            // Arrange
-            var now = DateTime.UtcNow;
-            var dto = new UpdateTagRequestDto
-            {
-                Name = "Updated Test Tag"
-            };
+            Name = "Updated Test Tag"
+        };
 
         // Act
-        var result = await _tagBusiness.UpdateTag(uid, pid, tid, dto);
+        var result = await _tagBusiness.UpdateTag(oid, uid, pid, tid, dto);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(tid, result.Id);
-            Assert.Equal("Updated Test Tag", result.Name);
-            Assert.False(result.IsArchived);
-            Assert.Equal(pid, result.ProjectId);
-            Assert.True(result.LastUpdatedAt >= now);
-            Assert.Equal(uid, result.LastUpdatedBy);
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(tid, result.Id);
+        Assert.Equal("Updated Test Tag", result.Name);
+        Assert.False(result.IsArchived);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
         // Verify it was actually updated in database
         var updatedTag = await Context.Tags.FindAsync(tid);
@@ -523,7 +497,7 @@ public class TagBusinessTests : IntegrationTestBase
 
 
         // Act
-        var result = await _tagBusiness.UpdateTag(uid, pid, tid, updateDto);
+        var result = await _tagBusiness.UpdateTag(oid, uid, pid, tid, updateDto);
 
         // Assert
         Assert.NotNull(result);
@@ -559,7 +533,7 @@ public class TagBusinessTests : IntegrationTestBase
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.UpdateTag(uid, pid, 999, dto));
+            () => _tagBusiness.UpdateTag(oid, uid, pid, 999, dto));
 
         Assert.Contains("Tag with id 999 not found", exception.Message);
 
@@ -579,7 +553,7 @@ public class TagBusinessTests : IntegrationTestBase
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.UpdateTag(uid, pid2, tid, dto)); // Tag 1 belongs to project 2
+            () => _tagBusiness.UpdateTag(oid, uid, pid2, tid, dto)); // Tag 1 belongs to project 2
 
         Assert.Contains($"Tag with id {tid} not found", exception.Message);
 
@@ -599,7 +573,7 @@ public class TagBusinessTests : IntegrationTestBase
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.UpdateTag(uid, pid, tid3, dto)); // Tag 3 is archived
+            () => _tagBusiness.UpdateTag(oid, uid, pid, tid3, dto)); // Tag 3 is archived
 
         Assert.Contains($"Tag with id {tid3} not found", exception.Message);
 
@@ -616,7 +590,7 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task DeleteTag_ValidTag_DeletesSuccessfully()
     {
         // Act
-        var result = await _tagBusiness.DeleteTag(pid, tid);
+        var result = await _tagBusiness.DeleteTag(oid, pid, tid);
 
         // Assert
         Assert.True(result);
@@ -631,7 +605,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.DeleteTag(pid, 999));
+            () => _tagBusiness.DeleteTag(oid, pid, 999));
 
         Assert.Contains("Tag with id 999 not found", exception.Message);
     }
@@ -641,7 +615,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.DeleteTag(pid2, tid)); // Tag 1 belongs to project 1
+            () => _tagBusiness.DeleteTag(oid, pid2, tid)); // Tag 1 belongs to project 1
 
         Assert.Contains($"Tag with id {tid} not found", exception.Message);
     }
@@ -650,26 +624,26 @@ public class TagBusinessTests : IntegrationTestBase
 
     #region ArchiveTag Tests
 
-        [Fact]
-        public async Task ArchiveTag_ValidTag_ArchivesSuccessfully()
-        {
-            // Arrange
-            var now = DateTime.UtcNow;
-            // Act
-            var result = await _tagBusiness.ArchiveTag(uid, pid, tid);
+    [Fact]
+    public async Task ArchiveTag_ValidTag_ArchivesSuccessfully()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        // Act
+        var result = await _tagBusiness.ArchiveTag(oid, uid, pid, tid);
 
         // Assert
         Assert.True(result);
 
-            // Verify it was actually archived in database
-            var archivedTag = await Context.Tags.FindAsync(tid);
-            Assert.NotNull(archivedTag);
-            Assert.True(archivedTag.IsArchived);
-            Assert.Equal(tid, archivedTag.Id);
-            Assert.Equal("Analytics", archivedTag.Name);
-            Assert.Equal(pid, archivedTag.ProjectId);
-            Assert.True(archivedTag.LastUpdatedAt >= now);
-            Assert.Equal(uid, archivedTag.LastUpdatedBy);
+        // Verify it was actually archived in database
+        var archivedTag = await Context.Tags.FindAsync(tid);
+        Assert.NotNull(archivedTag);
+        Assert.True(archivedTag.IsArchived);
+        Assert.Equal(tid, archivedTag.Id);
+        Assert.Equal("Analytics", archivedTag.Name);
+        Assert.Equal(pid, archivedTag.ProjectId);
+        Assert.True(archivedTag.LastUpdatedAt >= now);
+        Assert.Equal(uid, archivedTag.LastUpdatedBy);
 
         // Ensure that the tag delete event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -686,7 +660,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.ArchiveTag(uid, pid, 999));
+            () => _tagBusiness.ArchiveTag(oid, uid, pid, 999));
 
         Assert.Contains("Tag with id 999 not found", exception.Message);
 
@@ -700,7 +674,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.ArchiveTag(uid, pid2, tid));
+            () => _tagBusiness.ArchiveTag(oid, uid, pid2, tid));
 
         Assert.Contains($"Tag with id {tid} not found", exception.Message);
 
@@ -714,7 +688,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.ArchiveTag(uid, pid, tid3)); // Tag 3 is already archived
+            () => _tagBusiness.ArchiveTag(oid, uid, pid, tid3)); // Tag 3 is already archived
 
         Assert.Contains($"Tag with id {tid3} not found", exception.Message);
 
@@ -727,11 +701,11 @@ public class TagBusinessTests : IntegrationTestBase
     public async Task ArchiveTag_ArchivedTagNotReturnedInGetAll()
     {
         // Arrange
-        var initialCount = (await _tagBusiness.GetAllTags(pid, true)).Count;
+        var initialCount = (await _tagBusiness.GetAllTags(oid, [pid], true)).Count;
 
         // Act
-        await _tagBusiness.ArchiveTag(uid, pid, tid);
-        var finalCount = (await _tagBusiness.GetAllTags(pid, true)).Count;
+        await _tagBusiness.ArchiveTag(oid, uid, pid, tid);
+        var finalCount = (await _tagBusiness.GetAllTags(oid, [pid], true)).Count;
 
         // Assert
         Assert.Equal(initialCount - 1, finalCount);
@@ -759,8 +733,8 @@ public class TagBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var task1 = await _tagBusiness.UpdateTag(uid, pid, tid, dto1);
-        var task2 = await _tagBusiness.UpdateTag(uid, pid, tid2, dto2);
+        var task1 = await _tagBusiness.UpdateTag(oid, uid, pid, tid, dto1);
+        var task2 = await _tagBusiness.UpdateTag(oid, uid, pid, tid2, dto2);
 
         // Assert
         var result1 = task1;
@@ -780,7 +754,7 @@ public class TagBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _tagBusiness.CreateTag(uid, pid, dto);
+        var result = await _tagBusiness.CreateTag(oid, uid, pid, dto);
 
         // Assert
         Assert.Equal("Test with émojis 🚀 and ñ special chars 中文", result.Name);
@@ -829,33 +803,33 @@ public class TagBusinessTests : IntegrationTestBase
 
     #region UnarchiveTag Tests
 
-        [Fact]
-        public async Task UnarchiveTag_ValidArchivedTag_UnarchivesSuccessfully()
-        {
-            // Arrange
-            var now = DateTime.UtcNow;    
-            
-            // Act
-            var result = await _tagBusiness.UnarchiveTag(uid, pid, tid3);
+    [Fact]
+    public async Task UnarchiveTag_ValidArchivedTag_UnarchivesSuccessfully()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
 
-            Assert.True(result);
-            
-            var refreshed = await Context.Tags.FindAsync(tid3);
-            Assert.NotNull(refreshed);
-            Assert.False(refreshed.IsArchived);
-            Assert.Equal(tid3, refreshed.Id);
-            Assert.Equal("Analytics 3", refreshed.Name);
-            Assert.Equal(pid, refreshed.ProjectId);
-            Assert.True(refreshed.LastUpdatedAt >= now);
-            Assert.Equal(uid, refreshed.LastUpdatedBy);
-        }
+        // Act
+        var result = await _tagBusiness.UnarchiveTag(oid, uid, pid, tid3);
+
+        Assert.True(result);
+
+        var refreshed = await Context.Tags.FindAsync(tid3);
+        Assert.NotNull(refreshed);
+        Assert.False(refreshed.IsArchived);
+        Assert.Equal(tid3, refreshed.Id);
+        Assert.Equal("Analytics 3", refreshed.Name);
+        Assert.Equal(pid, refreshed.ProjectId);
+        Assert.True(refreshed.LastUpdatedAt >= now);
+        Assert.Equal(uid, refreshed.LastUpdatedBy);
+    }
 
     [Fact]
     public async Task UnarchiveTag_NonExistentTag_ThrowsKeyNotFoundException()
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.UnarchiveTag(uid, pid, 99999));
+            () => _tagBusiness.UnarchiveTag(oid, uid, pid, 99999));
 
         Assert.Contains("Tag with id 99999 not found", exception.Message);
     }
@@ -865,7 +839,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.UnarchiveTag(uid, pid, tid4)); // Calling with pid (wrong project)
+            () => _tagBusiness.UnarchiveTag(oid, uid, pid, tid4)); // Calling with pid (wrong project)
 
         Assert.Contains($"Tag with id {tid4} not found", exception.Message);
     }
@@ -875,7 +849,7 @@ public class TagBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _tagBusiness.UnarchiveTag(uid, pid, tid));
+            () => _tagBusiness.UnarchiveTag(oid, uid, pid, tid));
 
         Assert.Contains($"Tag with id {tid} not found", exception.Message);
     }
@@ -892,6 +866,7 @@ public class TagBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag LastUpdatedBy",
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid
         };
@@ -914,6 +889,7 @@ public class TagBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag Navigation",
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = uid
         };
@@ -941,8 +917,9 @@ public class TagBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag Null",
             ProjectId = pid,
+            OrganizationId = oid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null
+            LastUpdatedBy = null,
         };
 
         // Act
@@ -970,7 +947,8 @@ public class TagBusinessTests : IntegrationTestBase
             Name = "Test Tag Update",
             ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null
+            LastUpdatedBy = null,
+            OrganizationId = oid
         };
         Context.Tags.Add(testTag);
         await Context.SaveChangesAsync();

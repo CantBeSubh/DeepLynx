@@ -127,8 +127,6 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Add(project);
 
-        SetDefaultPermissions(project);
-
         await _context.SaveChangesAsync();
         var projectId = project.Id;
 
@@ -306,19 +304,6 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();
-
-        // Log update Project event
-        await _eventBusiness.CreateEvent(currentUserId, new CreateEventRequestDto
-        {
-            ProjectId = projectId,
-            OrganizationId = organizationId,
-            Operation = "delete",
-            EntityType = "project",
-            EntityId = projectId,
-            EntityName = projectName,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { projectName })
-        });
 
         // Update the Project Cache List
         var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
@@ -814,7 +799,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
-        await _dataSourceBusiness.CreateDataSource(currentUserId, projectId, defaultDataSource, true);
+        await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, defaultDataSource);
 
         // ===============================
         // CREATE DEFAULT OBJECT STORAGE
@@ -880,8 +865,8 @@ public class ProjectBusiness : IProjectBusiness
         // TODO: project config should determine whether to do this (true by default)
         var defaultRoles = new List<CreateRoleRequestDto>
         {
-            new() { Name = "Admin" },
-            new() { Name = "User" }
+            new() { Name = "Admin", Description = "Project administrator with full permissions" },
+            new() { Name = "User", Description = "Standard project user with limited permissions" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(currentUserId, organizationId, projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
@@ -894,24 +879,5 @@ public class ProjectBusiness : IProjectBusiness
             organizationId, projectId);
 
         await AddMemberToProject(projectId, adminRoleId, currentUserId, null);
-    }
-
-    private void SetDefaultPermissions(Project project)
-    {
-        var defaultPermissions = DefaultPermissions.AllDefaultPermissions;
-
-        foreach (var defaultPermission in defaultPermissions)
-        {
-            var permission = new Permission
-            {
-                Name = defaultPermission.Name,
-                Resource = defaultPermission.Resource,
-                Action = defaultPermission.Action,
-                Description = defaultPermission.Description,
-                Project = project,
-                IsDefault = true
-            };
-            _context.Permissions.Add(permission);
-        }
     }
 }

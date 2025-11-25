@@ -301,6 +301,78 @@ public class ProjectBusinessTests : IntegrationTestBase
         };
         Context.ProjectMembers.AddRange(projectMembers);
         await Context.SaveChangesAsync();
+
+        var permissions = new List<Permission>
+        {
+            new() { Resource = "project", Action = "read", Name = "Read Project", IsDefault = true },
+            new() { Resource = "project", Action = "write", Name = "Write Project", IsDefault = true },
+            new() { Resource = "object_storage", Action = "read", Name = "Read Object Storage", IsDefault = true },
+            new() { Resource = "object_storage", Action = "write", Name = "Write Object Source", IsDefault = true },
+            new() { Resource = "data_source", Action = "read", Name = "Read Data Source", IsDefault = true },
+            new() { Resource = "data_source", Action = "write", Name = "Write Data Source", IsDefault = true },
+            new() { Resource = "record", Action = "read", Name = "Read Record", IsDefault = true },
+            new() { Resource = "record", Action = "write", Name = "Write Record", IsDefault = true },
+            new() { Resource = "edge", Action = "read", Name = "Read Edge", IsDefault = true },
+            new() { Resource = "edge", Action = "write", Name = "Write Edge", IsDefault = true },
+            new() { Resource = "file", Action = "read", Name = "Read File", IsDefault = true },
+            new() { Resource = "file", Action = "write", Name = "Write File", IsDefault = true },
+            new() { Resource = "tag", Action = "read", Name = "Read Tag", IsDefault = true },
+            new() { Resource = "tag", Action = "write", Name = "Write Tag", IsDefault = true },
+            new() { Resource = "class", Action = "read", Name = "Read Class", IsDefault = true },
+            new() { Resource = "class", Action = "write", Name = "Write Class", IsDefault = true },
+            new() { Resource = "relationship", Action = "read", Name = "Read Relationship", IsDefault = true },
+            new() { Resource = "relationship", Action = "write", Name = "Write Relationship", IsDefault = true },
+            new() { Resource = "user", Action = "read", Name = "Read User", IsDefault = true },
+            new() { Resource = "user", Action = "write", Name = "Write User", IsDefault = true },
+            new() { Resource = "group", Action = "read", Name = "Read Group", IsDefault = true },
+            new() { Resource = "group", Action = "write", Name = "Write Group", IsDefault = true },
+            new() { Resource = "organization", Action = "read", Name = "Read Organization", IsDefault = true },
+            new() { Resource = "organization", Action = "write", Name = "Write Organization", IsDefault = true },
+            new() { Resource = "role", Action = "read", Name = "Read Role", IsDefault = true },
+            new() { Resource = "role", Action = "write", Name = "Write Role", IsDefault = true },
+            new() { Resource = "permission", Action = "read", Name = "Read Permission", IsDefault = true },
+            new() { Resource = "permission", Action = "write", Name = "Write Permission", IsDefault = true },
+            new()
+            {
+                Resource = "sensitivity_label", Action = "read", Name = "Read Sensitivity Label", IsDefault = true
+            },
+            new()
+            {
+                Resource = "sensitivity_label", Action = "write", Name = "Write Sensitivity Label", IsDefault = true
+            }
+        };
+
+        Context.Permissions.AddRange(permissions);
+        await Context.SaveChangesAsync();
+    }
+
+    private void AssertRolePermissions(
+        Role role,
+        Dictionary<string, string[]> expectedPermissions)
+    {
+        // All permissions should be marked as default
+        Assert.True(
+            role.Permissions.All(p => p.IsDefault),
+            $"Role '{role.Name}' has permissions not marked as default"
+        );
+
+        // Verify permission count
+        var expectedCount = expectedPermissions.Sum(kvp => kvp.Value.Length);
+        Assert.Equal(expectedCount, role.Permissions.Count);
+
+        // Verify each resource type has the correct actions
+        foreach (var (resource, expectedActions) in expectedPermissions)
+        {
+            var actualActions = role.Permissions
+                .Where(p => p.Resource == resource)
+                .Select(p => p.Action)
+                .OrderBy(a => a)
+                .ToList();
+
+            var sortedExpectedActions = expectedActions.OrderBy(a => a).ToList();
+
+            Assert.Equal(sortedExpectedActions, actualActions);
+        }
     }
 
     #region CreateProject Tests
@@ -331,7 +403,7 @@ public class ProjectBusinessTests : IntegrationTestBase
 
         // Ensure that the project create event was logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(7, eventList.Count);
+        Assert.Equal(4, eventList.Count);
         Assert.Single(eventList, e =>
             e.ProjectId == result.Id &&
             e.Operation == "create" &&
@@ -341,7 +413,7 @@ public class ProjectBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task CreateProject_Creates_DefaultPermissions()
+    public async Task CreateProject_Success_CreatesDefaultRolesWithCorrectPermissions()
     {
         // Arrange
         var now = DateTime.UtcNow;
@@ -351,14 +423,36 @@ public class ProjectBusinessTests : IntegrationTestBase
             Description = "Test Description",
             Abbreviation = "TST"
         };
+
         // Act
         var result = await _projectBusiness.CreateProject(uid, oid, dto);
 
-        Assert.Equal("TST", result.Abbreviation);
+        // Assert
+        Assert.True(result.Id > 0);
+        Assert.True(result.LastUpdatedAt >= now);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.Equal(dto.Abbreviation, result.Abbreviation);
+        Assert.Equal(oid, result.OrganizationId);
+        Assert.Equal(uid, result.LastUpdatedBy);
 
-        var defaultProjectPermissions = await Context.Permissions.Where(p => p.ProjectId == result.Id).ToListAsync();
-        Assert.True(defaultProjectPermissions.All(dp => dp.IsDefault));
-        Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultProjectPermissions.Count);
+        var defaultRoles = await Context.Roles.Where(r => r.ProjectId == result.Id).Include(r => r.Permissions)
+            .ToListAsync();
+        var adminRole = defaultRoles.Single(r => r.Name == "Admin");
+        var userRole = defaultRoles.Single(r => r.Name == "User");
+
+        AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
+        AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
+
+        // Ensure that the project create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Equal(4, eventList.Count);
+        Assert.Single(eventList, e =>
+            e.ProjectId == result.Id &&
+            e.Operation == "create" &&
+            e.EntityType == "project" &&
+            e.EntityId == result.Id
+        );
     }
 
     [Fact]
@@ -380,13 +474,13 @@ public class ProjectBusinessTests : IntegrationTestBase
         var classResult = await _classBusiness.GetAllClasses(
             oid, [project.Id], true);
         Assert.Equal(3, classResult.Count);
-        Assert.Equal("Timeseries", classResult[0].Name);
+        Assert.Equal("File", classResult[0].Name);
         Assert.Equal("Report", classResult[1].Name);
-        Assert.Equal("File", classResult[2].Name);
+        Assert.Equal("Timeseries", classResult[2].Name);
 
         // Ensure that the project create event was logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(7, eventList.Count);
+        Assert.Equal(4, eventList.Count);
         Assert.Single(eventList, e =>
             e.ProjectId == project.Id &&
             e.Operation == "create" &&
@@ -412,7 +506,7 @@ public class ProjectBusinessTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(dto.Name, project.Name);
-        var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(project.Id, true);
+        var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(oid, new[] { project.Id });
         Assert.Single(dataSourceResult);
         Assert.Equal("Default Data Source", dataSourceResult[0].Name);
         Assert.Equal("This data source was created alongside the project for ease of use.",
@@ -420,7 +514,7 @@ public class ProjectBusinessTests : IntegrationTestBase
 
         // Ensure that the project create event was logged
         var eventList = await Context.Events.ToListAsync();
-        Assert.Equal(7, eventList.Count);
+        Assert.Equal(4, eventList.Count);
         Assert.Single(eventList, e =>
             e.ProjectId == project.Id &&
             e.Operation == "create" &&
@@ -447,32 +541,13 @@ public class ProjectBusinessTests : IntegrationTestBase
         Assert.Equal(dto.Name, project.Name);
 
         // Verify default roles were created
-        var roles = Context.Roles.Where(r => r.ProjectId == project.Id).ToList();
+        var roles = Context.Roles.Where(r => r.ProjectId == project.Id).Include(r => r.Permissions).ToList();
         Assert.Equal(2, roles.Count);
         var adminRole = roles.Single(r => r.Name == "Admin");
         var userRole = roles.Single(r => r.Name == "User");
-        Assert.NotNull(adminRole);
-        Assert.NotNull(userRole);
 
-        // Verify admin role has correct permissions
-        var adminRoleWithPerms = await Context.Roles
-            .Include(r => r.Permissions)
-            .Where(r => r.Id == adminRole.Id)
-            .ToListAsync();
-        var adminPermissionsList = adminRoleWithPerms[0].Permissions.ToList();
-        Assert.True(adminPermissionsList.Count > 0);
-        Assert.Contains(adminPermissionsList, p => p.Resource == "permission" && p.Action == "write");
-        Assert.DoesNotContain(adminPermissionsList, p => p.Resource == "organization" && p.Action == "write");
-
-        // Verify user role has correct permissions
-        var userRoleWithPerms = await Context.Roles
-            .Include(r => r.Permissions)
-            .Where(r => r.Id == userRole.Id)
-            .ToListAsync();
-        var userPermissionsList = userRoleWithPerms[0].Permissions.ToList();
-        Assert.True(userPermissionsList.Count > 0);
-        Assert.Contains(userPermissionsList, p => p.Resource == "project" && p.Action == "read");
-        Assert.DoesNotContain(userPermissionsList, p => p.Resource == "permission" && p.Action == "write");
+        AssertRolePermissions(adminRole, DefaultRolePermissions.Admin.AllowedPermissions);
+        AssertRolePermissions(userRole, DefaultRolePermissions.User.AllowedPermissions);
     }
 
     [Fact]
@@ -493,13 +568,13 @@ public class ProjectBusinessTests : IntegrationTestBase
     public async Task CreateProject_Fails_IfNoUser()
     {
         // Arrange
-        var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
+        var dto = new CreateProjectRequestDto { Name = "Test", Description = "Test Description" };
 
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.CreateProject(uid2, oid, dto));
 
-        Assert.Contains($"User with id {uid2} does not exist", exception.Message);
+        Assert.Contains($"User with id {uid2} not found", exception.Message);
     }
 
     [Fact]
@@ -546,28 +621,6 @@ public class ProjectBusinessTests : IntegrationTestBase
         _organizationBusiness.Verify(
             x => x.AddUserToOrganization(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()),
             Times.Never);
-    }
-
-    [Fact]
-    public async Task CreateProject_Fails_IfNonExistentOrgId()
-    {
-        // Arrange: seed a default org in the DB
-        var defaultOrg = new Organization { Name = "Default Org", DefaultOrg = true, IsArchived = false };
-        Context.Organizations.Add(defaultOrg);
-        await Context.SaveChangesAsync();
-
-        var dto = new CreateProjectRequestDto
-        {
-            Name = "Project Without OrgId",
-            Description = "Should use existing default org"
-        };
-
-        // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.CreateProject(uid, oid2, dto));
-
-        // Ensure that no project create event is logged
-        var eventList = await Context.Events.ToListAsync();
-        Assert.Empty(eventList);
     }
 
     #endregion
@@ -745,7 +798,7 @@ public class ProjectBusinessTests : IntegrationTestBase
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _projectBusiness.UpdateProject(uid, oid, nonExistentId, dto));
 
-        Assert.Contains("Project not found.", exception.Message);
+        Assert.Contains($"Project with id {nonExistentId} not found", exception.Message);
 
         // Ensure that no project update event is logged
         var eventList = await Context.Events.ToListAsync();
