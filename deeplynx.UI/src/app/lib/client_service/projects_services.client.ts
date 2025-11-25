@@ -1,9 +1,11 @@
 // src/app/lib/projects_services.client.ts
 "use client";
 
-import api from "./client_service/api";
-import { ProjectMemberResponseDto, ProjectResponseDto, ProjectStatResponseDto } from "../(home)/types/responseDTOs";
-import { CreateProjectRequestDto, UpdateProjectRequestDto } from "../(home)/types/requestDTOs";
+import { CreateProjectRequestDto, UpdateProjectRequestDto } from "@/app/(home)/types/requestDTOs";
+import { ProjectResponseDto, ProjectStatResponseDto, ProjectMemberResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
+
 /**
  * Get all projects for an organization
  * @param organizationId - The ID of the organization

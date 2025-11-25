@@ -1,10 +1,12 @@
 // src/app/lib/record_services.client.ts
 "use client";
 
-import api from "./client_service/api";
-import { RecordResponseDto, RelatedRecordsResponseDto } from "../(home)/types/responseDTOs";
-import { CreateRecordRequestDto, UpdateRecordRequestDto } from "../(home)/types/requestDTOs";
-import { GraphResponse } from "../(home)/types/types";
+import { CreateRecordRequestDto, UpdateRecordRequestDto } from "@/app/(home)/types/requestDTOs";
+import { RecordResponseDto, RelatedRecordsResponseDto } from "@/app/(home)/types/responseDTOs";
+import { GraphResponse } from "@/app/(home)/types/types";
+import api from "./api";
+
+
 /**
  * Get all records for a project
  * @param organizationId - The ID of the organization

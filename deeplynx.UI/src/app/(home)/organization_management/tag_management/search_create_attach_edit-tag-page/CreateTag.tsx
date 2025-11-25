@@ -1,15 +1,13 @@
-import { createTag } from "@/app/lib/tag_services.client";
-import React, { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { attachTagToRecord } from "@/app/lib/record_services.client";
 import {
   TagResponseDto,
   RecordResponseDto,
 } from "@/app/(home)/types/responseDTOs";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
-import { fullTextSearch } from "@/app/lib/query_services.client";
-import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { createTag } from "@/app/lib/client_service/tag_services.client";
+import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
+import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null

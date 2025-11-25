@@ -1,9 +1,11 @@
 // src/app/lib/group_services.client.ts
 "use client";
 
-import api from "./client_service/api";
-import { GroupResponseDto, UserResponseDto } from "../(home)/types/responseDTOs";
-import { CreateGroupRequestDto, UpdateGroupRequestDto } from "../(home)/types/requestDTOs";
+import { CreateGroupRequestDto, UpdateGroupRequestDto } from "@/app/(home)/types/requestDTOs";
+import { GroupResponseDto, UserResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
+
 
 /**
  * Get all groups within an organization

@@ -1,22 +1,20 @@
 // src/app/(home)/components/ExpandableProjectCard.tsx
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
-import { getProjectStats } from "@/app/lib/projects_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getProjectStats } from "@/app/lib/client_service/projects_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
   RectangleGroupIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import Image from "next/image";
+import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { peopleData } from "../dummy_data/data";
-import { getAllUsers } from "@/app/lib/client_service/user_services.client";
-import AvatarCell from "./Avatar";
-import { format } from "date-fns";
 import { ProjectResponseDto } from "../types/responseDTOs";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import AvatarCell from "./Avatar";
 
 interface Props {
   project: ProjectResponseDto;

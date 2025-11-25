@@ -1,6 +1,7 @@
 "use client";
 
-import api from "./client_service/api";
+import api from "./api";
+
 
 /** ---- Browser calls (with session cookies) ---- */
 

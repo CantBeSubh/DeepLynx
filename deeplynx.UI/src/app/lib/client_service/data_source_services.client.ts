@@ -1,8 +1,9 @@
 'use client';
 
-import api from './client_service/api';
-import { DataSourceResponseDto } from '../(home)/types/responseDTOs';
-import { CreateDataSourceRequestDto, UpdateDataSourceRequestDto } from '../(home)/types/requestDTOs';
+import { CreateDataSourceRequestDto, UpdateDataSourceRequestDto } from "@/app/(home)/types/requestDTOs";
+import { DataSourceResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
 
 /**
  * Get all data sources for a project

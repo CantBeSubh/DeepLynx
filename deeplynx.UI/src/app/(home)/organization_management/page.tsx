@@ -3,7 +3,11 @@
 import { getAllGroups } from "@/app/lib/server_service/group_services.server";
 import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { getAllUsersServer } from "@/app/lib/server_service/user_services.server";
-import { getAllRolesServer } from "@/app/lib/server_service/role_services.server";
+import {
+  getAllOrgRolesServer,
+  getAllRolesServer,
+  getOrgRolePermissionsServer,
+} from "@/app/lib/server_service/role_services.server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { mapToProjectResponseDtos } from "../page";
@@ -72,26 +76,10 @@ const OrganizationManagementPage = async ({
   let permissions: PermissionResponseDto[] = [];
 
   try {
-    const [rolesArrays, permissionsArrays] = await Promise.all([
-      Promise.all(
-        projects.map((project) =>
-          getAllRolesServer(Number(organizationId), Number(project.id))
-        )
-      ),
-      Promise.all(
-        projects.map((project) =>
-          getAllPermissionsServer(
-            Number(organizationId),
-            Number(project.id),
-            undefined,
-            true
-          )
-        )
-      ),
+    [roles, permissions] = await Promise.all([
+      getAllOrgRolesServer(Number(organizationId)),
+      getOrgRolePermissionsServer(Number(organizationId), 1),
     ]);
-
-    roles = rolesArrays.flat();
-    permissions = permissionsArrays.flat();
   } catch (error) {
     console.error("Failed to fetch roles or permissions:", error);
   }

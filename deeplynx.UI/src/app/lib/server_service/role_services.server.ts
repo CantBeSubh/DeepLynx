@@ -153,3 +153,35 @@ export async function setPermissionsForRoleServer(
 
   return asJson<{ message: string }>(res);
 }
+
+
+/** ===== Org server side calls ===== */
+
+export async function getAllOrgRolesServer(
+  organizationId: number,
+  hideArchived: boolean = true
+): Promise<RoleResponseDto[]> {
+  const searchParams = new URLSearchParams();
+  searchParams.append("hideArchived", hideArchived.toString());
+
+  const path = `/organizations/${organizationId}/roles?${searchParams.toString()}`;
+
+  const res = await apiFetch(path);
+  return asJson<RoleResponseDto[]>(res);
+}
+
+/**
+ * Get all permissions for a role at the organization level
+ * @param organizationId - The ID of the organization
+ * @param roleId - The ID of the role
+ * @returns Promise with array of PermissionResponseDto
+ */
+export async function getOrgRolePermissionsServer(
+  organizationId: number,
+  roleId: number
+): Promise<PermissionResponseDto[]> {
+  const path = `/organizations/${organizationId}/roles/${roleId}/permissions`;
+
+  const res = await apiFetch(path);
+  return asJson<PermissionResponseDto[]>(res);
+}

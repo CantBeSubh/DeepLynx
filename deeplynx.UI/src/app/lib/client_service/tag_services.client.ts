@@ -1,6 +1,7 @@
-import api from './client_service/api';
-import { TagResponseDto } from '../(home)/types/responseDTOs';
-import { CreateTagRequestDto, UpdateTagRequestDto } from '../(home)/types/requestDTOs';
+import { CreateTagRequestDto, UpdateTagRequestDto } from "@/app/(home)/types/requestDTOs";
+import { TagResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
 
 /**
  * Get all tags for a project

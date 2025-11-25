@@ -2,31 +2,33 @@
 
 "use client";
 
-import React, { useState } from "react";
-import { GroupResponseDto, UserResponseDto } from "../../types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import {
-  createGroup,
-  updateGroup,
-  deleteGroup,
   addUserToGroup,
-  removeUserFromGroup,
+  createGroup,
+  deleteGroup,
   getGroupMembers,
-} from "@/app/lib/group_services.client";
+  removeUserFromGroup,
+  updateGroup,
+} from "@/app/lib/client_service/group_services.client";
 import {
-  TrashIcon,
-  PencilIcon,
-  UserGroupIcon,
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
+  CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  CheckIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  UserGroupIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import AvatarCell from "../../components/Avatar";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { CreateGroupRequestDto, UpdateGroupRequestDto } from "../../types/requestDTOs";
+import AvatarCell from "../../components/Avatar";
+import {
+  CreateGroupRequestDto,
+  UpdateGroupRequestDto,
+} from "../../types/requestDTOs";
+import { GroupResponseDto, UserResponseDto } from "../../types/responseDTOs";
 
 interface InlineGroupsTableProps {
   initialGroups: GroupResponseDto[];
@@ -76,7 +78,6 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   );
   const { organization, hasLoaded } = useOrganizationSession();
 
-
   // Fetch members for a group
   const fetchGroupMembers = async (groupId: string | number) => {
     // Check if we already have the members cached
@@ -88,7 +89,10 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setLoadingMembers(newLoadingMembers);
 
     try {
-      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
+      const members = await getGroupMembers(
+        organization?.organizationId as number,
+        groupId as number
+      );
       setGroupMembers(new Map(groupMembers).set(groupId, members));
     } catch (err) {
       console.error("Failed to fetch group members:", err);
@@ -138,8 +142,8 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
     const dto: CreateGroupRequestDto = {
       name: newGroupName,
-      description: newGroupDescription
-    }
+      description: newGroupDescription,
+    };
     try {
       const newGroup = await createGroup(organizationId as number, dto);
       setGroups([...groups, newGroup]);
@@ -166,10 +170,14 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
     const dto: UpdateGroupRequestDto = {
       name: editName,
-      description: editDescription
-    }
+      description: editDescription,
+    };
     try {
-      const updatedGroup = await updateGroup(organization?.organizationId as number, groupId as number, dto);
+      const updatedGroup = await updateGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        dto
+      );
       setGroups(groups.map((g) => (g.id === groupId ? updatedGroup : g)));
       setEditingGroup(null);
       setEditName("");
@@ -189,7 +197,10 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await deleteGroup(organization?.organizationId as number, groupId as number);
+      await deleteGroup(
+        organization?.organizationId as number,
+        groupId as number
+      );
       setGroups(groups.filter((g) => g.id !== groupId));
       if (expandedGroup === groupId) {
         setExpandedGroup(null);
@@ -220,7 +231,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
 
     try {
       await Promise.all(
-        Array.from(selectedGroups).map((id) => deleteGroup(organization?.organizationId as number, id as number))
+        Array.from(selectedGroups).map((id) =>
+          deleteGroup(organization?.organizationId as number, id as number)
+        )
       );
       setGroups(groups.filter((g) => !selectedGroups.has(g.id)));
       setSelectedGroups(new Set());
@@ -240,9 +253,16 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await addUserToGroup(organization?.organizationId as number, groupId as number, userId as number);
+      await addUserToGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        userId as number
+      );
       // Refetch members after adding
-      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
+      const members = await getGroupMembers(
+        organization?.organizationId as number,
+        groupId as number
+      );
       setGroupMembers(new Map(groupMembers).set(groupId, members));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add member");
@@ -260,9 +280,16 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await removeUserFromGroup(organization?.organizationId as number, groupId as number, userId as number);
+      await removeUserFromGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        userId as number
+      );
       // Refetch members after removing
-      const members = await getGroupMembers(organization?.organizationId as number, groupId as number);
+      const members = await getGroupMembers(
+        organization?.organizationId as number,
+        groupId as number
+      );
       setGroupMembers(new Map(groupMembers).set(groupId, members));
       toast.success("Removed member");
     } catch (err) {
@@ -457,8 +484,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
                     <React.Fragment key={group.id}>
                       {/* Main Row */}
                       <tr
-                        className={`hover cursor-pointer ${expandedGroup === group.id ? "bg-base-200" : ""
-                          }`}
+                        className={`hover cursor-pointer ${
+                          expandedGroup === group.id ? "bg-base-200" : ""
+                        }`}
                         onClick={() => toggleExpand(group.id)}
                       >
                         <td onClick={(e) => e.stopPropagation()}>

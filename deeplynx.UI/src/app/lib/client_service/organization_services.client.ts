@@ -1,6 +1,7 @@
-import api from "./client_service/api";
-import { CreateOrganizationRequestDto, UpdateOrganizationRequestDto } from "../(home)/types/requestDTOs";
-import { OrganizationResponseDto } from "../(home)/types/responseDTOs";
+import { CreateOrganizationRequestDto, UpdateOrganizationRequestDto } from "@/app/(home)/types/requestDTOs";
+import { OrganizationResponseDto } from "@/app/(home)/types/responseDTOs";
+import api from "./api";
+
 
 /**
  * Get all organizations
