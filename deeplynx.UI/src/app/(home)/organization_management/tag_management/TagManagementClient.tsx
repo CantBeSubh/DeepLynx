@@ -1,21 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { getRecordsByTags } from "@/app/lib/client_service/record_services.client";
-import {
-  deleteTag,
-  getAllTags,
-  updateTag,
-} from "@/app/lib/client_service/tag_services.client";
 import toast from "react-hot-toast";
-import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
-import {
-  ProjectResponseDto,
-  RecordResponseDto,
-  TagResponseDto,
-} from "../../types/responseDTOs";
+import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
 import AttachTags, {
   AttachTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/AttachTags";
@@ -28,6 +17,11 @@ import EditTags, {
 import SearchTags, {
   SearchTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/SearchTags";
+import {
+  getAllOrganizationTags,
+  updateOrganizationTag,
+  archiveOrganizationTag,
+} from "@/app/lib/client_service/tag_services.client";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -50,19 +44,7 @@ const parseTags = (
   return [];
 };
 
-interface Props {
-  initialProjects: ProjectResponseDto[];
-  initialSelectedProject?: ProjectResponseDto | null;
-}
-
-const TagManagementClient = ({
-  initialProjects,
-  initialSelectedProject,
-}: Props) => {
-  const [projects] = useState<ProjectResponseDto[]>(initialProjects);
-  const [selectedProject, setSelectedProject] = useState<string>(
-    initialSelectedProject?.id?.toString() || ""
-  );
+const TagManagementClient = () => {
   const [selectedMenuItem, setSelectedMenuItems] = useState("Search Tags");
   const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [filteredTags, setFilteredTags] = useState<TagResponseDto[]>([]);
@@ -83,7 +65,7 @@ const TagManagementClient = ({
   }, [selectedMenuItem]);
 
   const refetchTags = useCallback(async () => {
-    if (!selectedProject) {
+    if (!organization?.organizationId) {
       setTags([]);
       setFilteredTags([]);
       return;
@@ -93,9 +75,8 @@ const TagManagementClient = ({
     setError(null);
 
     try {
-      const allTags = await getAllTags(
-        organization?.organizationId as number,
-        Number(selectedProject)
+      const allTags = await getAllOrganizationTags(
+        organization.organizationId as number
       );
       setTags(allTags);
       setFilteredTags(allTags);
@@ -105,15 +86,11 @@ const TagManagementClient = ({
     } finally {
       setLoading(false);
     }
-  }, [selectedProject]);
+  }, [organization?.organizationId]);
 
   useEffect(() => {
     refetchTags();
   }, [refetchTags]);
-
-  const handleProjectChange = useCallback((newProjectId: string) => {
-    setSelectedProject(newProjectId);
-  }, []);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -129,11 +106,12 @@ const TagManagementClient = ({
   }, [searchQuery, tags]);
 
   const handleSearchByTags = async (tagIds: number[]) => {
+    // TODO: Update to organization-level endpoint
     setIsSearchingByTags(true);
     try {
       const records = await getRecordsByTags(
         organization?.organizationId as number,
-        Number(selectedProject),
+        0, // TODO: Remove projectId dependency
         tagIds
       );
 
@@ -180,32 +158,53 @@ const TagManagementClient = ({
 
   const handleUpdateTag = async (tagId: number, newName: string) => {
     try {
-      await updateTag(
+      await updateOrganizationTag(
         organization?.organizationId as number,
-        Number(selectedProject),
         tagId,
-        { name: newName }
+        {
+          name: newName,
+        }
       );
       await refetchTags();
+      toast.success("Tag updated successfully");
     } catch (error) {
       console.error("Error updating tag:", error);
+      toast.error("Failed to update tag");
       throw error;
     }
   };
 
-  const handleDeleteTag = async (tagId: number) => {
+  const handleArchiveTag = async (tagId: number) => {
     try {
-      await deleteTag(
+      await archiveOrganizationTag(
         organization?.organizationId as number,
-        Number(selectedProject),
-        tagId
+        tagId,
+        true
       );
       const newSelected = new Set(selectedTagIds);
       newSelected.delete(tagId);
       setSelectedTagIds(newSelected);
       await refetchTags();
+      toast.success("Tag archived successfully");
     } catch (error) {
-      console.error("Error deleting tag:", error);
+      console.error("Error archiving tag:", error);
+      toast.error("Failed to archive tag");
+      throw error;
+    }
+  };
+
+  const handleUnarchiveTag = async (tagId: number) => {
+    try {
+      await archiveOrganizationTag(
+        organization?.organizationId as number,
+        tagId,
+        false
+      );
+      await refetchTags();
+      toast.success("Tag unarchived successfully");
+    } catch (error) {
+      console.error("Error unarchiving tag:", error);
+      toast.error("Failed to unarchive tag");
       throw error;
     }
   };
@@ -224,19 +223,12 @@ const TagManagementClient = ({
           access controls. These settings will propagate to all projects within
           the organization.
         </p>
-        <div className="mt-4">
-          <ProjectDropdownSingleSelect
-            projects={projects}
-            onSelectionChange={handleProjectChange}
-            defaultSelectedId={selectedProject}
-          />
-        </div>
       </div>
 
       {/* Main Content Grid with Height Constraint */}
       <div
         className="grid grid-cols-[20%_40%_40%] p-6 gap-6 transition-all"
-        style={{ height: "calc(100vh - 23rem)" }}
+        style={{ height: "calc(100vh - 20rem)" }}
       >
         {/* Left Menu */}
         <div className="card shadow-xl rounded-lg p-6 overflow-y-auto">
@@ -269,13 +261,12 @@ const TagManagementClient = ({
               onSearchChange={setSearchQuery}
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
-              projectId={selectedProject}
               onSearchByTags={handleSearchByTags}
+              projectId={""}
             />
           )}
           {selectedMenuItem === "Create Tag" && (
             <CreateTag
-              projectId={selectedProject}
               onTagCreated={refetchTags}
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
@@ -311,33 +302,30 @@ const TagManagementClient = ({
         <div className="card shadow-xl rounded-lg p-6 overflow-y-auto">
           {selectedMenuItem === "Search Tags" && (
             <SearchTagsRecordsList
-              projectId={selectedProject}
               selectedTagIds={selectedTagIds}
               onClearSelectedTags={() => setSelectedTagIds(new Set())}
               recordsFromTagSearch={recordsFromTagSearch}
               isSearchingByTags={isSearchingByTags}
               onClearSearch={handleClearSearch}
               onRefreshSearch={handleRefreshSearch}
+              projectId={""}
             />
           )}
-          {selectedMenuItem === "Create Tag" && (
-            <CreateTagRecordsList
-              projectId={selectedProject}
-              selectedTagIds={selectedTagIds}
-            />
-          )}
-          {selectedMenuItem === "Attach Tags" && (
+          {/* {selectedMenuItem === "Create Tag" && (
+            <CreateTagRecordsList selectedTagIds={selectedTagIds} />
+          )} */}
+          {/* {selectedMenuItem === "Attach Tags" && (
             <AttachTagsRecordsList
-              projectId={selectedProject}
               selectedTagIds={selectedTagIds}
               onClearSelectedTags={() => setSelectedTagIds(new Set())}
+              projectId={""}
             />
-          )}
+          )} */}
           {selectedMenuItem === "Edit Tags" && (
             <EditTagsNameFields
               selectedTags={selectedTags}
               onUpdateTag={handleUpdateTag}
-              onDeleteTag={handleDeleteTag}
+              onArchiveTag={handleArchiveTag}
             />
           )}
         </div>

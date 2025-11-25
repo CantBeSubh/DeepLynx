@@ -205,3 +205,123 @@ export const archiveTag = async (
     throw error;
   }
 };
+
+/** --------------ORG Calls -------------- */
+
+/**
+ * Get all tags for an organization
+ * @param organizationId - The ID of the organization
+ * @param projectIds - Optional array of project IDs to filter by
+ * @param hideArchived - Flag to hide archived tags (default: true)
+ * @returns Promise with array of TagResponseDto
+ */
+export const getAllOrganizationTags = async (
+  organizationId: number,
+  projectIds?: number[],
+  hideArchived: boolean = true
+): Promise<TagResponseDto[]> => {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/tags`,
+      { params: { projectIds, hideArchived } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error getting all organization tags:", error);
+    throw error;
+  }
+};
+
+/**
+ * Create a new tag at the organization level
+ * @param organizationId - The ID of the organization
+ * @param dto - The tag creation request DTO
+ * @returns Promise with TagResponseDto
+ */
+export const createOrganizationTag = async (
+  organizationId: number,
+  dto: CreateTagRequestDto
+): Promise<TagResponseDto> => {
+  try {
+    const res = await api.post(
+      `/organizations/${organizationId}/tags`,
+      dto,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error creating organization tag:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update a tag at the organization level
+ * @param organizationId - The ID of the organization
+ * @param tagId - The ID of the tag to update
+ * @param dto - The tag update request DTO
+ * @returns Promise with TagResponseDto
+ */
+export const updateOrganizationTag = async (
+  organizationId: number,
+  tagId: number,
+  dto: UpdateTagRequestDto
+): Promise<TagResponseDto> => {
+  try {
+    const res = await api.put(
+      `/organizations/${organizationId}/tags/${tagId}`,
+      dto,
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error updating organization tag ${tagId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a tag at the organization level
+ * @param organizationId - The ID of the organization
+ * @param tagId - The ID of the tag to delete
+ * @returns Promise with success message
+ */
+export const deleteOrganizationTag = async (
+  organizationId: number,
+  tagId: number
+): Promise<{ message: string }> => {
+  try {
+    const res = await api.delete(
+      `/organizations/${organizationId}/tags/${tagId}`
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error deleting organization tag ${tagId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Archive or unarchive a tag at the organization level
+ * @param organizationId - The ID of the organization
+ * @param tagId - The ID of the tag to archive/unarchive
+ * @param archive - True to archive, false to unarchive
+ * @returns Promise with success message
+ */
+export const archiveOrganizationTag = async (
+  organizationId: number,
+  tagId: number,
+  archive: boolean
+): Promise<{ message: string }> => {
+  try {
+    const res = await api.patch(
+      `/organizations/${organizationId}/tags/${tagId}`,
+      null,
+      { params: { archive } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error ${archive ? 'archiving' : 'unarchiving'} organization tag ${tagId}:`, error);
+    throw error;
+  }
+};

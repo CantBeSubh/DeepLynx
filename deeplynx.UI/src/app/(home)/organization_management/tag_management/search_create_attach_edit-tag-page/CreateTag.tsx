@@ -4,7 +4,7 @@ import {
 } from "@/app/(home)/types/responseDTOs";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { createTag } from "@/app/lib/client_service/tag_services.client";
+import { createOrganizationTag } from "@/app/lib/client_service/tag_services.client";
 import { getRecentlyAddedRecords } from "@/app/lib/client_service/user_services.client";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
@@ -31,14 +31,12 @@ const parseTags = (
 };
 
 interface CreateTagProps {
-  projectId: string;
   onTagCreated: () => Promise<void>;
   selectedTagIds: Set<number>;
   setSelectedTagIds: React.Dispatch<React.SetStateAction<Set<number>>>;
 }
 
 const CreateTag = ({
-  projectId,
   onTagCreated,
   selectedTagIds,
   setSelectedTagIds,
@@ -55,8 +53,8 @@ const CreateTag = ({
       return;
     }
 
-    if (!projectId || projectId === "0") {
-      setError("Invalid project selected");
+    if (!organization?.organizationId) {
+      setError("No organization selected");
       return;
     }
 
@@ -64,9 +62,8 @@ const CreateTag = ({
     setError(null);
 
     try {
-      const newTag = await createTag(
-        organization?.organizationId as number,
-        Number(projectId),
+      const newTag = await createOrganizationTag(
+        organization.organizationId as number,
         { name: tagName }
       );
       setTagName("");
@@ -92,8 +89,6 @@ const CreateTag = ({
     setSelectedTagIds(newSelected);
   };
 
-  const isProjectSelected = projectId && projectId !== "0";
-
   return (
     <div className="w-[70%] mx-auto">
       <div>
@@ -104,28 +99,19 @@ const CreateTag = ({
           className="input input-bordered w-full mb-4"
           value={tagName}
           onChange={(e) => setTagName(e.target.value)}
-          disabled={loading || !isProjectSelected}
+          disabled={loading}
           onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              !loading &&
-              tagName.trim() &&
-              isProjectSelected
-            ) {
+            if (e.key === "Enter" && !loading && tagName.trim()) {
               handleCreateTag();
             }
           }}
         />
-        {!isProjectSelected && (
-          <p className="text-primary text-sm mb-2">
-            Please select a project first
-          </p>
-        )}
+        {error && <p className="text-error text-sm mb-2">{error}</p>}
         <div className="flex justify-end mb-6">
           <button
             className="btn btn-primary"
             onClick={handleCreateTag}
-            disabled={loading || !tagName.trim() || !isProjectSelected}
+            disabled={loading || !tagName.trim()}
           >
             {loading ? "Creating..." : "Create Tag"}
           </button>
@@ -165,12 +151,10 @@ const CreateTag = ({
 };
 
 interface CreateTagRecordsListProps {
-  projectId: string;
   selectedTagIds: Set<number>;
 }
 
 export const CreateTagRecordsList = ({
-  projectId,
   selectedTagIds,
 }: CreateTagRecordsListProps) => {
   type RecordWithParsedTags = Omit<
@@ -195,7 +179,7 @@ export const CreateTagRecordsList = ({
 
   useEffect(() => {
     const fetchRecentRecords = async () => {
-      if (!projectId || projectId === "0") {
+      if (!organization?.organizationId) {
         setRecords([]);
         return;
       }
@@ -204,7 +188,7 @@ export const CreateTagRecordsList = ({
 
       try {
         const recentRecords = await getRecentlyAddedRecords(
-          organization?.organizationId as number
+          organization.organizationId as number
         );
         const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
           (record: RecordResponseDto) => ({
@@ -223,39 +207,36 @@ export const CreateTagRecordsList = ({
     };
 
     fetchRecentRecords();
-  }, [projectId]);
+  }, [organization?.organizationId]);
 
-  const performFullTextSearch = useCallback(
-    async (searchTerm: string, projectId: string) => {
-      if (!searchTerm.trim()) {
-        setSearchResults([]);
-        return;
-      }
+  const performFullTextSearch = useCallback(async (searchTerm: string) => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-      setSearchLoading(true);
+    setSearchLoading(true);
 
-      try {
-        //TODO: fix when reaady
-        // const data = await fullTextSearch(searchTerm, [projectId]);
-        // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
-        //   (record) => ({
-        //     ...record,
-        //     tags: parseTags(record.tags),
-        //   })
-        // );
-        // setSearchResults(resultsWithParsedTags);
-      } catch (error) {
-        console.error("Search error:", error);
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    },
-    []
-  );
+    try {
+      // TODO: Update to organization-level search endpoint
+      // const data = await fullTextSearchOrganization(organizationId, searchTerm);
+      // const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
+      //   (record) => ({
+      //     ...record,
+      //     tags: parseTags(record.tags),
+      //   })
+      // );
+      // setSearchResults(resultsWithParsedTags);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
 
   const handleSubmit = async () => {
-    await performFullTextSearch(searchTerm, projectId);
+    await performFullTextSearch(searchTerm);
   };
 
   const handleClearSearch = () => {
@@ -297,11 +278,11 @@ export const CreateTagRecordsList = ({
 
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
-      //TODO: you know the drill
+      // TODO: Update to organization-level attach endpoint
       // selectedRecordIds.forEach((recordId) => {
       //   selectedTagIds.forEach((tagId) => {
       //     attachPromises.push(
-      //       attachTagToRecord(Number(projectId), recordId, tagId)
+      //       attachTagToRecordOrganization(organizationId, recordId, tagId)
       //     );
       //   });
       // });
@@ -315,7 +296,7 @@ export const CreateTagRecordsList = ({
       setSelectedRecordIds(new Set());
 
       if (searchResults.length > 0) {
-        await performFullTextSearch(searchTerm, projectId);
+        await performFullTextSearch(searchTerm);
       } else {
         const recentRecords = await getRecentlyAddedRecords(
           organization?.organizationId as number
