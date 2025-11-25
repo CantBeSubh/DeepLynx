@@ -248,7 +248,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task GetDataSource_ValidIds_ReturnsDataSource()
     {
         // Act
-        var result = await _dataSourceBusiness.GetDataSource(oid, did, false, pid);
+        var result = await _dataSourceBusiness.GetDataSource(oid,pid, did, false);
 
         // Assert
         Assert.NotNull(result);
@@ -268,7 +268,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.GetDataSource(oid, 999, false, pid));
+                _dataSourceBusiness.GetDataSource(oid, pid, 999, false));
 
         Assert.Contains("Data Source with id 999 not found", exception.Message);
     }
@@ -277,10 +277,9 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task GetDataSource_WrongProject_ThrowsKeyNotFoundException()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.GetDataSource(oid,
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.GetDataSource(oid,pid2,
             did,
-            false,
-            pid2)); // DataSource belongs to project with pid, not pid2
+            false)); // DataSource belongs to project with pid, not pid2
 
         Assert.Contains($"Data Source with id {did} not found", exception.Message);
     }
@@ -291,7 +290,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.GetDataSource(oid, did3, true, pid)); // did3 is archived
+                _dataSourceBusiness.GetDataSource(oid, pid, did3, true)); // did3 is archived
 
         Assert.Contains($"Data Source with id {did3} is archived", exception.Message);
     }
@@ -300,7 +299,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task GetDataSource_ValidDataSource_ParsesConfigCorrectly()
     {
         // Act
-        var result = await _dataSourceBusiness.GetDataSource(oid, did, false, pid);
+        var result = await _dataSourceBusiness.GetDataSource(oid, pid, did, false);
 
         // Assert
         Assert.NotNull(result.Config);
@@ -335,7 +334,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _dataSourceBusiness.CreateDataSource(uid, oid, dto, pid);
+        var result = await _dataSourceBusiness.CreateDataSource(oid, pid, uid, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -372,7 +371,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _dataSourceBusiness.CreateDataSource(uid, oid, null, pid));
+            _dataSourceBusiness.CreateDataSource(oid, pid, uid, null));
 
         // Ensure that datasource create event was NOT logged
         var eventList = await Context.Events.ToListAsync();
@@ -391,7 +390,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _dataSourceBusiness.CreateDataSource(uid, oid, dto, pid);
+        var result = await _dataSourceBusiness.CreateDataSource(oid, pid, uid, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -423,7 +422,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         var beforeCreate = DateTime.UtcNow;
 
         // Act
-        var result = await _dataSourceBusiness.CreateDataSource(uid, oid, dto, pid);
+        var result = await _dataSourceBusiness.CreateDataSource(oid, pid, uid, dto);
 
         // Assert
         Assert.True(result.LastUpdatedAt >= beforeCreate);
@@ -469,7 +468,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         var beforeUpdate = DateTime.UtcNow;
 
         // Act
-        var result = await _dataSourceBusiness.UpdateDataSource(uid, oid, did, dto, pid);
+        var result = await _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -511,7 +510,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         var beforeUpdate = DateTime.UtcNow;
 
         // Act
-        var result = await _dataSourceBusiness.UpdateDataSource(uid, oid, did, updateDto, pid);
+        var result = await _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did, updateDto);
 
         //Assert
         Assert.NotNull(result);
@@ -558,7 +557,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.UpdateDataSource(uid, oid, 999, dto, pid));
+                _dataSourceBusiness.UpdateDataSource(oid, pid, uid, 999, dto));
 
         Assert.Contains("Data Source with id 999 not found", exception.Message);
 
@@ -580,7 +579,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.UpdateDataSource(uid, oid, did, dto, pid2)); // did belongs to pid not pid2
+                _dataSourceBusiness.UpdateDataSource(oid, pid2, uid, did, dto)); // did belongs to pid not pid2
 
         Assert.Contains($"Data Source with id {did} not found", exception.Message);
 
@@ -602,7 +601,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.UpdateDataSource(uid, oid, did3, dto, pid)); // DataSource 3 is archived
+                _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did3, dto)); // DataSource 3 is archived
 
         Assert.Contains($"Data Source with id {did3} not found", exception.Message);
 
@@ -623,7 +622,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _dataSourceBusiness.UpdateDataSource(uid, oid, did, dto, pid);
+        var result = await _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did, dto);
 
         // Assert
         Assert.NotNull(result.Config);
@@ -767,7 +766,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Act & Assert
         var exception =
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _dataSourceBusiness.ArchiveDataSource(uid, oid, 3, pid)); // DataSource 3 is already archived
+                _dataSourceBusiness.ArchiveDataSource(oid, pid, uid,3)); // DataSource 3 is already archived
 
         Assert.Contains("Data Source with id 3 not found", exception.Message);
 
@@ -828,8 +827,8 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // so for now we take the sequential approach
 
         // Act
-        await _dataSourceBusiness.UpdateDataSource(uid, oid, did, dto1, pid);
-        await _dataSourceBusiness.UpdateDataSource(uid, oid, did, dto2, pid);
+        await _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did, dto1);
+        await _dataSourceBusiness.UpdateDataSource(oid, pid, uid, did, dto2);
 
         // Assert
         // Verify it was actually updated in database
@@ -861,7 +860,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _dataSourceBusiness.CreateDataSource(uid, oid, dto, pid);
+        var result = await _dataSourceBusiness.CreateDataSource(oid, pid, uid, dto);
 
         // Assert
         Assert.NotNull(result.Config);
@@ -888,7 +887,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _dataSourceBusiness.CreateDataSource(uid, oid, dto, pid);
+        var result = await _dataSourceBusiness.CreateDataSource(oid, pid, uid, dto);
 
         // Assert
         Assert.Equal("Test with émojis 🚀 and ñ special chars", result.Name);

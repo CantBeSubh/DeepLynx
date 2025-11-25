@@ -11,5 +11,4 @@ public class UpdateDataSourceRequestDto
     public string? Type { get; set; }
     public string? BaseUri { get; set; }
     public JsonObject? Config { get; set; }
-    [JsonPropertyName("default")] public bool Default { get; set; } = false;
 }

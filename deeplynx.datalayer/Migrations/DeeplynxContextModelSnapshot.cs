@@ -361,6 +361,16 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex("ProjectId")
                         .HasDatabaseName("idx_data_sources_project_id");
 
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_organization_data_source_name")
+                        .HasFilter("project_id IS NULL");
+
+                    b.HasIndex("OrganizationId", "ProjectId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("unique_project_data_source_name")
+                        .HasFilter("project_id IS NOT NULL");
+
                     b.ToTable("data_sources", "deeplynx");
                 });
 
@@ -2093,6 +2103,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("DataSources")
                         .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("data_sources_project_id_fkey");
 
                     b.Navigation("LastUpdatedByUser");

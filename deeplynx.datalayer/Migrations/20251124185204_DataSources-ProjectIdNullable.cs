@@ -14,6 +14,11 @@ namespace deeplynx.datalayer.Migrations
                 name: "data_sources_project_id_fkey",
                 schema: "deeplynx",
                 table: "data_sources");
+            
+            migrationBuilder.DropForeignKey(
+                name: "data_sources_organization_id_fkey",
+                schema: "deeplynx",
+                table: "data_sources");
 
             migrationBuilder.AlterColumn<long>(
                 name: "project_id",
@@ -25,16 +30,15 @@ namespace deeplynx.datalayer.Migrations
                 oldType: "bigint");
             
             migrationBuilder.CreateIndex(
-                name: "idx_data_sources_org_name_unique",
+                name: "unique_organization_data_source_name",
                 schema: "deeplynx",
                 table: "data_sources",
                 columns: new[] { "organization_id", "name" },
                 unique: true,
                 filter: "project_id IS NULL");
-
-            // Unique when project-scoped
+            
             migrationBuilder.CreateIndex(
-                name: "idx_data_sources_org_project_name_unique",
+                name: "unique_project_data_source_name",
                 schema: "deeplynx",
                 table: "data_sources",
                 columns: new[] { "organization_id", "project_id", "name" },
@@ -50,6 +54,16 @@ namespace deeplynx.datalayer.Migrations
                 principalTable: "projects",
                 principalColumn: "id",
                 onDelete: ReferentialAction.Cascade);
+            
+            migrationBuilder.AddForeignKey(
+                name: "data_sources_organization_id_fkey",
+                schema: "deeplynx",
+                table: "data_sources",
+                column: "organization_id",
+                principalSchema: "deeplynx",
+                principalTable: "organizations",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
@@ -60,13 +74,18 @@ namespace deeplynx.datalayer.Migrations
                 schema: "deeplynx",
                 table: "data_sources");
             
+            migrationBuilder.DropForeignKey(
+                name: "data_sources_organization_id_fkey",
+                schema: "deeplynx",
+                table: "data_sources");
+            
             migrationBuilder.DropIndex(
-                name: "idx_data_sources_org_name_unique",
+                name: "unique_organization_data_source_name",
                 schema: "deeplynx",
                 table: "data_sources");
 
             migrationBuilder.DropIndex(
-                name: "idx_data_sources_org_project_name_unique",
+                name: "unique_project_data_source_name",
                 schema: "deeplynx",
                 table: "data_sources");
 
@@ -88,8 +107,16 @@ namespace deeplynx.datalayer.Migrations
                 column: "project_id",
                 principalSchema: "deeplynx",
                 principalTable: "projects",
-                principalColumn: "id",
-                onDelete: ReferentialAction.Cascade); //no-opted with above up application
+                principalColumn: "id");
+            
+            migrationBuilder.AddForeignKey(
+                name: "data_sources_organization_id_fkey",
+                schema: "deeplynx",
+                table: "data_sources",
+                column: "organization_id",
+                principalSchema: "deeplynx",
+                principalTable: "organizations",
+                principalColumn: "id");
         }
     }
 }
