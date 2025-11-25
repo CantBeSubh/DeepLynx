@@ -16,17 +16,17 @@ namespace deeplynx.api.Controllers;
 [Route("projects/{projectId}/classes")]
 [Authorize]
 [Tags("Project Management", "Class")]
-public class ProjectClassController : ControllerBase
+public class ClassProjectController : ControllerBase
 {
     private readonly IClassBusiness _classBusiness;
-    private readonly ILogger<ClassController> _logger;
+    private readonly ILogger<ClassProjectController> _logger;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ProjectClassController" /> class
+    ///     Initializes a new instance of the <see cref="ClassProjectController" /> class
     /// </summary>
     /// <param name="classBusiness">The business logic interface for handling class operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public ProjectClassController(IClassBusiness classBusiness, ILogger<ClassController> logger)
+    public ClassProjectController(IClassBusiness classBusiness, ILogger<ClassProjectController> logger)
     {
         _classBusiness = classBusiness;
         _logger = logger;
