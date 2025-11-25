@@ -13,17 +13,18 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Route("organizations/{organizationId}/projects/{projectId}/roles")]
-public class RoleController : ControllerBase
+[Tags("Project Management", "Role")]
+public class ProjectRoleController : ControllerBase
 {
-    private readonly ILogger<RoleController> _logger;
+    private readonly ILogger<ProjectRoleController> _logger;
     private readonly IRoleBusiness _roleBusiness;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="RoleController" /> class
+    ///     Initializes a new instance of the <see cref="ProjectRoleController" /> class
     /// </summary>
     /// <param name="roleBusiness">The business logic interface for handling Role operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
-    public RoleController(IRoleBusiness roleBusiness, ILogger<RoleController> logger)
+    public ProjectRoleController(IRoleBusiness roleBusiness, ILogger<ProjectRoleController> logger)
     {
         _roleBusiness = roleBusiness;
         _logger = logger;
@@ -36,7 +37,7 @@ public class RoleController : ControllerBase
     /// <param name="projectId">The ID of the project whose roles are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived roles from the result (Default true)</param>
     /// <returns>A list of roles for the given organization/project.</returns>
-    [HttpGet(Name = "api_get_all_roles")]
+    [HttpGet(Name = "api_get_all_roles_project")]
     public async Task<ActionResult<IEnumerable<RoleResponseDto>>> GetAllRoles(
         long organizationId,
         long projectId,
@@ -63,7 +64,7 @@ public class RoleController : ControllerBase
     /// <param name="roleId">The ID of the role to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived roles from the result (Default true)</param>
     /// <returns>The role associated with the given ID</returns>
-    [HttpGet("{roleId}", Name = "api_get_role")]
+    [HttpGet("{roleId}", Name = "api_get_role_project")]
     public async Task<ActionResult<RoleResponseDto>> GetRole(
         long organizationId,
         long projectId,
@@ -90,7 +91,7 @@ public class RoleController : ControllerBase
     /// <param name="projectId">The ID of the project to which the role belongs</param>
     /// <param name="dto">The data transfer object containing role details</param>
     /// <returns>The created role</returns>
-    [HttpPost(Name = "api_create_role")]
+    [HttpPost(Name = "api_create_role_project")]
     public async Task<ActionResult<RoleResponseDto>> CreateRole(
         long organizationId,
         long projectId,
@@ -118,7 +119,7 @@ public class RoleController : ControllerBase
     /// <param name="roleId">The ID of the role to update</param>
     /// <param name="dto">The data transfer object containing updated role details</param>
     /// <returns>The updated role</returns>
-    [HttpPut("{roleId}", Name = "api_update_role")]
+    [HttpPut("{roleId}", Name = "api_update_role_project")]
     public async Task<ActionResult<RoleResponseDto>> UpdateRole(
         long organizationId,
         long projectId,
@@ -146,7 +147,7 @@ public class RoleController : ControllerBase
     /// <param name="projectId">The ID of the project to which the role belongs</param>
     /// <param name="roleId">The ID of the role to delete</param>
     /// <returns>A message stating the role was successfully deleted.</returns>
-    [HttpDelete("{roleId}", Name = "api_delete_role")]
+    [HttpDelete("{roleId}", Name = "api_delete_role_project")]
     public async Task<ActionResult> DeleteRole(
         long organizationId,
         long projectId,
@@ -174,7 +175,7 @@ public class RoleController : ControllerBase
     /// <param name="roleId">The ID of the role to archive or unarchive</param>
     /// <param name="archive">True to archive the role, false to unarchive it.</param>
     /// <returns>A message stating the role was successfully archived or unarchived.</returns>
-    [HttpPatch("{roleId}", Name = "api_archive_role")]
+    [HttpPatch("{roleId}", Name = "api_archive_role_project")]
     public async Task<IActionResult> ArchiveRole(
         long organizationId,
         long projectId,
@@ -209,7 +210,7 @@ public class RoleController : ControllerBase
     /// <param name="projectId">The ID of the project to which the role belongs</param>
     /// <param name="roleId">The ID of the role whose permissions to retrieve</param>
     /// <returns>A list of permissions associated with the role</returns>
-    [HttpGet("{roleId}/permissions", Name = "api_get_permissions_by_role")]
+    [HttpGet("{roleId}/permissions", Name = "api_get_permissions_by_role_project")]
     public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetPermissionsByRole(
         long organizationId,
         long projectId,
@@ -236,7 +237,7 @@ public class RoleController : ControllerBase
     /// <param name="roleId">The ID of the role</param>
     /// <param name="permissionId">The ID of the permission to add</param>
     /// <returns>A message stating the permission was successfully added to the role.</returns>
-    [HttpPost("{roleId}/permissions/{permissionId}", Name = "api_add_permission_to_role")]
+    [HttpPost("{roleId}/permissions/{permissionId}", Name = "api_add_permission_to_role_project")]
     public async Task<ActionResult> AddPermissionToRole(
         long organizationId,
         long projectId,
@@ -264,7 +265,7 @@ public class RoleController : ControllerBase
     /// <param name="roleId">The ID of the role</param>
     /// <param name="permissionId">The ID of the permission to remove</param>
     /// <returns>A message stating the permission was successfully removed from the role.</returns>
-    [HttpDelete("{roleId}/permissions/{permissionId}", Name = "api_remove_permission_from_role")]
+    [HttpDelete("{roleId}/permissions/{permissionId}", Name = "api_remove_permission_from_role_project")]
     public async Task<ActionResult> RemovePermissionFromRole(
         long organizationId,
         long projectId,
@@ -292,7 +293,7 @@ public class RoleController : ControllerBase
     /// <param name="roleId">The ID of the role</param>
     /// <param name="permissionIds">Array of permission IDs to assign to the role (replaces existing permissions)</param>
     /// <returns>A message stating the permissions were successfully set for the role.</returns>
-    [HttpPut("{roleId}/permissions", Name = "api_set_permissions_for_role")]
+    [HttpPut("{roleId}/permissions", Name = "api_set_permissions_for_role_project")]
     public async Task<ActionResult> SetPermissionsForRole(
         long organizationId,
         long projectId,
