@@ -1,3 +1,5 @@
+// src/app/(home)/organization_management/users/UsersTable.tsx
+
 import React, { useEffect, useState } from "react";
 import GenericTable from "../../components/GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
@@ -46,7 +48,8 @@ const UsersTable = ({ members }: Props) => {
 
   const fetchUsers = async () => {
     try {
-      const users = await getAllUsers();
+      // Filter by organization ID
+      const users = await getAllUsers(organization?.organizationId);
       setData(users);
     } catch (err) {
       console.error(err);
@@ -58,7 +61,7 @@ const UsersTable = ({ members }: Props) => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [organization?.organizationId]); // Re-fetch when organization changes
 
   useEffect(() => {
     setSelectedMembers(new Array(data.length).fill(false));
