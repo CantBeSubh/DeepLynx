@@ -64,6 +64,7 @@ try
                     "http://localhost:3000",
                     "http://localhost:3001",
                     "http://ui:3000",
+                    "http://localhost:5173",
                     "https://*.cluster.local",
                     "http://*.cluster.local",
                     "https://*.svc.cluster.local",
