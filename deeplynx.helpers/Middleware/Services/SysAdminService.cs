@@ -36,7 +36,7 @@ public class SysAdminService : ISysAdminService
              SELECT EXISTS(
                 SELECT 1
                 FROM deeplynx.users u
-                WHERE u.id = {{userId}}
+                WHERE u.id = {userId}
                   AND u.is_sys_admin = true
                 ) as has_permission")
             .AsEnumerable()
