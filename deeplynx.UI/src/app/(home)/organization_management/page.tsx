@@ -1,6 +1,6 @@
 // src/app/(home)/organization_management/page.tsx
 
-import { getAllGroups } from "@/app/lib/server_service/group_services.server";
+import { getAllGroupsServer } from "@/app/lib/server_service/group_services.server";
 import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import {
   getAllOrgRolesServer,
@@ -63,7 +63,7 @@ const OrganizationManagementPage = async ({
   // Fetch groups filtered by organization
   let groups: GroupResponseDto[] = [];
   try {
-    const apiGroups = await getAllGroups(organizationId as number, true);
+    const apiGroups = await getAllGroupsServer(organizationId as number, true);
     groups = apiGroups.map(mapToGroupResponseDtos);
   } catch (error) {
     console.error("getAllGroups failed:", error);

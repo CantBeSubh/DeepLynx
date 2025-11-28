@@ -29,10 +29,8 @@ interface OrganizationManagementProps {
 
 const OrganizationManagementClient = ({
   members,
-  initialProjects,
   initialGroups,
   initialRoles,
-  initialSelectedProject,
   initialPermissions,
 }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
