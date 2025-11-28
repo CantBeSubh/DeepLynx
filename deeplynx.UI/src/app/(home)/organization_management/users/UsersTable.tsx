@@ -16,13 +16,12 @@ import { sendEmail } from "@/app/lib/client_service/notification_services.client
 import { removeUserFromOrganization } from "@/app/lib/client_service/organization_services.client";
 import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
 import { getAllRoles } from "@/app/lib/client_service/role_services.client";
-import {
-  getAllUsers
-} from "@/app/lib/client_service/user_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import DeleteModal from "./DeleteModal";
 import InviteUserModal from "./InviteUserModal";
 import UsersHeaderStats from "./UsersHeaderStats";
 import UsersListTable from "./UsersListTable";
+import { UsersTableRow } from "../../types/types";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -32,27 +31,47 @@ interface Props {
   members: UserResponseDto[];
 }
 
-// Extended table row type including pending invites
-export type TableRow = {
-  id: number;
-  name: string;
-  email: string;
-  username: string | null;
-  isActive: boolean;
-  isArchived: boolean;
-  isSysAdmin: boolean;
-  isPending?: boolean;
-  invitedAt?: string;
-  projectName?: string;
-  roleName?: string;
-  projects?: Array<{ id: number; name: string; role: string }>;
-};
-
 type ConfirmModalState = {
   isOpen: boolean;
   itemId: number | null;
   itemName: string;
   isPending: boolean;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                            Helper: build table rows                        */
+/* -------------------------------------------------------------------------- */
+
+const buildTableData = (users: UserResponseDto[]): UsersTableRow[] => {
+  // TODO: Replace mock with real pending invites from backend
+  const mockPendingInvites: UsersTableRow[] = [
+    {
+      id: 9999,
+      name: "",
+      email: "pending@example.com",
+      username: null,
+      isActive: false,
+      isArchived: false,
+      isSysAdmin: false,
+      isPending: true,
+      invitedAt: new Date().toISOString(),
+      projectName: "Alpha Project",
+      roleName: "Developer",
+    },
+  ];
+
+  const activeUsers: UsersTableRow[] = users.map((user) => ({
+    id: user.id,
+    name: user.name || "",
+    email: user.email || "",
+    username: user.username,
+    isActive: user.isActive,
+    isArchived: user.isArchived,
+    isSysAdmin: user.isSysAdmin,
+    isPending: false,
+  }));
+
+  return [...mockPendingInvites, ...activeUsers];
 };
 
 /* -------------------------------------------------------------------------- */
@@ -64,7 +83,9 @@ const UsersTable = ({ members }: Props) => {
   /*                               Core State                                */
   /* ------------------------------------------------------------------------ */
 
-  const [tableData, setTableData] = useState<TableRow[]>([]);
+  const [tableData, setTableData] = useState<UsersTableRow[]>(() =>
+    buildTableData(members)
+  );
   const [loading, setLoading] = useState(false);
 
   /* ------------------------------------------------------------------------ */
@@ -93,12 +114,11 @@ const UsersTable = ({ members }: Props) => {
   /* ------------------------------------------------------------------------ */
 
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({
-  isOpen: false,
-  itemId: null,
-  itemName: "",
-  isPending: false,
-});
-
+    isOpen: false,
+    itemId: null,
+    itemName: "",
+    isPending: false,
+  });
 
   /* ------------------------------------------------------------------------ */
   /*                           Organization Context                           */
@@ -111,49 +131,22 @@ const UsersTable = ({ members }: Props) => {
   /* ------------------------------------------------------------------------ */
 
   const loadAllData = async () => {
+    if (!organization?.organizationId) return; // guard
+
     try {
       const users: UserResponseDto[] = await getAllUsers(
-        organization?.organizationId
+        organization.organizationId
       );
-
-      // TODO: Replace mock with real pending invites from backend
-      const mockPendingInvites: TableRow[] = [
-        {
-          id: 9999,
-          name: "",
-          email: "pending@example.com",
-          username: null,
-          isActive: false,
-          isArchived: false,
-          isSysAdmin: false,
-          isPending: true,
-          invitedAt: new Date().toISOString(),
-          projectName: "Alpha Project",
-          roleName: "Developer",
-        },
-      ];
-
-      const activeUsers: TableRow[] = users.map((user) => ({
-        id: user.id,
-        name: user.name || "",
-        email: user.email || "",
-        username: user.username,
-        isActive: user.isActive,
-        isArchived: user.isArchived,
-        isSysAdmin: user.isSysAdmin,
-        isPending: false,
-      }));
-
-      const combined = [...mockPendingInvites, ...activeUsers];
-      setTableData(combined);
+      setTableData(buildTableData(users));
     } catch (error) {
       console.error("Failed to load data:", error);
     }
   };
 
+  // ✅ When server-side members prop changes, sync local state (no extra fetch)
   useEffect(() => {
-    loadAllData();
-  }, [members, organization?.organizationId]);
+    setTableData(buildTableData(members));
+  }, [members]);
 
   /* ------------------------------------------------------------------------ */
   /*                        Invite Flow: Open & Options                       */
@@ -164,8 +157,12 @@ const UsersTable = ({ members }: Props) => {
     setModalLoading(true);
 
     try {
+      if (!organization?.organizationId) {
+        throw new Error("No organization selected");
+      }
+
       const projects = await getAllProjects(
-        organization?.organizationId as number
+        organization.organizationId as number
       );
       setAvailableProjects(projects);
     } catch (error) {
@@ -225,11 +222,6 @@ const UsersTable = ({ members }: Props) => {
 
       await sendEmail(inviteEmail, "New User");
 
-      // TODO: Store pending assignment when backend is ready
-      // if (selectedProjectId && selectedRoleId) {
-      //   await createPendingAssignment(inviteEmail, projectId, roleId);
-      // }
-
       if (selectedProjectId && selectedRoleId) {
         toast.success(
           `Invitation sent to ${inviteEmail}. They will be added to the selected project upon accepting.`
@@ -238,6 +230,7 @@ const UsersTable = ({ members }: Props) => {
         toast.success(`Invitation sent to ${inviteEmail}`);
       }
 
+      // ✅ Now re-fetch from API (already org-scoped)
       await loadAllData();
 
       setShowInviteModal(false);
@@ -269,50 +262,48 @@ const UsersTable = ({ members }: Props) => {
   /*                  Remove User / Cancel Invite Confirmation                */
   /* ------------------------------------------------------------------------ */
 
-const handleRemoveOrCancel = async () => {
-  if (!confirmModal.itemId) return;
+  const handleRemoveOrCancel = async () => {
+    if (!confirmModal.itemId) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    if (confirmModal.isPending) {
-      // TODO: API call to cancel invite
-      // await cancelPendingInvite(confirmModal.itemId);
-      toast.success("Invitation cancelled");
-    } else {
-      if (!organization?.organizationId) {
-        throw new Error("No organization selected");
+      if (confirmModal.isPending) {
+        // TODO: API call to cancel invite
+        toast.success("Invitation cancelled");
+      } else {
+        if (!organization?.organizationId) {
+          throw new Error("No organization selected");
+        }
+
+        await removeUserFromOrganization(
+          organization.organizationId as number,
+          confirmModal.itemId
+        );
+
+        toast.success("User removed from organization");
       }
 
-      await removeUserFromOrganization(
-        organization.organizationId as number,
-        confirmModal.itemId
+      // ✅ Refresh org-scoped list
+      await loadAllData();
+
+      setConfirmModal({
+        isOpen: false,
+        itemId: null,
+        itemName: "",
+        isPending: false,
+      });
+    } catch (error) {
+      console.error("Failed to remove/cancel:", error);
+      toast.error(
+        confirmModal.isPending
+          ? "Failed to cancel invitation"
+          : "Failed to remove user"
       );
-
-      toast.success("User removed from organization");
+    } finally {
+      setLoading(false);
     }
-
-    await loadAllData();
-
-    setConfirmModal({
-      isOpen: false,
-      itemId: null,
-      itemName: "",
-      isPending: false,
-    });
-  } catch (error) {
-    console.error("Failed to remove/cancel:", error);
-    toast.error(
-      confirmModal.isPending
-        ? "Failed to cancel invitation"
-        : "Failed to remove user"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  };
 
   /* ------------------------------------------------------------------------ */
   /*                               Derived Stats                              */

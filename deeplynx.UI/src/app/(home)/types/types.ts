@@ -1,3 +1,5 @@
+// src/app/(home)/types/types.ts
+
 import React, { ReactNode } from 'react';
 import { CustomQueryRequestDto } from './requestDTOs';
 
@@ -175,4 +177,20 @@ export type GraphLink = {
 export type GraphResponse = {
   nodes?: GraphNode[];
   links?: GraphLink[];
+};
+
+// Users table row
+export type UsersTableRow = {
+  id: number;
+  name: string;
+  email: string;
+  username: string | null;
+  isActive: boolean;
+  isArchived: boolean;
+  isSysAdmin: boolean;
+  isPending?: boolean;
+  invitedAt?: string;
+  projectName?: string;
+  roleName?: string;
+  projects?: Array<{ id: number; name: string; role: string }>;
 };

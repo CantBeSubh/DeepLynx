@@ -17,6 +17,9 @@ import InlineGroupsTable from "./groups/InlineGroupsTable";
 import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
 import OrganizationSettings from "./settings/OrganizationSettings";
 import TagManagementClient from "./tag_management/TagManagementClient";
+import OptionOne from "./tag_management/OptionOne";
+import OptionTwo from "./tag_management/OptionTwo";
+import OptionThree from "./tag_management/OptionThree";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
@@ -63,7 +66,10 @@ const OrganizationManagementClient = ({
     },
     {
       label: "Tags and Security Labels",
-      content: <TagManagementClient />,
+      // content: <TagManagementClient />,
+      // content: <OptionOne />,
+      // content: <OptionTwo />,
+      content: <OptionThree />,
     },
     {
       label: "Settings",

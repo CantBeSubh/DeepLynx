@@ -9,14 +9,14 @@ import {
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import type { TableRow } from "./UsersTable";
+import { UsersTableRow } from "../../types/types";
 
 /* -------------------------------------------------------------------------- */
 /*                          Users & Invites Data Table                        */
 /* -------------------------------------------------------------------------- */
 
 interface UsersListTableProps {
-  tableData: TableRow[];
+  tableData: UsersTableRow[];
   loading: boolean;
   onResendInvite: (email: string) => void;
   onEditUser: (userId: number, userName: string) => void;
@@ -51,10 +51,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
         <tbody>
           {tableData.length === 0 ? (
             <tr>
-              <td
-                colSpan={6}
-                className="text-center py-8 text-base-content/70"
-              >
+              <td colSpan={6} className="text-center py-8 text-base-content/70">
                 No users or pending invites. Click &quot;Invite User&quot; to
                 get started.
               </td>
