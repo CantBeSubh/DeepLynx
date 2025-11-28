@@ -24,17 +24,11 @@ type OrgTag = {
   description?: string;
 };
 
-type TagManagementClientProps = {
-  // In the future you can hydrate from the server:
-  // initialLabels?: OrgSecurityLabel[];
-  // initialTags?: OrgTag[];
-};
-
 /* -------------------------------------------------------------------------- */
 /*                           TagManagementClient                              */
 /* -------------------------------------------------------------------------- */
 
-const OptionOne: React.FC<TagManagementClientProps> = () => {
+const OptionOne = () => {
   /* ------------------------------------------------------------------------ */
   /*                               Mocked State                               */
   /* ------------------------------------------------------------------------ */

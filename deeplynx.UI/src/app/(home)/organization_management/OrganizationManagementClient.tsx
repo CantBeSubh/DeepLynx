@@ -20,6 +20,9 @@ import TagManagementClient from "./tag_management/TagManagementClient";
 import OptionOne from "./tag_management/OptionOne";
 import OptionTwo from "./tag_management/OptionTwo";
 import OptionThree from "./tag_management/OptionThree";
+import SettingsOne from "./settings/SettingsOne";
+import SettingsTwo from "./settings/SettingsTwo";
+import SettingsThree from "./settings/SettingsThree";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
@@ -76,6 +79,9 @@ const OrganizationManagementClient = ({
       content: organization ? (
         <OrganizationSettings organization={organization} />
       ) : (
+        // <SettingsOne />
+        // <SettingsTwo />
+        // <SettingsThree />
         <div>No organization selected</div>
       ),
     },
