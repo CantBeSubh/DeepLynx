@@ -1,5 +1,6 @@
 // src/app/(home)/organization_management/roles_and_permissions/RolesAndPermissions.tsx
 
+import React, { useEffect, useRef, useState } from "react";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import {
@@ -9,16 +10,9 @@ import {
   setPermissionsForRole,
   updateRole,
 } from "@/app/lib/client_service/role_services.client";
-import {
-  CheckIcon,
-  ExclamationCircleIcon,
-  PencilIcon,
-  ShieldCheckIcon,
-  TrashIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
-import React, { useEffect, useRef, useState } from "react";
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
+
 import {
   CreateRoleRequestDto,
   UpdateRoleRequestDto,
@@ -27,41 +21,69 @@ import {
   PermissionResponseDto,
   RoleResponseDto,
 } from "../../types/responseDTOs";
+
 import CreateRoleModal from "./CreateRoleModal";
 import DeleteRoleModal from "./DeleteRoleModal";
 import EditRoleModal from "./EditRoleModal";
+import MatrixViewLayout from "./MatrixViewLayout";
+import SplitViewLayout from "./SplitViewLayout";
+
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
 
 interface RolesAndPermissionsProps {
   initialRoles: RoleResponseDto[];
   initialPermissions: PermissionResponseDto[];
 }
 
-interface PermissionCategory {
+export interface PermissionCategory {
   id: string;
   label: string;
   permissions: PermissionResponseDto[];
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           Main Component Definition                        */
+/* -------------------------------------------------------------------------- */
+
 const RolesAndPermissions = ({
   initialRoles,
   initialPermissions,
 }: RolesAndPermissionsProps) => {
-  const [activeLayout, setActiveLayout] = useState("split-view");
+  /* ------------------------------------------------------------------------ */
+  /*                               Core State                                */
+  /* ------------------------------------------------------------------------ */
+
+  const [activeLayout, setActiveLayout] = useState<"split-view" | "matrix">(
+    "split-view"
+  );
   const [rolesLocked, setRolesLocked] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(
     initialRoles[0]?.id || null
   );
+
   const [roles, setRoles] = useState(initialRoles);
   const [permissions, setPermissions] = useState(initialPermissions);
+
   const [rolePermissions, setRolePermissions] = useState<
     Record<number, PermissionResponseDto[]>
   >({});
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  /* ------------------------------------------------------------------------ */
+  /*                           Context: Org / Project                         */
+  /* ------------------------------------------------------------------------ */
+
   const { organization } = useOrganizationSession();
-  const { project, setProject } = useProjectSession();
+  const { project } = useProjectSession();
+
+  /* ------------------------------------------------------------------------ */
+  /*                             Create Role Modal                            */
+  /* ------------------------------------------------------------------------ */
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const handleCreateRole = async (data: {
     name: string;
@@ -71,7 +93,6 @@ const RolesAndPermissions = ({
       throw new Error("No organization selected");
     }
 
-    const orgId = Number(organization.organizationId);
     const dto: CreateRoleRequestDto = {
       name: data.name,
       description: data.description,
@@ -84,10 +105,7 @@ const RolesAndPermissions = ({
         dto
       );
 
-      // Add the new role to the state
       setRoles((prev) => [...prev, newRole]);
-
-      // Optionally select the new role
       setSelectedRoleId(newRole.id);
       toast.success("Created new role");
     } catch (error) {
@@ -96,6 +114,10 @@ const RolesAndPermissions = ({
       throw error;
     }
   };
+
+  /* ------------------------------------------------------------------------ */
+  /*                              Edit Role Modal                             */
+  /* ------------------------------------------------------------------------ */
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [roleToEdit, setRoleToEdit] = useState<RoleResponseDto | null>(null);
@@ -106,10 +128,7 @@ const RolesAndPermissions = ({
     description?: string | null
   ) => {
     try {
-      const dto: UpdateRoleRequestDto = {
-        name: name,
-        description: description,
-      };
+      const dto: UpdateRoleRequestDto = { name, description };
       const updatedRole = await updateRole(
         organization?.organizationId as number,
         project?.projectId as number,
@@ -138,13 +157,15 @@ const RolesAndPermissions = ({
     setRoleToEdit(null);
   };
 
-  // Add state (after your other modal states)
+  /* ------------------------------------------------------------------------ */
+  /*                             Delete Role Modal                            */
+  /* ------------------------------------------------------------------------ */
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<RoleResponseDto | null>(
     null
   );
 
-  // Add delete handler
   const handleDeleteRole = async () => {
     if (!roleToDelete) return;
 
@@ -153,12 +174,12 @@ const RolesAndPermissions = ({
         organization?.organizationId as number,
         project?.projectId as number,
         roleToDelete.id
-      ); // Changed from deleteRole to archiveRole
+      );
 
-      // Remove the role from state (it's now archived, so hide it)
+      // Remove archived role from UI
       setRoles((prev) => prev.filter((role) => role.id !== roleToDelete.id));
 
-      // If the deleted role was selected, select another role or null
+      // Re-select a fallback role if needed
       if (selectedRoleId === roleToDelete.id) {
         const remainingRoles = roles.filter(
           (role) => role.id !== roleToDelete.id
@@ -174,49 +195,47 @@ const RolesAndPermissions = ({
     }
   };
 
-  // Add handler to open delete modal
   const handleDeleteClick = (role: RoleResponseDto) => {
     setRoleToDelete(role);
     setIsDeleteModalOpen(true);
   };
 
-  // Add handler to close delete modal
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setRoleToDelete(null);
   };
 
-  // Add state for permission editing (after your other state declarations)
+  /* ------------------------------------------------------------------------ */
+  /*                    Single-Role Permission Editing State                  */
+  /* ------------------------------------------------------------------------ */
+
   const [isEditingPermissions, setIsEditingPermissions] = useState(false);
   const [tempPermissions, setTempPermissions] = useState<Set<number>>(
     new Set()
   );
 
-  // Add handler to start editing permissions
   const handleStartEditingPermissions = () => {
     if (!currentRole) return;
 
-    // Initialize temp permissions with current permissions
     const currentPermissionIds =
       rolePermissions[currentRole.id]?.map((p) => Number(p.id)) || [];
+
     setTempPermissions(new Set(currentPermissionIds));
     setIsEditingPermissions(true);
   };
 
-  // Add handler to toggle a permission in edit mode
   const handleTogglePermission = (permissionId: number) => {
     setTempPermissions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(permissionId)) {
-        newSet.delete(permissionId);
+      const next = new Set(prev);
+      if (next.has(permissionId)) {
+        next.delete(permissionId);
       } else {
-        newSet.add(permissionId);
+        next.add(permissionId);
       }
-      return newSet;
+      return next;
     });
   };
 
-  // Add handler to save permission changes
   const handleSavePermissions = async () => {
     if (!currentRole) return;
 
@@ -228,10 +247,10 @@ const RolesAndPermissions = ({
         Array.from(tempPermissions)
       );
 
-      // Update the rolePermissions state
       const updatedPerms = permissions.filter((p) =>
         tempPermissions.has(Number(p.id))
       );
+
       setRolePermissions((prev) => ({
         ...prev,
         [currentRole.id]: updatedPerms,
@@ -246,13 +265,15 @@ const RolesAndPermissions = ({
     }
   };
 
-  // Add handler to cancel editing
   const handleCancelEditingPermissions = () => {
     setIsEditingPermissions(false);
     setTempPermissions(new Set());
   };
 
-  // Add this handler after your other handlers
+  /* ------------------------------------------------------------------------ */
+  /*                             Role Selection                               */
+  /* ------------------------------------------------------------------------ */
+
   const handleRoleSelection = (roleId: number) => {
     if (isEditingPermissions) {
       toast.error("Please save or cancel your changes before switching roles");
@@ -261,14 +282,16 @@ const RolesAndPermissions = ({
     setSelectedRoleId(roleId);
   };
 
-  // Add state for matrix editing (after your other state declarations)
-  const tableContainerRef = useRef<HTMLDivElement>(null);
+  /* ------------------------------------------------------------------------ */
+  /*                      Matrix (All Roles/Perms) Editing                    */
+  /* ------------------------------------------------------------------------ */
+
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
   const [isEditingMatrix, setIsEditingMatrix] = useState(false);
   const [matrixTempPermissions, setMatrixTempPermissions] = useState<
     Record<number, Set<number>>
   >({});
 
-  // Initialize matrix editing with current permissions for all roles
   const handleStartEditingMatrix = () => {
     const initialMatrix: Record<number, Set<number>> = {};
 
@@ -282,12 +305,10 @@ const RolesAndPermissions = ({
     setIsEditingMatrix(true);
   };
 
-  // Toggle a permission for a specific role in matrix edit mode
   const handleToggleMatrixPermission = (
     roleId: number,
     permissionId: number
   ) => {
-    // Store current scroll position
     const scrollTop = tableContainerRef.current?.scrollTop || 0;
     const scrollLeft = tableContainerRef.current?.scrollLeft || 0;
 
@@ -308,7 +329,7 @@ const RolesAndPermissions = ({
       return updated;
     });
 
-    // Restore scroll position after state update
+    // Preserve scroll after re-render
     requestAnimationFrame(() => {
       if (tableContainerRef.current) {
         tableContainerRef.current.scrollTop = scrollTop;
@@ -317,10 +338,8 @@ const RolesAndPermissions = ({
     });
   };
 
-  // Save all matrix changes
   const handleSaveMatrixPermissions = async () => {
     try {
-      // Update permissions for all roles that changed
       const updatePromises = roles.map((role) => {
         const newPermissions = Array.from(matrixTempPermissions[role.id] || []);
         return setPermissionsForRole(
@@ -333,7 +352,6 @@ const RolesAndPermissions = ({
 
       await Promise.all(updatePromises);
 
-      // Update the rolePermissions state for all roles
       const updatedRolePermissions: Record<number, PermissionResponseDto[]> =
         {};
       roles.forEach((role) => {
@@ -358,13 +376,11 @@ const RolesAndPermissions = ({
     }
   };
 
-  // Cancel matrix editing
   const handleCancelEditingMatrix = () => {
     setIsEditingMatrix(false);
     setMatrixTempPermissions({});
   };
 
-  // Check if a role has a permission in matrix edit mode
   const matrixRoleHasPermission = (
     roleId: number,
     permissionId: number
@@ -375,7 +391,10 @@ const RolesAndPermissions = ({
     return roleHasPermission(roleId, permissionId);
   };
 
-  // Group permissions by resource (or use a default category)
+  /* ------------------------------------------------------------------------ */
+  /*                      Permission Grouping / Helpers                       */
+  /* ------------------------------------------------------------------------ */
+
   const groupPermissionsByResource = (): PermissionCategory[] => {
     const grouped = permissions.reduce((acc, perm) => {
       const resource = perm.resource || "General";
@@ -395,6 +414,10 @@ const RolesAndPermissions = ({
 
   const permissionCategories = groupPermissionsByResource();
   const currentRole = roles.find((r) => r.id === selectedRoleId);
+
+  /* ------------------------------------------------------------------------ */
+  /*                    Fetching Role Permissions (API Calls)                 */
+  /* ------------------------------------------------------------------------ */
 
   const fetchRolePermissions = async (roleId: number) => {
     if (rolePermissions[roleId]) return;
@@ -424,10 +447,12 @@ const RolesAndPermissions = ({
     try {
       const promises = roles.map((role) =>
         getOrgRolePermissions(organization.organizationId as number, role.id)
-          .then((perms) => ({ roleId: role.id, perms }))
+          .then((perms) => {
+            return { roleId: role.id, perms };
+          })
           .catch((error) => {
             console.error(
-              `Error fetching permissions for role ${role.id}:`,
+              `❌ Error fetching permissions for role ${role.name} (ID: ${role.id}):`,
               error
             );
             return { roleId: role.id, perms: [] };
@@ -444,497 +469,61 @@ const RolesAndPermissions = ({
       setRolePermissions(newRolePermissions);
       setInitialLoadComplete(true);
     } catch (error) {
-      console.error("Error fetching all role permissions:", error);
+      console.error("❌ Error fetching all role permissions:", error);
     } finally {
       setIsLoadingPermissions(false);
     }
   };
 
-  // Update the useEffect to fetch all permissions on mount
+  /* ------------------------------------------------------------------------ */
+  /*                               useEffect Hooks                            */
+  /* ------------------------------------------------------------------------ */
+
   useEffect(() => {
     if (!initialLoadComplete && roles.length > 0) {
       fetchAllRolePermissions();
     }
   }, [roles, initialLoadComplete]);
 
-  // Keep the existing useEffect for individual role selection
   useEffect(() => {
     if (selectedRoleId && initialLoadComplete) {
       fetchRolePermissions(selectedRoleId);
     }
   }, [selectedRoleId, initialLoadComplete]);
 
-  // Fetch permissions when a role is selected
-  useEffect(() => {
-    if (selectedRoleId) {
-      fetchRolePermissions(selectedRoleId);
-    }
-  }, [selectedRoleId]);
+  /* ------------------------------------------------------------------------ */
+  /*                          Permission Check Helper                         */
+  /* ------------------------------------------------------------------------ */
 
-  // Check if a role has a specific permission
   const roleHasPermission = (roleId: number, permissionId: number): boolean => {
-    return rolePermissions[roleId]?.some((p) => p.id === permissionId) || false;
+    const hasPermission =
+      rolePermissions[roleId]?.some((p) => p.id === permissionId) || false;
+
+    return hasPermission;
   };
 
-  // Determine if role is "standard"
   const isStandardRole = (role: RoleResponseDto): boolean => {
     return (
       role.name === "Admin" || role.name === "User" || role.name === "Viewer"
     );
   };
 
-  // Layout 1: Split View (Master-Detail)
-  const SplitViewLayout = () => (
-    <div className="flex gap-6" style={{ height: "calc(100vh - 28rem)" }}>
-      {/* Left Sidebar - Roles List */}
-      <div className="w-80 flex-shrink-0">
-        <div className="card bg-base-100 shadow-xl h-full flex flex-col border-2 border-primary">
-          <div className="card-body p-0">
-            <div className="px-4 py-3 border-base-300">
-              <h2 className="card-title text-base">Roles</h2>
-              <p className="text-xs text-base-content/60 mt-1">
-                {roles.length} total
-              </p>
-            </div>
-            <div className="divider px-3"></div>
-            <div className="flex-1 overflow-y-auto">
-              {roles.map((role) => (
-                <button
-                  key={role.id}
-                  onClick={() => handleRoleSelection(role.id)}
-                  disabled={isEditingPermissions}
-                  className={`w-full px-4 py-3 text-left border-b border-base-300 transition-colors ${
-                    selectedRoleId === role.id
-                      ? "bg-primary/10 border-l-4 border-l-primary"
-                      : ""
-                  } ${
-                    isEditingPermissions
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-base-200 cursor-pointer"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheckIcon
-                        className={`w-4 h-4 ${
-                          selectedRoleId === role.id
-                            ? "text-primary"
-                            : "text-base-content/40"
-                        }`}
-                      />
-                      <span className="font-medium text-sm">{role.name}</span>
-                    </div>
-                    {isStandardRole(role) && (
-                      <div className="badge badge-info badge-sm">STD</div>
-                    )}
-                  </div>
-                  {role.description && (
-                    <p className="text-xs text-base-content/60 mt-1 ml-6 truncate">
-                      {role.description}
-                    </p>
-                  )}
-                </button>
-              ))}
-            </div>
-            {/* <div className="p-3 border-t border-base-300">
-              <button
-                disabled={rolesLocked}
-                onClick={() => setIsCreateModalOpen(true)}
-                className="btn btn-primary btn-sm w-full gap-2"
-              >
-                <PlusIcon className="w-4 h-4" />
-                New Role
-              </button>
-            </div> */}
-          </div>
-        </div>
-      </div>
-
-      {/* Right Panel - Role Details & Permissions */}
-      <div className="flex-1 card bg-base-100 shadow-xl flex flex-col overflow-hidden border-2 border-primary">
-        {currentRole ? (
-          <>
-            <div className="px-6 py-4 border-base-300 flex-shrink-0">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="card-title">{currentRole.name}</h2>
-                    {isStandardRole(currentRole) && (
-                      <div className="badge badge-info">
-                        Standard Role (Read-Only)
-                      </div>
-                    )}
-                  </div>
-                  {currentRole.description && (
-                    <p className="text-sm text-base-content/70 mt-1">
-                      {currentRole.description}
-                    </p>
-                  )}
-                  <p className="text-sm text-base-content/60 mt-2">
-                    Last updated:{" "}
-                    {new Date(currentRole.lastUpdatedAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    disabled={isStandardRole(currentRole)} // Changed: always disabled for standard roles
-                    onClick={() => handleEditClick(currentRole)}
-                    className="btn btn-ghost btn-sm btn-circle"
-                    title={
-                      isStandardRole(currentRole)
-                        ? "Standard roles cannot be edited"
-                        : "Edit Role"
-                    }
-                  >
-                    <PencilIcon className="size-6" />
-                  </button>
-                  {!isStandardRole(currentRole) && (
-                    <button
-                      disabled={rolesLocked}
-                      onClick={() => handleDeleteClick(currentRole)}
-                      className="btn btn-ghost btn-sm btn-circle text-error"
-                      title="Delete Role"
-                    >
-                      <TrashIcon className="size-6" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="divider px-3"></div>
-
-            {/* Scrollable Permissions Section */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold">Permissions</h3>
-                {!isEditingPermissions ? (
-                  <button
-                    disabled={
-                      rolesLocked ||
-                      isStandardRole(currentRole) ||
-                      isLoadingPermissions
-                    }
-                    onClick={handleStartEditingPermissions}
-                    className="btn btn-primary btn-sm gap-2"
-                    title={
-                      isStandardRole(currentRole)
-                        ? "Standard role permissions cannot be modified"
-                        : rolesLocked
-                        ? "Roles are locked"
-                        : "Edit Permissions"
-                    }
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                    Edit Permissions
-                  </button>
-                ) : (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleCancelEditingPermissions}
-                      className="btn btn-ghost btn-sm"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSavePermissions}
-                      className="btn btn-primary btn-sm gap-2"
-                    >
-                      <CheckIcon className="w-4 h-4" />
-                      Save Changes
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Add info alert for standard roles */}
-              {isStandardRole(currentRole) && (
-                <div className="alert alert-info mb-4">
-                  <ExclamationCircleIcon className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm">
-                    This is a standard role and cannot be modified. Create a
-                    custom role if you need different permissions.
-                  </span>
-                </div>
-              )}
-
-              {isLoadingPermissions ? (
-                <div className="flex items-center justify-center py-12">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
-                </div>
-              ) : permissionCategories.length === 0 ? (
-                <div className="alert">
-                  <span>No permissions available.</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {permissionCategories.map((category) => (
-                    <div key={category.id} className="card bg-base-200/25">
-                      <div className="card-body p-4">
-                        <h4 className="card-title text-sm mb-3">
-                          {category.label}
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {category.permissions.map((perm) => {
-                            const hasPermission = isEditingPermissions
-                              ? tempPermissions.has(Number(perm.id))
-                              : roleHasPermission(
-                                  currentRole.id,
-                                  Number(perm.id)
-                                );
-
-                            return (
-                              <label
-                                key={perm.id}
-                                className={`label justify-start gap-2 ${
-                                  isEditingPermissions
-                                    ? "cursor-pointer"
-                                    : "cursor-default"
-                                }`}
-                                title={perm.description || perm.name}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={hasPermission}
-                                  onChange={() =>
-                                    handleTogglePermission(Number(perm.id))
-                                  }
-                                  disabled={!isEditingPermissions}
-                                  className="checkbox checkbox-primary checkbox-sm"
-                                />
-                                <span className="label-text">{perm.name}</span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-base-content/60">
-              Select a role to view details
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Layout 2: Permission Matrix View
-  const MatrixViewLayout = () => (
-    <div style={{ height: "calc(100vh - 28rem)" }}>
-      <div className="card bg-base-100 shadow-xl h-full flex flex-col overflow-hidden">
-        {/* Add Edit Controls Header */}
-        <div className="px-6 py-3 border-b border-base-300 flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Permission Matrix</h3>
-          {/* {!isEditingMatrix ? (
-            <button
-              disabled={rolesLocked || isLoadingPermissions}
-              onClick={handleStartEditingMatrix}
-              className="btn btn-primary btn-sm gap-2"
-            >
-              <PencilIcon className="w-4 h-4" />
-              Edit Matrix
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                onClick={handleCancelEditingMatrix}
-                className="btn btn-ghost btn-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveMatrixPermissions}
-                className="btn btn-primary btn-sm gap-2"
-              >
-                <CheckIcon className="w-4 h-4" />
-                Save All Changes
-              </button>
-            </div>
-          )} */}
-        </div>
-
-        {isLoadingPermissions && !initialLoadComplete ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <span className="loading loading-spinner loading-lg text-primary"></span>
-              <p className="mt-4 text-base-content/60">
-                Loading permissions...
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div ref={tableContainerRef} className="flex-1 overflow-auto">
-            <table className="table">
-              <thead className="sticky top-0 z-20 bg-base-100">
-                <tr>
-                  <th className="sticky left-0 bg-base-200 z-30">Permission</th>
-                  {roles.map((role) => (
-                    <th key={role.id} className="text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <div className="flex items-center gap-2">
-                          <ShieldCheckIcon className="w-4 h-4 text-primary" />
-                          <span className="font-medium">{role.name}</span>
-                          {isStandardRole(role) && (
-                            <div className="badge badge-info badge-xs">STD</div>
-                          )}
-                          {/* Only show edit role button when not in matrix edit mode */}
-                          {!isEditingMatrix && (
-                            <button
-                              disabled={isStandardRole(role)} // Changed: always disabled for standard roles
-                              onClick={() => handleEditClick(role)}
-                              className="btn btn-ghost btn-xs btn-circle"
-                              title={
-                                isStandardRole(role)
-                                  ? "Standard roles cannot be edited"
-                                  : "Edit Role"
-                              }
-                            >
-                              <PencilIcon className="size-4" />
-                            </button>
-                          )}
-                        </div>
-                        {role.description && (
-                          <span className="text-xs text-base-content/60 font-normal">
-                            {role.description}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {permissionCategories.map((category) => (
-                  <React.Fragment key={category.id}>
-                    {/* Category Header Row */}
-                    <tr className="bg-base-200">
-                      <td
-                        colSpan={roles.length + 2}
-                        className="font-semibold text-sm sticky left-0"
-                      >
-                        {category.label}
-                      </td>
-                    </tr>
-                    {/* Permission Rows */}
-                    {category.permissions.map((perm) => (
-                      <tr key={perm.id} className="hover">
-                        <td className="sticky left-0 z-10">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">
-                              {perm.name}
-                            </span>
-                            {perm.description && (
-                              <span className="text-xs text-base-content/60">
-                                {perm.description}
-                              </span>
-                            )}
-                            <span className="text-xs text-base-content/50 mt-1">
-                              Action: {perm.action}
-                            </span>
-                          </div>
-                        </td>
-                        {roles.map((role) => {
-                          const hasPermission = matrixRoleHasPermission(
-                            role.id,
-                            Number(perm.id)
-                          );
-                          const isStandard = isStandardRole(role); // Check if standard role
-
-                          return (
-                            <td key={role.id} className="text-center">
-                              <div
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (isEditingMatrix && !isStandard) {
-                                    handleToggleMatrixPermission(
-                                      role.id,
-                                      Number(perm.id)
-                                    );
-                                  }
-                                }}
-                                className={`inline-block ${
-                                  isEditingMatrix && !isStandard
-                                    ? "cursor-pointer hover:scale-110 transition-transform"
-                                    : "cursor-default"
-                                } ${
-                                  isStandard && isEditingMatrix
-                                    ? "opacity-60 ring-2 ring-warning rounded-lg p-1" // Add warning ring
-                                    : ""
-                                }`}
-                                title={
-                                  isStandard && isEditingMatrix
-                                    ? "Standard role permissions cannot be modified"
-                                    : isEditingMatrix
-                                    ? "Click to toggle"
-                                    : hasPermission
-                                    ? "Has permission"
-                                    : "No permission"
-                                }
-                              >
-                                {hasPermission ? (
-                                  <CheckIcon
-                                    className={`size-8 mx-auto ${
-                                      isEditingMatrix && !isStandard
-                                        ? "text-success hover:text-success/70"
-                                        : isStandard && isEditingMatrix
-                                        ? "text-warning" // Change to warning color
-                                        : "text-success"
-                                    }`}
-                                  />
-                                ) : (
-                                  <XMarkIcon
-                                    className={`size-8 mx-auto ${
-                                      isEditingMatrix && !isStandard
-                                        ? "text-base-300 hover:text-success/50"
-                                        : isStandard && isEditingMatrix
-                                        ? "text-warning/50" // Change to warning color
-                                        : "text-base-300"
-                                    }`}
-                                  />
-                                )}
-                              </div>
-                            </td>
-                          );
-                        })}
-                        <td className="text-center">
-                          {/* Removed individual permission edit button */}
-                        </td>
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  /* ------------------------------------------------------------------------ */
+  /*                               Main Render                                */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <div className="p-6 mx-auto">
-      {/* Header */}
+      {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold">Roles & Permissions</h1>
+          {/* Locking Roles (currently disabled) */}
           {/* <button
             onClick={() => setRolesLocked(!rolesLocked)}
             className={`btn gap-2 ${rolesLocked ? "btn-error" : "btn-primary"}`}
           >
-            {rolesLocked ? (
-              <LockClosedIcon className="size-6" />
-            ) : (
-              <LockOpenIcon className="size-6" />
-            )}
-            {rolesLocked ? "Roles Locked" : "Lock Roles"}
+            ...
           </button> */}
         </div>
         <p className="text-base-content/70">
@@ -981,11 +570,49 @@ const RolesAndPermissions = ({
         </div>
       </div>
 
-      {/* Render Selected Layout */}
-      {activeLayout === "split-view" && <SplitViewLayout />}
-      {activeLayout === "matrix" && <MatrixViewLayout />}
+      {/* Selected Layout */}
+      {activeLayout === "split-view" && (
+        <SplitViewLayout
+          roles={roles}
+          rolesLocked={rolesLocked}
+          selectedRoleId={selectedRoleId}
+          currentRole={currentRole || null}
+          isEditingPermissions={isEditingPermissions}
+          isLoadingPermissions={isLoadingPermissions}
+          permissionCategories={permissionCategories}
+          tempPermissions={tempPermissions}
+          onRoleSelection={handleRoleSelection}
+          onEditClick={handleEditClick}
+          onDeleteClick={handleDeleteClick}
+          onStartEditingPermissions={handleStartEditingPermissions}
+          onCancelEditingPermissions={handleCancelEditingPermissions}
+          onSavePermissions={handleSavePermissions}
+          onTogglePermission={handleTogglePermission}
+          roleHasPermission={roleHasPermission}
+          isStandardRole={isStandardRole}
+        />
+      )}
 
-      {/* Add the modals */}
+      {activeLayout === "matrix" && (
+        <MatrixViewLayout
+          roles={roles}
+          rolesLocked={rolesLocked}
+          isLoadingPermissions={isLoadingPermissions}
+          initialLoadComplete={initialLoadComplete}
+          permissionCategories={permissionCategories}
+          tableContainerRef={tableContainerRef}
+          isEditingMatrix={isEditingMatrix}
+          onStartEditingMatrix={handleStartEditingMatrix}
+          onCancelEditingMatrix={handleCancelEditingMatrix}
+          onSaveMatrixPermissions={handleSaveMatrixPermissions}
+          matrixRoleHasPermission={matrixRoleHasPermission}
+          onEditClick={handleEditClick}
+          onToggleMatrixPermission={handleToggleMatrixPermission}
+          isStandardRole={isStandardRole}
+        />
+      )}
+
+      {/* Modals */}
       <CreateRoleModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

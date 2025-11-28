@@ -43,6 +43,7 @@ type TableRow = {
   invitedAt?: string;
   projectName?: string;
   roleName?: string;
+  projects?: Array<{ id: number; name: string; role: string }>; // Add projects array
 };
 
 const UsersTable = ({ members }: Props) => {
@@ -73,7 +74,7 @@ const UsersTable = ({ members }: Props) => {
   const loadAllData = async () => {
     try {
       // Load active users
-      const users = await getAllUsers(organization?.organizationId);
+      const users: UserResponseDto[] = await getAllUsers(organization?.organizationId);
       
       // TODO: Load pending invites from backend
       // const pendingInvites = await getPendingInvites(organization?.organizationId);
@@ -381,18 +382,44 @@ const UsersTable = ({ members }: Props) => {
 
                       {/* Project Assignment Column */}
                       <td>
-                        {row.projectName ? (
-                          <div className="flex items-center gap-2 text-sm">
-                            <FolderIcon className="w-4 h-4 text-base-content/50" />
-                            <span>{row.projectName}</span>
-                            {row.roleName && (
-                              <span className="badge badge-sm badge-outline">
-                                {row.roleName}
-                              </span>
-                            )}
-                          </div>
+                        {row.isPending ? (
+                          // Pending invite - show single project assignment
+                          row.projectName ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <FolderIcon className="w-4 h-4 text-base-content/50" />
+                              <span>{row.projectName}</span>
+                              {row.roleName && (
+                                <span className="badge badge-sm badge-outline">
+                                  {row.roleName}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-base-content/50 text-sm">—</span>
+                          )
                         ) : (
-                          <span className="text-base-content/50 text-sm">—</span>
+                          // Active user - show all projects
+                          row.projects && row.projects.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {row.projects.slice(0, 2).map((project) => (
+                                <div
+                                  key={project.id}
+                                  className="badge badge-sm badge-primary gap-1"
+                                  title={`${project.name} (${project.role})`}
+                                >
+                                  <FolderIcon className="w-3 h-3" />
+                                  {project.name}
+                                </div>
+                              ))}
+                              {row.projects.length > 2 && (
+                                <div className="badge badge-sm badge-ghost">
+                                  +{row.projects.length - 2} more
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-base-content/50 text-sm">No projects</span>
+                          )
                         )}
                       </td>
 
