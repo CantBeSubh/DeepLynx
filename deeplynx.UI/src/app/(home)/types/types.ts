@@ -1,19 +1,5 @@
 import React, { ReactNode } from 'react';
 import { CustomQueryRequestDto } from './requestDTOs';
-//For dummy data
-export type DataSourceTableRow = {
-  name: string;
-  country: string;
-  adapterType: string;
-  active: boolean;
-  id: string | number;
-  select?: boolean;
-};
-
-export type Tag = {
-  id?: number;
-  name: string
-}
 
 // TODO: change Tag[] to string[] and figure out how to display
 export type FileViewerTableRow = {
@@ -39,12 +25,7 @@ export type FileViewerTableRow = {
   associatedRecords?: string[];
 };
 
-export type Tags = {
-  id: string;
-  name: string;
-}
-
-export type TableRow = DataSourceTableRow | FileViewerTableRow;
+export type TableRow = FileViewerTableRow;
 
 export type Column<T extends object> = {
   accessor?: string;
@@ -70,24 +51,6 @@ export type MySearchsTable = {
   sortable?: boolean;
 }
 
-export interface Group {
-  id: number;
-  name: string;
-  description?: string;
-}
-
-export type ProjectPermissionsTable = {
-  id: number;
-  role: string;
-  description: string;
-}
-
-export type UserPermissionsTable = {
-  id: number;
-  role: string;
-  description: string;
-}
-
 export type TeamMember = {
   id: number;
   name: string;
@@ -96,43 +59,6 @@ export type TeamMember = {
   visibility: string;
   role: string;
   lastLogin: string;
-};
-
-//record_service 
-export type RecordRow = {
-  id: number;
-  uri?: string | null;
-  name?: string;
-  properties?: string;
-  originalId?: string;
-  classId?: number;
-  className?: string;
-  dataSourceId?: number;
-  dataSourceName?: string;
-  projectId?: number;
-  projectName?: string;
-  tags: string;
-  createdBy?: string | null;
-  createdAt?: string | null;
-  modifiedBy?: string | null;
-  modifiedAt?: string | null;
-  archivedAt?: string | null;
-  lastUpdatedAt?: string;
-  description?: string;
-  fileType: string;
-  timeseries?: boolean;
-  fileSize?: number;
-  select?: boolean;
-  associatedRecords?: string[];
-};
-export type UpdateRecordPayload = {
-  uri?: string | null;
-  properties?: Record<string, unknown>;
-  original_id?: string | null;
-  name?: string | null;
-  class_id?: number | null;
-  class_name?: string | null;
-  description?: string | null;
 };
 
 //DatePicker
@@ -152,102 +78,6 @@ export type FileMetadata = {
   updateAction?: "merge" | "overwrite";
 };
 
-//RecentRecordsCard
-export type RecentRecord = {
-  id: number;
-  name: string;
-  className: string;
-  createdAt: string;
-  lastUpdatedAt: string;
-  dataSourceName: string;
-  projectName: string;
-  projectId: number;
-};
-
-export type UserResponseDto =
-  {
-    id: number;
-    name?: string;
-    email?: string;
-    username?: string;
-    ssoId?: string;
-    isSysAdmin?: boolean;
-    isArchined?: boolean;
-    isActive?: boolean;
-    projectId?: number;
-  }
-
-export type UserRequestDto =
-  {
-    name: string;
-    username: string;
-    ssoId: string;
-    isArchived: boolean | null;
-    projectId: number;
-    isActive: boolean | null;
-  }
-
-export type RoleResponseDto =
-  {
-    id: number;
-    name?: string;
-    description?: string | null;
-    lastUpdatedAt?: string | Date;
-    lastUpdatedBy?: string | null;
-    isArchieved?: boolean;
-    projectId?: number;
-    organizationId?: number;
-    roleId?: number;
-  }
-
-export type ProjectResponseDto =
-  {
-    id: number;
-    name?: string;
-    description?: string | null;
-    abbreviation?: string | null;
-    lastUpdatedAt?: string | Date;
-    lastUpdatedBy?: string | null;
-    isArchieved?: boolean;
-    projectId?: number;
-    organizationId?: number;
-    roleId?: number;
-    userId?: number;
-  }
-
-export type PermissionResponseDto =
-  {
-    id: number;
-    name?: string;
-    description?: string | null;
-    action?: string;
-    resource?: string | null;
-    isDefault?: boolean;
-    labelId?: number;
-    lastUpdatedAt?: string | Date;
-    lastUpdatedBy?: string | null;
-    isArchieved?: boolean;
-    projectId?: number;
-    organizationId?: number;
-    roleId?: number;
-    userId?: number;
-  }
-
-export type CreateRoleRequestDto =
-  {
-    name: string;
-    description?: string | null;
-    projectId?: number;
-    organizationId?: number;
-  }
-
-export type PermissionRequestDto =
-  {
-    name: string;
-    description?: string | null;
-    projectId?: number;
-    organizationId?: number;
-  }
 //Widgets
 export type WidgetType =
   | "DataOverview"
@@ -326,27 +156,6 @@ export type CreateRecordPayload = {
   class_name?: string | null;
   tags?: string[] | null;
   sensitivity_labels?: string[] | null;
-};
-
-export type Role = {
-  id: number;
-  name: string;
-  description: string | null;
-  lastUpdatedAt: string;
-  lastUpdatedBy: string | null;
-  isArchived: boolean;
-  projectId: number;
-  organizationId: number | null;
-}
-
-export type PaginatedResponse<T> = {
-  data: T[];
-  pageNumber: number;
-  pageSize: number;
-  totalCount: number;
-  totalPages: number;
-  hasPreviousPage: boolean;
-  hasNextPage: boolean;
 };
 
 export type GraphNode = {

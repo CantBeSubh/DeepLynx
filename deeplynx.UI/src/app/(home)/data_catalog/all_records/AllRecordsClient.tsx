@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import SearchBar from "@/app/(home)/components/SearchBar";
-import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/client_service/filter_services.client";
 
@@ -20,6 +20,7 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
+import { TagResponseDto } from "../../types/responseDTOs";
 
 /* ----------------------------- Types & utils ----------------------------- */
 
@@ -202,7 +203,7 @@ export default function DataCatalogClient({
       const parsed = JSON.parse(tags);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
 
-      const values = arr.flatMap((item: Tags) => {
+      const values = arr.flatMap((item: TagResponseDto) => {
         if (item && typeof item === "object") {
           if (typeof item.name === "string") return [item.name];
           return Object.values(item).filter((v) => typeof v === "string");
