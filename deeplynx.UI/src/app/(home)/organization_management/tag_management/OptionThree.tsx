@@ -1,7 +1,7 @@
 // src/app/(home)/organization_management/tag_management/TagManagementClientOption3.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   LockClosedIcon,
   LockOpenIcon,
@@ -11,67 +11,46 @@ import {
   InformationCircleIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
+
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getAllOrganizationTags } from "@/app/lib/client_service/tag_services.client";
+import type { TagResponseDto } from "@/app/(home)/types/responseDTOs";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
-
-type OrgSecurityLabel = {
-  id: number;
-  name: string;
-};
-
-type OrgTag = {
-  id: number;
-  name: string;
-};
-
-type ModalMode = "label" | "tag";
+type ModalMode = "tag";
 
 /* -------------------------------------------------------------------------- */
 /*                       TagManagementClientOption3                           */
 /* -------------------------------------------------------------------------- */
 
-const OptionThree: React.FC = () => {
+const TagManagementClientOption3: React.FC = () => {
   /* ------------------------------------------------------------------------ */
-  /*                               Mocked State                               */
+  /*                         Organization / Core State                        */
   /* ------------------------------------------------------------------------ */
 
-  // TODO: replace with server data
-  const [labels, setLabels] = useState<OrgSecurityLabel[]>([
-    { id: 1, name: "CUI" },
-    { id: 2, name: "FOUO" },
-    { id: 3, name: "Internal" },
-  ]);
+  const { organization } = useOrganizationSession();
 
-  const [tags, setTags] = useState<OrgTag[]>([
-    { id: 1, name: "PII" },
-    { id: 2, name: "QA" },
-    { id: 3, name: "Archive" },
-  ]);
+  // 🔒 Labels are not supported yet – we only use this for display.
+  const [labelsLocked] = useState(false);
+  const labelCount = 0;
 
-  const [labelsLocked, setLabelsLocked] = useState(false);
+  // Tags loaded from backend
+  const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [tagsLocked, setTagsLocked] = useState(false);
+
+  const [tagsLoading, setTagsLoading] = useState(false);
+  const [tagsError, setTagsError] = useState<string | null>(null);
 
   /* ------------------------------------------------------------------------ */
   /*                               Search State                               */
   /* ------------------------------------------------------------------------ */
 
-  const [labelSearch, setLabelSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
 
-  const normalizedLabelSearch = labelSearch.trim().toLowerCase();
   const normalizedTagSearch = tagSearch.trim().toLowerCase();
-
-  const filteredLabels = useMemo(
-    () =>
-      normalizedLabelSearch
-        ? labels.filter((l) =>
-            l.name.toLowerCase().includes(normalizedLabelSearch)
-          )
-        : labels,
-    [labels, normalizedLabelSearch]
-  );
 
   const filteredTags = useMemo(
     () =>
@@ -86,44 +65,29 @@ const OptionThree: React.FC = () => {
   /* ------------------------------------------------------------------------ */
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<ModalMode>("label");
-  const [editingLabel, setEditingLabel] = useState<OrgSecurityLabel | null>(
-    null
-  );
-  const [editingTag, setEditingTag] = useState<OrgTag | null>(null);
-
+  const [modalMode, setModalMode] = useState<ModalMode>("tag");
+  const [editingTag, setEditingTag] = useState<TagResponseDto | null>(null);
   const [nameInput, setNameInput] = useState("");
 
   const resetModalState = () => {
-    setEditingLabel(null);
     setEditingTag(null);
     setNameInput("");
   };
 
-  const openCreateModal = (mode: ModalMode) => {
+  const openCreateTagModal = () => {
     resetModalState();
-    setModalMode(mode);
+    setModalMode("tag");
     setIsModalOpen(true);
   };
 
-  const openEditModal = (mode: ModalMode, id: number) => {
+  const openEditTagModal = (id: number) => {
     resetModalState();
-    setModalMode(mode);
-
-    if (mode === "label") {
-      const found = labels.find((l) => l.id === id) || null;
-      if (found) {
-        setEditingLabel(found);
-        setNameInput(found.name);
-      }
-    } else {
-      const found = tags.find((t) => t.id === id) || null;
-      if (found) {
-        setEditingTag(found);
-        setNameInput(found.name);
-      }
+    setModalMode("tag");
+    const found = tags.find((t) => t.id === id) || null;
+    if (found) {
+      setEditingTag(found);
+      setNameInput(found.name);
     }
-
     setIsModalOpen(true);
   };
 
@@ -133,55 +97,88 @@ const OptionThree: React.FC = () => {
   };
 
   /* ------------------------------------------------------------------------ */
+  /*                           Load Tags from Backend                         */
+  /* ------------------------------------------------------------------------ */
+
+  const loadOrganizationTags = async () => {
+    if (!organization?.organizationId) return;
+
+    try {
+      setTagsLoading(true);
+      setTagsError(null);
+
+      const dtoList: TagResponseDto[] = await getAllOrganizationTags(
+        organization.organizationId as number,
+        undefined,
+        true // hide archived by default
+      );
+
+      // Map DTO → local OrgTag
+      // Keep full DTOs
+      setTags(dtoList.filter((t) => !t.isArchived));
+    } catch (error) {
+      console.error("Failed to load organization tags:", error);
+      setTagsError("Failed to load organization tags.");
+      toast.error("Failed to load organization tags.");
+    } finally {
+      setTagsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadOrganizationTags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.organizationId]);
+
+  /* ------------------------------------------------------------------------ */
   /*                          Save / Delete Handlers                          */
   /* ------------------------------------------------------------------------ */
+
+  // NOTE: For now these update *local state only*.
+  // When you wire create/update/delete APIs, call them here and then
+  // either refetch tags or update state based on the response.
 
   const handleSave = () => {
     if (!nameInput.trim()) return;
 
-    if (modalMode === "label") {
-      if (editingLabel) {
-        setLabels((prev) =>
-          prev.map((l) =>
-            l.id === editingLabel.id ? { ...l, name: nameInput.trim() } : l
-          )
-        );
-      } else {
-        const newId =
-          labels.length > 0 ? Math.max(...labels.map((l) => l.id)) + 1 : 1;
-        setLabels((prev) => [
-          ...prev,
-          {
-            id: newId,
-            name: nameInput.trim(),
-          },
-        ]);
-      }
-    } else {
+    if (modalMode === "tag") {
       if (editingTag) {
+        // editing existing tag
         setTags((prev) =>
           prev.map((t) =>
-            t.id === editingTag.id ? { ...t, name: nameInput.trim() } : t
+            t.id === editingTag.id
+              ? {
+                  ...t,
+                  name: nameInput.trim(),
+                  // optional: update metadata if you want
+                  lastUpdatedAt: new Date().toISOString(),
+                }
+              : t
           )
         );
       } else {
+        // creating new tag (local only for now)
         const newId =
           tags.length > 0 ? Math.max(...tags.map((t) => t.id)) + 1 : 1;
-        setTags((prev) => [
-          ...prev,
-          {
-            id: newId,
-            name: nameInput.trim(),
-          },
-        ]);
+
+        const newTag: TagResponseDto = {
+          id: newId,
+          name: nameInput.trim(),
+          projectId: 0, // or whatever your "org-level tag" sentinel is
+          isArchived: false,
+          lastUpdatedAt: null,
+          lastUpdatedBy: null,
+          archivedAt: null,
+        };
+
+        setTags((prev) => [...prev, newTag]);
       }
     }
 
-    closeModal();
-  };
+    // labels branch unchanged…
+    // (or similarly updated if you moved them to their own DTO)
 
-  const handleDeleteLabel = (id: number) => {
-    setLabels((prev) => prev.filter((l) => l.id !== id));
+    closeModal();
   };
 
   const handleDeleteTag = (id: number) => {
@@ -192,11 +189,10 @@ const OptionThree: React.FC = () => {
   /*                               Derived Data                               */
   /* ------------------------------------------------------------------------ */
 
-  const labelCount = labels.length;
   const tagCount = tags.length;
 
-  // Mock “affected project counts”
-  const projectsWithLabels = Math.max(1, Math.min(12, labelCount * 3));
+  // Mock “affected project counts” – adjust/remove once wired to backend
+  const projectsWithLabels = 0; // labels not yet supported
   const projectsWithTags = Math.max(1, Math.min(12, tagCount * 2));
 
   /* ------------------------------------------------------------------------ */
@@ -207,52 +203,45 @@ const OptionThree: React.FC = () => {
     <div className="p-6">
       {/* Page Header */}
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-base-content">
-          Tag &amp; Security Label Management
-        </h2>
+        <h2 className="text-2xl font-bold text-base-content">Tag Management</h2>
         <p className="text-base-content/70 mt-1 max-w-3xl text-sm">
-          Establish organization-wide policies for security labels and tags.
-          These definitions propagate to all projects and can optionally lock
-          project-level customization.
+          Define organization-wide tags today. Security labels will be added in
+          a future release and will appear here once available.
         </p>
       </div>
 
       {/* Policy Overview Strip */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-        <div className="stat bg-base-100 border border-base-300 rounded-xl">
+        {/* Security Labels – Coming Soon */}
+        <div className="stat bg-base-100 border border-dashed border-base-300 rounded-xl opacity-60">
           <div className="stat-title flex items-center gap-1 text-xs">
-            <ShieldCheckIcon className="w-4 h-4 text-primary" />
+            <ShieldCheckIcon className="w-4 h-4 text-base-content/50" />
             Org Security Labels
           </div>
-          <div className="stat-value text-primary text-xl">{labelCount}</div>
-          <div className="stat-desc text-xs flex items-center gap-1">
-            {labelsLocked ? (
-              <>
-                <LockClosedIcon className="w-4 h-4 text-error" />
-                <span>Locked for all projects</span>
-              </>
-            ) : (
-              <>
-                <LockOpenIcon className="w-4 h-4 text-success" />
-                <span>Projects may define their own</span>
-              </>
-            )}
+          <div className="stat-value text-base-content/60 text-xl">
+            {labelCount}
+          </div>
+          <div className="stat-desc text-xs flex items-center gap-1 text-base-content/60">
+            <InformationCircleIcon className="w-4 h-4" />
+            <span>Security labels coming soon</span>
           </div>
         </div>
 
-        <div className="stat bg-base-100 border border-base-300 rounded-xl">
+        {/* Projects with Labels – Coming Soon */}
+        <div className="stat bg-base-100 border border-dashed border-base-300 rounded-xl opacity-60">
           <div className="stat-title flex items-center gap-1 text-xs">
-            <ShieldCheckIcon className="w-4 h-4 text-secondary" />
+            <ShieldCheckIcon className="w-4 h-4 text-base-content/50" />
             Projects with Labels
           </div>
-          <div className="stat-value text-secondary text-xl">
+          <div className="stat-value text-base-content/60 text-xl">
             {projectsWithLabels}
           </div>
-          <div className="stat-desc text-xs text-base-content/70">
-            Using organization-level security labels
+          <div className="stat-desc text-xs text-base-content/60">
+            Will reflect usage once labels are enabled
           </div>
         </div>
 
+        {/* Tags */}
         <div className="stat bg-base-100 border border-base-300 rounded-xl">
           <div className="stat-title flex items-center gap-1 text-xs">
             <TagIcon className="w-4 h-4 text-primary" />
@@ -290,141 +279,45 @@ const OptionThree: React.FC = () => {
 
       {/* Two-Column Policy Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Security Labels Card */}
-        <div className="card bg-base-100 border border-primary/70 shadow-sm">
+        {/* Security Labels Card – Coming Soon (visually disabled) */}
+        <div className="card bg-base-100 border border-dashed border-base-300 shadow-sm opacity-60">
           <div className="card-body">
             <div className="flex items-start justify-between gap-4 mb-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <ShieldCheckIcon className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold text-base">
+                  <ShieldCheckIcon className="w-5 h-5 text-base-content/60" />
+                  <h3 className="font-semibold text-base text-base-content/80">
                     Organization Security Labels
                   </h3>
+                  <span className="badge badge-sm badge-ghost">
+                    Coming soon
+                  </span>
                 </div>
                 <p className="text-xs text-base-content/70 mt-1 max-w-md">
-                  Labels used for attribute-based access control (ABAC) and
-                  sensitivity marking. All projects inherit these labels.
+                  Security labels (e.g., CUI) for attribute-based access control
+                  will appear here in a future release. Projects will inherit
+                  labels defined at the organization level.
                 </p>
-              </div>
-
-              <div className="flex flex-col items-end gap-2">
-                {/* Lock toggle */}
-                <button
-                  type="button"
-                  className={`btn btn-xs gap-1 ${
-                    labelsLocked ? "btn-error" : "btn-ghost"
-                  }`}
-                  onClick={() => setLabelsLocked((prev) => !prev)}
-                >
-                  {labelsLocked ? (
-                    <>
-                      <LockClosedIcon className="w-4 h-4" />
-                      Locked
-                    </>
-                  ) : (
-                    <>
-                      <LockOpenIcon className="w-4 h-4" />
-                      Unlocked
-                    </>
-                  )}
-                </button>
-
-                {/* Search compact */}
-                <div className="form-control w-40">
-                  <div className="input input-xs input-bordered flex items-center gap-1 px-2">
-                    <MagnifyingGlassIcon className="w-3 h-3 text-base-content/60" />
-                    <input
-                      type="text"
-                      className="grow text-[0.7rem] bg-transparent focus:outline-none"
-                      placeholder="Search labels..."
-                      value={labelSearch}
-                      onChange={(e) => setLabelSearch(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Add button */}
-                <button
-                  type="button"
-                  className="btn btn-primary btn-xs gap-1"
-                  onClick={() => openCreateModal("label")}
-                  disabled={labelsLocked}
-                  title={
-                    labelsLocked
-                      ? "Security labels are locked at the org level"
-                      : "Create new security label"
-                  }
-                >
-                  <PlusIcon className="w-3 h-3" />
-                  New Label
-                </button>
               </div>
             </div>
 
-            <div className="flex items-start gap-2 mb-3 text-xs text-base-content/70">
+            <div className="flex items-start gap-2 text-xs text-base-content/70 mt-2">
               <InformationCircleIcon className="w-4 h-4" />
               <p>
-                When locked, projects{" "}
-                <span className="font-semibold">cannot create or modify</span>{" "}
-                security labels locally. They may only apply the labels defined
-                here.
+                You&apos;ll be able to define and lock organization-wide
+                security labels here. Until then, only tags are available for
+                project use.
               </p>
             </div>
 
-            {/* Labels list */}
-            <div className="space-y-2 max-h-72 overflow-y-auto">
-              {filteredLabels.length === 0 ? (
-                <div className="py-6 text-center text-xs text-base-content/60 border border-dashed border-base-300 rounded-lg">
-                  {labelSearch.trim()
-                    ? "No security labels match your search."
-                    : "No security labels defined. Create at least one label to enable ABAC policies."}
-                </div>
-              ) : (
-                filteredLabels.map((label) => (
-                  <div
-                    key={label.id}
-                    className="flex items-center justify-between bg-base-200/70 hover:bg-base-300/80 transition rounded-lg px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="badge badge-outline badge-sm">
-                        {label.name}
-                      </span>
-                      <span className="text-[0.7rem] text-base-content/70">
-                        Used across all projects
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-xs"
-                        onClick={() => openEditModal("label", label.id)}
-                        disabled={labelsLocked}
-                        title={
-                          labelsLocked ? "Security labels are locked" : "Edit"
-                        }
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-xs text-error"
-                        onClick={() => handleDeleteLabel(label.id)}
-                        disabled={labelsLocked}
-                        title={
-                          labelsLocked ? "Security labels are locked" : "Delete"
-                        }
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="mt-4 py-4 text-center text-xs text-base-content/60 border border-dashed border-base-300 rounded-lg">
+              Security label management is not yet enabled for this
+              organization.
             </div>
           </div>
         </div>
 
-        {/* Tags Card */}
+        {/* Tags Card – Fully Functional */}
         <div className="card bg-base-100 border border-secondary/60 shadow-sm">
           <div className="card-body">
             <div className="flex items-start justify-between gap-4 mb-3">
@@ -479,7 +372,7 @@ const OptionThree: React.FC = () => {
                 <button
                   type="button"
                   className="btn btn-primary btn-xs gap-1"
-                  onClick={() => openCreateModal("tag")}
+                  onClick={openCreateTagModal}
                   disabled={tagsLocked}
                   title={
                     tagsLocked
@@ -504,7 +397,15 @@ const OptionThree: React.FC = () => {
 
             {/* Tags list */}
             <div className="space-y-2 max-h-72 overflow-y-auto">
-              {filteredTags.length === 0 ? (
+              {tagsLoading ? (
+                <div className="py-6 text-center text-xs text-base-content/60">
+                  Loading organization tags…
+                </div>
+              ) : tagsError ? (
+                <div className="py-6 text-center text-xs text-error">
+                  {tagsError}
+                </div>
+              ) : filteredTags.length === 0 ? (
                 <div className="py-6 text-center text-xs text-base-content/60 border border-dashed border-base-300 rounded-lg">
                   {tagSearch.trim()
                     ? "No tags match your search."
@@ -528,7 +429,7 @@ const OptionThree: React.FC = () => {
                       <button
                         type="button"
                         className="btn btn-ghost btn-xs"
-                        onClick={() => openEditModal("tag", tag.id)}
+                        onClick={() => openEditTagModal(tag.id)}
                         disabled={tagsLocked}
                         title={tagsLocked ? "Tags are locked" : "Edit"}
                       >
@@ -552,41 +453,29 @@ const OptionThree: React.FC = () => {
         </div>
       </div>
 
-      {/* Shared Modal */}
-      {isModalOpen && (
+      {/* Tag Modal Only (labels not yet supported) */}
+      {isModalOpen && modalMode === "tag" && (
         <div className="modal modal-open">
           <div className="modal-box max-w-md">
             <h3 className="font-bold text-lg mb-2">
-              {modalMode === "label"
-                ? editingLabel
-                  ? "Edit Security Label"
-                  : "Create Security Label"
-                : editingTag
-                ? "Edit Tag"
-                : "Create Tag"}
+              {editingTag ? "Edit Tag" : "Create Tag"}
             </h3>
             <p className="text-xs text-base-content/70 mb-4">
-              {modalMode === "label"
-                ? "Define an organization-level security label. Projects inherit this label and can apply it to records and files."
-                : "Define an organization-level tag. Projects inherit this tag and can use it across their assets."}
+              Define an organization-level tag. Projects inherit this tag and
+              can use it across their assets.
             </p>
 
             <div className="space-y-4">
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-semibold">
-                    {modalMode === "label" ? "Label Name" : "Tag Name"}{" "}
-                    <span className="text-error">*</span>
+                    Tag Name <span className="text-error">*</span>
                   </span>
                 </label>
                 <input
                   type="text"
                   className="input input-bordered input-sm"
-                  placeholder={
-                    modalMode === "label"
-                      ? "e.g., CUI, FOUO, Internal"
-                      : "e.g., PII, QA, Archive"
-                  }
+                  placeholder="e.g., PII, QA, Archive"
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
                 />
@@ -607,13 +496,7 @@ const OptionThree: React.FC = () => {
                 disabled={!nameInput.trim()}
                 onClick={handleSave}
               >
-                {modalMode === "label"
-                  ? editingLabel
-                    ? "Save Label"
-                    : "Create Label"
-                  : editingTag
-                  ? "Save Tag"
-                  : "Create Tag"}
+                {editingTag ? "Save Tag" : "Create Tag"}
               </button>
             </div>
           </div>
@@ -624,4 +507,4 @@ const OptionThree: React.FC = () => {
   );
 };
 
-export default OptionThree;
+export default TagManagementClientOption3;
