@@ -14,13 +14,23 @@ import {
 import toast from "react-hot-toast";
 
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { getAllOrganizationTags } from "@/app/lib/client_service/tag_services.client";
+import {
+  getAllOrganizationTags,
+  createOrganizationTag,
+  archiveOrganizationTag,
+} from "@/app/lib/client_service/tag_services.client";
 import type { TagResponseDto } from "@/app/(home)/types/responseDTOs";
+import ConfirmArchiveTagModal from "./ConfirmArchiveTagModal";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
 type ModalMode = "tag";
+
+// If you already have this in requestDTOs, import it instead
+type CreateTagRequestDto = {
+  name: string;
+};
 
 /* -------------------------------------------------------------------------- */
 /*                       TagManagementClientOption3                           */
@@ -32,6 +42,7 @@ const TagManagementClientOption3: React.FC = () => {
   /* ------------------------------------------------------------------------ */
 
   const { organization } = useOrganizationSession();
+  const orgId = organization?.organizationId as number | undefined;
 
   // 🔒 Labels are not supported yet – we only use this for display.
   const [labelsLocked] = useState(false);
@@ -43,6 +54,9 @@ const TagManagementClientOption3: React.FC = () => {
 
   const [tagsLoading, setTagsLoading] = useState(false);
   const [tagsError, setTagsError] = useState<string | null>(null);
+
+  // For delete/archiving UX
+  const [archivingTagId, setArchivingTagId] = useState<number | null>(null);
 
   /* ------------------------------------------------------------------------ */
   /*                               Search State                               */
@@ -68,10 +82,14 @@ const TagManagementClientOption3: React.FC = () => {
   const [modalMode, setModalMode] = useState<ModalMode>("tag");
   const [editingTag, setEditingTag] = useState<TagResponseDto | null>(null);
   const [nameInput, setNameInput] = useState("");
+  const [savingTag, setSavingTag] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [tagToArchive, setTagToArchive] = useState<TagResponseDto | null>(null);
 
   const resetModalState = () => {
     setEditingTag(null);
     setNameInput("");
+    setSavingTag(false);
   };
 
   const openCreateTagModal = () => {
@@ -96,25 +114,28 @@ const TagManagementClientOption3: React.FC = () => {
     resetModalState();
   };
 
+  const openArchiveModal = (tag: TagResponseDto) => {
+    setTagToArchive(tag);
+    setShowArchiveModal(true);
+  };
+
   /* ------------------------------------------------------------------------ */
   /*                           Load Tags from Backend                         */
   /* ------------------------------------------------------------------------ */
 
   const loadOrganizationTags = async () => {
-    if (!organization?.organizationId) return;
+    if (!orgId) return;
 
     try {
       setTagsLoading(true);
       setTagsError(null);
 
       const dtoList: TagResponseDto[] = await getAllOrganizationTags(
-        organization.organizationId as number,
+        orgId,
         undefined,
         true // hide archived by default
       );
 
-      // Map DTO → local OrgTag
-      // Keep full DTOs
       setTags(dtoList.filter((t) => !t.isArchived));
     } catch (error) {
       console.error("Failed to load organization tags:", error);
@@ -128,61 +149,75 @@ const TagManagementClientOption3: React.FC = () => {
   useEffect(() => {
     loadOrganizationTags();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organization?.organizationId]);
+  }, [orgId]);
 
   /* ------------------------------------------------------------------------ */
   /*                          Save / Delete Handlers                          */
   /* ------------------------------------------------------------------------ */
 
-  // NOTE: For now these update *local state only*.
-  // When you wire create/update/delete APIs, call them here and then
-  // either refetch tags or update state based on the response.
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!nameInput.trim()) return;
+    if (!orgId) {
+      toast.error("No organization selected. Unable to save tag.");
+      return;
+    }
 
-    if (modalMode === "tag") {
+    if (modalMode !== "tag") return;
+
+    try {
+      setSavingTag(true);
+
       if (editingTag) {
-        // editing existing tag
+        // TODO: wire updateOrganizationTag when endpoint exists.
         setTags((prev) =>
           prev.map((t) =>
             t.id === editingTag.id
               ? {
                   ...t,
                   name: nameInput.trim(),
-                  // optional: update metadata if you want
                   lastUpdatedAt: new Date().toISOString(),
                 }
               : t
           )
         );
+        toast.success("Tag updated (local only for now).");
       } else {
-        // creating new tag (local only for now)
-        const newId =
-          tags.length > 0 ? Math.max(...tags.map((t) => t.id)) + 1 : 1;
-
-        const newTag: TagResponseDto = {
-          id: newId,
+        // Create via organization-level API
+        const dto: CreateTagRequestDto = {
           name: nameInput.trim(),
-          projectId: 0, // or whatever your "org-level tag" sentinel is
-          isArchived: false,
-          lastUpdatedAt: null,
-          lastUpdatedBy: null,
-          archivedAt: null,
         };
 
-        setTags((prev) => [...prev, newTag]);
+        const created = await createOrganizationTag(orgId, dto);
+        setTags((prev) => [...prev, created]);
+        toast.success("Organization tag created.");
       }
+
+      closeModal();
+    } catch (error) {
+      console.error("Failed to save organization tag:", error);
+      toast.error("Failed to save organization tag.");
+    } finally {
+      setSavingTag(false);
     }
-
-    // labels branch unchanged…
-    // (or similarly updated if you moved them to their own DTO)
-
-    closeModal();
   };
 
-  const handleDeleteTag = (id: number) => {
-    setTags((prev) => prev.filter((t) => t.id !== id));
+  const confirmArchiveTag = async () => {
+    if (!tagToArchive || !orgId) return;
+
+    try {
+      setArchivingTagId(tagToArchive.id);
+      await archiveOrganizationTag(orgId, tagToArchive.id, true);
+
+      setTags((prev) => prev.filter((t) => t.id !== tagToArchive.id));
+      toast.success(`Tag "${tagToArchive.name}" archived.`);
+    } catch (error) {
+      console.error("Failed to archive tag:", error);
+      toast.error("Failed to archive tag.");
+    } finally {
+      setArchivingTagId(null);
+      setShowArchiveModal(false);
+      setTagToArchive(null);
+    }
   };
 
   /* ------------------------------------------------------------------------ */
@@ -373,9 +408,11 @@ const TagManagementClientOption3: React.FC = () => {
                   type="button"
                   className="btn btn-primary btn-xs gap-1"
                   onClick={openCreateTagModal}
-                  disabled={tagsLocked}
+                  disabled={tagsLocked || !orgId}
                   title={
-                    tagsLocked
+                    !orgId
+                      ? "No organization selected"
+                      : tagsLocked
                       ? "Tags are locked at the org level"
                       : "Create new tag"
                   }
@@ -438,11 +475,15 @@ const TagManagementClientOption3: React.FC = () => {
                       <button
                         type="button"
                         className="btn btn-ghost btn-xs text-error"
-                        onClick={() => handleDeleteTag(tag.id)}
-                        disabled={tagsLocked}
-                        title={tagsLocked ? "Tags are locked" : "Delete"}
+                        onClick={() => openArchiveModal(tag)}
+                        disabled={tagsLocked || archivingTagId === tag.id}
+                        title={
+                          tagsLocked
+                            ? "Tags are locked"
+                            : "Archive (soft delete) tag"
+                        }
                       >
-                        Delete
+                        {archivingTagId === tag.id ? "Archiving..." : "Delete"}
                       </button>
                     </div>
                   </div>
@@ -493,16 +534,30 @@ const TagManagementClientOption3: React.FC = () => {
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                disabled={!nameInput.trim()}
+                disabled={!nameInput.trim() || savingTag}
                 onClick={handleSave}
               >
-                {editingTag ? "Save Tag" : "Create Tag"}
+                {savingTag
+                  ? "Saving..."
+                  : editingTag
+                  ? "Save Tag"
+                  : "Create Tag"}
               </button>
             </div>
           </div>
           <div className="modal-backdrop" onClick={closeModal} />
         </div>
       )}
+      <ConfirmArchiveTagModal
+        isOpen={showArchiveModal}
+        tagName={tagToArchive?.name ?? ""}
+        onClose={() => {
+          setShowArchiveModal(false);
+          setTagToArchive(null);
+        }}
+        onConfirm={confirmArchiveTag}
+        loading={archivingTagId === tagToArchive?.id}
+      />
     </div>
   );
 };
