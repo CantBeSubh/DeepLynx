@@ -38,6 +38,7 @@ const OrganizationManagementClient = ({
   initialGroups,
   initialRoles,
   initialPermissions,
+  initialProjects,
 }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
   const { t } = useLanguage();
@@ -72,7 +73,7 @@ const OrganizationManagementClient = ({
       // content: <TagManagementClient />,
       // content: <OptionOne />,
       // content: <OptionTwo />,
-      content: <OptionThree />,
+      content: <OptionThree projects={initialProjects} />,
     },
     {
       label: "Settings",

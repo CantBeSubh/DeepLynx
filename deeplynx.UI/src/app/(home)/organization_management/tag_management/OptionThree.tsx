@@ -18,25 +18,26 @@ import {
   getAllOrganizationTags,
   createOrganizationTag,
   archiveOrganizationTag,
+  updateOrganizationTag,
 } from "@/app/lib/client_service/tag_services.client";
-import type { TagResponseDto } from "@/app/(home)/types/responseDTOs";
+import type {
+  ProjectResponseDto,
+  TagResponseDto,
+} from "@/app/(home)/types/responseDTOs";
 import ConfirmArchiveTagModal from "./ConfirmArchiveTagModal";
-
+interface Props {
+  projects: ProjectResponseDto[];
+}
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
 type ModalMode = "tag";
 
-// If you already have this in requestDTOs, import it instead
-type CreateTagRequestDto = {
-  name: string;
-};
-
 /* -------------------------------------------------------------------------- */
 /*                       TagManagementClientOption3                           */
 /* -------------------------------------------------------------------------- */
 
-const TagManagementClientOption3: React.FC = () => {
+const TagManagementClientOption3 = ({ projects }: Props) => {
   /* ------------------------------------------------------------------------ */
   /*                         Organization / Core State                        */
   /* ------------------------------------------------------------------------ */
@@ -168,26 +169,33 @@ const TagManagementClientOption3: React.FC = () => {
       setSavingTag(true);
 
       if (editingTag) {
-        // TODO: wire updateOrganizationTag when endpoint exists.
-        setTags((prev) =>
-          prev.map((t) =>
-            t.id === editingTag.id
-              ? {
-                  ...t,
-                  name: nameInput.trim(),
-                  lastUpdatedAt: new Date().toISOString(),
-                }
-              : t
-          )
-        );
-        toast.success("Tag updated (local only for now).");
-      } else {
-        // Create via organization-level API
-        const dto: CreateTagRequestDto = {
+        const updatePayload: TagResponseDto = {
+          ...editingTag,
           name: nameInput.trim(),
         };
 
-        const created = await createOrganizationTag(orgId, dto);
+        const updated = await updateOrganizationTag(
+          orgId,
+          editingTag.id,
+          updatePayload
+        );
+
+        // Use the server's response to update local state
+        setTags((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+
+        toast.success("Organization tag updated.");
+      } else {
+        const createPayload: TagResponseDto = {
+          id: 0, // backend should ignore / overwrite
+          name: nameInput.trim(),
+          projectId: 0, // sentinel for "org-level" if that's how your API works
+          isArchived: false,
+          lastUpdatedAt: null,
+          lastUpdatedBy: null,
+          archivedAt: null,
+        };
+
+        const created = await createOrganizationTag(orgId, createPayload);
         setTags((prev) => [...prev, created]);
         toast.success("Organization tag created.");
       }
@@ -228,7 +236,7 @@ const TagManagementClientOption3: React.FC = () => {
 
   // Mock “affected project counts” – adjust/remove once wired to backend
   const projectsWithLabels = 0; // labels not yet supported
-  const projectsWithTags = Math.max(1, Math.min(12, tagCount * 2));
+  const projectsWithTags = projects.length;
 
   /* ------------------------------------------------------------------------ */
   /*                               Main Render                                */
@@ -548,6 +556,7 @@ const TagManagementClientOption3: React.FC = () => {
           <div className="modal-backdrop" onClick={closeModal} />
         </div>
       )}
+
       <ConfirmArchiveTagModal
         isOpen={showArchiveModal}
         tagName={tagToArchive?.name ?? ""}
