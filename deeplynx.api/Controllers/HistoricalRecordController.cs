@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to retrieve historical record information and record history.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/records/historical")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/records/historical")]
 [Authorize]
 public class HistoricalRecordController : ControllerBase
 {

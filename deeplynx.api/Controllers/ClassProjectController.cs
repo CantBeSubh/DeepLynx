@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve class information.
 /// </remarks>
 [ApiController]
-[Route("projects/{projectId}/classes")]
+[Route("projects/{projectId:long}/classes")]
 [Authorize]
 [Tags("Project Management", "Class")]
 public class ClassProjectController : ControllerBase
@@ -67,7 +67,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="classId">The ID of the class to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>Class response DTO</returns>
-    [HttpGet("{classId}", Name = "api_get_a_class_project")]
+    [HttpGet("{classId:long}", Name = "api_get_a_class_project")]
     [Auth("read", "class")]
     public async Task<ActionResult<ClassResponseDto>> GetClass(
         long projectId,
@@ -153,7 +153,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="classId">The ID of the class to update</param>
     /// <param name="dto">The request DTO for the class</param>
     /// <returns>Class response DTO</returns>
-    [HttpPut("{classId}", Name = "api_update_a_class_project")]
+    [HttpPut("{classId:long}", Name = "api_update_a_class_project")]
     [Auth("write", "class")]
     public async Task<ActionResult<ClassResponseDto>> UpdateClass(
         long projectId,
@@ -182,7 +182,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="classId">The ID of the class to delete.</param>
     /// <returns>A message stating the class was successfully deleted.</returns>
-    [HttpDelete("{classId}", Name = "api_delete_a_class_project")]
+    [HttpDelete("{classId:long}", Name = "api_delete_a_class_project")]
     [Auth("write", "class")]
     public async Task<IActionResult> DeleteClass(
         long projectId,
@@ -211,7 +211,7 @@ public class ClassProjectController : ControllerBase
     /// <param name="classId">The ID of the class to archive or unarchive.</param>
     /// <param name="archive">True to archive the class, false to unarchive it.</param>
     /// <returns>A message stating the class was successfully archived or unarchived.</returns>
-    [HttpPatch("{classId}", Name = "api_archive_class_project")]
+    [HttpPatch("{classId:long}", Name = "api_archive_class_project")]
     [Auth("write", "class")]
     public async Task<IActionResult> ArchiveClass(
         long projectId,

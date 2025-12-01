@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to retrieve historical edge information and edge history.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/edges/historical")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/edges/historical")]
 [Authorize]
 public class HistoricalEdgeController : ControllerBase
 {

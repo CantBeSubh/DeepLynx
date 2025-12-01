@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve class information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/classes")]
+[Route("organizations/{organizationId:long}/classes")]
 [Authorize]
 [Tags("Organization Management", "Class")]
 public class ClassOrganizationController : ControllerBase
@@ -68,7 +68,7 @@ public class ClassOrganizationController : ControllerBase
     /// <param name="classId">The ID of the class to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
     /// <returns>Class response DTO</returns>
-    [HttpGet("{classId}", Name = "api_get_a_class_organization")]
+    [HttpGet("{classId:long}", Name = "api_get_a_class_organization")]
     [Auth("read", "class")]
     public async Task<ActionResult<ClassResponseDto>> GetClass(
         long organizationId,
@@ -151,7 +151,7 @@ public class ClassOrganizationController : ControllerBase
     /// <param name="classId">The ID of the class to update</param>
     /// <param name="dto">The request DTO for the class</param>
     /// <returns>Class response DTO</returns>
-    [HttpPut("{classId}", Name = "api_update_a_class_organization")]
+    [HttpPut("{classId:long}", Name = "api_update_a_class_organization")]
     [Auth("write", "class")]
     public async Task<ActionResult<ClassResponseDto>> UpdateClass(
         long organizationId,
@@ -179,7 +179,7 @@ public class ClassOrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="classId">The ID of the class to delete.</param>
     /// <returns>A message stating the class was successfully deleted.</returns>
-    [HttpDelete("{classId}", Name = "api_delete_a_class_organization")]
+    [HttpDelete("{classId:long}", Name = "api_delete_a_class_organization")]
     [Auth("write", "class")]
     public async Task<IActionResult> DeleteClass(
         long organizationId,
@@ -207,7 +207,7 @@ public class ClassOrganizationController : ControllerBase
     /// <param name="classId">The ID of the class to archive or unarchive.</param>
     /// <param name="archive">True to archive the class, false to unarchive it.</param>
     /// <returns>A message stating the class was successfully archived or unarchived.</returns>
-    [HttpPatch("{classId}", Name = "api_archive_class_organization")]
+    [HttpPatch("{classId:long}", Name = "api_archive_class_organization")]
     [Auth("write", "class")]
     public async Task<IActionResult> ArchiveClass(
         long organizationId,

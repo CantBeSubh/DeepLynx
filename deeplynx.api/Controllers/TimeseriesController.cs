@@ -9,7 +9,7 @@ using deeplynx.helpers;
 namespace deeplynx.api.Controllers;
 
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/datasources/{dataSourceId}/timeseries")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/datasources/{dataSourceId:long}/timeseries")]
 [Authorize]
 public class TimeseriesController : ControllerBase
 {

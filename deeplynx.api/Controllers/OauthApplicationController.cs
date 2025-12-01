@@ -56,7 +56,7 @@ public class OauthApplicationController : ControllerBase
     /// <param name="applicationId">ID of OAuth application</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>
     /// <returns></returns>
-    [HttpGet("{applicationId}", Name = "api_get_oauth_application")]
+    [HttpGet("{applicationId:long}", Name = "api_get_oauth_application")]
     public async Task<ActionResult<OauthApplicationResponseDto>> GetOauthApplication(
         long applicationId, [FromQuery] bool hideArchived = true)
     {
@@ -103,7 +103,7 @@ public class OauthApplicationController : ControllerBase
     /// <param name="applicationId">ID of the OAuth application</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("{applicationId}", Name = "api_update_oauth_application")]
+    [HttpPut("{applicationId:long}", Name = "api_update_oauth_application")]
     public async Task<ActionResult<OauthApplicationResponseDto>> UpdateOauthApplication(
         long applicationId,
         [FromBody] UpdateOauthApplicationRequestDto dto)
@@ -128,7 +128,7 @@ public class OauthApplicationController : ControllerBase
     /// </summary>
     /// <param name="applicationId">ID of the OAuth application to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("{applicationId}", Name = "api_delete_oauth_application")]
+    [HttpDelete("{applicationId:long}", Name = "api_delete_oauth_application")]
     public async Task<ActionResult> DeleteOauthApplication(long applicationId)
     {
         try
@@ -152,7 +152,7 @@ public class OauthApplicationController : ControllerBase
     /// <param name="applicationId">ID of the OAuth Application to archive or unarchive</param>
     /// <param name="archive">True to archive the application, false to unarchive it</param>
     /// <returns>A message stating the application was successfully archived or unarchived</returns>
-    [HttpPatch("{applicationId}", Name = "api_archive_oauth_application")]
+    [HttpPatch("{applicationId:long}", Name = "api_archive_oauth_application")]
     public async Task<IActionResult> ArchiveOauthApplication(
         long applicationId,
         [FromQuery] bool archive)
