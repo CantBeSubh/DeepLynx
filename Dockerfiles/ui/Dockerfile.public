@@ -39,14 +39,17 @@ ENV NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${NEXT_PUBLIC_DISABLE_FRONTEND_A
 # Set working directory
 WORKDIR /usr/src/app
 
+# Install versioned os packages
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache \
+      openssl=3.3.5-r0 \
+      busybox=1.36.1-r31
+
 # Copy package.json and package-lock.json first
 COPY deeplynx.UI/package*.json ./
 
-# Install Node.js and npm
-RUN apk add --no-cache nodejs npm openssl=3.3.5-r0 busybox=1.36.1-r31
-
 # Install frontend dependencies
-RUN npm install
+RUN npm ci
 
 # Copy the rest of the frontend source code
 COPY deeplynx.UI .
@@ -57,8 +60,11 @@ RUN npm run build
 # Stage 2: Create the final image
 FROM node:lts-alpine3.20 AS final
 
-# Update runtime packages to specific versions
-RUN apk add --no-cache openssl=3.3.5-r0 busybox=1.36.1-r31
+# Install versioned os packages
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache \
+      openssl=3.3.5-r0 \
+      busybox=1.36.1-r31
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -67,7 +73,7 @@ WORKDIR /usr/src/app
 COPY --from=frontend-build /usr/src/app/package*.json ./
 
 # Install production dependencies BEFORE copying build artifacts
-RUN npm install --production
+RUN npm ci --omit-dev
 
 # NOW copy the built application (including .next folder)
 COPY --from=frontend-build /usr/src/app/.next ./.next
