@@ -275,30 +275,3 @@ export async function removeMemberFromProject(
     throw error;
   }
 }
-
-// /**
-//  * Get records from multiple projects
-//  * @param projectIds - Array of project IDs
-//  * @param hideArchived - Flag to hide archived records (default: true)
-//  * @param opts - Optional configuration like abort signal
-//  * @returns Promise with records data
-//  */
-// export async function getAllRecordsForMultipleProjects(
-//   projectIds: number[],
-//   hideArchived: boolean = true,
-//   opts?: { signal?: AbortSignal }
-// ): Promise<any> {
-//   try {
-//     const query =
-//       projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
-//       `&hideArchived=${hideArchived}`;
-
-//     const res = await api.get(`/projects/MultiProjectRecords?${query}`, {
-//       signal: opts?.signal,
-//     });
-//     return res.data;
-//   } catch (error) {
-//     console.error("Error getting records for multiple projects:", error);
-//     throw error;
-//   }
-// }

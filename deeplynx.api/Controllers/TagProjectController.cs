@@ -7,7 +7,7 @@ using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
-[Route("organizations/{organizationId}/projects/{projectId}/tags")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/tags")]
 [ApiController]
 [Authorize]
 [Tags("Project Management", "Tag")]
@@ -60,7 +60,7 @@ public class TagProjectController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
-    [HttpGet("{tagId}", Name = "api_get_a_tag_project")]
+    [HttpGet("{tagId:long}", Name = "api_get_a_tag_project")]
     [Auth("read", "tag")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
         long organizationId,
@@ -144,7 +144,7 @@ public class TagProjectController : ControllerBase
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
-    [HttpPut("{tagId}", Name = "api_update_a_tag_project")]
+    [HttpPut("{tagId:long}", Name = "api_update_a_tag_project")]
     [Auth("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(
         long organizationId, long projectId, long tagId,
@@ -171,7 +171,7 @@ public class TagProjectController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
-    [HttpDelete("{tagId}", Name = "api_delete_a_tag_project")]
+    [HttpDelete("{tagId:long}", Name = "api_delete_a_tag_project")]
     [Auth("write", "tag")]
     public async Task<IActionResult> DeleteTag(
         long organizationId, long projectId, long tagId)
@@ -197,7 +197,7 @@ public class TagProjectController : ControllerBase
     /// <param name="tagId">The ID of the tag to archive or unarchive.</param>
     /// <param name="archive">True to archive the tag, false to unarchive it.</param>
     /// <returns>A message stating the tag was successfully archived or unarchived.</returns>
-    [HttpPatch("{tagId}", Name = "api_archive_tag_project")]
+    [HttpPatch("{tagId:long}", Name = "api_archive_tag_project")]
     [Auth("write", "tag")]
     public async Task<IActionResult> ArchiveTag(
         long organizationId,

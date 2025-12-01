@@ -63,13 +63,12 @@ export const getTag = async (
  */
 export const getAllTagsMultiProject = async (
   organizationId: number,
-  projectId: number,
   projectIds: number[],
   hideArchived: boolean = true
 ): Promise<TagResponseDto[]> => {
   try {
     const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/tags/multiproject`,
+      `/organizations/${organizationId}/tags`,
       { params: { projectIds, hideArchived } }
     );
     return res.data;
