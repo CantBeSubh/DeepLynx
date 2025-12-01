@@ -4,7 +4,8 @@ import { useLanguage } from "@/app/contexts/Language";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import { FileViewerTableRow, Tags } from "../types/types";
+import { FileViewerTableRow } from "../types/types";
+import { TagResponseDto } from "../types/responseDTOs";
 
 interface ListViewProps {
   data: FileViewerTableRow[];
@@ -63,7 +64,7 @@ const ListView: React.FC<ListViewProps> = ({
       const parsed = JSON.parse(tags);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
 
-      const values = arr.flatMap((item: Tags) => {
+      const values = arr.flatMap((item: TagResponseDto) => {
         if (item && typeof item === "object") {
           if (typeof item.name === "string") return [item.name];
           return Object.values(item).filter((v) => typeof v === "string");

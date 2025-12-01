@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Tag } from "../types/types";
 import React from "react";
 import { useLanguage } from "@/app/contexts/Language";
+import { TagResponseDto } from "../types/responseDTOs";
 
-const ExpandableTagsCell = ({ tags }: { tags: Tag[] }) => {
+const ExpandableTagsCell = ({ tags }: { tags: TagResponseDto[] }) => {
   const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   if (!Array.isArray(tags)) return null;

@@ -17,6 +17,10 @@ import InlineGroupsTable from "./groups/InlineGroupsTable";
 import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
 import OrganizationSettings from "./settings/OrganizationSettings";
 import TagManagementClient from "./tag_management/TagManagementClient";
+import OptionThree from "./tag_management/OptionThree";
+import SettingsOne from "./settings/SettingsOne";
+import SettingsTwo from "./settings/SettingsTwo";
+import SettingsThree from "./settings/SettingsThree";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
@@ -29,11 +33,10 @@ interface OrganizationManagementProps {
 
 const OrganizationManagementClient = ({
   members,
-  initialProjects,
   initialGroups,
   initialRoles,
-  initialSelectedProject,
   initialPermissions,
+  initialProjects,
 }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
   const { t } = useLanguage();
@@ -65,13 +68,19 @@ const OrganizationManagementClient = ({
     },
     {
       label: "Tags and Security Labels",
-      content: <TagManagementClient />,
+      // content: <TagManagementClient />,
+      // content: <OptionOne />,
+      // content: <OptionTwo />,
+      content: <OptionThree projects={initialProjects} />,
     },
     {
       label: "Settings",
       content: organization ? (
         <OrganizationSettings organization={organization} />
       ) : (
+        // <SettingsOne />
+        // <SettingsTwo />
+        // <SettingsThree />
         <div>No organization selected</div>
       ),
     },
