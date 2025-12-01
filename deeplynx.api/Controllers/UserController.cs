@@ -54,7 +54,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="userId">ID of user</param>
     /// <returns>User response DTO</returns>
-    [HttpGet("{userId}", Name = "api_get_a_user")]
+    [HttpGet("{userId:long}", Name = "api_get_a_user")]
     public async Task<ActionResult<UserResponseDto>> GetUser(long userId)
     {
         try
@@ -118,7 +118,7 @@ public class UserController : ControllerBase
     /// <param name="userId">ID of user</param>
     /// <param name="dto">User request DTO</param>
     /// <returns>User response DTO</returns>
-    [HttpPut("{userId}", Name = "api_update_a_user")]
+    [HttpPut("{userId:long}", Name = "api_update_a_user")]
     public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UpdateUserRequestDto dto)
     {
         try
@@ -139,7 +139,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="userId">The ID of the user to delete.</param>
     /// <returns>A message stating the user was successfully deleted.</returns>
-    [HttpDelete("{userId}", Name = "api_delete_a_user")]
+    [HttpDelete("{userId:long}", Name = "api_delete_a_user")]
     public async Task<IActionResult> DeleteUser(long userId)
     {
         try
@@ -161,7 +161,7 @@ public class UserController : ControllerBase
     /// <param name="userId">The ID of the user</param>
     /// <param name="archive">True to archive the user, false to unarchive it.</param>
     /// <returns>A message stating the user was successfully archived or unarchived.</returns>
-    [HttpPatch("{userId}", Name = "api_archive_user")]
+    [HttpPatch("{userId:long}", Name = "api_archive_user")]
     public async Task<IActionResult> ArchiveUser(
         long userId,
         [FromQuery] bool archive)
@@ -191,7 +191,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="userId">ID of user to grant the sysadmin rights to </param>
     /// <returns>User response DTO</returns>
-    [HttpPatch("{userId}/admin", Name = "api_set_sys_admin")]
+    [HttpPatch("{userId:long}/admin", Name = "api_set_sys_admin")]
     public async Task<ActionResult<UserResponseDto>> SetSysAdmin(long userId)
     {
         try
@@ -214,7 +214,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="userId">ID of user</param>
     /// <returns>Data overview DTO</returns>
-    [HttpGet("{userId}/overview", Name = "api_get_a_user_overview")]
+    [HttpGet("{userId:long}/overview", Name = "api_get_a_user_overview")]
     public async Task<ActionResult<DataOverviewDto>> GetDataOverview(long userId)
     {
         try

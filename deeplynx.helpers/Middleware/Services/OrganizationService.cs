@@ -8,7 +8,7 @@ namespace deeplynx.helpers;
 
 public interface IOrganizationService
 {
-    Task CheckExistence(long? projectId, long? organizationId);
+    Task<long> CheckExistence(long? projectId, long? organizationId);
 }
 public class OrganizationService : IOrganizationService
 {
@@ -25,7 +25,7 @@ public class OrganizationService : IOrganizationService
         _cacheBusiness = cacheBusiness;
     }
     
-    public async Task CheckExistence(long? projectId, long? organizationId)
+    public async Task<long> CheckExistence(long? projectId, long? organizationId)
     {
         if (organizationId.HasValue)
         {
@@ -35,26 +35,26 @@ public class OrganizationService : IOrganizationService
         if (projectId.HasValue)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_dbContext, projectId.Value, _cacheBusiness);
-            _logger.LogInformation(
-                "Grabbing organization from project - Project: {ProjectId}",
-                projectId);
-            
-            var project = _dbContext.Projects.FirstOrDefault(
-                p => p.Id == projectId
-                && (!organizationId.HasValue || p.OrganizationId == organizationId.Value)
-            );
+        
+            var project = await _dbContext.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
 
-            if (project != null)
+            if (project == null)
             {
-                _logger.LogInformation(
-                    "Organization found - Organization: {OrganizationId}",
-                    project.OrganizationId);
-                UserContextStorage.OrganizationId = project.OrganizationId;
+                throw new KeyNotFoundException($"Project with ID {projectId} not found");
             }
-            else
-                _logger.LogWarning(
-                    "No organization associated with project ID - Project: {ProjectId}",
-                    projectId);
+
+            if (organizationId.HasValue && project.OrganizationId != organizationId.Value)
+            {
+                throw new InvalidOperationException(
+                    $"Project {projectId} does not belong to organization {organizationId.Value}");
+            }
+
+            _logger.LogInformation("Organization found - Organization: {OrganizationId}", project.OrganizationId);
+        
+            // Return the organizationId
+            return project.OrganizationId;
         }
+        
+        return organizationId.GetValueOrDefault();
     }
 }

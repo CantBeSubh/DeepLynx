@@ -27,7 +27,7 @@ export async function getLocalDevUserServer(): Promise<UserResponseDto> {
 export async function getDataOverviewServer<T = unknown>(
   userId: string
 ): Promise<T> {
-  const res = await apiFetch(`users/${encodeURIComponent(userId)}/data-overview`);
+  const res = await apiFetch(`users/${encodeURIComponent(userId)}/data-overview`); // TODO FIX
   return asJson<T>(res);
 }
 
@@ -36,7 +36,7 @@ export async function getRecentlyAddedRecordsServer<T = unknown[]>(
 ): Promise<T> {
   const qs = new URLSearchParams();
   projectIds.forEach((id) => qs.append("projectId", id));
-  const res = await apiFetch(`users/recently-added-records?${qs.toString()}`);
+  const res = await apiFetch(`users/recently-added-records?${qs.toString()}`); // TODO FIX
   return asJson<T>(res);
 }
 

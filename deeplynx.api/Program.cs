@@ -64,6 +64,7 @@ try
                     "http://localhost:3000",
                     "http://localhost:3001",
                     "http://ui:3000",
+                    "http://localhost:5173",
                     "https://*.cluster.local",
                     "http://*.cluster.local",
                     "https://*.svc.cluster.local",
@@ -428,11 +429,11 @@ try
     app.UseStaticFiles();
     app.UseRouting();
     app.UseCors("AllowAll");
-    app.UseAuthentication();
-    app.UseAuthorization();
-    app.MapControllers();
-    app.UseMiddleware<UserContextMiddleware>();
-    app.UseMiddleware<AuthMiddleware>(); //Organization and project RBAC
+    app.UseAuthentication(); // Must be first
+    app.UseMiddleware<UserContextMiddleware>(); // Second - sets UserId/Email
+    app.UseMiddleware<AuthMiddleware>(); // Third - sets OrganizationId
+    app.UseAuthorization(); // Fourth
+    app.MapControllers(); // Last
 
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")

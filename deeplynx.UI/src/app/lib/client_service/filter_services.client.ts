@@ -6,7 +6,7 @@ import api from "./api";
 /** Keep the exact behavior you had before (cookies + same payload shape) */
 export async function filterRecords(filter: string) {
   try {
-    const res = await api.post("/records/Filter", filter, {
+    const res = await api.post("/records/Filter", filter, { // TODO FIX
       headers: { "Content-Type": "application/json" },
     });
     return res.data;
@@ -18,7 +18,7 @@ export async function filterRecords(filter: string) {
 
 export async function queryRecords(query: string) {
   try {
-    const res = await api.get("/records/Filter/", {
+    const res = await api.get("/records/Filter/", { // TODO FIX
       params: { userQuery: query },
     });
     return res.data;

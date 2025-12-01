@@ -7,7 +7,7 @@ using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
-[Route("organizations/{organizationId}/tags")]
+[Route("organizations/{organizationId:long}/tags")]
 [ApiController]
 [Authorize]
 [Tags("Organization Management", "Tag")]
@@ -41,7 +41,7 @@ public class TagOrganizationController : ControllerBase
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(organizationId, null, hideArchived);
+            var tags = await _tagBusiness.GetAllTags(organizationId, projectIds, hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -59,7 +59,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
-    [HttpGet("{tagId}", Name = "api_get_a_tag_organization")]
+    [HttpGet("{tagId:long}", Name = "api_get_a_tag_organization")]
     [Auth("read", "tag")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
         long organizationId,
@@ -138,7 +138,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
-    [HttpPut("{tagId}", Name = "api_update_a_tag_organization")]
+    [HttpPut("{tagId:long}", Name = "api_update_a_tag_organization")]
     [Auth("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(
         long organizationId, long tagId,
@@ -164,7 +164,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
-    [HttpDelete("{tagId}", Name = "api_delete_a_tag_organization")]
+    [HttpDelete("{tagId:long}", Name = "api_delete_a_tag_organization")]
     [Auth("write", "tag")]
     public async Task<IActionResult> DeleteTag(
         long organizationId, long tagId)
@@ -189,7 +189,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="tagId">The ID of the tag to archive or unarchive.</param>
     /// <param name="archive">True to archive the tag, false to unarchive it.</param>
     /// <returns>A message stating the tag was successfully archived or unarchived.</returns>
-    [HttpPatch("{tagId}", Name = "api_archive_tag_organization")]
+    [HttpPatch("{tagId:long}", Name = "api_archive_tag_organization")]
     [Auth("write", "tag")]
     public async Task<IActionResult> ArchiveTag(
         long organizationId,

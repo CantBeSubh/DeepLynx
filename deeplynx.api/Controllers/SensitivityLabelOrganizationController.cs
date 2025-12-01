@@ -8,7 +8,7 @@ using deeplynx.helpers;
 namespace deeplynx.api.Controllers;
 
 [ApiController]
-[Route("organizations/{organizationId}/labels")]
+[Route("organizations/{organizationId:long}/labels")]
 [Authorize]
 [Tags("Organization Management", "Sensitivity Label")]
 public class SensitivityLabelOrganizationController : ControllerBase
@@ -64,7 +64,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     /// <param name="labelId">ID of sensitivity label</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
     /// <returns></returns>
-    [HttpGet("{labelId}", Name = "api_get_sensitivity_label_organization")]
+    [HttpGet("{labelId:long}", Name = "api_get_sensitivity_label_organization")]
     [Auth("read", "sensitivity_label")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> GetSensitivityLabel(
         long organizationId,
@@ -118,7 +118,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     /// <param name="labelId">ID of the sensitivity label</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("{labelId}", Name = "api_update_sensitivity_label_organization")]
+    [HttpPut("{labelId:long}", Name = "api_update_sensitivity_label_organization")]
     [Auth("write", "sensitivity_label")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> UpdateSensitivityLabel(
         long organizationId,
@@ -146,7 +146,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">ID of the sensitivity label to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label_organization")]
+    [HttpDelete("{labelId:long}", Name = "api_delete_sensitivity_label_organization")]
     [Auth("write", "sensitivity_label")]
     public async Task<ActionResult> DeleteSensitivityLabel(
         long organizationId,
@@ -173,7 +173,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     /// <param name="labelId">The ID of the sensitivity label to archive or unarchive.</param>
     /// <param name="archive">True to archive the label, false to unarchive it.</param>
     /// <returns>A message stating the label was successfully archived or unarchived.</returns>
-    [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label_organization")]
+    [HttpPatch("{labelId:long}", Name = "api_archive_sensitivity_label_organization")]
     [Auth("write", "sensitivity_label")]
     public async Task<IActionResult> ArchiveSensitivityLabel(
         long organizationId,

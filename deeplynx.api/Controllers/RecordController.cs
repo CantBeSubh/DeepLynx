@@ -1,9 +1,9 @@
+using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve record information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/records")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/records")]
 [Authorize]
 public class RecordController : ControllerBase
 {
@@ -124,6 +124,37 @@ public class RecordController : ControllerBase
         catch (Exception exc)
         {
             var message = $"An error occurred while retrieving record {recordId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Get record count for a data source
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the records belong</param>
+    /// <param name="dataSourceId">The ID of the datasource by which to count records for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
+    /// <returns>The record count for the given data source</returns>
+    [HttpGet(Name = "api_get_records_count_by_data_source")]
+    [Auth("read", "record")]
+    public async Task<ActionResult<int>> GetRecordsCountByDataSource(
+        long organizationId,
+        long projectId,
+        [FromQuery] long dataSourceId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var count =
+                await _recordBusiness.GetRecordsCountByDataSource(organizationId, projectId, dataSourceId,
+                    hideArchived);
+            return Ok(count);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while counting records for data source {dataSourceId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -357,7 +388,7 @@ public class RecordController : ControllerBase
     /// <param name="page">Indicates the page number for pagination</param>
     /// <param name="pageSize">Indicates the page size for pagination</param>
     /// <returns>A list of related records based on edges.</returns>
-    [HttpGet("{recordId}/edges", Name = "api_get_edges_by_record")]
+    [HttpGet("{recordId:long}/edges", Name = "api_get_edges_by_record")]
     [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
         long organizationId,
@@ -389,7 +420,7 @@ public class RecordController : ControllerBase
     /// <param name="recordId">The ID of the record for which to retrieve graph data</param>
     /// <param name="depth">The number of levels you want to search through</param>
     /// <returns>Graph data including nodes and edges.</returns>
-    [HttpGet("{recordId}/graph", Name = "api_get_graph_data_for_record")]
+    [HttpGet("{recordId:long}/graph", Name = "api_get_graph_data_for_record")]
     [Auth("read", "record")]
     public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
         long organizationId,
