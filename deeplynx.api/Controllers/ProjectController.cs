@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -32,6 +33,7 @@ public class ProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>A list of projects</returns>
     [HttpGet(Name = "api_get_all_projects")]
+    [Auth("read", "project")]
     public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects(
         long organizationId,
         [FromQuery] bool hideArchived = true)
@@ -51,6 +53,34 @@ public class ProjectController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+    
+    /// <summary>
+    ///     Get all user projects
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to list projects from</param>
+    /// <param name="userId">ID of the user whose projects to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>A list of projects</returns>
+    [HttpGet("GetProjectsByUser", Name = "api_get_all_projects_by_user")]
+    [Auth("read", "project")]
+    public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjectsByUser(
+        long organizationId,
+        [FromQuery] long userId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var projects = await _projectBusiness
+                .GetAllProjects(userId, organizationId, hideArchived);
+            return Ok(projects);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing projects: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
     /// <summary>
     ///     Get a project
@@ -60,6 +90,7 @@ public class ProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>The given project to return</returns>
     [HttpGet("{projectId}", Name = "api_get_a_project")]
+    [Auth("read", "project")]
     public async Task<ActionResult<ProjectResponseDto>> GetProject(
         long organizationId,
         long projectId,
@@ -85,6 +116,7 @@ public class ProjectController : ControllerBase
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
     [HttpPost(Name = "api_create_a_project")]
+    [Auth("write", "project")]
     public async Task<ActionResult<ProjectResponseDto>> CreateProject(
         long organizationId,
         [FromBody] CreateProjectRequestDto dto)
@@ -111,6 +143,7 @@ public class ProjectController : ControllerBase
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
     [HttpPut("{projectId}", Name = "api_update_a_project")]
+    [Auth("write", "project")]
     public async Task<ActionResult<ProjectResponseDto>> UpdateProject(
         long organizationId,
         long projectId,
@@ -137,6 +170,7 @@ public class ProjectController : ControllerBase
     /// <param name="projectId">ID of the project to delete.</param>
     /// <returns>Boolean true on successful deletion.</returns>
     [HttpDelete("{projectId}", Name = "api_delete_a_project")]
+    [Auth("write", "project")]
     public async Task<IActionResult> DeleteProject(long organizationId, long projectId)
     {
         try
@@ -161,6 +195,7 @@ public class ProjectController : ControllerBase
     /// <param name="archive">True to archive the project, false to unarchive it.</param>
     /// <returns>A message stating the project was successfully archived or unarchived.</returns>
     [HttpPatch("{projectId}", Name = "api_archive_project")]
+    [Auth("write", "project")]
     public async Task<IActionResult> ArchiveProject(
         long organizationId,
         long projectId,
@@ -194,6 +229,7 @@ public class ProjectController : ControllerBase
     /// <param name="projectId">ID of the project to display stats about.</param>
     /// <returns>Project stats</returns>
     [HttpGet("{projectId}/stats", Name = "api_get_a_projects_stats")]
+    [Auth("read", "project")]
     public async Task<ActionResult<ProjectStatResponseDto>> ProjectStats(long organizationId, long projectId)
     {
         try
@@ -216,6 +252,7 @@ public class ProjectController : ControllerBase
     /// <param name="projectId">(Optional)ID of the project</param>
     /// <returns>A list of groups and users in the project, along with their roles</returns>
     [HttpGet("{projectId}/members", Name = "api_get_project_members")]
+    [Auth("read", "project")]
     public async Task<ActionResult<ProjectMemberResponseDto>> GetProjectMembers(long organizationId, long projectId)
     {
         try
@@ -241,6 +278,7 @@ public class ProjectController : ControllerBase
     /// <param name="groupId">ID of group if group is member</param>
     /// <returns></returns>
     [HttpPost("{projectId}/members", Name = "api_add_member_to_project")]
+    [Auth("write", "project")]
     public async Task<ActionResult> AddMemberToProject(
         long organizationId, long projectId,
         [FromQuery] long? roleId, [FromQuery] long? userId, [FromQuery] long? groupId)
@@ -268,6 +306,7 @@ public class ProjectController : ControllerBase
     /// <param name="groupId">ID of group if group is member</param>
     /// <returns></returns>
     [HttpPut("{projectId}/members", Name = "api_update_project_member_role")]
+    [Auth("write", "project")]
     public async Task<ActionResult> UpdateProjectMemberRole(
         long organizationId, long projectId,
         [FromQuery] long roleId, [FromQuery] long? userId, [FromQuery] long? groupId)
@@ -294,6 +333,7 @@ public class ProjectController : ControllerBase
     /// <param name="groupId">ID of the group if group is member</param>
     /// <returns></returns>
     [HttpDelete("{projectId}/members", Name = "api_remove_member_from_project")]
+    [Auth("write", "project")]
     public async Task<ActionResult> RemoveMemberFromProject(
         long organizationId,
         long projectId,

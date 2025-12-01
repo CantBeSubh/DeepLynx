@@ -27,7 +27,7 @@ import { useRBAC } from "../rbac/useRBAC";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { OrganizationResponseDto } from "../types/responseDTOs";
 import { useSafeSession } from "@/app/hooks/useSafeSession";
-import { getAllOrganizations } from "@/app/lib/client_service/organization_services.client";
+import { getAllOrganizationsForUser } from "@/app/lib/client_service/organization_services.client";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
@@ -56,7 +56,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const fetchOrganizations = async () => {
       try {
         setLoadingOrgs(true);
-        const orgs = await getAllOrganizations(true);
+        const orgs = await getAllOrganizationsForUser(true);
         setOrganizations(orgs);
       } catch (error) {
         console.error("Failed to fetch organizations:", error);

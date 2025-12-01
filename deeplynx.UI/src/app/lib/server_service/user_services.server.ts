@@ -19,6 +19,11 @@ export async function getAllUsersServer(projectId?: number, organizationId?: num
   return asJson<UserResponseDto[]>(res);
 }
 
+export async function getLocalDevUserServer(): Promise<UserResponseDto> {
+  const res = await apiFetch(`users/superuser`);
+  return asJson<UserResponseDto>(res);
+}
+
 export async function getDataOverviewServer<T = unknown>(
   userId: string
 ): Promise<T> {

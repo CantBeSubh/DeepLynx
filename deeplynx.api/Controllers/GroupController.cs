@@ -2,6 +2,7 @@ using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -30,6 +31,7 @@ public class GroupController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide or show archived groups</param>
     /// <returns></returns>
     [HttpGet(Name = "api_get_all_groups")]
+    [Auth("read", "group")]
     public async Task<ActionResult<IEnumerable<GroupResponseDto>>> GetAllGroups(
         long organizationId,
         [FromQuery] bool hideArchived = true)
@@ -55,6 +57,7 @@ public class GroupController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide or show archived groups</param>
     /// <returns></returns>
     [HttpGet("{groupId}", Name = "api_get_group")]
+    [Auth("read", "group")]
     public async Task<ActionResult<GroupResponseDto>> GetGroup(
         long organizationId,
         long groupId,
@@ -80,6 +83,7 @@ public class GroupController : ControllerBase
     /// <param name="groupId">ID of the group</param>
     /// <returns>List of users in the group</returns>
     [HttpGet("{groupId}/users", Name = "api_get_group_members")]
+    [Auth("read", "group")]
     public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetGroupMembers(
         long organizationId,
         long groupId)
@@ -104,6 +108,7 @@ public class GroupController : ControllerBase
     /// <param name="dto">Data structure of group to create</param>
     /// <returns></returns>
     [HttpPost(Name = "api_create_group")]
+    [Auth("write", "group")]
     public async Task<ActionResult<GroupResponseDto>> CreateGroup(
         long organizationId,
         [FromBody] CreateGroupRequestDto dto)
@@ -130,6 +135,7 @@ public class GroupController : ControllerBase
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
     [HttpPut("{groupId}", Name = "api_update_group")]
+    [Auth("write", "group")]
     public async Task<ActionResult<GroupResponseDto>> UpdateGroup(
         long organizationId,
         long groupId,
@@ -156,6 +162,7 @@ public class GroupController : ControllerBase
     /// <param name="groupId">ID of the group to hard delete</param>
     /// <returns></returns>
     [HttpDelete("{groupId}", Name = "api_delete_group")]
+    [Auth("write", "group")]
     public async Task<ActionResult> DeleteGroup(
         long organizationId,
         long groupId)
@@ -182,6 +189,7 @@ public class GroupController : ControllerBase
     /// <param name="archive">True to archive the group, false to unarchive it.</param>
     /// <returns>A message stating the group was successfully archived or unarchived.</returns>
     [HttpPatch("{groupId}", Name = "api_archive_group")]
+    [Auth("write", "group")]
     public async Task<IActionResult> ArchiveGroup(
         long organizationId,
         long groupId,
@@ -215,6 +223,7 @@ public class GroupController : ControllerBase
     /// <param name="groupId">ID of the group</param>
     /// <param name="userId">ID of the user to be added</param>
     [HttpPost("{groupId}/users", Name = "api_add_user_to_group")]
+    [Auth("write", "group")]
     public async Task<ActionResult> AddUserToGroup(
         long organizationId,
         long groupId,
@@ -242,6 +251,7 @@ public class GroupController : ControllerBase
     /// <param name="userId">ID of user to be removed</param>
     /// <returns></returns>
     [HttpDelete("{groupId}/users/{userId}", Name = "api_remove_user_from_group")]
+    [Auth("write", "group")]
     public async Task<ActionResult> RemoveUserFromGroup(
         long organizationId,
         long groupId,

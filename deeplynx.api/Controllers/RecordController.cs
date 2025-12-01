@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -47,6 +48,7 @@ public class RecordController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
     /// <returns>A list of records based on the applied filters.</returns>
     [HttpGet(Name = "api_get_all_records")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
         long organizationId,
         long projectId,
@@ -77,6 +79,8 @@ public class RecordController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
     /// <returns>A list of records that have all the specified tags.</returns>
     [HttpGet("by-tags", Name = "api_get_records_by_tags")]
+    [Auth("read", "record")]
+    [Auth("read", "tag")]
     public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetRecordsByTags(
         long organizationId,
         long projectId,
@@ -105,6 +109,7 @@ public class RecordController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
     /// <returns>The record associated with the given ID</returns>
     [HttpGet("{recordId:long}", Name = "api_get_a_record")]
+    [Auth("read", "record")]
     public async Task<ActionResult<RecordResponseDto>> GetRecord(
         long organizationId,
         long projectId,
@@ -133,6 +138,7 @@ public class RecordController : ControllerBase
     /// <param name="dto">The record request data transfer object containing record details</param>
     /// <returns>The created record</returns>
     [HttpPost(Name = "api_create_a_record")]
+    [Auth("write", "record")]
     public async Task<ActionResult<RecordResponseDto>> CreateRecord(
         long organizationId,
         long projectId,
@@ -163,6 +169,7 @@ public class RecordController : ControllerBase
     /// <param name="records">List of record request data transfer objects containing record details</param>
     /// <returns>The created records</returns>
     [HttpPost("bulk", Name = "api_create_many_records")]
+    [Auth("write", "record")]
     public async Task<ActionResult<List<RecordResponseDto>>> BulkCreateRecords(
         long organizationId,
         long projectId,
@@ -194,6 +201,7 @@ public class RecordController : ControllerBase
     /// <param name="dto">The record request data transfer object containing updated record details</param>
     /// <returns>The updated record</returns>
     [HttpPut("{recordId:long}", Name = "api_update_a_record")]
+    [Auth("write", "record")]
     public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
         long organizationId,
         long projectId,
@@ -222,6 +230,7 @@ public class RecordController : ControllerBase
     /// <param name="recordId">The ID of the record to delete</param>
     /// <returns>A message stating the record was successfully deleted.</returns>
     [HttpDelete("{recordId:long}", Name = "api_delete_a_record")]
+    [Auth("write", "record")]
     public async Task<IActionResult> DeleteRecord(
         long organizationId,
         long projectId,
@@ -250,6 +259,7 @@ public class RecordController : ControllerBase
     /// <param name="archive">True to archive the record, false to unarchive it.</param>
     /// <returns>A message stating the record was successfully archived or unarchived.</returns>
     [HttpPatch("{recordId:long}", Name = "api_archive_record")]
+    [Auth("write", "record")]
     public async Task<IActionResult> ArchiveRecord(
         long organizationId,
         long projectId,
@@ -286,6 +296,8 @@ public class RecordController : ControllerBase
     /// <param name="tagId">The ID of the tag to attach</param>
     /// <returns>A message stating the tag was successfully attached to the record.</returns>
     [HttpPost("{recordId:long}/tags", Name = "api_attach_a_tag")]
+    [Auth("write", "record")]
+    [Auth("read", "tag")]
     public async Task<IActionResult> AttachTag(
         long organizationId,
         long projectId,
@@ -314,6 +326,8 @@ public class RecordController : ControllerBase
     /// <param name="tagId">The ID of the tag to unattach</param>
     /// <returns>A message stating the tag was successfully unattached from the record.</returns>
     [HttpDelete("{recordId:long}/tags", Name = "api_unattach_a_tag")]
+    [Auth("write", "record")]
+    [Auth("read", "tag")]
     public async Task<IActionResult> UnattachTag(
         long organizationId,
         long projectId,
@@ -344,6 +358,7 @@ public class RecordController : ControllerBase
     /// <param name="pageSize">Indicates the page size for pagination</param>
     /// <returns>A list of related records based on edges.</returns>
     [HttpGet("{recordId}/edges", Name = "api_get_edges_by_record")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
         long organizationId,
         long projectId,
@@ -375,6 +390,7 @@ public class RecordController : ControllerBase
     /// <param name="depth">The number of levels you want to search through</param>
     /// <returns>Graph data including nodes and edges.</returns>
     [HttpGet("{recordId}/graph", Name = "api_get_graph_data_for_record")]
+    [Auth("read", "record")]
     public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
         long organizationId,
         long projectId,

@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -34,6 +35,7 @@ public class SensitivityLabelProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
     /// <returns></returns>
     [HttpGet(Name = "api_get_all_sensitivity_labels_project")]
+    [Auth("read", "sensitivity_label")]
     public async Task<ActionResult<IEnumerable<SensitivityLabelResponseDto>>> GetAllSensitivityLabels(
         long projectId,
         [FromQuery] bool hideArchived = true)
@@ -62,6 +64,7 @@ public class SensitivityLabelProjectController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide or show archived labels</param>
     /// <returns></returns>
     [HttpGet("{labelId}", Name = "api_get_sensitivity_label_project")]
+    [Auth("read", "sensitivity_label")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> GetSensitivityLabel(
         long projectId,
         long labelId, [FromQuery] bool hideArchived = true)
@@ -88,6 +91,7 @@ public class SensitivityLabelProjectController : ControllerBase
     /// <param name="dto">Data structure of sensitivity label to create</param>
     /// <returns></returns>
     [HttpPost(Name = "api_create_sensitivity_label_project")]
+    [Auth("write", "sensitivity_label")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> CreateSensitivityLabel(
         long projectId,
         [FromBody] CreateSensitivityLabelRequestDto dto)
@@ -116,6 +120,7 @@ public class SensitivityLabelProjectController : ControllerBase
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
     [HttpPut("{labelId}", Name = "api_update_sensitivity_label_project")]
+    [Auth("write", "sensitivity_label")]
     public async Task<ActionResult<SensitivityLabelResponseDto>> UpdateSensitivityLabel(
         long projectId,
         long labelId,
@@ -144,6 +149,7 @@ public class SensitivityLabelProjectController : ControllerBase
     /// <param name="labelId">ID of the sensitivity label to hard delete</param>
     /// <returns></returns>
     [HttpDelete("{labelId}", Name = "api_delete_sensitivity_label_project")]
+    [Auth("write", "sensitivity_label")]
     public async Task<ActionResult> DeleteSensitivityLabel(
         long projectId,
         long labelId)
@@ -171,6 +177,7 @@ public class SensitivityLabelProjectController : ControllerBase
     /// <param name="archive">True to archive the label, false to unarchive it.</param>
     /// <returns>A message stating the label was successfully archived or unarchived.</returns>
     [HttpPatch("{labelId}", Name = "api_archive_sensitivity_label_project")]
+    [Auth("write", "sensitivity_label")]
     public async Task<IActionResult> ArchiveSensitivityLabel(
         long projectId,
         long labelId,

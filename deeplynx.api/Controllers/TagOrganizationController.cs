@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -34,6 +35,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet(Name = "api_get_all_tags_organization")]
+    [Auth("read", "tag")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
         long organizationId, [FromQuery] long[]? projectIds, [FromQuery] bool hideArchived = true)
     {
@@ -58,6 +60,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
     [HttpGet("{tagId}", Name = "api_get_a_tag_organization")]
+    [Auth("read", "tag")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
         long organizationId,
         long tagId,
@@ -83,6 +86,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost(Name = "api_create_a_tag_organization")]
+    [Auth("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> CreateTag(
         long organizationId,
         [FromBody] CreateTagRequestDto tagRequestDto)
@@ -108,6 +112,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("bulk", Name = "api_create_many_tags_organization")]
+    [Auth("write", "tag")]
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
         long organizationId,
         [FromBody] List<CreateTagRequestDto> tagRequestDto)
@@ -134,6 +139,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
     [HttpPut("{tagId}", Name = "api_update_a_tag_organization")]
+    [Auth("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(
         long organizationId, long tagId,
         [FromBody] UpdateTagRequestDto tagRequestDto)
@@ -159,6 +165,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
     [HttpDelete("{tagId}", Name = "api_delete_a_tag_organization")]
+    [Auth("write", "tag")]
     public async Task<IActionResult> DeleteTag(
         long organizationId, long tagId)
     {
@@ -183,6 +190,7 @@ public class TagOrganizationController : ControllerBase
     /// <param name="archive">True to archive the tag, false to unarchive it.</param>
     /// <returns>A message stating the tag was successfully archived or unarchived.</returns>
     [HttpPatch("{tagId}", Name = "api_archive_tag_organization")]
+    [Auth("write", "tag")]
     public async Task<IActionResult> ArchiveTag(
         long organizationId,
         long tagId,

@@ -24,6 +24,26 @@ export const getAllOrganizations = async (
 };
 
 /**
+ * Get all organizations for the current user
+ * @param hideArchived - Flag to hide archived organizations (default: true)
+ * @returns Promise with array of OrganizationResponseDto
+ */
+export const getAllOrganizationsForUser = async (
+    hideArchived: boolean = true
+): Promise<OrganizationResponseDto[]> => {
+    try {
+        const res = await api.get<OrganizationResponseDto[]>(
+            `/organizations/user`,
+            { params: { hideArchived } }
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error fetching organizations for user:", error);
+        throw error;
+    }
+};
+
+/**
  * Get a specific organization by ID
  * @param organizationId - The ID of the organization
  * @param hideArchived - Flag to hide archived organizations (default: true)

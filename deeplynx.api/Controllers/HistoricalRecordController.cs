@@ -2,6 +2,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -41,6 +42,7 @@ public class HistoricalRecordController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
     /// <returns>A list of historical records based on the applied filters.</returns>
     [HttpGet(Name = "api_get_all_historical_records")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetAllHistoricalRecords(
         long organizationId,
         long projectId,
@@ -74,6 +76,7 @@ public class HistoricalRecordController : ControllerBase
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
     /// <returns>The historical record at the specified point in time</returns>
     [HttpGet("{recordId:long}", Name = "api_get_a_historical_record")]
+    [Auth("read", "record")]
     public async Task<ActionResult<HistoricalRecordResponseDto>> GetHistoricalRecord(
         long organizationId,
         long projectId,
@@ -104,6 +107,7 @@ public class HistoricalRecordController : ControllerBase
     /// <param name="recordId">The ID of the record for which to retrieve history</param>
     /// <returns>A list of all previous versions of the record</returns>
     [HttpGet("{recordId:long}/history", Name = "api_get_record_history")]
+    [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecordHistory(
         long organizationId,
         long projectId,
