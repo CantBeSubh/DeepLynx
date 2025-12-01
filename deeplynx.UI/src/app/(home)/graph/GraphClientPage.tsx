@@ -5,7 +5,8 @@ import Graph from "graphology";
 // Remove this line: import Sigma from "sigma";
 import { Attributes } from "graphology-types";
 import { GraphResponseDto } from "../types/responseDTOs";
-import { getGraphDataForRecord } from "@/app/lib/client_service/graph_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getGraphDataForRecord } from "@/app/lib/client_service/record_services.client";
 // Remove this line: import FA2Layout from "graphology-layout-forceatlas2/worker";
 
 // ============================================
@@ -40,7 +41,7 @@ interface EdgeAttributes extends Attributes {
 // ============================================
 
 interface GraphClientPageProps {
-  projectId: string;
+  projectId: number;
   recordId: number;
   depth?: number;
 }
@@ -87,7 +88,7 @@ const GraphClientPage = ({
 // ============================================
 
 interface MyGraphProps {
-  projectId: string;
+  projectId: number;
   recordId: number; // Required
   depth?: number;
   onLoadingChange: (loading: boolean) => void;
@@ -109,6 +110,8 @@ const MyGraph = ({
 
   // Reference to the layout for cleanup
   const layoutRef = useRef<unknown>(null);
+
+  const { organization, hasLoaded } = useOrganizationSession();
 
   // Add state to track if layout is settling
   const [isLayoutSettling, setIsLayoutSettling] = useState(true);
@@ -133,10 +136,12 @@ const MyGraph = ({
         ]);
 
         // Fetch graph data from backend using the service
-        const data = await getGraphDataForRecord(projectId, {
+        const data = await getGraphDataForRecord(
+          organization!.organizationId as number,
+          projectId, 
           recordId,
           depth,
-        });
+        );
 
         // Validate that we have data
         if (!data.nodes || data.nodes.length === 0) {
@@ -171,7 +176,7 @@ const MyGraph = ({
             if (!current) continue;
 
             // Find all connected nodes
-            data.links.forEach((link) => {
+            data.links!.forEach((link) => {
               let nextNodeId: number | null = null;
 
               // Check if current node is source or target
@@ -225,7 +230,7 @@ const MyGraph = ({
         });
 
         // Add all edges (links) to the graph
-        data.links.forEach((link, index) => {
+        data.links!.forEach((link, index) => {
           // Convert numeric IDs to strings
           const sourceId = String(link.source);
           const targetId = String(link.target);
