@@ -130,7 +130,7 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Get record count for a data source
+    ///     Get Record Count for a Data Source
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the records belong</param>

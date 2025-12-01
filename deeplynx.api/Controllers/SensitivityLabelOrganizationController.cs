@@ -10,7 +10,9 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId:long}/labels")]
 [Authorize]
-[Tags("Organization Management", "Sensitivity Label")]
+[Tags(
+    // "Organization Management",
+    "Sensitivity Label")]
 public class SensitivityLabelOrganizationController : ControllerBase
 {
     private readonly ILogger<SensitivityLabelOrganizationController> _logger;
@@ -29,7 +31,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     List Sensitivity Labels
+    ///     List Sensitivity Labels (Organization)
     /// </summary>
     /// <param name="organizationId">ID of the organization across which to search</param>
     /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
@@ -58,7 +60,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Fetch Sensitivity Label by ID
+    ///     Fetch Sensitivity Label by ID (Organization)
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">ID of sensitivity label</param>
@@ -85,7 +87,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Sensitivity Label
+    ///     Create a Sensitivity Label (Organization)
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="dto">Data structure of sensitivity label to create</param>
@@ -112,7 +114,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Sensitivity Label
+    ///     Update a Sensitivity Label (Organization)
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">ID of the sensitivity label</param>
@@ -141,7 +143,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Sensitivity Label
+    ///     Delete a Sensitivity Label (Organization)
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">ID of the sensitivity label to hard delete</param>
@@ -167,7 +169,7 @@ public class SensitivityLabelOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Sensitivity Label
+    ///     Archive or Unarchive a Sensitivity Label (Organization)
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the label belongs</param>
     /// <param name="labelId">The ID of the sensitivity label to archive or unarchive.</param>

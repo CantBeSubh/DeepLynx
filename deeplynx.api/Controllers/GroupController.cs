@@ -25,7 +25,7 @@ public class GroupController : ControllerBase
     }
 
     /// <summary>
-    ///     List all groups within an organization
+    ///     Get All Groups Within an Organization
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the groups belong</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived groups</param>
@@ -77,7 +77,7 @@ public class GroupController : ControllerBase
     }
 
     /// <summary>
-    ///     Get all members of a group
+    ///     Get All Members of a Group
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the group belongs</param>
     /// <param name="groupId">ID of the group</param>
@@ -217,7 +217,7 @@ public class GroupController : ControllerBase
     }
 
     /// <summary>
-    ///     Add user to group
+    ///     Add User to Group
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the group belongs</param>
     /// <param name="groupId">ID of the group</param>
@@ -244,7 +244,7 @@ public class GroupController : ControllerBase
 
 
     /// <summary>
-    ///     Remove user from group
+    ///     Remove User from Group
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the group belongs</param>
     /// <param name="groupId">ID of the group to remove from</param>

@@ -14,7 +14,9 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Route("organizations/{organizationId:long}/projects/{projectId:long}/roles")]
-[Tags("Project Management", "Role")]
+[Tags(
+    // "Project Management",
+    "Role")]
 public class RoleProjectController : ControllerBase
 {
     private readonly ILogger<RoleProjectController> _logger;
@@ -32,7 +34,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Roles
+    ///     Get All Roles (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project whose roles are to be retrieved</param>
@@ -59,7 +61,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Role
+    ///     Get a Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -88,7 +90,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Role
+    ///     Create a Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -116,7 +118,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Role
+    ///     Update a Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -146,7 +148,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Role
+    ///     Delete a Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -174,7 +176,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Role
+    ///     Archive or Unarchive a Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -211,7 +213,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get Permissions for a Role
+    ///     Get Permissions for a Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -238,7 +240,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Add Permission to Role
+    ///     Add Permission to Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -267,7 +269,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Remove Permission from Role
+    ///     Remove Permission from Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
@@ -296,7 +298,7 @@ public class RoleProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Set All Permissions for a Role
+    ///     Set All Permissions for a Role (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="projectId">The ID of the project to which the role belongs</param>
