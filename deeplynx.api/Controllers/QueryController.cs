@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve class information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/query")]
+[Route("organizations/{organizationId:long}/query")]
 [Authorize]
 public class QueryController : ControllerBase
 {

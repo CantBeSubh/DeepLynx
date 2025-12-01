@@ -66,7 +66,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="permissionId">The ID of the permission to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
     /// <returns>The permission associated with the given ID</returns>
-    [HttpGet("organizations/{organizationId}/permissions/{permissionId}", Name = "api_get_organization_permission")]
+    [HttpGet("organizations/{organizationId:long}/permissions/{permissionId:long}", Name = "api_get_organization_permission")]
     [Auth("read", "permission")]
     public async Task<ActionResult<PermissionResponseDto>> GetPermission(
         long organizationId,
@@ -92,7 +92,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="dto">The data transfer object containing permission details</param>
     /// <returns>The created permission</returns>
-    [HttpPost("organizations/{organizationId}/permissions", Name = "api_create_organization_permission")]
+    [HttpPost("organizations/{organizationId:long}/permissions", Name = "api_create_organization_permission")]
     [Auth("write", "permission")]
     public async Task<ActionResult<PermissionResponseDto>> CreatePermission(
         long organizationId,
@@ -121,7 +121,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="permissionId">The ID of the permission to update</param>
     /// <param name="dto">The data transfer object containing updated permission details</param>
     /// <returns>The updated permission</returns>
-    [HttpPut("organizations/{organizationId}/permissions/{permissionId}", Name = "api_update_organization_permission")]
+    [HttpPut("organizations/{organizationId:long}/permissions/{permissionId:long}", Name = "api_update_organization_permission")]
     [Auth("write", "permission")]
     public async Task<ActionResult<PermissionResponseDto>> UpdatePermission(
         long organizationId,
@@ -148,7 +148,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="permissionId">The ID of the permission to delete</param>
     /// <returns>A message stating the permission was successfully deleted.</returns>
-    [HttpDelete("organizations/{organizationId}/permissions/{permissionId}", Name = "api_delete_organization_permission")]
+    [HttpDelete("organizations/{organizationId:long}/permissions/{permissionId:long}", Name = "api_delete_organization_permission")]
     [Auth("write", "permission")]
     public async Task<ActionResult> DeletePermission(
         long organizationId,
@@ -175,7 +175,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="permissionId">The ID of the permission to archive or unarchive</param>
     /// <param name="archive">True to archive the permission, false to unarchive it.</param>
     /// <returns>A message stating the permission was successfully archived or unarchived.</returns>
-    [HttpPatch("organizations/{organizationId}/permissions/{permissionId}", Name = "api_archive_organization_permission")]
+    [HttpPatch("organizations/{organizationId:long}/permissions/{permissionId:long}", Name = "api_archive_organization_permission")]
     [Auth("write", "permission")]
     public async Task<IActionResult> ArchivePermission(
         long organizationId,

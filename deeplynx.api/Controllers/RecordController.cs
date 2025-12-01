@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve record information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/records")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/records")]
 [Authorize]
 public class RecordController : ControllerBase
 {
@@ -357,7 +357,7 @@ public class RecordController : ControllerBase
     /// <param name="page">Indicates the page number for pagination</param>
     /// <param name="pageSize">Indicates the page size for pagination</param>
     /// <returns>A list of related records based on edges.</returns>
-    [HttpGet("{recordId}/edges", Name = "api_get_edges_by_record")]
+    [HttpGet("{recordId:long}/edges", Name = "api_get_edges_by_record")]
     [Auth("read", "record")]
     public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
         long organizationId,
@@ -389,7 +389,7 @@ public class RecordController : ControllerBase
     /// <param name="recordId">The ID of the record for which to retrieve graph data</param>
     /// <param name="depth">The number of levels you want to search through</param>
     /// <returns>Graph data including nodes and edges.</returns>
-    [HttpGet("{recordId}/graph", Name = "api_get_graph_data_for_record")]
+    [HttpGet("{recordId:long}/graph", Name = "api_get_graph_data_for_record")]
     [Auth("read", "record")]
     public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
         long organizationId,

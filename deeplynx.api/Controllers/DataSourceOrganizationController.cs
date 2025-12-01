@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve data source information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/datasources")]
+[Route("organizations/{organizationId:long}/datasources")]
 [Authorize]
 [Tags("Organization Management", "DataSource")]
 public class DataSourceOrganizationController : ControllerBase
@@ -68,7 +68,7 @@ public class DataSourceOrganizationController : ControllerBase
     /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
     /// <returns>The data source associated with the given ID</returns>
-    [HttpGet("{dataSourceId}", Name = "api_get_a_data_source_organization")]
+    [HttpGet("{dataSourceId:long}", Name = "api_get_a_data_source_organization")]
     [Auth("read", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
         long organizationId,
@@ -119,7 +119,7 @@ public class DataSourceOrganizationController : ControllerBase
     /// <param name="dataSourceId">The ID of the data source to update</param>
     /// <param name="dto">The data transfer object containing updated data source details</param>
     /// <returns>The newly updated data source</returns>
-    [HttpPut("{dataSourceId}", Name = "api_update_a_data_source_for_organization")]
+    [HttpPut("{dataSourceId:long}", Name = "api_update_a_data_source_for_organization")]
     [Auth("write", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
         long organizationId,
@@ -147,7 +147,7 @@ public class DataSourceOrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dataSourceId">The ID of the data source to delete</param>
     /// <returns>A message stating the data source was successfully deleted.</returns>
-    [HttpDelete("{dataSourceId}", Name = "api_delete_a_data_source_for_organization")]
+    [HttpDelete("{dataSourceId:long}", Name = "api_delete_a_data_source_for_organization")]
     [Auth("write", "data_source")]
     public async Task<IActionResult> DeleteDataSource(
         long organizationId,
@@ -173,7 +173,7 @@ public class DataSourceOrganizationController : ControllerBase
     /// <param name="dataSourceId">The ID of the data source to archive or unarchive</param>
     /// <param name="archive">True to archive the data source, false to unarchive it.</param>
     /// <returns>A message stating the data source was successfully archived or unarchived.</returns>
-    [HttpPatch("{dataSourceId}", Name = "api_archive_data_source_for_organization")]
+    [HttpPatch("{dataSourceId:long}", Name = "api_archive_data_source_for_organization")]
     [Auth("write", "data_source")]
     public async Task<IActionResult> ArchiveDataSource(
         long organizationId,
@@ -207,7 +207,7 @@ public class DataSourceOrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dataSourceId">The ID of the data source to set as default</param>
     /// <returns>The updated data source</returns>
-    [HttpPatch("{dataSourceId}/default", Name = "api_set_default_data_source_for_organization")]
+    [HttpPatch("{dataSourceId:long}/default", Name = "api_set_default_data_source_for_organization")]
     [Auth("write", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
         long organizationId,
