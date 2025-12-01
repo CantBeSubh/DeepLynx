@@ -200,15 +200,17 @@ export async function getProjectMembers(
 export async function addMemberToProject(
   organizationId: number,
   projectId: number,
-  roleId?: number,
-  userId?: number,
-  groupId?: number
+  data: {
+    roleId?: number;
+    userId?: number;
+    groupId?: number;
+  }
 ): Promise<{ message: string }> {
   try {
     const res = await api.post(
       `/organizations/${organizationId}/projects/${projectId}/members`,
       null,
-      { params: { roleId, userId, groupId } }
+      { params: data }
     );
     return res.data;
   } catch (error) {
@@ -216,6 +218,7 @@ export async function addMemberToProject(
     throw error;
   }
 }
+
 
 /**
  * Update a member's role in a project

@@ -69,7 +69,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                       <>
                         <div className="avatar placeholder">
                           <div className="bg-warning text-warning-content rounded-full w-8">
-                            <EnvelopeIcon className="w-4 h-4" />
+                            <EnvelopeIcon className="size-6" />
                           </div>
                         </div>
                         <div className="font-medium text-base-content/70">
@@ -101,7 +101,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                 <td>
                   {row.isPending ? (
                     <div className="badge badge-warning gap-1">
-                      <EnvelopeIcon className="w-3 h-3" />
+                      <EnvelopeIcon className="size-5" />
                       Pending
                     </div>
                   ) : row.isArchived ? (
@@ -118,7 +118,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                   {row.isPending ? (
                     row.projectName ? (
                       <div className="flex items-center gap-2 text-sm">
-                        <FolderIcon className="w-4 h-4 text-base-content/50" />
+                        <FolderIcon className="size-6 text-base-content/50" />
                         <span>{row.projectName}</span>
                         {row.roleName && (
                           <span className="badge badge-sm badge-outline">
@@ -137,7 +137,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                           className="badge badge-sm badge-primary gap-1"
                           title={`${project.name} (${project.role})`}
                         >
-                          <FolderIcon className="w-3 h-3" />
+                          <FolderIcon className="size-5" />
                           {project.name}
                         </div>
                       ))}
@@ -165,7 +165,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                           disabled={loading}
                           title="Resend invitation"
                         >
-                          <ArrowPathIcon className="w-4 h-4" />
+                          <ArrowPathIcon className="size-6" />
                         </button>
                         <button
                           className="btn btn-ghost btn-sm text-error"
@@ -180,7 +180,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                           disabled={loading}
                           title="Cancel invitation"
                         >
-                          <XMarkIcon className="w-4 h-4" />
+                          <XMarkIcon className="size-6" />
                         </button>
                       </>
                     ) : (
@@ -191,7 +191,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                           onClick={() => onEditUser(row.id, row.name)}
                           disabled={loading}
                         >
-                          <PencilIcon className="w-4 h-4" />
+                          <PencilIcon className="size-6" />
                         </button>
                         <button
                           className="btn btn-ghost btn-sm text-error"
@@ -206,7 +206,7 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
                           }
                           disabled={loading || row.isSysAdmin}
                         >
-                          <TrashIcon className="w-4 h-4" />
+                          <TrashIcon className="size-6" />
                         </button>
                       </>
                     )}
