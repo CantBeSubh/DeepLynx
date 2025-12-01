@@ -160,6 +160,7 @@ export async function getProjectStats(
     const res = await api.get(
       `/organizations/${organizationId}/projects/${projectId}/stats`
     );
+    console.log("Project stats: ", res)
     return res.data;
   } catch (error) {
     console.error(`Error getting stats for project ${projectId}:`, error);

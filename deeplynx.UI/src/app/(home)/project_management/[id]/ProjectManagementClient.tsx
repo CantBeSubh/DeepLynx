@@ -17,6 +17,7 @@ import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import ProjectUsersTable from "./users/ProjectUsersTable";
 import ProjectRolesAndPermissions from "./roles_and_permissions/ProjectRolesAndPermissions";
+import DataSources from "./data_source/DataSources";
 
 interface ProjectManagementProps {
   project: ProjectResponseDto | null;
@@ -67,15 +68,8 @@ const ProjectManagementClient = ({
       ),
     },
     {
-      label: "Groups",
-      content: (
-        <div>
-          {/* TODO: Replace with ProjectGroups table */}
-          <p className="text-sm text-base-content/70">
-            Add and manage groups that have access to this project.
-          </p>
-        </div>
-      ),
+      label: "Data Sources",
+      content: <DataSources projectId={project?.id as number} />,
     },
     {
       label: "Tags and Security Labels",
