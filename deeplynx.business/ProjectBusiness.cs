@@ -90,16 +90,16 @@ public class ProjectBusiness : IProjectBusiness
             );
 
         return await projectQuery.Select(p => new ProjectResponseDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Description = p.Description,
-                Abbreviation = p.Abbreviation,
-                LastUpdatedAt = p.LastUpdatedAt,
-                LastUpdatedBy = p.LastUpdatedBy,
-                IsArchived = p.IsArchived,
-                OrganizationId = p.OrganizationId
-            })
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Description = p.Description,
+            Abbreviation = p.Abbreviation,
+            LastUpdatedAt = p.LastUpdatedAt,
+            LastUpdatedBy = p.LastUpdatedBy,
+            IsArchived = p.IsArchived,
+            OrganizationId = p.OrganizationId
+        })
             .ToListAsync();
     }
 
@@ -164,9 +164,9 @@ public class ProjectBusiness : IProjectBusiness
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
         };
-        
+
         await _eventBusiness.CreateEvent(userId, organizationId, projectId, eventLog);
-        
+
         await SetProjectDefaults(userId, organizationId, projectId);
 
         return projectResponseDto;
@@ -483,9 +483,9 @@ public class ProjectBusiness : IProjectBusiness
 
                 // Log the event
                 await _eventBusiness.CreateEvent(
-                    currentUserId, 
-                    organizationId, 
-                    projectId, 
+                    currentUserId,
+                    organizationId,
+                    projectId,
                     new CreateEventRequestDto
                     {
                         Operation = "unarchive",
@@ -515,29 +515,26 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>A list of project stats</returns>
     public async Task<ProjectStatResponseDto> GetProjectStats(long organizationId, long projectId)
     {
-        // "classes": number, “dataRecords”: number, “connections”: number 
-        var classesTask = _context.Classes
+        var classes = await _context.Classes
             .Where(p => !p.IsArchived && p.ProjectId == projectId && p.OrganizationId == organizationId)
             .CountAsync();
 
-        var recordsTask = _context.Records
+        var records = await _context.Records
             .Where(p => !p.IsArchived && p.ProjectId == projectId && p.OrganizationId == organizationId)
             .CountAsync();
 
-        var datasourcesTask = _context.DataSources
+        var datasources = await _context.DataSources
             .Where(p => !p.IsArchived && p.ProjectId == projectId && p.OrganizationId == organizationId)
             .CountAsync();
-
-        // Wait for all three to complete
-        await Task.WhenAll(classesTask, recordsTask, datasourcesTask);
 
         return new ProjectStatResponseDto
         {
-            classes = await classesTask,
-            records = await recordsTask,
-            datasources = await datasourcesTask
+            classes = classes,
+            records = records,
+            datasources = datasources
         };
     }
+
 
     /// <summary>
     ///     List the users and groups in a given project, along with their roles
