@@ -21,6 +21,8 @@ dist
 
 deeplynx.sln.DotSettings.user
 
+package-lock.json
+
 duckdb
 
 - global.json
