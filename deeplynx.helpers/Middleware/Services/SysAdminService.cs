@@ -1,4 +1,5 @@
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -26,10 +27,7 @@ public class SysAdminService : ISysAdminService
     public async Task<bool> SysAdminCheck(
         long userId)
     {
-        _logger.LogInformation(
-            "Checking permission - User: {UserId}",
-            userId);
-
+        
         //check for whether a user has permission to an action/resource within a organization through group membership
         var hasPermission = _dbContext.Database
             .SqlQuery<bool>($@"
