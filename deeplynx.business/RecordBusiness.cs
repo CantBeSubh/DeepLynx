@@ -176,7 +176,6 @@ public class RecordBusiness : IRecordBusiness
         };
     }
 
-
     /// <summary>
     ///     Attaches a tag to a record
     /// </summary>
@@ -414,14 +413,14 @@ public class RecordBusiness : IRecordBusiness
             organizationId,
             projectId,
             new CreateEventRequestDto
-        {
-            EntityType = "record",
-            EntityId = record.Id,
-            EntityName = record.Name,
-            Operation = "create",
-            Properties = "{}",
-            DataSourceId = record.DataSourceId,
-        });
+            {
+                EntityType = "record",
+                EntityId = record.Id,
+                EntityName = record.Name,
+                Operation = "create",
+                Properties = "{}",
+                DataSourceId = record.DataSourceId
+            });
 
         return new RecordResponseDto
         {
@@ -522,28 +521,26 @@ public class RecordBusiness : IRecordBusiness
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
 
-       // returns the resulting upserted classes
-       var result = await _context.Database
-           .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
-           .ToListAsync();
-       
-       // Log Event for all records created
-       var events = new List<CreateEventRequestDto> { };
-       foreach (var record in result)
-       {
-           events.Add(new CreateEventRequestDto
-                  {
-                      Operation = "create",
-                      EntityType = "record",
-                      EntityId = record.Id,
-                      EntityName = record.Name,
-                      Properties = "{}",
-                      DataSourceId = record.DataSourceId,
-                  });
-       }
-       await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
-       
-       return result;
+        // returns the resulting upserted classes
+        var result = await _context.Database
+            .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
+
+        // Log Event for all records created
+        var events = new List<CreateEventRequestDto>();
+        foreach (var record in result)
+            events.Add(new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "record",
+                EntityId = record.Id,
+                EntityName = record.Name,
+                Properties = "{}",
+                DataSourceId = record.DataSourceId
+            });
+        await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
+
+        return result;
     }
 
     /// <summary>
@@ -603,7 +600,7 @@ public class RecordBusiness : IRecordBusiness
             EntityId = recordId,
             EntityName = returnedRecord.Name,
             DataSourceId = returnedRecord.DataSourceId,
-            Properties = JsonSerializer.Serialize(new { returnedRecord.Name }),
+            Properties = JsonSerializer.Serialize(new { returnedRecord.Name })
         });
 
         return true;
@@ -659,18 +656,18 @@ public class RecordBusiness : IRecordBusiness
         }
 
         // Log record unarchive event
-        await _eventBusiness.CreateEvent(currentUserId, 
+        await _eventBusiness.CreateEvent(currentUserId,
             organizationId,
             projectId,
             new CreateEventRequestDto
-        {
-            Operation = "unarchive",
-            EntityType = "record",
-            EntityId = returnedRecord.Id,
-            EntityName = returnedRecord.Name,
-            DataSourceId = returnedRecord.DataSourceId,
-            Properties = JsonSerializer.Serialize(new { returnedRecord.Name }),
-        });
+            {
+                Operation = "unarchive",
+                EntityType = "record",
+                EntityId = returnedRecord.Id,
+                EntityName = returnedRecord.Name,
+                DataSourceId = returnedRecord.DataSourceId,
+                Properties = JsonSerializer.Serialize(new { returnedRecord.Name })
+            });
 
         return true;
     }
@@ -709,7 +706,7 @@ public class RecordBusiness : IRecordBusiness
             EntityId = recordId,
             EntityName = recordName,
             DataSourceId = recordDataSourceId,
-            Properties = JsonSerializer.Serialize(new { recordName }),
+            Properties = JsonSerializer.Serialize(new { recordName })
         });
 
         return true;
@@ -769,7 +766,7 @@ public class RecordBusiness : IRecordBusiness
             EntityName = returnedRecord.Name,
             Operation = "update",
             Properties = "{}",
-            DataSourceId = returnedRecord.DataSourceId,
+            DataSourceId = returnedRecord.DataSourceId
         });
 
         return new RecordResponseDto
@@ -790,6 +787,28 @@ public class RecordBusiness : IRecordBusiness
             IsArchived = returnedRecord.IsArchived,
             FileType = returnedRecord.FileType
         };
+    }
+
+    /// <summary>
+    ///     Get record count for a data source
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The project of the records to retrieve</param>
+    /// <param name="dataSourceId">The ID of the data source by which to filter records</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns>The record count for the given data source</returns>
+    /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
+    public async Task<int> GetRecordsCountByDataSource(
+        long organizationId, long projectId, long dataSourceId, bool hideArchived)
+    {
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId, hideArchived);
+        var recordQuery = _context.Records
+            .Where(r => r.OrganizationId == organizationId && r.ProjectId == projectId &&
+                        r.DataSourceId == dataSourceId);
+
+        if (hideArchived) recordQuery = recordQuery.Where(r => !r.IsArchived);
+
+        return await recordQuery.CountAsync();
     }
 
     /// <summary>
