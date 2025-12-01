@@ -220,11 +220,11 @@ public class DataSourceProjectController : ControllerBase
             var currentUserId = UserContextStorage.UserId;
             if (archive)
             {
-                await _dataSourceBusiness.ArchiveDataSource(currentUserId, organizationId, dataSourceId, projectId);
+                await _dataSourceBusiness.ArchiveDataSource(organizationId, projectId, currentUserId, dataSourceId);
                 return Ok(new { message = $"Archived data source {dataSourceId}" });
             }
 
-            await _dataSourceBusiness.UnarchiveDataSource(currentUserId, organizationId, dataSourceId, projectId);
+            await _dataSourceBusiness.UnarchiveDataSource(organizationId, projectId, currentUserId, dataSourceId);
             return Ok(new { message = $"Unarchived data source {dataSourceId}" });
         }
         catch (Exception exc)
@@ -244,6 +244,7 @@ public class DataSourceProjectController : ControllerBase
     /// <param name="isDefault">True to set as default, false to unset as default.</param>
     /// <returns>The updated data source</returns>
     [HttpPatch("{dataSourceId:long}/default", Name = "api_set_default_data_source_for_project")]
+    [Auth("write", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
         long projectId,
         long dataSourceId,

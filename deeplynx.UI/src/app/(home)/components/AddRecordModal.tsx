@@ -2,17 +2,25 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useLanguage } from "@/app/contexts/Language";
-
-import { DataSourceResponseDto } from "../types/responseDTOs";
 import toast from "react-hot-toast";
-import { isAxiosError } from "axios";
-import { ProjectResponseDto } from "../types/responseDTOs";
+
+import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+
 import { CreateRecordRequestDto } from "../types/requestDTOs";
+import {
+  DataSourceResponseDto,
+  ProjectResponseDto,
+} from "../types/responseDTOs";
+import { CreateRecordPayload } from "../types/types";
+
 import { getAllDataSources } from "@/app/lib/client_service/data_source_services.client";
 import { createRecord } from "@/app/lib/client_service/record_services.client";
-import { CreateRecordPayload } from "../types/types";
+
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
+
 type JsonValue = Record<string, unknown>;
 
 type Props = {
@@ -21,22 +29,30 @@ type Props = {
   initialProjects: ProjectResponseDto[] | { id: string; name: string }[];
 };
 
+/* -------------------------------------------------------------------------- */
+/*                             AddRecordModal                                 */
+/* -------------------------------------------------------------------------- */
+
 const AddRecordModal: React.FC<Props> = ({
   isOpen,
   onClose,
   initialProjects,
 }) => {
   const { t } = useLanguage();
+  const { organization } = useOrganizationSession();
 
-  // Project/Data Source
+  /* ------------------------------------------------------------------------ */
+  /*                        Project / Data Source State                       */
+  /* ------------------------------------------------------------------------ */
+
   const initialProjectId = useMemo(
     () => (initialProjects.length ? Number(initialProjects[0].id) : undefined),
     [initialProjects]
   );
+
   const [selectedProjectId, setSelectedProjectId] = useState<
     number | undefined
   >(initialProjectId);
-
   const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [selectedDataSourceId, setSelectedDataSourceId] = useState<
     number | undefined
@@ -45,21 +61,30 @@ const AddRecordModal: React.FC<Props> = ({
   const [dsError, setDsError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Required fields
+  /* ------------------------------------------------------------------------ */
+  /*                              Required Fields                             */
+  /* ------------------------------------------------------------------------ */
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [propertiesText, setPropertiesText] = useState("");
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
-  const { organization, hasLoaded } = useOrganizationSession();
 
-  // Optional fields
+  /* ------------------------------------------------------------------------ */
+  /*                              Optional Fields                             */
+  /* ------------------------------------------------------------------------ */
+
   const [objectStorageId, setObjectStorageId] = useState<string>("");
   const [classId, setClassId] = useState<number | undefined>();
   const [uri, setUri] = useState<string>("");
   const [classNameOpt, setClassNameOpt] = useState<string>("");
   const [tagsText, setTagsText] = useState<string>("");
   const [labelsText, setLabelsText] = useState<string>("");
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Helpers                                    */
+  /* ------------------------------------------------------------------------ */
 
   const parseCommaList = (text: string) =>
     text
@@ -71,6 +96,7 @@ const AddRecordModal: React.FC<Props> = ({
     setPropertiesText(val);
     try {
       const parsed = JSON.parse(val);
+
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         setPropertiesError(t.translations.MUST_BE_SINGLE_JSON_OBJECT);
       } else {
@@ -111,6 +137,10 @@ const AddRecordModal: React.FC<Props> = ({
     onClose();
   };
 
+  /* ------------------------------------------------------------------------ */
+  /*                            Submit / Create Logic                         */
+  /* ------------------------------------------------------------------------ */
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -121,6 +151,7 @@ const AddRecordModal: React.FC<Props> = ({
       setIsSubmitting(false);
       return;
     }
+
     if (selectedDataSourceId === undefined) {
       toast.error(t.translations.PLEASE_SELECT_A_DATA_SOURCE);
       setIsSubmitting(false);
@@ -128,6 +159,7 @@ const AddRecordModal: React.FC<Props> = ({
     }
 
     let props: JsonValue;
+
     try {
       const parsed = JSON.parse(propertiesText);
 
@@ -147,6 +179,7 @@ const AddRecordModal: React.FC<Props> = ({
       } else {
         throw new Error(t.translations.MUST_BE_SINGLE_JSON_OBJECT);
       }
+
       setPropertiesError(null);
     } catch (err) {
       setPropertiesError(err instanceof Error ? err.message : "Invalid JSON.");
@@ -156,6 +189,7 @@ const AddRecordModal: React.FC<Props> = ({
 
     const objectStorageIdNum =
       objectStorageId.trim() === "" ? undefined : Number(objectStorageId);
+
     if (
       objectStorageIdNum !== undefined &&
       (!Number.isInteger(objectStorageIdNum) ||
@@ -175,9 +209,10 @@ const AddRecordModal: React.FC<Props> = ({
       name,
       description,
       original_id: abbreviation,
-      properties: props, // now guaranteed to be a single object
+      properties: props,
       class_id: classId,
     };
+
     const dto: CreateRecordRequestDto = {
       name,
       description,
@@ -186,8 +221,9 @@ const AddRecordModal: React.FC<Props> = ({
       class_id: classId,
     };
 
-    if (objectStorageIdNum !== undefined)
+    if (objectStorageIdNum !== undefined) {
       payload.object_storage_id = objectStorageIdNum;
+    }
     if (uri.trim()) payload.uri = uri.trim();
     if (classNameOpt.trim()) payload.class_name = classNameOpt.trim();
     if (tags?.length) payload.tags = tags;
@@ -212,6 +248,10 @@ const AddRecordModal: React.FC<Props> = ({
     }
   };
 
+  /* ------------------------------------------------------------------------ */
+  /*                     Load Data Sources When Project Changes               */
+  /* ------------------------------------------------------------------------ */
+
   useEffect(() => {
     if (!selectedProjectId) {
       setDataSources([]);
@@ -221,33 +261,27 @@ const AddRecordModal: React.FC<Props> = ({
     }
 
     let cancelled = false;
+
     (async () => {
       try {
         setDsLoading(true);
         setDsError(null);
         setSelectedDataSourceId(undefined);
+
         const list = await getAllDataSources(
           organization?.organizationId as number,
           [selectedProjectId]
         );
+
         if (!cancelled) setDataSources(list ?? []);
       } catch (err: unknown) {
         const fallback = t.translations.FAILED_TO_LOAD_DATA_SOURCE;
         let message = fallback;
 
-        if (isAxiosError(err)) {
-          const data = err.response?.data as unknown;
-
-          if (typeof data === "string") {
-            message = data;
-          } else if (
-            data &&
-            typeof data === "object" &&
-            "message" in data &&
-            typeof (data as { message?: string }).message === "string"
-          ) {
-            message = (data as { message?: string }).message!;
-          }
+        if (err instanceof Error && err.message) {
+          message = err.message;
+        } else if (typeof err === "string") {
+          message = err;
         }
 
         if (!cancelled) setDsError(message);
@@ -259,7 +293,11 @@ const AddRecordModal: React.FC<Props> = ({
     return () => {
       cancelled = true;
     };
-  }, [selectedProjectId, t.translations]);
+  }, [selectedProjectId, t.translations, organization?.organizationId]);
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Main Render                                */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
@@ -332,7 +370,7 @@ const AddRecordModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Required */}
+          {/* Required Fields */}
           <input
             type="text"
             className="input input-primary w-full"
@@ -370,7 +408,7 @@ const AddRecordModal: React.FC<Props> = ({
             <p className="text-error text-sm">{propertiesError}</p>
           )}
 
-          {/* Optional */}
+          {/* Optional Fields */}
           <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-lg">
             <input type="checkbox" />
             <div className="collapse-title text-md font-medium">
@@ -433,6 +471,7 @@ const AddRecordModal: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Actions */}
           <div className="modal-action">
             <button type="button" className="btn" onClick={handleClose}>
               {t.translations.CANCEL}
