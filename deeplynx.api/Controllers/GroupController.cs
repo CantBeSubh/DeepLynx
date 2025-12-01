@@ -3,11 +3,13 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers;
 
 [ApiController]
 [Route("organizations/{organizationId:long}/groups")]
+[Authorize]
 public class GroupController : ControllerBase
 {
     private readonly IGroupBusiness _groupBusiness;
