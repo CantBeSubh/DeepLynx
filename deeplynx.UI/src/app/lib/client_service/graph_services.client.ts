@@ -15,7 +15,7 @@ export async function getGraphDataForRecord(
 ): Promise<GraphResponseDto> {
   try {
     const res = await api.get(
-      `/projects/${projectId}/edges/GetGraphDataForRecord`,
+      `/projects/${projectId}/edges/GetGraphDataForRecord`, // TODO FIX
       {
         params: {
           recordId: params?.recordId,
