@@ -5,7 +5,6 @@ using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
 using deeplynx.models.Configuration;
-using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -609,13 +608,13 @@ public class ProjectBusinessTests : IntegrationTestBase
         var result = await _projectBusiness.CreateProject(uid, oid, dto);
 
         // Assert
-        result.Id.Should().BeGreaterThan(0);
-        result.Name.Should().Be(dto.Name);
-        result.Description.Should().Be(dto.Description);
-        result.OrganizationId.Should().Be(oid);
+        Assert.True(result.Id > 0);
+        Assert.Equal(dto.Name, result.Name);
+        Assert.Equal(dto.Description, result.Description);
+        Assert.Equal(oid, result.OrganizationId);
         var persisted = await Context.Projects.FindAsync(result.Id);
-        persisted.Should().NotBeNull();
-        persisted!.OrganizationId.Should().Be(oid);
+        Assert.NotNull(persisted);
+        Assert.Equal(oid, persisted.OrganizationId);
 
         //Ensure
         _organizationBusiness.Verify(x => x.GetAllOrganizations(It.IsAny<bool>()), Times.Never);
