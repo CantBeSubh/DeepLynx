@@ -53,6 +53,34 @@ public class ProjectController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+    
+    /// <summary>
+    ///     Get all user projects
+    /// </summary>
+    /// <param name="organizationId">ID of the organization to list projects from</param>
+    /// <param name="userId">ID of the user whose projects to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>A list of projects</returns>
+    [HttpGet("GetProjectsByUser", Name = "api_get_all_projects_by_user")]
+    [Auth("read", "project")]
+    public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjectsByUser(
+        long organizationId,
+        [FromQuery] long userId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var projects = await _projectBusiness
+                .GetAllProjects(userId, organizationId, hideArchived);
+            return Ok(projects);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing projects: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
     /// <summary>
     ///     Get a project
