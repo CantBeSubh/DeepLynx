@@ -57,163 +57,165 @@ const UsersListTable: React.FC<UsersListTableProps> = ({
               </td>
             </tr>
           ) : (
-            tableData.map((row) => (
-              <tr
-                key={`${row.isPending ? "pending" : "user"}-${row.id}`}
-                className={row.isPending ? "bg-warning/10" : "hover"}
-              >
-                {/* User Column */}
-                <td>
-                  <div className="flex items-center gap-2">
-                    {row.isPending ? (
-                      <>
-                        <div className="avatar placeholder">
-                          <div className="bg-warning text-warning-content rounded-full w-8">
-                            <EnvelopeIcon className="size-6" />
+            tableData
+              .filter((row) => !row.isPending)
+              .map((row) => (
+                <tr
+                  key={`${row.isPending ? "pending" : "user"}-${row.id}`}
+                  className={row.isPending ? "bg-warning/10" : "hover"}
+                >
+                  {/* User Column */}
+                  <td>
+                    <div className="flex items-center gap-2">
+                      {row.isPending ? (
+                        <>
+                          <div className="avatar placeholder">
+                            <div className="bg-warning text-warning-content rounded-full w-8">
+                              <EnvelopeIcon className="w-4 h-4" />
+                            </div>
                           </div>
-                        </div>
-                        <div className="font-medium text-base-content/70">
-                          Pending Invite
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="font-medium">{row.name}</div>
-                        {row.isSysAdmin && (
-                          <div className="badge badge-warning badge-sm">
-                            Admin
+                          <div className="font-medium text-base-content/70">
+                            Pending Invite
                           </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </td>
-
-                {/* Email Column */}
-                <td className="text-base-content/70">{row.email}</td>
-
-                {/* Username Column */}
-                <td className="text-base-content/70">
-                  {row.isPending ? "—" : row.username || "—"}
-                </td>
-
-                {/* Status Column */}
-                <td>
-                  {row.isPending ? (
-                    <div className="badge badge-warning gap-1">
-                      <EnvelopeIcon className="size-5" />
-                      Pending
+                        </>
+                      ) : (
+                        <>
+                          <div className="font-medium">{row.name}</div>
+                          {row.isSysAdmin && (
+                            <div className="badge badge-warning badge-sm">
+                              Admin
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
-                  ) : row.isArchived ? (
-                    <div className="badge badge-error">Archived</div>
-                  ) : row.isActive ? (
-                    <div className="badge badge-success">Active</div>
-                  ) : (
-                    <div className="badge badge-warning">Inactive</div>
-                  )}
-                </td>
+                  </td>
 
-                {/* Project Assignment Column */}
-                <td>
-                  {row.isPending ? (
-                    row.projectName ? (
-                      <div className="flex items-center gap-2 text-sm">
-                        <FolderIcon className="size-6 text-base-content/50" />
-                        <span>{row.projectName}</span>
-                        {row.roleName && (
-                          <span className="badge badge-sm badge-outline">
-                            {row.roleName}
-                          </span>
+                  {/* Email Column */}
+                  <td className="text-base-content/70">{row.email}</td>
+
+                  {/* Username Column */}
+                  <td className="text-base-content/70">
+                    {row.isPending ? "—" : row.username || "—"}
+                  </td>
+
+                  {/* Status Column */}
+                  <td>
+                    {row.isPending ? (
+                      <div className="badge badge-warning gap-1">
+                        <EnvelopeIcon className="w-3 h-3" />
+                        Pending
+                      </div>
+                    ) : row.isArchived ? (
+                      <div className="badge badge-error">Archived</div>
+                    ) : row.isActive ? (
+                      <div className="badge badge-success">Active</div>
+                    ) : (
+                      <div className="badge badge-warning">Inactive</div>
+                    )}
+                  </td>
+
+                  {/* Project Assignment Column */}
+                  <td>
+                    {row.isPending ? (
+                      row.projectName ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <FolderIcon className="w-4 h-4 text-base-content/50" />
+                          <span>{row.projectName}</span>
+                          {row.roleName && (
+                            <span className="badge badge-sm badge-outline">
+                              {row.roleName}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-base-content/50 text-sm">—</span>
+                      )
+                    ) : row.projects && row.projects.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {row.projects.slice(0, 2).map((project) => (
+                          <div
+                            key={project.id}
+                            className="badge badge-sm badge-primary gap-1"
+                            title={`${project.name} (${project.role})`}
+                          >
+                            <FolderIcon className="w-3 h-3" />
+                            {project.name}
+                          </div>
+                        ))}
+                        {row.projects.length > 2 && (
+                          <div className="badge badge-sm badge-ghost">
+                            +{row.projects.length - 2} more
+                          </div>
                         )}
                       </div>
                     ) : (
-                      <span className="text-base-content/50 text-sm">—</span>
-                    )
-                  ) : row.projects && row.projects.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {row.projects.slice(0, 2).map((project) => (
-                        <div
-                          key={project.id}
-                          className="badge badge-sm badge-primary gap-1"
-                          title={`${project.name} (${project.role})`}
-                        >
-                          <FolderIcon className="size-5" />
-                          {project.name}
-                        </div>
-                      ))}
-                      {row.projects.length > 2 && (
-                        <div className="badge badge-sm badge-ghost">
-                          +{row.projects.length - 2} more
-                        </div>
+                      <span className="text-base-content/50 text-sm">
+                        No projects
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Actions Column */}
+                  <td>
+                    <div className="flex gap-2">
+                      {row.isPending ? (
+                        <>
+                          <button
+                            className="btn btn-ghost btn-sm gap-1"
+                            onClick={() => onResendInvite(row.email)}
+                            disabled={loading}
+                            title="Resend invitation"
+                          >
+                            <ArrowPathIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm text-error"
+                            onClick={() =>
+                              onOpenConfirm({
+                                isOpen: true,
+                                itemId: row.id,
+                                itemName: row.email,
+                                isPending: true,
+                              })
+                            }
+                            disabled={loading}
+                            title="Cancel invitation"
+                          >
+                            <XMarkIcon className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            title="Edit user"
+                            onClick={() => onEditUser(row.id, row.name)}
+                            disabled={loading}
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm text-error"
+                            title="Remove from organization"
+                            onClick={() =>
+                              onOpenConfirm({
+                                isOpen: true,
+                                itemId: row.id,
+                                itemName: row.name,
+                                isPending: false,
+                              })
+                            }
+                            disabled={loading || row.isSysAdmin}
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </>
                       )}
                     </div>
-                  ) : (
-                    <span className="text-base-content/50 text-sm">
-                      No projects
-                    </span>
-                  )}
-                </td>
-
-                {/* Actions Column */}
-                <td>
-                  <div className="flex gap-2">
-                    {row.isPending ? (
-                      <>
-                        <button
-                          className="btn btn-ghost btn-sm gap-1"
-                          onClick={() => onResendInvite(row.email)}
-                          disabled={loading}
-                          title="Resend invitation"
-                        >
-                          <ArrowPathIcon className="size-6" />
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm text-error"
-                          onClick={() =>
-                            onOpenConfirm({
-                              isOpen: true,
-                              itemId: row.id,
-                              itemName: row.email,
-                              isPending: true,
-                            })
-                          }
-                          disabled={loading}
-                          title="Cancel invitation"
-                        >
-                          <XMarkIcon className="size-6" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          title="Edit user"
-                          onClick={() => onEditUser(row.id, row.name)}
-                          disabled={loading}
-                        >
-                          <PencilIcon className="size-6" />
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm text-error"
-                          title="Remove from organization"
-                          onClick={() =>
-                            onOpenConfirm({
-                              isOpen: true,
-                              itemId: row.id,
-                              itemName: row.name,
-                              isPending: false,
-                            })
-                          }
-                          disabled={loading || row.isSysAdmin}
-                        >
-                          <TrashIcon className="size-6" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))
+                  </td>
+                </tr>
+              ))
           )}
         </tbody>
       </table>

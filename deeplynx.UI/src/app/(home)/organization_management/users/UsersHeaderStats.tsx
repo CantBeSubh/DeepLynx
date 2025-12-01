@@ -61,7 +61,8 @@ const UsersHeaderStats: React.FC<UsersHeaderStatsProps> = ({
             <EnvelopeIcon className="w-8 h-8" />
           </div>
           <div className="stat-title">Pending Invites</div>
-          <div className="stat-value text-warning">{pendingCount}</div>
+          {/* <div className="stat-value text-warning">{pendingCount}</div> */}
+          <div className="stat-value text-warning">0</div>
         </div>
         <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-secondary">
