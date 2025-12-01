@@ -22,6 +22,9 @@ RUN apk update && apk upgrade --no-cache && \
 # Copy package.json and package-lock.json first
 COPY deeplynx.docs/package*.json ./
 
+# Install latest npm version
+RUN npm install -g npm@latest
+
 # Install frontend dependencies
 RUN npm ci
 
@@ -45,6 +48,9 @@ WORKDIR /usr/src/app
 
 # Copy the built frontend code from the previous stage
 COPY --from=frontend-build /usr/src/app .
+
+# Install latest npm version
+RUN npm install -g npm@latest
 
 # Install production dependencies
 RUN npm ci --omit=dev
