@@ -90,12 +90,13 @@ export type CreateDataSourceRequestDto = {
 
 export type UpdateDataSourceRequestDto = {
   name?: string;
-  description?: string;
-  abbreviation?: string;
-  type?: string;
-  baseUri?: string;
-  config?: string;
+  description?: string | null;
+  abbreviation?: string | null;
+  type?: string | null;
+  baseUri?: string | null;
+  config?: Record<string, unknown>;
 };
+
 
 export type CreateEdgeRequestDto = {
   origin_id?: number;
