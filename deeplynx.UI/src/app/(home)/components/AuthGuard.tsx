@@ -38,12 +38,7 @@ export default function AuthGuard({
     }
   }, [status, session, router, redirectTo, disableAuth]);
 
-  // If auth is disabled, always render children immediately
-  if (disableAuth) {
-    return <>{children}</>;
-  }
-
-  // Show loading while checking authentication
+  // Show loading while checking authentication OR fetching local user
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center login">
@@ -61,8 +56,27 @@ export default function AuthGuard({
     );
   }
 
+  // If auth is disabled, wait for local session to be loaded
+  if (disableAuth && !session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center login">
+        <div className="text-center">
+          <div className="loading loading-spinner loading-lg"></div>
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
+          <p className="mt-4 text-white">Loading local user...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Show nothing while redirecting unauthenticated users
-  if (status === "unauthenticated" || !session) {
+  if (!disableAuth && (status === "unauthenticated" || !session)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-100">
         <div className="text-center">
@@ -73,6 +87,6 @@ export default function AuthGuard({
     );
   }
 
-  // User is authenticated, show the protected content
+  // User is authenticated (or local session is loaded), show the protected content
   return <>{children}</>;
 }
