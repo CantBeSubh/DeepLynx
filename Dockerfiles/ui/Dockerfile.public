@@ -52,7 +52,7 @@ COPY deeplynx.UI/package*.json ./
 RUN npm install -g npm@latest
 
 # Install frontend dependencies
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the frontend source code
 COPY deeplynx.UI .
@@ -79,7 +79,7 @@ COPY --from=frontend-build /usr/src/app/package*.json ./
 RUN npm install -g npm@latest
 
 # Install production dependencies BEFORE copying build artifacts
-RUN npm ci --omit-dev
+RUN npm install --omit-dev
 
 # NOW copy the built application (including .next folder)
 COPY --from=frontend-build /usr/src/app/.next ./.next
