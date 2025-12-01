@@ -58,8 +58,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
     public async Task<MetadataResponseDto> CreateMetadata(
         long currentUserId,
-        long organizationId,
         long projectId,
+        long organizationId,
         long dataSourceId,
         CreateMetadataRequestDto metadataRequestDto)
     {
@@ -86,8 +86,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
     public async Task<MetadataResponseDto> CreateMetadataFromFile(
         long currentUserId,
-        long organizationId,
         long projectId,
+        long organizationId,
         long dataSourceId,
         IFormFile file)
     {
