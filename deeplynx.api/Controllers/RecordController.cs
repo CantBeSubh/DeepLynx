@@ -136,10 +136,10 @@ public class RecordController : ControllerBase
     /// <param name="projectId">The ID of the project to which the records belong</param>
     /// <param name="dataSourceId">The ID of the datasource by which to count records for</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
-    /// <returns>The record associated with the given ID</returns>
-    [HttpGet(Name = "api_get_records_by_data_source")]
+    /// <returns>The record count for the given data source</returns>
+    [HttpGet(Name = "api_get_records_count_by_data_source")]
     [Auth("read", "record")]
-    public async Task<ActionResult<RecordResponseDto>> GetRecordsCountByDataSource(
+    public async Task<ActionResult<int>> GetRecordsCountByDataSource(
         long organizationId,
         long projectId,
         [FromQuery] long dataSourceId,
@@ -147,10 +147,10 @@ public class RecordController : ControllerBase
     {
         try
         {
-            var record =
+            var count =
                 await _recordBusiness.GetRecordsCountByDataSource(organizationId, projectId, dataSourceId,
                     hideArchived);
-            return Ok(record);
+            return Ok(count);
         }
         catch (Exception exc)
         {
