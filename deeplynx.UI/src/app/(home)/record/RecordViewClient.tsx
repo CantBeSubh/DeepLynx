@@ -640,7 +640,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     {
       label: "Graph",
       content: (
-        <GraphClientPage projectId={String(projectId)} recordId={recordId} />
+        <GraphClientPage projectId={projectId} recordId={recordId} />
       ),
     },
   ];

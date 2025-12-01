@@ -172,6 +172,6 @@ export async function getAllRecordsForMultipleProjectsServer(
   const query =
     projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
     `&hideArchived=${hideArchived}`;
-  const res = await apiFetch(`/projects/MultiProjectRecords?${query}`);
+  const res = await apiFetch(`/projects/MultiProjectRecords?${query}`); // TODO FIX
   return asJson<FileViewerTableRow[]>(res);
 }

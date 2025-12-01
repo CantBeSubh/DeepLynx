@@ -674,8 +674,12 @@ public class RelationshipBusinessTests : IntegrationTestBase
     {
         // Arrange
         var originalRelationship = await Context.Relationships.FindAsync(rid);
+
+        var now = DateTime.UtcNow;
+
         // Act
         var archivedResult = await _relationshipBusiness.ArchiveRelationship(uid, oid, pid, rid);
+
 
         // Assert
         Assert.True(archivedResult);
@@ -690,7 +694,7 @@ public class RelationshipBusinessTests : IntegrationTestBase
         Assert.True(archivedRelationship.IsArchived);
         Assert.Equal(originalRelationship.Id, archivedRelationship.Id);
         Assert.Equal(originalRelationship.Name, archivedRelationship.Name);
-        Assert.True(originalRelationship.LastUpdatedAt <= archivedRelationship.LastUpdatedAt);
+        Assert.True(archivedRelationship.LastUpdatedAt >= now);
         Assert.Equal(originalRelationship.Description, archivedRelationship.Description);
         Assert.Equal(originalRelationship.Uuid, archivedRelationship.Uuid);
         Assert.Equal(originalRelationship.ProjectId, archivedRelationship.ProjectId);
@@ -750,6 +754,8 @@ public class RelationshipBusinessTests : IntegrationTestBase
         // Arrange
         var originalRelationship = await Context.Relationships.FindAsync(rid2);
 
+        var now = DateTime.UtcNow;
+
         // Act
         var unarchivedResult = await _relationshipBusiness.UnarchiveRelationship(uid, oid, pid, rid2);
         Assert.True(unarchivedResult);
@@ -764,7 +770,7 @@ public class RelationshipBusinessTests : IntegrationTestBase
         Assert.False(unarchivedRelationship.IsArchived);
         Assert.Equal(originalRelationship.Id, unarchivedRelationship.Id);
         Assert.Equal(originalRelationship.Name, unarchivedRelationship.Name);
-        Assert.True(originalRelationship.LastUpdatedAt <= unarchivedRelationship.LastUpdatedAt);
+        Assert.True(unarchivedRelationship.LastUpdatedAt >= now);
         Assert.Equal(originalRelationship.Description, unarchivedRelationship.Description);
         Assert.Equal(originalRelationship.Uuid, unarchivedRelationship.Uuid);
         Assert.Equal(originalRelationship.ProjectId, unarchivedRelationship.ProjectId);

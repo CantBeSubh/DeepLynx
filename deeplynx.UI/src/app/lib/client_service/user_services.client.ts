@@ -50,39 +50,13 @@ export async function getLocalDevUser() {
 
 export async function getDataOverview(userId: string) {
   try {
-    const res = await api.get(`/users/GetDataOverview/${encodeURIComponent(userId)}`);
+    const res = await api.get(`/users/GetDataOverview/${encodeURIComponent(userId)}`); // TODO FIX
     return res.data;
   } catch (error) {
     console.error("API call failed:", error);
     throw error;
   }
 }
-
-// export async function getRecentlyAddedRecords(
-//   organizationId: number,
-//   projectIds?: Array<number | string>
-// ): Promise<RecordResponseDto[]> {
-//   if (!organizationId) {
-//     throw new Error("organizationId is required");
-//   }
-
-//   const baseUrl = `/organizations/${organizationId}/query/recent`;
-
-//   // Build ?projectIds=...&projectIds=... if provided
-//   const qs =
-//     projectIds && projectIds.length
-//       ? (() => {
-//           const params = new URLSearchParams();
-//           projectIds.forEach((id) => params.append("projectIds", String(id)));
-//           return `?${params.toString()}`;
-//         })()
-//       : "";
-
-//   const { data } = await api.get<RecordResponseDto[]>(`${baseUrl}${qs}`);
-//   return data;
-// }
-
-
 
 export async function updateUser(
   userId: number,
@@ -105,7 +79,7 @@ export async function updateUser(
 
 export async function deleteUser(userId: number) {
   try {
-    const res = await api.delete(`/users/DeleteUser/${userId}`);
+    const res = await api.delete(`/users/DeleteUser/${userId}`); // TODO FIX
     return res.data;
   } catch (error) {
     console.error("API call failed:", error);
