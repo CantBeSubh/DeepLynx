@@ -16,12 +16,13 @@ import {
   getProjectMembersServer,
 } from "@/app/lib/server_service/projects_services.server";
 import { getAllRolesServer } from "@/app/lib/server_service/role_services.server";
+import { getPermissionsForRoleServer } from "@/app/lib/server_service/permissions_services.server";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: {
-    id: string; // /project_management/[id]
+    id: string;
   };
 }
 
@@ -52,6 +53,7 @@ const Page = async ({ params }: PageProps) => {
   let project: ProjectResponseDto | null = null;
   let projectMembers: ProjectMemberResponseDto[] = [];
   let projectRoles: RoleResponseDto[] = [];
+  let projectPermissions: PermissionResponseDto[] = [];
 
   if (!isNaN(organizationId) && !isNaN(projectId)) {
     try {
@@ -71,21 +73,54 @@ const Page = async ({ params }: PageProps) => {
     } catch (e) {
       console.error("getAllRoles failed: ", e);
     }
+
+    try {
+      if (projectRoles.length > 0) {
+        const permsByRole: PermissionResponseDto[][] = await Promise.all(
+          projectRoles.map((role) =>
+            getPermissionsForRoleServer(
+              organizationId,
+              projectId,
+              role.id
+            ).catch((error) => {
+              console.error(
+                `getPermissionsForRoleServer failed for role ${role.id}:`,
+                error
+              );
+              return [] as PermissionResponseDto[];
+            })
+          )
+        );
+
+        // Flatten and dedupe by permission id
+        const permsMap = new Map<number | string, PermissionResponseDto>();
+
+        permsByRole.flat().forEach((perm: PermissionResponseDto) => {
+          const key = perm.id;
+          if (!permsMap.has(key)) {
+            permsMap.set(key, perm);
+          }
+        });
+
+        projectPermissions = Array.from(permsMap.values());
+      }
+    } catch (e) {
+      console.error("Aggregating permissions by role failed: ", e);
+    }
+
+    // TODO: later: fetch real groups for this project
+    const projectGroups: GroupResponseDto[] = [];
+
+    return (
+      <ProjectManagementClient
+        project={project}
+        projectMembers={projectMembers}
+        projectGroups={projectGroups}
+        projectRoles={projectRoles}
+        projectPermissions={projectPermissions}
+      />
+    );
   }
-
-  // TODO: later: fetch real groups/roles/permissions for this project
-  const projectGroups: GroupResponseDto[] = [];
-  const projectPermissions: PermissionResponseDto[] = [];
-
-  return (
-    <ProjectManagementClient
-      project={project}
-      projectMembers={projectMembers}
-      projectGroups={projectGroups}
-      projectRoles={projectRoles}
-      projectPermissions={projectPermissions}
-    />
-  );
 };
 
 export default Page;

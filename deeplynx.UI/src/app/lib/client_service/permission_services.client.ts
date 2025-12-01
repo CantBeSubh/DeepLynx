@@ -1,9 +1,11 @@
-// src/app/lib/permission_services.ts
+// src/app/lib/client_service/permission_services.ts
 
-import { CreatePermissionRequestDto, UpdatePermissionRequestDto } from "@/app/(home)/types/requestDTOs";
+import {
+  CreatePermissionRequestDto,
+  UpdatePermissionRequestDto,
+} from "@/app/(home)/types/requestDTOs";
 import { PermissionResponseDto } from "@/app/(home)/types/responseDTOs";
 import api from "./api";
-
 
 /**
  * Get all permissions for a project
@@ -154,7 +156,36 @@ export async function archivePermission(
     );
     return res.data;
   } catch (error) {
-    console.error(`Error ${archive ? 'archiving' : 'unarchiving'} permission ${permissionId}:`, error);
+    console.error(
+      `Error ${archive ? "archiving" : "unarchiving"} permission ${permissionId}:`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Get permissions for a specific role
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role whose permissions to retrieve
+ * @returns Promise with array of PermissionResponseDto
+ */
+export async function getPermissionsForRole(
+  organizationId: number,
+  projectId: number,
+  roleId: number
+): Promise<PermissionResponseDto[]> {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}/permissions`
+    );
+    return res.data;
+  } catch (error) {
+    console.error(
+      `Error getting permissions for role ${roleId} in project ${projectId}:`,
+      error
+    );
     throw error;
   }
 }

@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  UserGroupIcon,
+  UserIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
 import React from "react";
 
 /* -------------------------------------------------------------------------- */
@@ -54,17 +59,28 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="stat bg-base-200 rounded-lg">
+        <div className="stat bg-base-200 rounded-lg text-secondary border-none">
           <div className="stat-title">Total Members</div>
-          <div className="stat-value">{totalMembers}</div>
+          <div className="flex justify-between">
+            <div className="stat-value">{totalMembers}</div>
+            <UserGroupIcon className="size-8" />
+          </div>
         </div>
-        <div className="stat bg-base-200 rounded-lg">
+
+        <div className="stat bg-base-200 rounded-lg text-secondary border-none">
           <div className="stat-title">Users</div>
-          <div className="stat-value">{userCount}</div>
+          <div className="flex justify-between">
+            <div className="stat-value">{userCount}</div>
+            <UserIcon className="size-8" />
+          </div>
         </div>
-        <div className="stat bg-base-200 rounded-lg">
+
+        <div className="stat bg-base-200 rounded-lg text-secondary border-none">
           <div className="stat-title">Groups</div>
-          <div className="stat-value">{groupCount}</div>
+          <div className="flex justify-between">
+            <div className="stat-value">{groupCount}</div>
+            <UsersIcon className="size-8" />
+          </div>
         </div>
       </div>
     </>

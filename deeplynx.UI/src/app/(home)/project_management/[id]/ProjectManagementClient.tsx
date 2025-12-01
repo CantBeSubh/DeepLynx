@@ -16,6 +16,7 @@ import {
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import ProjectUsersTable from "./users/ProjectUsersTable";
+import ProjectRolesAndPermissions from "./roles_and_permissions/ProjectRolesAndPermissions";
 
 interface ProjectManagementProps {
   project: ProjectResponseDto | null;
@@ -58,13 +59,11 @@ const ProjectManagementClient = ({
     {
       label: "Roles & Permissions",
       content: (
-        <div>
-          {/* TODO: Replace with ProjectRolesAndPermissions component */}
-          <p className="text-sm text-base-content/70">
-            Define project-level roles and adjust permissions, unless locked at
-            the organization level.
-          </p>
-        </div>
+        <ProjectRolesAndPermissions
+          initialRoles={projectRoles}
+          initialPermissions={projectPermissions}
+          projectId={project?.id as number}
+        />
       ),
     },
     {
