@@ -83,31 +83,34 @@ const DataSources = ({ projectId }: Props) => {
     abbreviation: "",
     type: "",
     baseUri: "",
-    config: "",
+    config: {},
+    default: false,
   });
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      console.log("Org ID", organization?.organizationId);
-      console.log("Project ID", projectId);
-
       const [dataSourceList, projectStats, keys] = await Promise.all([
         getAllDataSources(
           organization?.organizationId as number,
           [projectId],
           hideArchived
         ),
-        getProjectStats(organization?.organizationId as number, projectId),
+        getProjectStats(
+          organization?.organizationId as number,
+          projectId
+        ).catch((err) => {
+          console.warn("⚠️ getProjectStats failed, defaulting to null:", err);
+          return null;
+        }),
         getUserApiKeys().catch((err) => {
           console.warn("⚠️ getUserApiKeys failed, defaulting to []:", err);
           return [] as string[];
         }),
       ]);
 
-      console.log("🔹 DataSources list from DB:", dataSourceList);
-      console.log("🔹 User API keys from DB:", keys);
+      setStats(projectStats ?? null);
 
       setSources(dataSourceList ?? []);
       setStats(projectStats);
@@ -195,7 +198,8 @@ const DataSources = ({ projectId }: Props) => {
         abbreviation: "",
         type: "",
         baseUri: "",
-        config: "",
+        config: {},
+        default: false,
       });
       await fetchAll();
     } catch (e) {

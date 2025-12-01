@@ -77,18 +77,18 @@ export const getDefaultDataSource = async (
 };
 
 /**
- * Create a new data source
- * @param organizationId - The ID of the organization
+ * Create a new data source for a project
+ * @param projectId - The ID of the project to which the data source belongs
  * @param dto - The data source creation request DTO
  * @returns Promise with DataSourceResponseDto
  */
 export const createDataSource = async (
-  organizationId: number,
+  projectId: number,
   dto: CreateDataSourceRequestDto
 ): Promise<DataSourceResponseDto> => {
   try {
     const res = await api.post(
-      `/organizations/${organizationId}/datasources`,
+      `/projects/${projectId}/datasources`,
       dto
     );
     return res.data;
@@ -97,6 +97,7 @@ export const createDataSource = async (
     throw error;
   }
 };
+
 
 /**
  * Update a data source

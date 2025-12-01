@@ -79,12 +79,14 @@ export type UpdateClassRequestDto = {
 
 export type CreateDataSourceRequestDto = {
   name: string;
-  description?: string;
-  abbreviation?: string;
-  type?: string;
-  baseUri?: string;
-  config?: string;
+  description?: string | null;
+  abbreviation?: string | null;
+  type?: string | null;
+  baseUri?: string | null;
+  config: Record<string, unknown>;
+  default: boolean;
 };
+
 
 export type UpdateDataSourceRequestDto = {
   name?: string;
