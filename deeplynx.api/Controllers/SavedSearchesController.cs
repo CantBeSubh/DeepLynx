@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve class information.
 /// </remarks>
 [ApiController]
-[Route("users/{userId}/saved-searches")]
+[Route("users/{userId:long}/saved-searches")]
 [Authorize]
 public class SavedSearchController : ControllerBase
 {

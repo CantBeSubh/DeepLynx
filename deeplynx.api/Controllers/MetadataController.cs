@@ -7,7 +7,7 @@ using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
-[Route("organizations/{organizationId}/projects/{projectId}/datasources/{dataSourceId}/metadata")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/datasources/{dataSourceId:long}/metadata")]
 [ApiController]
 [Authorize]
 public class MetadataController : ControllerBase

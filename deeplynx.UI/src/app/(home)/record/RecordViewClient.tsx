@@ -405,7 +405,6 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
       try {
         const data = await getAllTagsMultiProject(
           organization.organizationId as number,
-          projectId,
           [projectId]
         );
         setTags(data);
