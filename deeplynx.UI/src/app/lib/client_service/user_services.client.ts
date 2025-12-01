@@ -36,9 +36,11 @@ export async function getCurrentUser() {
   }
 }
 
+// user_services.client.ts (wherever your service is located)
+
 export async function getLocalDevUser() {
   try {
-    const res = await api.get(`/users/GetLocalDevUser`);
+    const res = await api.get(`/users/superuser`);
     return res.data;
   } catch (error) {
     console.error("API call failed getting local dev user:", error);
