@@ -28,7 +28,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get all tags
+    ///     Get all tags organization
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
