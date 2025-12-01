@@ -468,9 +468,17 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
 
   const additionalPropertiesRows = useMemo(() => {
     if (!record?.properties) return [];
-    // const parsedProperties = JSON.parse(record.properties); //TODO: fix this once business is fixed
-    return Object.entries(record.properties).map(([key, value]) => ({
-      label: key,
+
+    // Check if properties is a string and parse it, otherwise use it directly
+    const parsedProperties = typeof record.properties === "string"
+      ? JSON.parse(record.properties)
+      : record.properties;
+
+    return Object.entries(parsedProperties).map(([key, value]) => ({
+      label: key
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' '), // Optional: convert snake_case to Title Case
       value: typeof value === "object" ? JSON.stringify(value) : String(value),
     }));
   }, [record?.properties]);
