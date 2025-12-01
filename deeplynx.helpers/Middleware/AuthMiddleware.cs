@@ -1,6 +1,7 @@
 using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 
 namespace deeplynx.helpers;
 
@@ -110,19 +111,26 @@ public class AuthMiddleware
             return;
         }
 
-        // Check existence for each project
+        // Check existence for each project and capture the organizationId
+        long? capturedOrgId = null;
         foreach (var projectId in projectIds)
         {
-            await organizationService.CheckExistence(projectId, organizationId);
+            capturedOrgId = await organizationService.CheckExistence(projectId, organizationId);
         }
-        
-        // If no projects but has org, still check org existence
+
+// If no projects but has org, still check org existence
         if (!projectIds.Any() && organizationId.HasValue)
         {
-            await organizationService.CheckExistence(null, organizationId);
+            capturedOrgId = await organizationService.CheckExistence(null, organizationId);
         }
-        
+
+        if (capturedOrgId.HasValue)
+        {
+            UserContextStorage.OrganizationId = capturedOrgId.Value;
+        }
+
         bool isSysAdmin = await sysAdminService.SysAdminCheck(userId);
+
         if (!isSysAdmin)
         {
             // Check each permission requirement

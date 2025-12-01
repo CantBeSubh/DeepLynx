@@ -1,4 +1,5 @@
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -27,6 +28,13 @@ public class SysAdminService : ISysAdminService
         long userId)
     {
         _logger.LogInformation(
+            "START SysAdminCheck - UserContextStorage.OrganizationId: {OrgId}",
+            UserContextStorage.OrganizationId);
+    
+        _logger.LogInformation(
+            "Checking permission - User: {UserId}",
+            userId);
+        _logger.LogInformation(
             "Checking permission - User: {UserId}",
             userId);
 
@@ -50,6 +58,10 @@ public class SysAdminService : ISysAdminService
             _logger.LogWarning(
                 "Permission denied - User: {UserId}",
                 userId);
+
+        _logger.LogInformation(
+            "END SysAdminCheck - UserContextStorage.OrganizationId: {OrgId}",
+            UserContextStorage.OrganizationId);
 
         return hasPermission;
     }

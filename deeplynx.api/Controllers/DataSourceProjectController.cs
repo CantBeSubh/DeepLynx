@@ -127,9 +127,12 @@ public class DataSourceProjectController : ControllerBase
     {
         try
         {
+            _logger.LogInformation(
+                "Reading OrganizationId from UserContextStorage - Value: {OrganizationId}",
+                UserContextStorage.OrganizationId);
             var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId,projectId, currentUserId, dto );
+            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto );
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -251,7 +254,7 @@ public class DataSourceProjectController : ControllerBase
             var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             var dataSource =
-                await _dataSourceBusiness.SetDefaultDataSource(currentUserId, organizationId, dataSourceId, projectId);
+                await _dataSourceBusiness.SetDefaultDataSource(organizationId, projectId, currentUserId, dataSourceId);
             return Ok(dataSource);
         }
         catch (Exception exc)
