@@ -1,6 +1,6 @@
 // src/app/(home)/organization_management/page.tsx
 
-import { getAllGroups } from "@/app/lib/server_service/group_services.server";
+import { getAllGroupsServer } from "@/app/lib/server_service/group_services.server";
 import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import {
   getAllOrgRolesServer,
@@ -63,7 +63,7 @@ const OrganizationManagementPage = async ({
   // Fetch groups filtered by organization
   let groups: GroupResponseDto[] = [];
   try {
-    const apiGroups = await getAllGroups(organizationId as number, true);
+    const apiGroups = await getAllGroupsServer(organizationId as number, true);
     groups = apiGroups.map(mapToGroupResponseDtos);
   } catch (error) {
     console.error("getAllGroups failed:", error);
@@ -74,10 +74,18 @@ const OrganizationManagementPage = async ({
   let permissions: PermissionResponseDto[] = [];
 
   try {
-    [roles, permissions] = await Promise.all([
-      getAllOrgRolesServer(Number(organizationId)),
-      getOrgRolePermissionsServer(Number(organizationId), 1),
-    ]);
+    // First, fetch roles for the organization
+    roles = await getAllOrgRolesServer(Number(organizationId));
+
+    // Then, fetch permissions for the FIRST role if it exists
+    if (roles.length > 0) {
+      permissions = await getOrgRolePermissionsServer(
+        Number(organizationId),
+        roles[0].id // ✅ Use the first role's actual ID
+      );
+    } else {
+      permissions = [];
+    }
   } catch (error) {
     console.error("Failed to fetch roles or permissions:", error);
   }
@@ -96,11 +104,9 @@ const OrganizationManagementPage = async ({
     ? projects.find((p) => String(p.id) === fromProject) || projects[0]
     : projects[0];
 
-  console.log("roles", roles);
-  console.log("Permissions", permissions);
-
   return (
     <OrganizationManagmentClient
+      key={organizationId}
       members={members}
       initialProjects={projects}
       initialGroups={groups}

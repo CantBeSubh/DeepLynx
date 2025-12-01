@@ -9,7 +9,6 @@ import React, {
   useCallback,
 } from "react";
 import { Session } from "next-auth";
-import axios from "axios";
 import Image from "next/image";
 import {
   getCurrentUser,
@@ -48,8 +47,8 @@ export function RBACProvider({ children }: { children: ReactNode }) {
         setUser(userData);
       } catch (error) {
         console.error("Failed to fetch dev user:", error);
-        if (axios.isAxiosError(error)) {
-          console.error("Error details:", error.response?.data);
+        if (error instanceof Error) {
+          console.error("Error details:", error.message);
         }
         setUser(null);
       } finally {
@@ -67,8 +66,8 @@ export function RBACProvider({ children }: { children: ReactNode }) {
         setUser(userData);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
-        if (axios.isAxiosError(error)) {
-          console.error("Error details:", error.response?.data);
+        if (error instanceof Error) {
+          console.error("Error details:", error.message);
         }
         setUser(null);
       } finally {

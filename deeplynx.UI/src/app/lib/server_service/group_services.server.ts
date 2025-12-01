@@ -4,7 +4,7 @@ import "server-only"
 import { GroupResponseDto } from "../../(home)/types/responseDTOs";
 import { apiFetch, asJson } from "./api.server";
 
-export async function getAllGroups(
+export async function getAllGroupsServer(
     organizationId: number,
     hideArchived: boolean = true
 ): Promise<GroupResponseDto[]> {

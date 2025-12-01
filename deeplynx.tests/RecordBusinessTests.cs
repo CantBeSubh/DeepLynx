@@ -233,6 +233,159 @@ public class RecordBusinessTests : IntegrationTestBase
         rfiletype = testRecord.FileType;
     }
 
+    #region GetRecordsCountByDataSource Tests
+
+    [Fact]
+    public async Task GetRecordsCountByDataSource_ValidDataSource_ReturnsCount()
+    {
+        // Act
+        var result = await _recordBusiness.GetRecordsCountByDataSource(
+            organizationId, pid, did, true);
+
+        // Assert
+        Assert.Equal(1, result);
+    }
+
+    [Fact]
+    public async Task GetRecordsCountByDataSource_NonExistentDataSource_ThrowsKeyNotFoundException()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.GetRecordsCountByDataSource(organizationId, pid, 999L, true));
+
+        Assert.Contains("DataSource with id 999 not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetRecordsCountByDataSource_WrongProject_ThrowsKeyNotFoundException()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.GetRecordsCountByDataSource(organizationId, pid2, did, true));
+
+        Assert.Contains($"DataSource with id {did} not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetRecordsCountByDataSource_WithArchivedRecords_HideArchivedTrue_ExcludesArchived()
+    {
+        // Arrange - Archive the existing record
+        var record = await Context.Records.FindAsync(rid);
+        record!.IsArchived = true;
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.GetRecordsCountByDataSource(
+            organizationId, pid, did, true);
+
+        // Assert
+        Assert.Equal(0, result);
+    }
+
+    [Fact]
+    public async Task GetRecordsCountByDataSource_WithArchivedRecords_HideArchivedFalse_IncludesArchived()
+    {
+        // Arrange - Archive the existing record
+        var record = await Context.Records.FindAsync(rid);
+        record!.IsArchived = true;
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.GetRecordsCountByDataSource(
+            organizationId, pid, did, false);
+
+        // Assert
+        Assert.Equal(1, result);
+    }
+
+    [Fact]
+    public async Task GetRecordsCountByDataSource_NoRecords_ReturnsZero()
+    {
+        // Arrange - Create a new data source with no records
+        var emptyDataSource = new DataSource
+        {
+            Name = "Empty Data Source",
+            Description = "Data source with no records",
+            ProjectId = pid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
+            OrganizationId = organizationId
+        };
+        Context.DataSources.Add(emptyDataSource);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.GetRecordsCountByDataSource(
+            organizationId, pid, emptyDataSource.Id, true);
+
+        // Assert
+        Assert.Equal(0, result);
+    }
+
+    [Fact]
+    public async Task GetRecordsCountByDataSource_MultipleDataSources_OnlyCountsSpecificDataSource()
+    {
+        // Arrange - Create a second data source in the same project
+        var dataSource2 = new DataSource
+        {
+            Name = "Test Data Source 2",
+            Description = "Second data source for unit tests",
+            ProjectId = pid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
+            OrganizationId = organizationId
+        };
+        Context.DataSources.Add(dataSource2);
+        await Context.SaveChangesAsync();
+
+        // Create additional records for the second data source
+        var record2 = new Record
+        {
+            Name = "Test Record 2",
+            Description = "Second test record",
+            OriginalId = "og_id_2",
+            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue2" }),
+            ProjectId = pid,
+            DataSourceId = dataSource2.Id,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
+            OrganizationId = organizationId
+        };
+
+        var record3 = new Record
+        {
+            Name = "Test Record 3",
+            Description = "Third test record",
+            OriginalId = "og_id_3",
+            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue3" }),
+            ProjectId = pid,
+            DataSourceId = dataSource2.Id,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
+            OrganizationId = organizationId
+        };
+
+        Context.Records.Add(record2);
+        Context.Records.Add(record3);
+        await Context.SaveChangesAsync();
+
+        // Act - Get count for first data source (should only have 1 record)
+        var result1 = await _recordBusiness.GetRecordsCountByDataSource(
+            organizationId, pid, did, true);
+
+        // Act - Get count for second data source (should have 2 records)
+        var result2 = await _recordBusiness.GetRecordsCountByDataSource(
+            organizationId, pid, dataSource2.Id, true);
+
+        // Assert
+        Assert.Equal(1, result1); // Original data source has 1 record
+        Assert.Equal(2, result2); // New data source has 2 records
+    }
+
+    #endregion
+
     #region GetAllRecords Tests
 
     [Fact]

@@ -1,9 +1,9 @@
+using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -124,6 +124,37 @@ public class RecordController : ControllerBase
         catch (Exception exc)
         {
             var message = $"An error occurred while retrieving record {recordId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Get record count for a data source
+    /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
+    /// <param name="projectId">The ID of the project to which the records belong</param>
+    /// <param name="dataSourceId">The ID of the datasource by which to count records for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
+    /// <returns>The record count for the given data source</returns>
+    [HttpGet(Name = "api_get_records_count_by_data_source")]
+    [Auth("read", "record")]
+    public async Task<ActionResult<int>> GetRecordsCountByDataSource(
+        long organizationId,
+        long projectId,
+        [FromQuery] long dataSourceId,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var count =
+                await _recordBusiness.GetRecordsCountByDataSource(organizationId, projectId, dataSourceId,
+                    hideArchived);
+            return Ok(count);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while counting records for data source {dataSourceId}: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }

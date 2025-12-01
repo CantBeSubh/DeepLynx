@@ -13,6 +13,7 @@ import type { ReactNode, Context } from "react";
 export interface OrganizationSession {
   organizationId: string | number;
   organizationName: string;
+  logoUrl?: string;
 }
 
 interface OrganizationSessionContextType {

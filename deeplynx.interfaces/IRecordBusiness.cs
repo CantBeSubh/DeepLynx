@@ -13,6 +13,9 @@ public interface IRecordBusiness
     Task<RecordResponseDto> GetRecord(
         long organizationId, long projectId, long recordId, bool hideArchived);
 
+    Task<int> GetRecordsCountByDataSource(
+        long organizationId, long projectId, long dataSourceId, bool hideArchived);
+
     Task<RecordResponseDto> CreateRecord(
         long currentUserId, long organizationId, long projectId, long dataSourceId, CreateRecordRequestDto dto);
 

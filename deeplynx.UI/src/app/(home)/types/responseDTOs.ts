@@ -189,6 +189,18 @@ export type UserResponseDto =
     role?: string;
   }
 
+export type PendingInviteDto = {
+  id: number;
+  email: string;
+  invitedAt: string;
+  expiresAt: string;
+  projectId?: number;
+  projectName?: string;
+  roleId?: number;
+  roleName?: string;
+  status: 'pending' | 'expired';
+}
+
 export type GraphResponseDto = {
   nodes: Array<{
     id: number;

@@ -199,7 +199,8 @@ public class MetadataBusinessTests : IntegrationTestBase
             }
         };
         // Act
-        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid,did, dto);
+        var result = await _metadataBusiness.CreateMetadata(
+            uid, pid, organizationId,did, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -236,7 +237,8 @@ public class MetadataBusinessTests : IntegrationTestBase
         };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid, did, dto);
+            var result = await _metadataBusiness.CreateMetadata(
+                uid, pid, organizationId, did, dto);
             
             // Assert
             Assert.Equal(2, result.Classes.Count);
@@ -273,7 +275,8 @@ public class MetadataBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid, did, dto);
+        var result = await _metadataBusiness.CreateMetadata(
+            uid, pid, organizationId, did, dto);
 
         // Assert
         Assert.Single(result.Classes);
@@ -350,7 +353,8 @@ public class MetadataBusinessTests : IntegrationTestBase
             }
         };
 
-        var result = await _metadataBusiness.CreateMetadata(uid, organizationId, pid, did, dto);
+        var result = await _metadataBusiness.CreateMetadata(
+            uid, pid, organizationId, did, dto);
 
         // Assert
         Assert.Single(result.Classes);
@@ -425,7 +429,8 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid, did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(
+            uid, pid, organizationId, did, file);
 
         // Assert
         Assert.NotNull(result);
@@ -465,7 +470,8 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid,did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(
+            uid, pid, organizationId,did, file);
 
         // Assert
         Assert.Equal(2, result.Classes.Count);
@@ -516,7 +522,8 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid, did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(
+            uid, pid, organizationId, did, file);
 
         // Assert
         Assert.Single(result.Classes);
@@ -597,7 +604,8 @@ public class MetadataBusinessTests : IntegrationTestBase
         var file = CreateJsonFile(metadataContent);
 
         // Act
-        var result = await _metadataBusiness.CreateMetadataFromFile(uid, organizationId, pid,did, file);
+        var result = await _metadataBusiness.CreateMetadataFromFile(
+            uid, pid, organizationId,did, file);
 
         // Assert
         Assert.Single(result.Classes);
