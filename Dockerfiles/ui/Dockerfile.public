@@ -43,7 +43,7 @@ WORKDIR /usr/src/app
 COPY deeplynx.UI/package*.json ./
 
 # Install Node.js and npm
-RUN apk add --no-cache nodejs npm openssl=3.3.5-r0
+RUN apk add --no-cache nodejs npm openssl=3.3.5-r0 busybox=1.36.1-r31
 
 # Install frontend dependencies
 RUN npm install
@@ -58,7 +58,7 @@ RUN npm run build
 FROM node:lts-alpine3.20 AS final
 
 # Update runtime packages to specific versions
-RUN apk add --no-cache openssl=3.3.5-r0
+RUN apk add --no-cache openssl=3.3.5-r0 busybox=1.36.1-r31
 
 # Set working directory
 WORKDIR /usr/src/app
