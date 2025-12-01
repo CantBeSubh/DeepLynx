@@ -61,82 +61,82 @@ public class AuthMiddleware
             return;
         }
 
-        bool isSysAdmin = await sysAdminService.SysAdminCheck(userId);
+        
+        // Extract organizationId and projectId(s) from route or query
+        int? organizationId = null;
+        List<int> projectIds = new List<int>();
 
-        if (!isSysAdmin)
+        // Try to get organizationId from route
+        var routeOrgId = context.GetRouteValue("organizationId")?.ToString();
+        if (!string.IsNullOrEmpty(routeOrgId) && int.TryParse(routeOrgId, out var tempOrgId))
         {
-            // Extract organizationId and projectId(s) from route or query
-            int? organizationId = null;
-            List<int> projectIds = new List<int>();
+            organizationId = tempOrgId;
+        }
 
-            // Try to get organizationId from route
-            var routeOrgId = context.GetRouteValue("organizationId")?.ToString();
-            if (!string.IsNullOrEmpty(routeOrgId) && int.TryParse(routeOrgId, out var tempOrgId))
-            {
-                organizationId = tempOrgId;
-            }
+        // Try to get single projectId from route
+        var routeProjectId = context.GetRouteValue("projectId")?.ToString();
+        if (!string.IsNullOrEmpty(routeProjectId) && int.TryParse(routeProjectId, out var tempProjectId))
+        {
+            projectIds.Add(tempProjectId);
+        }
 
-            // Try to get single projectId from route
-            var routeProjectId = context.GetRouteValue("projectId")?.ToString();
-            if (!string.IsNullOrEmpty(routeProjectId) && int.TryParse(routeProjectId, out var tempProjectId))
+        // Try to get multiple projectIds from query parameter
+        // Supports formats like: ?projectIds=1,2,3 or ?projectIds=1&projectIds=2&projectIds=3
+        if (context.Request.Query.TryGetValue("projectIds", out var queryProjectIds))
+        {
+            foreach (var idValue in queryProjectIds)
             {
-                projectIds.Add(tempProjectId);
-            }
-
-            // Try to get multiple projectIds from query parameter
-            // Supports formats like: ?projectIds=1,2,3 or ?projectIds=1&projectIds=2&projectIds=3
-            if (context.Request.Query.TryGetValue("projectIds", out var queryProjectIds))
-            {
-                foreach (var idValue in queryProjectIds)
+                if (!string.IsNullOrEmpty(idValue))
                 {
-                    if (!string.IsNullOrEmpty(idValue))
+                    // Handle comma-separated values
+                    var ids = idValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var id in ids)
                     {
-                        // Handle comma-separated values
-                        var ids = idValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var id in ids)
+                        if (int.TryParse(id.Trim(), out var parsedId) && !projectIds.Contains(parsedId))
                         {
-                            if (int.TryParse(id.Trim(), out var parsedId) && !projectIds.Contains(parsedId))
-                            {
-                                projectIds.Add(parsedId);
-                            }
+                            projectIds.Add(parsedId);
                         }
                     }
                 }
             }
+        }
 
-            // Must have at least one of organizationId or projectId(s)
-            if (!organizationId.HasValue && !projectIds.Any())
-            {
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsJsonAsync(new
-                    { error = "Bad Request: Missing both organization AND project ID value" });
-                return;
-            }
+        // Must have at least one of organizationId or projectId(s)
+        if (!organizationId.HasValue && !projectIds.Any())
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new
+                { error = "Bad Request: Missing both organization AND project ID value" });
+            return;
+        }
 
-            // Check existence for each project
-            foreach (var projectId in projectIds)
-            {
-                await organizationService.CheckExistence(projectId, organizationId);
-            }
-            
-            // If no projects but has org, still check org existence
-            if (!projectIds.Any() && organizationId.HasValue)
-            {
-                await organizationService.CheckExistence(null, organizationId);
-            }
-
+        // Check existence for each project
+        foreach (var projectId in projectIds)
+        {
+            await organizationService.CheckExistence(projectId, organizationId);
+        }
+        
+        // If no projects but has org, still check org existence
+        if (!projectIds.Any() && organizationId.HasValue)
+        {
+            await organizationService.CheckExistence(null, organizationId);
+        }
+        
+        bool isSysAdmin = await sysAdminService.SysAdminCheck(userId);
+        if (!isSysAdmin)
+        {
             // Check each permission requirement
             foreach (var authAttr in authAttributes)
             {
                 bool hasPermission = false;
-            
+
                 // SCENARIO 1 & 2: Project-level permissions (single or multiple projects)
                 // Project permissions always take precedence over organization permissions
                 if (projectIds.Any())
                 {
                     // User must have permission in ALL specified projects
                     bool hasPermissionInAllProjects = true;
-                    
+
                     foreach (var projectId in projectIds)
                     {
                         var projectPermission = await projectRolePermissionService.PermissionInProject(
@@ -145,14 +145,14 @@ public class AuthMiddleware
                             authAttr.Action,
                             authAttr.Resource
                         );
-                        
+
                         if (!projectPermission)
                         {
                             hasPermissionInAllProjects = false;
                             break;
                         }
                     }
-                    
+
                     hasPermission = hasPermissionInAllProjects;
                 }
                 // SCENARIO 3: Organization-level only (no projects specified)
@@ -166,7 +166,7 @@ public class AuthMiddleware
                         authAttr.Resource
                     );
                 }
-            
+
                 if (!hasPermission)
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
