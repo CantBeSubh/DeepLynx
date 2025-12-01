@@ -7,11 +7,7 @@ import api from "./api";
 
 export async function sendEmail(email: string, name: string = "User") {
   try {
-<<<<<<< HEAD
-    const res = await api.post(`/notifications/email`, null, {
-=======
     const res = await api.post(`/notification/SendEmail`, null, { // TODO FIX
->>>>>>> develop
       params: { email, name },
     });
     return res.data;
