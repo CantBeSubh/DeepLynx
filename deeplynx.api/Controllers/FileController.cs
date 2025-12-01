@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to upload, update, download, and delete file information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/files")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/files")]
 [Authorize]
 public class FileController : ControllerBase
 {
@@ -74,7 +74,7 @@ public class FileController : ControllerBase
     /// <param name="recordId">The ID of the record that contains file information</param>
     /// <param name="file">The file to replace the old one</param>
     /// <returns>Record response DTO containing updated file information</returns>
-    [HttpPut("{recordId}", Name = "api_update_file")]
+    [HttpPut("{recordId:long}", Name = "api_update_file")]
     [Auth("write", "file")]
     public async Task<ActionResult<RecordResponseDto>> UpdateFile(
         long organizationId,
@@ -104,7 +104,7 @@ public class FileController : ControllerBase
     /// <param name="projectId">The ID of the project to which the file belongs</param>
     /// <param name="recordId">The ID of the record that contains file information</param>
     /// <returns>The file stream for download</returns>
-    [HttpGet("{recordId}", Name = "api_download_file")]
+    [HttpGet("{recordId:long}", Name = "api_download_file")]
     [Auth("read", "file")]
     public async Task<IActionResult> DownloadFile(
         long organizationId,
@@ -131,7 +131,7 @@ public class FileController : ControllerBase
     /// <param name="projectId">The ID of the project to which the file belongs</param>
     /// <param name="recordId">The ID of the record that contains file information</param>
     /// <returns>A message stating the file was successfully deleted.</returns>
-    [HttpDelete("{recordId}", Name = "api_delete_file")]
+    [HttpDelete("{recordId:long}", Name = "api_delete_file")]
     [Auth("write", "file")]
     public async Task<IActionResult> DeleteFile(
         long organizationId,

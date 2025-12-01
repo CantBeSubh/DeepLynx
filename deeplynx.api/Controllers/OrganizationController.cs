@@ -80,7 +80,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of organization</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
-    [HttpGet("{organizationId}", Name = "api_get_organization")]
+    [HttpGet("{organizationId:long}", Name = "api_get_organization")]
     [Auth("read", "organization")]
     public async Task<ActionResult<OrganizationResponseDto>> GetOrganization(
         long organizationId, [FromQuery] bool hideArchived = true)
@@ -128,7 +128,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of the organization</param>
     /// <param name="dto">Fields to update</param>
     /// <returns></returns>
-    [HttpPut("{organizationId}", Name = "api_update_organization")]
+    [HttpPut("{organizationId:long}", Name = "api_update_organization")]
     [Auth("write", "organization")]
     public async Task<ActionResult<OrganizationResponseDto>> UpdateOrganization(
         long organizationId,
@@ -153,7 +153,7 @@ public class OrganizationController : ControllerBase
     /// </summary>
     /// <param name="organizationId">ID of the organization to hard delete</param>
     /// <returns></returns>
-    [HttpDelete("{organizationId}", Name = "api_delete_organization")]
+    [HttpDelete("{organizationId:long}", Name = "api_delete_organization")]
     [Auth("write", "organization")]
     public async Task<ActionResult> DeleteOrganization(long organizationId)
     {
@@ -176,7 +176,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">The ID of the organization</param>
     /// <param name="archive">True to archive the organization, false to unarchive it.</param>
     /// <returns>A message stating the organization was successfully archived or unarchived.</returns>
-    [HttpPatch("{organizationId}", Name = "api_archive_organization")]
+    [HttpPatch("{organizationId:long}", Name = "api_archive_organization")]
     [Auth("write", "organization")]
     public async Task<IActionResult> ArchiveOrganization(
         long organizationId,
@@ -210,7 +210,7 @@ public class OrganizationController : ControllerBase
     /// <param name="userId">ID of the user to be added</param>
     /// <param name="isAdmin"></param>
     /// <returns></returns>
-    [HttpPost("{organizationId}/user", Name = "api_add_user_to_organization")]
+    [HttpPost("{organizationId:long}/user", Name = "api_add_user_to_organization")]
     [Auth("write", "organization")]
     public async Task<ActionResult> AddUserToOrganization(
         long organizationId,
@@ -237,7 +237,7 @@ public class OrganizationController : ControllerBase
     /// <param name="userId">ID of the user</param>
     /// <param name="isAdmin">isAdmin status</param>
     /// <returns></returns>
-    [HttpPut("{organizationId}/admin", Name = "api_update_organization_admin_status")]
+    [HttpPut("{organizationId:long}/admin", Name = "api_update_organization_admin_status")]
     [Auth("write", "organization")]
     public async Task<ActionResult> SetOrganizationAdminStatus(
         long organizationId,
@@ -264,7 +264,7 @@ public class OrganizationController : ControllerBase
     /// <param name="organizationId">ID of the organization to remove from</param>
     /// <param name="userId">ID of user to be removed</param>
     /// <returns></returns>
-    [HttpDelete("{organizationId}/user", Name = "api_remove_user_from_organization")]
+    [HttpDelete("{organizationId:long}/user", Name = "api_remove_user_from_organization")]
     [Auth("write", "organization")]
     public async Task<ActionResult> RemoveUserFromOrganization(
         long organizationId,

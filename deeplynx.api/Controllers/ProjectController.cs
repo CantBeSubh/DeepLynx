@@ -8,7 +8,7 @@ using deeplynx.helpers;
 namespace deeplynx.api.Controllers;
 
 [ApiController]
-[Route("organizations/{organizationId}/projects")]
+[Route("organizations/{organizationId:long}/projects")]
 [Authorize]
 public class ProjectController : ControllerBase
 {
@@ -89,7 +89,7 @@ public class ProjectController : ControllerBase
     /// <param name="projectId">The ID by which to retrieve the project</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>The given project to return</returns>
-    [HttpGet("{projectId}", Name = "api_get_a_project")]
+    [HttpGet("{projectId:long}", Name = "api_get_a_project")]
     [Auth("read", "project")]
     public async Task<ActionResult<ProjectResponseDto>> GetProject(
         long organizationId,
@@ -142,7 +142,7 @@ public class ProjectController : ControllerBase
     /// <param name="projectId">The ID of the project to update</param>
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
-    [HttpPut("{projectId}", Name = "api_update_a_project")]
+    [HttpPut("{projectId:long}", Name = "api_update_a_project")]
     [Auth("write", "project")]
     public async Task<ActionResult<ProjectResponseDto>> UpdateProject(
         long organizationId,
@@ -169,7 +169,7 @@ public class ProjectController : ControllerBase
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">ID of the project to delete.</param>
     /// <returns>Boolean true on successful deletion.</returns>
-    [HttpDelete("{projectId}", Name = "api_delete_a_project")]
+    [HttpDelete("{projectId:long}", Name = "api_delete_a_project")]
     [Auth("write", "project")]
     public async Task<IActionResult> DeleteProject(long organizationId, long projectId)
     {
@@ -194,7 +194,7 @@ public class ProjectController : ControllerBase
     /// <param name="projectId">The ID of the project to archive or unarchive</param>
     /// <param name="archive">True to archive the project, false to unarchive it.</param>
     /// <returns>A message stating the project was successfully archived or unarchived.</returns>
-    [HttpPatch("{projectId}", Name = "api_archive_project")]
+    [HttpPatch("{projectId:long}", Name = "api_archive_project")]
     [Auth("write", "project")]
     public async Task<IActionResult> ArchiveProject(
         long organizationId,
@@ -228,7 +228,7 @@ public class ProjectController : ControllerBase
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">ID of the project to display stats about.</param>
     /// <returns>Project stats</returns>
-    [HttpGet("{projectId}/stats", Name = "api_get_a_projects_stats")]
+    [HttpGet("{projectId:long}/stats", Name = "api_get_a_projects_stats")]
     [Auth("read", "project")]
     public async Task<ActionResult<ProjectStatResponseDto>> ProjectStats(long organizationId, long projectId)
     {
@@ -251,7 +251,7 @@ public class ProjectController : ControllerBase
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">(Optional)ID of the project</param>
     /// <returns>A list of groups and users in the project, along with their roles</returns>
-    [HttpGet("{projectId}/members", Name = "api_get_project_members")]
+    [HttpGet("{projectId:long}/members", Name = "api_get_project_members")]
     [Auth("read", "project")]
     public async Task<ActionResult<ProjectMemberResponseDto>> GetProjectMembers(long organizationId, long projectId)
     {
@@ -277,7 +277,7 @@ public class ProjectController : ControllerBase
     /// <param name="userId">ID of user if user is member</param>
     /// <param name="groupId">ID of group if group is member</param>
     /// <returns></returns>
-    [HttpPost("{projectId}/members", Name = "api_add_member_to_project")]
+    [HttpPost("{projectId:long}/members", Name = "api_add_member_to_project")]
     [Auth("write", "project")]
     public async Task<ActionResult> AddMemberToProject(
         long organizationId, long projectId,
@@ -305,7 +305,7 @@ public class ProjectController : ControllerBase
     /// <param name="userId">ID of user if user is member</param>
     /// <param name="groupId">ID of group if group is member</param>
     /// <returns></returns>
-    [HttpPut("{projectId}/members", Name = "api_update_project_member_role")]
+    [HttpPut("{projectId:long}/members", Name = "api_update_project_member_role")]
     [Auth("write", "project")]
     public async Task<ActionResult> UpdateProjectMemberRole(
         long organizationId, long projectId,
@@ -332,7 +332,7 @@ public class ProjectController : ControllerBase
     /// <param name="userId">ID of the user if user is member</param>
     /// <param name="groupId">ID of the group if group is member</param>
     /// <returns></returns>
-    [HttpDelete("{projectId}/members", Name = "api_remove_member_from_project")]
+    [HttpDelete("{projectId:long}/members", Name = "api_remove_member_from_project")]
     [Auth("write", "project")]
     public async Task<ActionResult> RemoveMemberFromProject(
         long organizationId,

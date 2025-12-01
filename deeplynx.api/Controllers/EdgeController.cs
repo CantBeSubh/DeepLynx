@@ -15,7 +15,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve edge information.
 /// </remarks>
 [ApiController]
-[Route("organizations/{organizationId}/projects/{projectId}/edges")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/edges")]
 [Authorize]
 public class EdgeController : ControllerBase
 {
