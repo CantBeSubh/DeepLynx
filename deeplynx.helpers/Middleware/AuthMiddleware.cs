@@ -118,7 +118,7 @@ public class AuthMiddleware
             capturedOrgId = await organizationService.CheckExistence(projectId, organizationId);
         }
 
-// If no projects but has org, still check org existence
+        // If no projects but has org, still check org existence
         if (!projectIds.Any() && organizationId.HasValue)
         {
             capturedOrgId = await organizationService.CheckExistence(null, organizationId);
@@ -137,8 +137,7 @@ public class AuthMiddleware
             foreach (var authAttr in authAttributes)
             {
                 bool hasPermission = false;
-
-                // SCENARIO 1 & 2: Project-level permissions (single or multiple projects)
+                
                 // Project permissions always take precedence over organization permissions
                 if (projectIds.Any())
                 {
@@ -163,7 +162,6 @@ public class AuthMiddleware
 
                     hasPermission = hasPermissionInAllProjects;
                 }
-                // SCENARIO 3: Organization-level only (no projects specified)
                 // Only check org permissions when NO project IDs are present
                 else if (organizationId.HasValue)
                 {

@@ -51,11 +51,10 @@ public class OrganizationService : IOrganizationService
 
             _logger.LogInformation("Organization found - Organization: {OrganizationId}", project.OrganizationId);
         
-            // Return the organizationId instead of setting it here
+            // Return the organizationId
             return project.OrganizationId;
         }
-
-        // If only organizationId was provided, return it
+        
         return organizationId.GetValueOrDefault();
     }
 }

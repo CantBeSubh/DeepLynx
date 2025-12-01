@@ -27,17 +27,7 @@ public class SysAdminService : ISysAdminService
     public async Task<bool> SysAdminCheck(
         long userId)
     {
-        _logger.LogInformation(
-            "START SysAdminCheck - UserContextStorage.OrganizationId: {OrgId}",
-            UserContextStorage.OrganizationId);
-    
-        _logger.LogInformation(
-            "Checking permission - User: {UserId}",
-            userId);
-        _logger.LogInformation(
-            "Checking permission - User: {UserId}",
-            userId);
-
+        
         //check for whether a user has permission to an action/resource within a organization through group membership
         var hasPermission = _dbContext.Database
             .SqlQuery<bool>($@"
@@ -58,10 +48,6 @@ public class SysAdminService : ISysAdminService
             _logger.LogWarning(
                 "Permission denied - User: {UserId}",
                 userId);
-
-        _logger.LogInformation(
-            "END SysAdminCheck - UserContextStorage.OrganizationId: {OrgId}",
-            UserContextStorage.OrganizationId);
 
         return hasPermission;
     }
