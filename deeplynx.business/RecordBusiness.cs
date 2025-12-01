@@ -797,7 +797,6 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dataSourceId">The ID of the data source by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>The record count for the given data source</returns>
-    /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
     public async Task<int> GetRecordsCountByDataSource(
         long organizationId, long projectId, long dataSourceId, bool hideArchived)
     {
