@@ -127,9 +127,7 @@ public class DataSourceProjectController : ControllerBase
     {
         try
         {
-            _logger.LogInformation(
-                "Reading OrganizationId from UserContextStorage - Value: {OrganizationId}",
-                UserContextStorage.OrganizationId);
+           
             var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto );
