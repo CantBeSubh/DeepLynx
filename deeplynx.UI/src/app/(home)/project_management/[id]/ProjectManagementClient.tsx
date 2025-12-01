@@ -18,6 +18,8 @@ import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import ProjectUsersTable from "./users/ProjectUsersTable";
 import ProjectRolesAndPermissions from "./roles_and_permissions/ProjectRolesAndPermissions";
 import DataSources from "./data_source/DataSources";
+import ProjectSecurityLabelsPanel from "./tag_management/ProjectTagAndLabelManagementClient";
+import ProjectTagAndLabelManagementClient from "./tag_management/ProjectTagAndLabelManagementClient";
 
 interface ProjectManagementProps {
   project: ProjectResponseDto | null;
@@ -74,13 +76,10 @@ const ProjectManagementClient = ({
     {
       label: "Tags and Security Labels",
       content: (
-        <div>
-          {/* TODO: Replace with project-level Tag & Security Label management */}
-          <p className="text-sm text-base-content/70">
-            Configure project-level tags and security labels for attribute-based
-            access controls, respecting organization-level locks.
-          </p>
-        </div>
+        <ProjectTagAndLabelManagementClient
+          project={project as ProjectResponseDto}
+          orgTagsLocked={false}
+        />
       ),
     },
     {
