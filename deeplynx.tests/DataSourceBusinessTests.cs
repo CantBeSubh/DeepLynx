@@ -132,6 +132,288 @@ public class DataSourceBusinessTests : IntegrationTestBase
         did3 = dataSource3.Id;
     }
 
+    #region GetDefaultDataSource Tests
+
+    [Fact]
+    public async Task GetDefaultDataSource_ProjectLevel_ReturnsProjectDefault()
+    {
+        // Arrange - Set one of the existing data sources as project-level default
+        var projectDefault = await Context.DataSources.FindAsync(did);
+        projectDefault!.Default = true;
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _dataSourceBusiness.GetDefaultDataSource(oid, pid);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(did, result.Id);
+        Assert.Equal("Customer CRM Database", result.Name);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.True(result.Default);
+    }
+
+    [Fact]
+    public async Task GetDefaultDataSource_OrgLevel_ReturnsOrgDefault()
+    {
+        // Arrange - Create an org-level default (ProjectId = null)
+        var orgLevelDefault = new DataSource
+        {
+            Name = "Org-Wide Data Source",
+            Description = "Organization-level default",
+            Abbreviation = "ORG_DS",
+            Type = "PostgreSQL",
+            BaseUri = "Server=org-db.company.com;Database=OrgData;",
+            Config = @"{""driver"":""postgresql""}",
+            OrganizationId = oid,
+            ProjectId = null, // Org-level
+            Default = true,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.DataSources.Add(orgLevelDefault);
+        await Context.SaveChangesAsync();
+
+        // Act - Request org-level default (projectId = null)
+        var result = await _dataSourceBusiness.GetDefaultDataSource(oid, null);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(orgLevelDefault.Id, result.Id);
+        Assert.Equal("Org-Wide Data Source", result.Name);
+        Assert.Null(result.ProjectId);
+        Assert.True(result.Default);
+    }
+
+    [Fact]
+    public async Task GetDefaultDataSource_ProjectLevel_NoDefault_ThrowsKeyNotFoundException()
+    {
+        // Arrange - All seeded data sources have Default = false by default
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _dataSourceBusiness.GetDefaultDataSource(oid, pid));
+
+        Assert.Contains($"Default data source for project {pid} not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetDefaultDataSource_OrgLevel_NoDefault_ThrowsKeyNotFoundException()
+    {
+        // Arrange - Only project-level data sources exist (all have ProjectId = pid)
+        // No org-level defaults exist
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _dataSourceBusiness.GetDefaultDataSource(oid, null));
+
+        Assert.Contains($"Default data source for organization {oid} not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetDefaultDataSource_ProjectLevel_IgnoresArchivedDefaults()
+    {
+        // Arrange - Set the archived data source as default
+        var archivedDataSource = await Context.DataSources.FindAsync(did3);
+        archivedDataSource!.Default = true;
+        await Context.SaveChangesAsync();
+
+        // Act & Assert - Should not find archived default
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _dataSourceBusiness.GetDefaultDataSource(oid, pid));
+
+        Assert.Contains($"Default data source for project {pid} not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetDefaultDataSource_ProjectLevel_DoesNotReturnOrgDefault()
+    {
+        // Arrange - Create org-level default and project-level default
+        var orgLevelDefault = new DataSource
+        {
+            Name = "Org Default",
+            ProjectId = null, // Org-level
+            Default = true,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.DataSources.Add(orgLevelDefault);
+
+        var projectDefault = await Context.DataSources.FindAsync(did);
+        projectDefault!.Default = true;
+        await Context.SaveChangesAsync();
+
+        // Act - Request project-level default
+        var result = await _dataSourceBusiness.GetDefaultDataSource(oid, pid);
+
+        // Assert - Should return project default, NOT org default
+        Assert.NotNull(result);
+        Assert.Equal(did, result.Id);
+        Assert.Equal(pid, result.ProjectId);
+        Assert.NotEqual(orgLevelDefault.Id, result.Id);
+    }
+
+    [Fact]
+    public async Task GetDefaultDataSource_OrgLevel_DoesNotReturnProjectDefault()
+    {
+        // Arrange - Set existing project data source as default
+        var projectDefault = await Context.DataSources.FindAsync(did);
+        projectDefault!.Default = true;
+        await Context.SaveChangesAsync();
+
+        // Act & Assert - Requesting org-level should NOT return project-level
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _dataSourceBusiness.GetDefaultDataSource(oid, null));
+
+        Assert.Contains($"Default data source for organization {oid} not found", exception.Message);
+    }
+
+    #endregion
+
+    #region SetDefaultDataSource
+
+    [Fact]
+    public async Task SetDefaultDataSource_ProjectLevel_SetsDefaultAndUnsetsPrevious()
+    {
+        // Arrange - Set did as current default
+        var currentDefault = await Context.DataSources.FindAsync(did);
+        currentDefault!.Default = true;
+        await Context.SaveChangesAsync();
+
+        // Act - Set did2 as new default
+        var result = await _dataSourceBusiness.SetDefaultDataSource(oid, pid, uid, did2);
+
+        // Assert - New default is set
+        Assert.NotNull(result);
+        Assert.Equal(did2, result.Id);
+        Assert.True(result.Default);
+        Assert.Equal(uid, result.LastUpdatedBy);
+
+        // Assert - Previous default is unset
+        Context.ChangeTracker.Clear();
+        var previousDefault = await Context.DataSources.FindAsync(did);
+        Assert.False(previousDefault!.Default);
+        Assert.Equal(uid, previousDefault.LastUpdatedBy);
+
+        // Assert - Event was created
+        var events = await Context.Events.Where(e => e.EntityId == did2).ToListAsync();
+        Assert.Single(events);
+        Assert.Equal("update", events[0].Operation);
+        Assert.Equal("data_source", events[0].EntityType);
+    }
+
+    [Fact]
+    public async Task SetDefaultDataSource_OrgLevel_SetsDefaultAndUnsetsPrevious()
+    {
+        // Arrange - Create two org-level data sources
+        var orgDefault1 = new DataSource
+        {
+            Name = "Org Default 1",
+            ProjectId = null,
+            Default = true,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        var orgDefault2 = new DataSource
+        {
+            Name = "Org Default 2",
+            ProjectId = null,
+            Default = false,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.DataSources.AddRange(orgDefault1, orgDefault2);
+        await Context.SaveChangesAsync();
+
+        // Act - Set orgDefault2 as default
+        var result = await _dataSourceBusiness.SetDefaultDataSource(oid, null, uid, orgDefault2.Id);
+
+        // Assert - New default is set
+        Assert.NotNull(result);
+        Assert.Equal(orgDefault2.Id, result.Id);
+        Assert.True(result.Default);
+        Assert.Null(result.ProjectId);
+
+        // Assert - Previous org-level default is unset
+        Context.ChangeTracker.Clear();
+        var previousDefault = await Context.DataSources.FindAsync(orgDefault1.Id);
+        Assert.False(previousDefault!.Default);
+    }
+
+    [Fact]
+    public async Task SetDefaultDataSource_ProjectLevel_DoesNotAffectOrgLevelDefault()
+    {
+        // Arrange - Create org-level default and project-level data source
+        var orgDefault = new DataSource
+        {
+            Name = "Org Default",
+            ProjectId = null,
+            Default = true,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.DataSources.Add(orgDefault);
+        await Context.SaveChangesAsync();
+
+        // Act - Set project-level data source as default
+        var result = await _dataSourceBusiness.SetDefaultDataSource(oid, pid, uid, did);
+
+        // Assert - Project default is set
+        Assert.True(result.Default);
+        Assert.Equal(pid, result.ProjectId);
+
+        // Assert - Org-level default is unchanged
+        Context.ChangeTracker.Clear();
+        var orgDefaultAfter = await Context.DataSources.FindAsync(orgDefault.Id);
+        Assert.True(orgDefaultAfter!.Default); // Should still be true
+    }
+
+    [Fact]
+    public async Task SetDefaultDataSource_OrgLevel_DoesNotAffectProjectLevelDefaults()
+    {
+        // Arrange - Set project-level data source as default
+        var projectDefault = await Context.DataSources.FindAsync(did);
+        projectDefault!.Default = true;
+        await Context.SaveChangesAsync();
+
+        // Create org-level data source
+        var orgDataSource = new DataSource
+        {
+            Name = "Org Data Source",
+            ProjectId = null,
+            Default = false,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.DataSources.Add(orgDataSource);
+        await Context.SaveChangesAsync();
+
+        // Act - Set org-level as default
+        var result = await _dataSourceBusiness.SetDefaultDataSource(oid, null, uid, orgDataSource.Id);
+
+        // Assert - Org default is set
+        Assert.True(result.Default);
+        Assert.Null(result.ProjectId);
+
+        // Assert - Project-level default is unchanged
+        Context.ChangeTracker.Clear();
+        var projectDefaultAfter = await Context.DataSources.FindAsync(did);
+        Assert.True(projectDefaultAfter!.Default); // Should still be true
+    }
+
+    #endregion
+
     #region GetAllDataSources Tests
 
     [Fact]
@@ -213,7 +495,6 @@ public class DataSourceBusinessTests : IntegrationTestBase
 
     #endregion
 
-
     #region GetDataSource Tests
 
     [Fact]
@@ -249,7 +530,8 @@ public class DataSourceBusinessTests : IntegrationTestBase
     public async Task GetDataSource_WrongProject_ThrowsKeyNotFoundException()
     {
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.GetDataSource(oid, pid2,
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _dataSourceBusiness.GetDataSource(oid,
+            pid2,
             did,
             false)); // DataSource belongs to project with pid, not pid2
 
@@ -409,6 +691,143 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.Equal("create", actualEvent.Operation);
         Assert.Equal("data_source", actualEvent.EntityType);
         Assert.Equal(result.Id, actualEvent.EntityId);
+    }
+
+    [Fact]
+    public async Task CreateDataSource_ProjectLevel_AsDefault_UnsetsPreviousDefault()
+    {
+        // Arrange - Set existing data source as default
+        var existingDefault = await Context.DataSources.FindAsync(did);
+        existingDefault!.Default = true;
+        await Context.SaveChangesAsync();
+
+        var dto = new CreateDataSourceRequestDto
+        {
+            Name = "New Project Default",
+            Description = "New default data source",
+            Abbreviation = "NEW_DS",
+            Type = "PostgreSQL",
+            BaseUri = "Server=new-db.company.com",
+            Default = true,
+            Config = new JsonObject { ["driver"] = "postgresql" }
+        };
+
+        // Act
+        var result = await _dataSourceBusiness.CreateDataSource(oid, pid, uid, dto);
+
+        // Assert - New data source is default
+        Assert.NotNull(result);
+        Assert.True(result.Default);
+        Assert.Equal("New Project Default", result.Name);
+        Assert.Equal(pid, result.ProjectId);
+
+        // Assert - Previous default is unset
+        var previousDefault = await Context.DataSources.FindAsync(did);
+        Assert.False(previousDefault!.Default);
+        Assert.Equal(uid, previousDefault.LastUpdatedBy);
+    }
+
+    [Fact]
+    public async Task CreateDataSource_OrgLevel_AsDefault_UnsetsPreviousOrgDefault()
+    {
+        // Arrange - Create existing org-level default
+        var existingOrgDefault = new DataSource
+        {
+            Name = "Existing Org Default",
+            ProjectId = null,
+            Default = true,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.DataSources.Add(existingOrgDefault);
+        await Context.SaveChangesAsync();
+
+        var dto = new CreateDataSourceRequestDto
+        {
+            Name = "New Org Default",
+            Description = "New org-level default",
+            Abbreviation = "NEW_ORG",
+            Type = "MySQL",
+            Default = true
+        };
+
+        // Act - Create new org-level default (projectId = null)
+        var result = await _dataSourceBusiness.CreateDataSource(oid, null, uid, dto);
+
+        // Assert - New data source is default
+        Assert.True(result.Default);
+        Assert.Null(result.ProjectId);
+
+        // Assert - Previous org-level default is unset
+        var previousDefault = await Context.DataSources.FindAsync(existingOrgDefault.Id);
+        Assert.False(previousDefault!.Default);
+    }
+
+    [Fact]
+    public async Task CreateDataSource_ProjectLevel_AsDefault_DoesNotAffectOrgDefault()
+    {
+        // Arrange - Create org-level default
+        var orgDefault = new DataSource
+        {
+            Name = "Org Default",
+            ProjectId = null,
+            Default = true,
+            OrganizationId = oid,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = false
+        };
+        Context.DataSources.Add(orgDefault);
+        await Context.SaveChangesAsync();
+
+        var dto = new CreateDataSourceRequestDto
+        {
+            Name = "New Project Default",
+            Abbreviation = "PROJ_DS",
+            Type = "SQL Server",
+            Default = true
+        };
+
+        // Act - Create project-level default
+        var result = await _dataSourceBusiness.CreateDataSource(oid, pid, uid, dto);
+
+        // Assert - New project default is created
+        Assert.True(result.Default);
+        Assert.Equal(pid, result.ProjectId);
+
+        // Assert - Org-level default is unchanged
+        var orgDefaultAfter = await Context.DataSources.FindAsync(orgDefault.Id);
+        Assert.True(orgDefaultAfter!.Default);
+    }
+
+    [Fact]
+    public async Task CreateDataSource_OrgLevel_AsDefault_DoesNotAffectProjectDefaults()
+    {
+        // Arrange - Set existing project data source as default
+        var projectDefault = await Context.DataSources.FindAsync(did);
+        projectDefault!.Default = true;
+        await Context.SaveChangesAsync();
+
+        var dto = new CreateDataSourceRequestDto
+        {
+            Name = "New Org Default",
+            Abbreviation = "ORG_DS",
+            Type = "MongoDB",
+            Default = true
+        };
+
+        // Act - Create org-level default
+        var result = await _dataSourceBusiness.CreateDataSource(oid, null, uid, dto);
+
+        // Assert - New org default is created
+        Assert.True(result.Default);
+        Assert.Null(result.ProjectId);
+
+        // Assert - Project-level default is unchanged
+        var projectDefaultAfter = await Context.DataSources.FindAsync(did);
+        Assert.True(projectDefaultAfter!.Default);
     }
 
     #endregion
@@ -680,7 +1099,7 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.True(archivedDataSource.LastUpdatedAt >= now);
         Assert.Equal(uid, archivedDataSource.LastUpdatedBy);
         Assert.True(archivedDataSource.IsArchived);
-        
+
         // Ensure that data source soft delete event was logged
         var eventList = await Context.Events.ToListAsync();
         Assert.Single(eventList);
