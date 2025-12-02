@@ -88,151 +88,164 @@ const SettingsPageClient = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-base-100 p-8 lg:p-20">
-      {/* User Header Section */}
-      <div className="flex items-center mb-8">
-        <AvatarCell image={image} name={name} size={20} />
-        <h1 className="ml-3 text-2xl font-bold text-base-content">
-          {session?.user?.name}
-        </h1>
-      </div>
-
-      {/* Main Content Container */}
-      <div className="lg:ml-20 max-w-4xl">
-        {/* User Settings Section */}
-        <section className="mb-12">
-          <h2 className="text-lg font-bold text-base-content mb-6">
-            {t.translations.USER_SETTINGS ?? "User Settings"}
-          </h2>
-
-          <div className="bg-base-200 rounded-box p-6">
-            <h3 className="font-bold text-base-content mb-4">
-              {t.translations.GENERAL ?? "General"}
-            </h3>
-            <div className="divider my-2" />
-
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="font-semibold text-base-content min-w-[140px]">
-                  {t.translations.NAME ?? "Name"}:
-                </span>
-                <span className="text-base-content/80">{name}</span>
+    <div className="min-h-screen bg-gradient-to-br from-base-100 to-base-200 p-6 lg:p-12">
+      <div className="max-w-5xl mx-auto">
+        {/* User Header Section */}
+        <div className="card bg-base-100 shadow-xl mb-8">
+          <div className="card-body">
+            <div className="flex items-center gap-4">
+              <div className="avatar">
+                <div className="w-20 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+                  <AvatarCell image={image} name={name} size={20} />
+                </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="font-semibold text-base-content min-w-[140px]">
-                  {t.translations.EMAIL ?? "Email"}:
-                </span>
-                <span className="text-base-content/80">{email ?? "—"}</span>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <span className="font-semibold text-base-content min-w-[140px]">
-                  {t.translations.PROFILE_PICTURE ?? "Profile Picture"}:
-                </span>
-                <span className="text-base-content/80 truncate">{image}</span>
+              <div>
+                <h1 className="text-3xl font-bold text-base-content">
+                  {session?.user?.name}
+                </h1>
+                <p className="text-base-content/60 text-sm mt-1">{email}</p>
               </div>
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Preferences Section */}
-        <section className="mb-12">
-          <h2 className="text-lg font-bold text-base-content mb-6">
-            {t.translations.PREFERENCES ?? "Preferences"}
-          </h2>
+        {/* Main Content Grid */}
+        <div className="grid gap-6">
+          {/* User Settings Section */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title text-xl mb-4">
+                {t.translations.USER_SETTINGS ?? "User Settings"}
+              </h2>
 
-          <div className="bg-base-200 rounded-box p-6">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-base-content">
-                  {t.translations.DARK_MODE ?? "Dark Mode"}
-                </span>
-                <ThemeToggle />
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-base-300">
+                  <span className="font-semibold text-base-content/80 text-sm uppercase tracking-wider">
+                    {t.translations.NAME ?? "Name"}
+                  </span>
+                  <span className="text-base-content font-medium">{name}</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3 border-b border-base-300">
+                  <span className="font-semibold text-base-content/80 text-sm uppercase tracking-wider">
+                    {t.translations.EMAIL ?? "Email"}
+                  </span>
+                  <span className="text-base-content font-medium">{email ?? "—"}</span>
+                </div>
               </div>
+            </div>
+          </div>
 
-              <div className="divider my-2" />
+          {/* Preferences Section */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title text-xl mb-4">
+                {t.translations.PREFERENCES ?? "Preferences"}
+              </h2>
 
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-base-content">
-                  {t.translations.EMAIL_NOTIFICATIONS ?? "Email Notifications"}
-                </span>
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  className="toggle toggle-primary"
-                />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-base-300">
+                  <div>
+                    <span className="font-semibold text-base-content block">
+                      {t.translations.DARK_MODE ?? "Dark Mode"}
+                    </span>
+                    <span className="text-xs text-base-content/60">
+                      Toggle between light and dark themes
+                    </span>
+                  </div>
+                  <ThemeToggle />
+                </div>
+
+                <div className="flex items-center justify-between py-3">
+                  <div>
+                    <span className="font-semibold text-base-content block">
+                      {t.translations.LANGUAGE ?? "Language"}
+                    </span>
+                    <span className="text-xs text-base-content/60">
+                      Choose your preferred language
+                    </span>
+                  </div>
+                  <select
+                    className="select select-bordered select-primary select-sm w-32"
+                    value={lang}
+                    onChange={(e) => setLang(e.target.value as "en" | "es")}
+                  >
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                  </select>
+                </div>
               </div>
+            </div>
+          </div>
 
-              <div className="divider my-2" />
-
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-base-content">
-                  {t.translations.LANGUAGE ?? "Language"}
-                </span>
-                <select
-                  className="select select-primary select-sm"
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value as "en" | "es")}
+          {/* API Keypairs Section */}
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="card-title text-xl">
+                    {t.translations.API_KEYPAIRS ?? "API Keypairs"}
+                  </h2>
+                  <p className="text-sm text-base-content/60 mt-1">
+                    Manage your API authentication keys
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary gap-2"
+                  onClick={apiKeyGen}
+                  disabled={creating}
                 >
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                </select>
+                  <PlusIcon className="size-5" />
+                  <span>{creating ? "Generating…" : "Generate New"}</span>
+                </button>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* API Keypairs Section */}
-        <section>
-          <div className="flex items-center justify-between w-full pt-5">
-            <h2 className="w-50 text-lg font-bold text-base-content mb-6">
-              {t.translations.API_KEYPAIRS ?? "API Keypairs"}
-            </h2>
-
-            {/* NOTE: don't call the function; pass it */}
-            <button
-              type="button"
-              className="btn btn-sm btn-outline btn-primary"
-              onClick={apiKeyGen}
-              disabled={creating}
-            >
-              <PlusIcon className="size-5" />
-              <span>{creating ? "Generating…" : "Generate"}</span>
-            </button>
-          </div>
-
-          {isLoading ? (
-            <UserSettingsSkeleton />
-          ) : (
-            <div className="bg-base-200 rounded-box p-6">
-              {userKeys.length > 0 ? (
-                <ul>
-                  {userKeys.map((k, i) => (
-                    <li
-                      key={k}
-                      className="flex items-center font-mono text-sm pb-3"
-                    >
-                      {i + 1}: {k}
-                      <button
-                        className="ml-auto"
-                        type="button"
-                        onClick={apiKeyDelete(k)}
-                        disabled={deleting}
-                      >
-                        <TrashIcon className="text-red-400 hover:text-red-700 hover:cursor-pointer size-5" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+              {isLoading ? (
+                <UserSettingsSkeleton />
               ) : (
-                <p className="text-base-content/60">
-                  No API keypairs configured
-                </p>
+                <div className="mt-4">
+                  {userKeys.length > 0 ? (
+                    <div className="space-y-3">
+                      {userKeys.map((k, i) => (
+                        <div
+                          key={k}
+                          className="flex items-center gap-3 p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
+                        >
+                          <div className="badge badge-neutral badge-sm">{i + 1}</div>
+                          <code className="flex-1 text-sm font-mono truncate">
+                            {k}
+                          </code>
+                          <button
+                            className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+                            type="button"
+                            onClick={apiKeyDelete(k)}
+                            disabled={deleting}
+                            aria-label="Delete API key"
+                          >
+                            <TrashIcon className="size-5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-base-200 mb-4">
+                        <PlusIcon className="size-8 text-base-content/40" />
+                      </div>
+                      <p className="text-base-content/60">
+                        No API keypairs configured
+                      </p>
+                      <p className="text-sm text-base-content/40 mt-1">
+                        Generate your first keypair to get started
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </section>
+          </div>
+        </div>
       </div>
     </div>
   );
