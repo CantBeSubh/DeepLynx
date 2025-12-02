@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -140,7 +140,7 @@ public class EdgeController : ControllerBase
     public async Task<ActionResult<EdgeResponseDto>> CreateEdge(
         long organizationId,
         long projectId,
-        [FromQuery] [Required] long dataSourceId,
+        [FromQuery] long dataSourceId,
         [FromBody] CreateEdgeRequestDto edge)
     {
         try

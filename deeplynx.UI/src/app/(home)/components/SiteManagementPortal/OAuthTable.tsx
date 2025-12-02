@@ -12,12 +12,13 @@ import {
 } from "@/app/lib/client_service/oauth_services.client";
 
 interface Props {
-  applications: OauthApplicationResponseDto[];
+  initialApplications: OauthApplicationResponseDto[];
+  onApplicationsChange?: () => Promise<void>; // Add this prop
 }
 
-const OAuthManagement = ({ applications }: Props) => {
+const OAuthManagement = ({ initialApplications, onApplicationsChange }: Props) => {
   const { t } = useLanguage();
-  const [data, setData] = useState<OauthApplicationResponseDto[]>(applications);
+  const [data, setData] = useState<OauthApplicationResponseDto[]>(initialApplications);
   const [isOAuthApplicationModalOpen, setIsOAuthApplicationModalOpen] =
     useState(false);
   const [editOAuthApplicationModal, setEditOAuthApplicationModal] =
@@ -56,6 +57,10 @@ const OAuthManagement = ({ applications }: Props) => {
     try {
       const updatedData = await getAllOauthApplications();
       setData(updatedData);
+      // Notify parent component to update its state too
+      if (onApplicationsChange) {
+        await onApplicationsChange();
+      }
     } catch (err) {
       console.error("Failed to refresh organizations:", err);
       setError("Failed to refresh organizations.");
