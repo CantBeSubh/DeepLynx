@@ -17,7 +17,7 @@ import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import ProjectUsersTable from "./users/ProjectUsersTable";
 import ProjectRolesAndPermissions from "./roles_and_permissions/ProjectRolesAndPermissions";
-import DataSources from "./data_source/DataSources";
+import DataSources from "./data_source/DataSourcesClient";
 import ProjectSecurityLabelsPanel from "./tag_management/ProjectTagAndLabelManagementClient";
 import ProjectTagAndLabelManagementClient from "./tag_management/ProjectTagAndLabelManagementClient";
 

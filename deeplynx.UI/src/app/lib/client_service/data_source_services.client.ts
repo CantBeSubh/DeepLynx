@@ -154,6 +154,47 @@ export const getDefaultDataSourceForProject = async (
   }
 };
 
+/**
+ * Get record count for a project, optionally filtered by data source
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param dataSourceId - Optional ID of the data source to filter by
+ * @param hideArchived - Flag indicating whether to hide archived records (default: true)
+ * @returns Promise with the record count (may be null if no records)
+ *
+ * GET /organizations/{organizationId}/projects/{projectId}/records/count
+ */
+export const getRecordCountForDataSource = async (
+  organizationId: number,
+  projectId: number,
+  dataSourceId?: number,
+  hideArchived: boolean = true
+): Promise<number | null> => {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/projects/${projectId}/records/count`,
+      {
+        params: {
+          dataSourceId,
+          hideArchived,
+        },
+      }
+    );
+
+    // Backend may return `null` when there are no records
+    return res.data as number | null;
+  } catch (error) {
+    console.error(
+      `Error getting record count for project ${projectId}${
+        dataSourceId ? ` and data source ${dataSourceId}` : ""
+      }:`,
+      error
+    );
+    throw error;
+  }
+};
+
+
 /* -------------------------------------------------------------------------- */
 /*                  Organization-scoped Data Source Services                  */
 /* -------------------------------------------------------------------------- */
