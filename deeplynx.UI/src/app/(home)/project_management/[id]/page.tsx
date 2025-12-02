@@ -1,9 +1,9 @@
 // src/app/(home)/project_management/[id]/page.tsx
 
-import React from "react";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import ProjectManagementClient from "./ProjectManagementClient";
+
 import {
   GroupResponseDto,
   ProjectResponseDto,
@@ -11,6 +11,7 @@ import {
   PermissionResponseDto,
   ProjectMemberResponseDto,
 } from "@/app/(home)/types/responseDTOs";
+
 import {
   getProjectServer,
   getProjectMembersServer,
@@ -20,20 +21,23 @@ import { getPermissionsForRoleServer } from "@/app/lib/server_service/permission
 
 export const dynamic = "force-dynamic";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-}
+type Props = {
+  params: Promise<{ id?: string }>;
+};
 
-const Page = async ({ params }: PageProps) => {
-  // Redirect if projectId is missing or invalid
-  if (!params?.id || isNaN(Number(params.id))) {
+export default async function ProjectManagementPage({ params }: Props) {
+  // 🔹 Match the other page: await params and validate id
+  const { id } = await params;
+  if (!id) {
+    return notFound();
+  }
+
+  const projectId = Number(id);
+  if (isNaN(projectId)) {
     redirect("/");
   }
 
-  const projectId = Number(params.id);
-
+  // Get organization from cookies (same pattern as other page)
   const cookieStore = await cookies();
   const orgSessionCookie = cookieStore.get("organizationSession");
 
@@ -111,6 +115,11 @@ const Page = async ({ params }: PageProps) => {
     // TODO: later: fetch real groups for this project
     const projectGroups: GroupResponseDto[] = [];
 
+    // If project isn't found, mirror behavior of the other page
+    if (!project) {
+      return notFound();
+    }
+
     return (
       <ProjectManagementClient
         project={project}
@@ -121,6 +130,7 @@ const Page = async ({ params }: PageProps) => {
       />
     );
   }
-};
 
-export default Page;
+  // If we somehow get here, treat as not found
+  return notFound();
+}

@@ -69,7 +69,7 @@ const AddProjectMember = ({
           await addMemberToProject(
             projectId,
             selectedUser,
-            selectedRole || undefined
+            selectedRole ? { roleId: selectedRole } : {}
           );
           onMemberAdded();
           onClose();
