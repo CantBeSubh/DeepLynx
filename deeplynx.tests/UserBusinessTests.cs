@@ -42,6 +42,16 @@ public class UserBusinessTests : IntegrationTestBase
     public long uid4;
     public long uid5;
 
+    // Additional test data IDs for GetUserAdminInfo scenarios
+    public long adminUid; // admin user ID
+    public long nonAdminUid; // non-admin user ID
+    public long adminOrgId; // org where both users are admins
+    public long nonAdminOrgId; // org where neither user is admin
+    public long directAdminPid; // project where both users are direct admins
+    public long groupAdminPid; // project where both users are admins via group
+    public long nonAdminPid; // project where neither user is admin
+    public long adminGroupId; // group that grants project admin access
+
     public UserBusinessTests(TestSuiteFixture fixture) : base(fixture)
     {
     }
@@ -574,6 +584,168 @@ public class UserBusinessTests : IntegrationTestBase
             historicalArchivedRecord
         );
         await Context.SaveChangesAsync();
+
+        // Create admin users for GetUserAdminInfo tests
+        var sysAdminUser = new User
+        {
+            Name = "SysAdmin User",
+            Email = "sysadmin@test.com",
+            Username = "sysadmin",
+            IsActive = true,
+            IsSysAdmin = true
+        };
+        var regularUser = new User
+        {
+            Name = "Regular User",
+            Email = "regular@test.com",
+            Username = "regular",
+            IsActive = true,
+            IsSysAdmin = false
+        };
+        Context.Users.AddRange(sysAdminUser, regularUser);
+        await Context.SaveChangesAsync();
+        adminUid = sysAdminUser.Id;
+        nonAdminUid = regularUser.Id;
+
+        // Create organizations for admin testing
+        var adminOrg = new Organization
+        {
+            Name = "Admin Org",
+            Description = "Org where users are admins"
+        };
+        var regularOrg = new Organization
+        {
+            Name = "Regular Org",
+            Description = "Org where users are not admins"
+        };
+        Context.Organizations.AddRange(adminOrg, regularOrg);
+        await Context.SaveChangesAsync();
+        adminOrgId = adminOrg.Id;
+        nonAdminOrgId = regularOrg.Id;
+
+        // Make both users org admins in adminOrg
+        var orgUser3 = new OrganizationUser
+        {
+            OrganizationId = adminOrgId,
+            UserId = adminUid,
+            IsOrgAdmin = true
+        };
+        var orgUser4 = new OrganizationUser
+        {
+            OrganizationId = adminOrgId,
+            UserId = nonAdminUid,
+            IsOrgAdmin = true
+        };
+        // Make users non-admin members of regularOrg
+        var orgUser5 = new OrganizationUser
+        {
+            OrganizationId = nonAdminOrgId,
+            UserId = adminUid,
+            IsOrgAdmin = false
+        };
+        var orgUser6 = new OrganizationUser
+        {
+            OrganizationId = nonAdminOrgId,
+            UserId = nonAdminUid,
+            IsOrgAdmin = false
+        };
+        Context.OrganizationUsers.AddRange(orgUser3, orgUser4, orgUser5, orgUser6);
+        await Context.SaveChangesAsync();
+
+        // Create projects for admin testing
+        var directAdminProject = new Project
+        {
+            Name = "Direct Admin Project",
+            Description = "Project where users are direct admins",
+            Abbreviation = "DAP",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = adminOrgId
+        };
+        var groupAdminProject = new Project
+        {
+            Name = "Group Admin Project",
+            Description = "Project where users are admins via group",
+            Abbreviation = "GAP",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = adminOrgId
+        };
+        var regularProject = new Project
+        {
+            Name = "Regular Project",
+            Description = "Project where users are not admins",
+            Abbreviation = "REG",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = adminOrgId
+        };
+        Context.Projects.AddRange(directAdminProject, groupAdminProject, regularProject);
+        await Context.SaveChangesAsync();
+        directAdminPid = directAdminProject.Id;
+        groupAdminPid = groupAdminProject.Id;
+        nonAdminPid = regularProject.Id;
+
+        // Create Admin roles for each project where admins are relevant
+        var dapAdminRole = new Role
+        {
+            Name = "Admin",
+            OrganizationId = adminOrgId,
+            ProjectId = directAdminPid
+        };
+        var gapAdminRole = new Role
+        {
+            Name = "Admin",
+            OrganizationId = adminOrgId,
+            ProjectId = groupAdminPid
+        };
+        Context.Roles.AddRange(dapAdminRole, gapAdminRole);
+        await Context.SaveChangesAsync();
+
+        // Create group for group-based admin access
+        var adminGroup = new Group
+        {
+            Name = "Admin Group",
+            Description = "Group that grants admin access",
+            OrganizationId = adminOrgId,
+            Users = new List<User> { sysAdminUser, regularUser }
+        };
+        Context.Groups.Add(adminGroup);
+        await Context.SaveChangesAsync();
+        adminGroupId = adminGroup.Id;
+
+        // Make both users direct project admins in directAdminProject
+        var directMember1 = new ProjectMember
+        {
+            ProjectId = directAdminPid,
+            UserId = adminUid,
+            RoleId = dapAdminRole.Id
+        };
+        var directMember2 = new ProjectMember
+        {
+            ProjectId = directAdminPid,
+            UserId = nonAdminUid,
+            RoleId = dapAdminRole.Id
+        };
+        // Make group a project admin in groupAdminProject
+        var groupMember = new ProjectMember
+        {
+            ProjectId = groupAdminPid,
+            GroupId = adminGroupId,
+            RoleId = gapAdminRole.Id
+        };
+        // Make users non-admin members of regularProject
+        var regularMember1 = new ProjectMember
+        {
+            ProjectId = nonAdminPid,
+            UserId = adminUid
+        };
+        var regularMember2 = new ProjectMember
+        {
+            ProjectId = nonAdminPid,
+            UserId = nonAdminUid
+        };
+        Context.ProjectMembers.AddRange(
+            directMember1, directMember2, groupMember, 
+            regularMember1, regularMember2);
+        await Context.SaveChangesAsync();
     }
 
     #region CreateUser Tests
@@ -660,7 +832,7 @@ public class UserBusinessTests : IntegrationTestBase
         var users = result.ToList();
 
         // Assert
-        Assert.Equal(7, users.Count);
+        Assert.Equal(9, users.Count);
         Assert.All(users, u => Assert.False(u.IsArchived));
         Assert.Contains(users, u => u.Id == uid5);
         Assert.DoesNotContain(users, u => u.Id == uid2); // archived
@@ -786,6 +958,276 @@ public class UserBusinessTests : IntegrationTestBase
 
         // Assert
         Assert.Contains($"User with id {uid3} not found", exception.Message);
+    }
+
+    #endregion
+
+    #region GetUserAdminInfo Tests
+
+    [Fact]
+    public async Task GetUserAdminInfo_Succeeds_WhenExists()
+    {
+        // Act
+        var result = await _userBusiness.GetUserAdminInfo(uid1);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(uid1, result.Id);
+        Assert.Equal("User 1", result.Name);
+        Assert.Equal("user1@test.com", result.Email);
+        Assert.False(result.IsArchived);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_Fails_IfArchived()
+    {
+        // Act
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _userBusiness.GetUserAdminInfo(uid2));
+
+        // Assert
+        Assert.Contains($"User with id {uid2} not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_Fails_IfDeleted()
+    {
+        // Act
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _userBusiness.GetUserAdminInfo(uid3));
+
+        // Assert
+        Assert.Contains($"User with id {uid3} not found", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithUserIdOnly_ReturnsSysAdminOnly()
+    {
+        // Act - SysAdmin user
+        var adminResult = await _userBusiness.GetUserAdminInfo(adminUid);
+
+        // Assert
+        Assert.NotNull(adminResult);
+        Assert.Equal(adminUid, adminResult.Id);
+        Assert.True(adminResult.IsSysAdmin);
+        Assert.Null(adminResult.IsOrgAdmin);
+        Assert.Null(adminResult.IsProjectAdmin);
+
+        // Act - Non-admin user
+        var regularResult = await _userBusiness.GetUserAdminInfo(nonAdminUid);
+
+        // Assert
+        Assert.NotNull(regularResult);
+        Assert.Equal(nonAdminUid, regularResult.Id);
+        Assert.False(regularResult.IsSysAdmin);
+        Assert.Null(regularResult.IsOrgAdmin);
+        Assert.Null(regularResult.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithOrgId_ReturnsIsOrgAdmin_True()
+    {
+        // Act - SysAdmin user in admin org
+        var adminResult = await _userBusiness.GetUserAdminInfo(adminUid, adminOrgId);
+
+        // Assert
+        Assert.NotNull(adminResult);
+        Assert.Equal(adminUid, adminResult.Id);
+        Assert.True(adminResult.IsSysAdmin);
+        Assert.True(adminResult.IsOrgAdmin);
+        Assert.Null(adminResult.IsProjectAdmin);
+
+        // Act - Regular user in admin org
+        var regularResult = await _userBusiness.GetUserAdminInfo(nonAdminUid, adminOrgId);
+
+        // Assert
+        Assert.NotNull(regularResult);
+        Assert.Equal(nonAdminUid, regularResult.Id);
+        Assert.False(regularResult.IsSysAdmin);
+        Assert.True(regularResult.IsOrgAdmin);
+        Assert.Null(regularResult.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithOrgId_ReturnsIsOrgAdmin_False()
+    {
+        // Act - SysAdmin user in non-admin org
+        var adminResult = await _userBusiness.GetUserAdminInfo(adminUid, nonAdminOrgId);
+
+        // Assert
+        Assert.NotNull(adminResult);
+        Assert.Equal(adminUid, adminResult.Id);
+        Assert.True(adminResult.IsSysAdmin);
+        Assert.False(adminResult.IsOrgAdmin);
+        Assert.Null(adminResult.IsProjectAdmin);
+
+        // Act - Regular user in non-admin org
+        var regularResult = await _userBusiness.GetUserAdminInfo(nonAdminUid, nonAdminOrgId);
+
+        // Assert
+        Assert.NotNull(regularResult);
+        Assert.Equal(nonAdminUid, regularResult.Id);
+        Assert.False(regularResult.IsSysAdmin);
+        Assert.False(regularResult.IsOrgAdmin);
+        Assert.Null(regularResult.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithProjectId_ReturnsIsProjectAdmin_TrueForDirectMembership()
+    {
+        // Act - SysAdmin user with direct admin membership
+        var adminResult = await _userBusiness.GetUserAdminInfo(adminUid, projectId: directAdminPid);
+
+        // Assert
+        Assert.NotNull(adminResult);
+        Assert.Equal(adminUid, adminResult.Id);
+        Assert.True(adminResult.IsSysAdmin);
+        Assert.Null(adminResult.IsOrgAdmin);
+        Assert.True(adminResult.IsProjectAdmin);
+
+        // Act - Regular user with direct admin membership
+        var regularResult = await _userBusiness.GetUserAdminInfo(nonAdminUid, projectId: directAdminPid);
+
+        // Assert
+        Assert.NotNull(regularResult);
+        Assert.Equal(nonAdminUid, regularResult.Id);
+        Assert.False(regularResult.IsSysAdmin);
+        Assert.Null(regularResult.IsOrgAdmin);
+        Assert.True(regularResult.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithProjectId_ReturnsIsProjectAdmin_TrueForGroupMembership()
+    {
+        // Act - SysAdmin user with group-based admin membership
+        var adminResult = await _userBusiness.GetUserAdminInfo(adminUid, projectId: groupAdminPid);
+
+        // Assert
+        Assert.NotNull(adminResult);
+        Assert.Equal(adminUid, adminResult.Id);
+        Assert.True(adminResult.IsSysAdmin);
+        Assert.Null(adminResult.IsOrgAdmin);
+        Assert.True(adminResult.IsProjectAdmin);
+
+        // Act - Regular user with group-based admin membership
+        var regularResult = await _userBusiness.GetUserAdminInfo(nonAdminUid, projectId: groupAdminPid);
+
+        // Assert
+        Assert.NotNull(regularResult);
+        Assert.Equal(nonAdminUid, regularResult.Id);
+        Assert.False(regularResult.IsSysAdmin);
+        Assert.Null(regularResult.IsOrgAdmin);
+        Assert.True(regularResult.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithProjectId_ReturnsIsProjectAdmin_False()
+    {
+        // Act - SysAdmin user in non-admin project
+        var adminResult = await _userBusiness.GetUserAdminInfo(adminUid, projectId: nonAdminPid);
+
+        // Assert
+        Assert.NotNull(adminResult);
+        Assert.Equal(adminUid, adminResult.Id);
+        Assert.True(adminResult.IsSysAdmin);
+        Assert.Null(adminResult.IsOrgAdmin);
+        Assert.False(adminResult.IsProjectAdmin);
+
+        // Act - Regular user in non-admin project
+        var regularResult = await _userBusiness.GetUserAdminInfo(nonAdminUid, projectId: nonAdminPid);
+
+        // Assert
+        Assert.NotNull(regularResult);
+        Assert.Equal(nonAdminUid, regularResult.Id);
+        Assert.False(regularResult.IsSysAdmin);
+        Assert.Null(regularResult.IsOrgAdmin);
+        Assert.False(regularResult.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithAllIds_ReturnsAllBooleans()
+    {
+        // Act - SysAdmin user with all admin privileges
+        var adminResult = await _userBusiness.GetUserAdminInfo(
+            adminUid, 
+            adminOrgId, 
+            directAdminPid);
+
+        // Assert
+        Assert.NotNull(adminResult);
+        Assert.Equal(adminUid, adminResult.Id);
+        Assert.True(adminResult.IsSysAdmin);
+        Assert.True(adminResult.IsOrgAdmin);
+        Assert.True(adminResult.IsProjectAdmin);
+
+        // Act - Regular user with org and project admin privileges
+        var regularResult = await _userBusiness.GetUserAdminInfo(
+            nonAdminUid, 
+            adminOrgId, 
+            directAdminPid);
+
+        // Assert
+        Assert.NotNull(regularResult);
+        Assert.Equal(nonAdminUid, regularResult.Id);
+        Assert.False(regularResult.IsSysAdmin);
+        Assert.True(regularResult.IsOrgAdmin);
+        Assert.True(regularResult.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithAllIds_ReturnsAllBooleans_MixedPermissions()
+    {
+        // Act - SysAdmin user with mixed permissions (sys admin, org admin, not project admin)
+        var result1 = await _userBusiness.GetUserAdminInfo(
+            adminUid, 
+            adminOrgId, 
+            nonAdminPid);
+
+        // Assert
+        Assert.NotNull(result1);
+        Assert.True(result1.IsSysAdmin);
+        Assert.True(result1.IsOrgAdmin);
+        Assert.False(result1.IsProjectAdmin);
+
+        // Act - Regular user with mixed permissions (not sys admin, not org admin, is project admin via group)
+        var result2 = await _userBusiness.GetUserAdminInfo(
+            nonAdminUid, 
+            nonAdminOrgId, 
+            groupAdminPid);
+
+        // Assert
+        Assert.NotNull(result2);
+        Assert.False(result2.IsSysAdmin);
+        Assert.False(result2.IsOrgAdmin);
+        Assert.True(result2.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithNonExistentOrgId_ReturnsIsOrgAdminFalse()
+    {
+        // Act
+        var result = await _userBusiness.GetUserAdminInfo(adminUid, 99999);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(adminUid, result.Id);
+        Assert.True(result.IsSysAdmin);
+        Assert.False(result.IsOrgAdmin);
+        Assert.Null(result.IsProjectAdmin);
+    }
+
+    [Fact]
+    public async Task GetUserAdminInfo_WithNonExistentProjectId_ReturnsIsProjectAdminFalse()
+    {
+        // Act
+        var result = await _userBusiness.GetUserAdminInfo(adminUid, projectId: 99999);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(adminUid, result.Id);
+        Assert.True(result.IsSysAdmin);
+        Assert.Null(result.IsOrgAdmin);
+        Assert.False(result.IsProjectAdmin);
     }
 
     #endregion
@@ -1122,16 +1564,16 @@ public class UserBusinessTests : IntegrationTestBase
         // Arrange - Create a sysadmin authorizer and a regular candidate user
         var authorizer = new User
         {
-            Name = "Admin User",
-            Email = "admin@test.com",
+            Name = "Admin Alan",
+            Email = "adminalan@test.com",
             Username = "admin",
             IsActive = true,
             IsSysAdmin = true
         };
         var candidate = new User
         {
-            Name = "Regular User",
-            Email = "regular@test.com",
+            Name = "Regular Joe",
+            Email = "regularjoe@test.com",
             Username = "regular",
             IsActive = true,
             IsSysAdmin = false
@@ -1157,8 +1599,8 @@ public class UserBusinessTests : IntegrationTestBase
         // Arrange - Create a non-admin authorizer and a candidate user
         var authorizer = new User
         {
-            Name = "Regular User",
-            Email = "regular@test.com",
+            Name = "Regular Joe",
+            Email = "regularjoe@test.com",
             Username = "regular",
             IsActive = true,
             IsSysAdmin = false
