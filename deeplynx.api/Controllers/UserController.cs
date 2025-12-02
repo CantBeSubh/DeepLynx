@@ -233,14 +233,18 @@ public class UserController : ControllerBase
     /// <summary>
     ///     Get the Current Authenticated User
     /// </summary>
+    /// <param name="organizationId">If specified, return boolean if user is admin of this org</param>
+    /// <param name="projectId">If specified, return boolean if user is admin of this project</param>
     /// <returns>User response DTO</returns>
     [HttpGet("current", Name = "api_get_current_user")]
-    public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
+    public async Task<ActionResult<UserAdminInfoDto>> GetCurrentUser(
+        [FromQuery] long? organizationId,
+        [FromQuery] long? projectId)
     {
         try
         {
             var userId = UserContextStorage.UserId;
-            var user = await _userBusiness.GetUser(userId);
+            var user = await _userBusiness.GetUserAdminInfo(userId, organizationId, projectId);
             return Ok(user);
         }
         catch (Exception exc)
