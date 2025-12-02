@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
+FROM node:lts-alpine3.22 AS frontend-build
 
 # Define build arguments
 ARG OKTA_ISSUER
@@ -30,9 +30,6 @@ ENV NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${NEXT_PUBLIC_DISABLE_FRONTEND_A
 # Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json first
-COPY deeplynx.UI/package*.json ./
-
 # Configure INL certs and environment variables
 RUN apk --no-check-certificate add wget ca-certificates
 RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
@@ -43,8 +40,11 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
-# Install Node.js and npm
-RUN apk add --no-cache nodejs npm
+# Install latest global npm version and packages
+RUN npm install -g npm@latest
+
+# Copy package.json first
+COPY deeplynx.UI/package*.json ./
 
 # Install frontend dependencies
 RUN npm install
@@ -56,7 +56,7 @@ COPY deeplynx.UI .
 RUN npm run build
 
 # Stage 2: Create the final image
-FROM node:lts-alpine3.20 AS final
+FROM node:lts-alpine3.22 AS final
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -70,6 +70,9 @@ ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
+
+# Install latest global npm version and packages
+RUN npm install -g npm@latest
 
 # Copy the built frontend code from the previous stage
 COPY --from=frontend-build /usr/src/app .
