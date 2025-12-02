@@ -217,7 +217,7 @@ const AddRecordModal: React.FC<Props> = ({
       name,
       description,
       original_id: abbreviation,
-      properties: JSON.stringify(props),
+      properties: props,
       class_id: classId,
     };
 
