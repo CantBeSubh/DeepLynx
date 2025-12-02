@@ -28,7 +28,7 @@ public class OauthApplicationController : ControllerBase
     }
 
     /// <summary>
-    ///     List all OAuth applications
+    ///     Get All OAuth Applications
     /// </summary>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>
     /// <returns></returns>
@@ -51,7 +51,7 @@ public class OauthApplicationController : ControllerBase
     }
 
     /// <summary>
-    ///     Fetch OAuth Application by ID
+    ///     Get OAuth Application by ID
     /// </summary>
     /// <param name="applicationId">ID of OAuth application</param>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>

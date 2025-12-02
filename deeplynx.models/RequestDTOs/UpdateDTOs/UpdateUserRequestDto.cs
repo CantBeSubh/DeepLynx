@@ -6,7 +6,5 @@ public class UpdateUserRequestDto
     // since we search by email, do not allow update of email
     public string? Username { get; set; }
     public bool? IsArchived { get; set; } = false;
-    
-    public long? ProjectId { get; set; }
     public bool? IsActive { get; set; } = false;
 }

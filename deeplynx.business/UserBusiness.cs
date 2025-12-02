@@ -281,6 +281,12 @@ public class UserBusiness : IUserBusiness
     /// <returns>Data overview object</returns>
     public async Task<DataOverviewDto> GetUserOverview(long userId)
     {
+        var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
+        if (!userExists)
+        {
+            throw  new KeyNotFoundException($"User with ID {userId} not found.");
+        }
+        
         // Filtering projects by a user
         var projectsTotal = _context.ProjectMembers
             .Count(p => p.UserId == userId);

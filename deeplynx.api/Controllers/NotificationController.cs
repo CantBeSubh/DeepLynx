@@ -27,7 +27,7 @@ public class NotificationController : ControllerBase
     }
 
     /// <summary>
-    ///     Send email
+    ///     Send Email
     /// </summary>
     [HttpPost("email", Name = "api_send_email")]
     public async Task<IActionResult> SendEmail([FromQuery] string email, string? name)
