@@ -40,10 +40,10 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
-# Install latest npm version and packages
+# Install latest global npm version and packages
 RUN npm install -g npm@latest
 
-# Copy package.json and package-lock.json first
+# Copy package.json first
 COPY deeplynx.UI/package*.json ./
 
 # Install frontend dependencies
@@ -71,7 +71,7 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
-# Install latest npm version and packages
+# Install latest global npm version and packages
 RUN npm install -g npm@latest
 
 # Copy the built frontend code from the previous stage

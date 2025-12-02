@@ -13,17 +13,11 @@ ENV HOSTED_LINK=${HOSTED_LINK}
 # Set working directory
 WORKDIR /usr/src/app
 
-# Install versioned os packages
-#RUN apk update && apk upgrade --no-cache && \
-#    apk add --no-cache \
-#      openssl=3.3.5-r0 \
-#      busybox=1.36.1-r31
-
-# Copy package.json and package-lock.json first
-COPY deeplynx.docs/package*.json ./
-
-# Install latest npm version and packages
+# Install latest global npm version and packages
 RUN npm install -g npm@latest
+
+# Copy package.json first
+COPY deeplynx.docs/package*.json ./
 
 # Install frontend dependencies
 RUN npm install
@@ -37,20 +31,14 @@ RUN npm run build
 # Stage 2: Create the final image
 FROM node:lts-alpine3.22 AS final
 
-# Install versioned os packages
-# RUN apk update && apk upgrade --no-cache && \
-#     apk add --no-cache \
-#       openssl=3.3.5-r0 \
-#       busybox=1.36.1-r31
-
 # Set working directory
 WORKDIR /usr/src/app
 
+# Install latest global npm version and packages
+RUN npm install -g npm@latest
+
 # Copy the built frontend code from the previous stage
 COPY --from=frontend-build /usr/src/app .
-
-# Install latest npm version and packages
-RUN npm install -g npm@latest
 
 # Install production dependencies
 RUN npm install --omit=dev
