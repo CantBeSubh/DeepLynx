@@ -3,11 +3,13 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers;
 
 [ApiController]
 [Route("organizations")]
+[Authorize]
 public class OrganizationController : ControllerBase
 {
     private readonly ILogger<OrganizationController> _logger;
