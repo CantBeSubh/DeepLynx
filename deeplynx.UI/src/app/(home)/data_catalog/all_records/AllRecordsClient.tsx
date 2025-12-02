@@ -122,7 +122,6 @@ export default function DataCatalogClient({
         setTableData([]);
         return;
       }
-      const { organization} = useOrganizationSession();
       const data = await getMultiProjectRecords(organization?.organizationId as number, idsNum, true);
       const transformedData: RecordTableRow[] = data.map((record) => ({
         id: record.id || 0,

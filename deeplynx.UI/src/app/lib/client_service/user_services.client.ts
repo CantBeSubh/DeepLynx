@@ -48,6 +48,16 @@ export async function getLocalDevUser() {
   }
 }
 
+export async function getDataOverview(userId: string) {
+  try {
+    const res = await api.get(`/users/GetDataOverview/${encodeURIComponent(userId)}`); // TODO FIX
+    return res.data;
+  } catch (error) {
+    console.error("API call failed:", error);
+    throw error;
+  }
+}
+
 export async function updateUser(
   userId: number,
   data: {
