@@ -143,7 +143,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <UserGroupIcon className="size-8 mr-3" />
               <div className="flex flex-col">
                 <span className="text-xs opacity-70">Organization</span>
-                <h1 className="text-lg font-bold">
+                <h1 className="text-lg font-bold truncate">
                   {organization?.organizationName || "No Organization"}
                 </h1>
               </div>
@@ -163,7 +163,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {isOrgDropdownOpen && (
             <ul
               tabIndex={0}
-              className="dropdown-content menu bg-base-100 text-base-content rounded-box z-[100] w-72 p-2 shadow-xl border border-base-300 mt-2"
+              className="dropdown-content menu bg-base-100 text-base-content rounded-box z-[100] w-72 max-w-72 p-2 shadow-xl border border-base-300 mt-2"
             >
               {loadingOrgs ? (
                 <li>
@@ -179,38 +179,31 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </span>
                   </li>
                   {organizations.map((org) => (
-                    <li key={org.id}>
-                      <button
+                    <li key={org.id} className="w-full">
+                      <a
                         onClick={() => handleOrganizationSwitch(org)}
-                        className={`flex items-center justify-between ${organization?.organizationId === org.id
-                          ? "active bg-info/60 text-primary-content"
+                        className={`flex items-center gap-2 w-full max-w-full ${organization?.organizationId === org.id
+                          ? "active bg-info/60"
                           : ""
                           }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <AvatarCell name={org.name} size={8} />
-                          <div className="flex flex-col items-start">
-                            <span className="font-semibold text-base-content">
-                              {org.name}
-                            </span>
-                            {org.description && (
-                              <span className="text-xs opacity-70 truncate max-w-[200px]">
-                                {org.description}
-                              </span>
-                            )}
-                          </div>
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <div className=" font-medium truncate">{org.name}</div>
+                          {org.description && (
+                            <div className="text-xs opacity-70 truncate">{org.description}</div>
+                          )}
                         </div>
                         {organization?.organizationId === org.id && (
-                          <span className="badge badge-sm">Current</span>
+                          <span className="badge badge-sm shrink-0 whitespace-nowrap !text-base-content">Current</span>
                         )}
-                      </button>
+                      </a>
                     </li>
                   ))}
                   <div className="divider my-1"></div>
                   <li>
                     <Link
                       href="/select-org"
-                      className=" hover:bg-base-200"
+                      className="hover:bg-base-200"
                       onClick={() => setIsOrgDropdownOpen(false)}
                     >
                       <UserGroupIcon className="size-5" />
