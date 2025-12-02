@@ -199,8 +199,8 @@ public class RecordBusiness : IRecordBusiness
 
         var tagExists = await _context.Tags
             .AnyAsync(t => t.Id == tagId
-                           && t.ProjectId == projectId
                            && t.OrganizationId == organizationId
+                           && (t.ProjectId == projectId || t.ProjectId == null)
                            && !t.IsArchived);
 
         if (!tagExists)
@@ -215,7 +215,10 @@ public class RecordBusiness : IRecordBusiness
             throw new InvalidOperationException($"Tag with id {tagId} is already attached to record {recordId}");
 
         // Only now load entities for modification
-        var record = await _context.Records.FindAsync(recordId);
+        var record = await _context.Records
+            .Include(r => r.Tags)
+            .FirstOrDefaultAsync(r => r.Id == recordId);
+        
         var tag = await _context.Tags.FindAsync(tagId);
 
         record.Tags.Add(tag);
@@ -246,15 +249,17 @@ public class RecordBusiness : IRecordBusiness
 
         var tagExists = await _context.Tags
             .AnyAsync(t => t.Id == tagId
-                           && t.ProjectId == projectId
                            && t.OrganizationId == organizationId
+                           && (t.ProjectId == projectId || t.ProjectId == null)
                            && !t.IsArchived);
 
         if (!tagExists)
             throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
 
         // Only now load entities for modification
-        var record = await _context.Records.FindAsync(recordId);
+        var record = await _context.Records
+            .Include(r => r.Tags)
+            .FirstOrDefaultAsync(r => r.Id == recordId);
         var tag = await _context.Tags.FindAsync(tagId);
 
         record.Tags.Remove(tag);
