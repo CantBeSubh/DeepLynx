@@ -33,6 +33,7 @@ interface InlineGroupsTableProps {
   initialGroups: GroupResponseDto[];
   availableUsers: UserResponseDto[];
   organizationId?: number | string;
+  onGroupsChange?: () => Promise<void>; // Add this prop
 }
 
 /* -------------------------------------------------------------------------- */
@@ -43,6 +44,7 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   initialGroups,
   availableUsers,
   organizationId,
+  onGroupsChange
 }) => {
   /* ------------------------------------------------------------------------ */
   /*                               Core State                                */
@@ -194,6 +196,10 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
       setNewGroupDescription("");
       setShowCreateForm(false);
       toast.success("Group created");
+
+      if (onGroupsChange) {
+        await onGroupsChange();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create group");
       toast.error("Group not created");
@@ -230,6 +236,10 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
       setEditingGroup(null);
       setEditName("");
       setEditDescription("");
+
+      if (onGroupsChange) {
+        await onGroupsChange();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update group");
     } finally {
@@ -295,6 +305,9 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
           ? "Group archived"
           : "Groups archived"
       );
+      if (onGroupsChange) {
+        await onGroupsChange();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive groups");
       toast.error("Failed to archive groups");

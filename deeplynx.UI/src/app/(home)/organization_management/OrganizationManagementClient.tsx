@@ -1,4 +1,3 @@
-// src/app/(home)/organization_management/OrganizationManagementClient.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -21,6 +20,7 @@ import OptionThree from "./tag_management/OptionThree";
 import SettingsOne from "./settings/SettingsOne";
 import SettingsTwo from "./settings/SettingsTwo";
 import SettingsThree from "./settings/SettingsThree";
+import { getAllGroups } from "@/app/lib/client_service/group_services.client"; // Add this import
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
@@ -39,13 +39,31 @@ const OrganizationManagementClient = ({
   initialProjects,
 }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
+  const [groups, setGroups] = useState<GroupResponseDto[]>(initialGroups);
   const { t } = useLanguage();
   const { organization } = useOrganizationSession();
+
+  const refreshGroups = async () => {
+    if (!organization?.organizationId) return;
+
+    try {
+      const updatedGroups = await getAllGroups(
+        organization.organizationId as number
+      );
+      setGroups(updatedGroups);
+    } catch (err) {
+      console.error("Failed to refresh groups:", err);
+    }
+  };
 
   const tabData = [
     {
       label: "Users",
-      content: <UsersTable members={members} header={"Organization Users"} description={"Manage users in your organization. Invite new users via email or add them directly."} />,
+      content: <UsersTable
+        initialMembers={members}
+        header={"Organization Users"}
+        description={"Manage users in your organization. Invite new users via email or add them directly."}
+      />,
     },
     {
       label: "Roles & Permissions",
@@ -60,17 +78,15 @@ const OrganizationManagementClient = ({
       label: "Groups",
       content: (
         <InlineGroupsTable
-          initialGroups={initialGroups}
+          initialGroups={groups}
           availableUsers={members}
           organizationId={organization?.organizationId}
+          onGroupsChange={refreshGroups}
         />
       ),
     },
     {
       label: "Tags and Security Labels",
-      // content: <TagManagementClient />,
-      // content: <OptionOne />,
-      // content: <OptionTwo />,
       content: <OptionThree projects={initialProjects} />,
     },
     {
@@ -78,9 +94,6 @@ const OrganizationManagementClient = ({
       content: organization ? (
         <OrganizationSettings organization={organization} />
       ) : (
-        // <SettingsOne />
-        // <SettingsTwo />
-        // <SettingsThree />
         <div>No organization selected</div>
       ),
     },
