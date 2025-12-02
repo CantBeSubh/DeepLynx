@@ -23,7 +23,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { TagResponseDto } from "../../types/responseDTOs";
 import { fullTextSearch } from "@/app/lib/client_service/query_services.client";
-import { getAllRecordsForMultipleProjectsServer } from "@/app/lib/server_service/projects_services.server";
 
 /* ----------------------------- Types & utils ----------------------------- */
 
