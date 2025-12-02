@@ -50,7 +50,7 @@ export async function getLocalDevUser() {
 
 export async function getDataOverview(userId: string) {
   try {
-    const res = await api.get(`/users/GetDataOverview/${encodeURIComponent(userId)}`); // TODO FIX
+    const res = await api.get(`/users/${userId}/overview`); 
     return res.data;
   } catch (error) {
     console.error("API call failed:", error);
@@ -70,16 +70,6 @@ export async function updateUser(
 ): Promise<UserResponseDto> {
   try {
     const res = await api.put<UserResponseDto>(`/users/${userId}`, data);
-    return res.data;
-  } catch (error) {
-    console.error("API call failed:", error);
-    throw error;
-  }
-}
-
-export async function deleteUser(userId: number) {
-  try {
-    const res = await api.delete(`/users/DeleteUser/${userId}`); // TODO FIX
     return res.data;
   } catch (error) {
     console.error("API call failed:", error);

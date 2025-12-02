@@ -21,7 +21,6 @@ import RecentRecordsCard from "../components/RecentRecordsCard";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { fullTextSearch, getMultiProjectRecords } from "@/app/lib/client_service/query_services.client";
 import { HistoricalRecordResponseDto, RecordResponseDto } from "../types/responseDTOs";
-import { getAllRecordsForMultipleProjectsServer } from "@/app/lib/server_service/projects_services.server";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -38,7 +37,7 @@ export default function DataCatalogClient({
 }: Props) {
   const { t } = useLanguage();
   const { hasLoaded, setProject: setProjectSession } = useProjectSession();
-    const { organization} = useOrganizationSession();
+  const { organization} = useOrganizationSession();
 
   // Use ref to store initial values to prevent re-renders
   const initialSelectedProjectsRef = useRef(initialSelectedProjects);
