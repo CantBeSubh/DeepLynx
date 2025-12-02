@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import api from './api';
 import { DataSourceResponseDto } from '../../(home)/types/responseDTOs';
@@ -58,6 +58,8 @@ export const getDataSource = async (
  * Get default data source for a project
  * @param projectId - The ID of the project
  * @returns Promise with DataSourceResponseDto
+ *
+ * GET /organizations/{organizationId}/datasources/default?projectId={projectId}
  */
 export const getDefaultDataSource = async (
   projectId: number
@@ -101,6 +103,8 @@ export const createDataSource = async (
  * @param dataSourceId - The ID of the data source to update
  * @param dto - The data source update request DTO
  * @returns Promise with DataSourceResponseDto
+ *
+ * PUT /organizations/{organizationId}/datasources/{dataSourceId}
  */
 export const updateDataSource = async (
   projectId: number,
@@ -160,7 +164,11 @@ export const archiveDataSource = async (
     );
     return res.data;
   } catch (error) {
-    console.error(`Error ${archive ? 'archiving' : 'unarchiving'} data source ${dataSourceId}:`, error);
+    console.error(
+      `Error ${archive ? "archiving" : "unarchiving"} data source ${dataSourceId
+      }:`,
+      error
+    );
     throw error;
   }
 };
@@ -171,6 +179,8 @@ export const archiveDataSource = async (
  * @param dataSourceId - The ID of the data source to set as default
  * @param isDefault - True to set as default, false to unset (default: true)
  * @returns Promise with DataSourceResponseDto
+ *
+ * PATCH /organizations/{organizationId}/datasources/{dataSourceId}/default?projectId={projectId}&isDefault=true|false
  */
 export const setDefaultDataSource = async (
   projectId: number,
