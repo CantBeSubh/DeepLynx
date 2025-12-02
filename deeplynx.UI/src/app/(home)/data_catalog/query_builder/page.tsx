@@ -4,6 +4,7 @@ import { ProjectResponseDto } from "../../types/responseDTOs";
 import QueryBuilderClient from "./QueryBuilderClient";
 import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { auth } from "../../../../../auth";
+import { HistoricalRecordResponseDto } from "../../types/responseDTOs";
 
 export default async function Page({
   searchParams,
@@ -53,7 +54,7 @@ export default async function Page({
       initialProjects={initialProjects}
       initialSelectedProjects={initialSelectedProjects}
       initialSearchTerm={initialSearch}
-      queriedRecords={[]}
+      organizationId={organizationId!}
     />
   );
 }

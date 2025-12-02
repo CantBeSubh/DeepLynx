@@ -64,14 +64,14 @@ export interface HistoricalRecordResponseDto {
   className?: string | null;
   dataSourceId?: number;
   dataSourceName: string;
-  objectStorageId?: number;
-  objectStorageName?: string | null;
   projectId?: number;
   projectName: string;
   tags?: string | null;
   lastUpdatedAt: string;
   lastUpdatedBy?: string | null;
   isArchived: boolean;
+  objectStorageId?: number;
+  objectStorageName?: string | null;
 }
 
 export type RecordResponseDto = {
