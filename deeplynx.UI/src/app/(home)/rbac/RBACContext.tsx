@@ -36,6 +36,13 @@ interface RBACContextType {
   session: Session | null;
 }
 
+/* Props for provider: org/project context is passed in from outside */
+interface RBACProviderProps {
+  children: ReactNode;
+  orgId?: number;
+  projectId?: number;
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                RBAC Context                                */
 /* -------------------------------------------------------------------------- */
@@ -48,7 +55,11 @@ export const RBACContext = createContext<RBACContextType | undefined>(
 /*                               RBAC Provider                                */
 /* -------------------------------------------------------------------------- */
 
-export function RBACProvider({ children }: { children: ReactNode }) {
+export function RBACProvider({
+  children,
+  orgId,
+  projectId,
+}: RBACProviderProps) {
   const disableAuth =
     process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
 
@@ -63,15 +74,9 @@ export function RBACProvider({ children }: { children: ReactNode }) {
   const deriveRoles = (user: UserAdminInfoDto): RBACRole[] => {
     const roles: RBACRole[] = [];
 
-    if (user.isSysAdmin) {
-      roles.push("sysAdmin");
-    }
-    if (user.isOrgAdmin) {
-      roles.push("orgAdmin");
-    }
-    if (user.isProjectAdmin) {
-      roles.push("projectAdmin");
-    }
+    if (user.isSysAdmin) roles.push("sysAdmin");
+    if (user.isOrgAdmin) roles.push("orgAdmin");
+    if (user.isProjectAdmin) roles.push("projectAdmin");
 
     return roles;
   };
@@ -104,7 +109,10 @@ export function RBACProvider({ children }: { children: ReactNode }) {
   const fetchUserData = useCallback(async () => {
     setLoading(true);
     try {
-      const response: UserAdminInfoDto = await getCurrentUser();
+      // 🔥 Here we now use orgId/projectId from props
+      const response = await getCurrentUser(orgId, projectId);
+      console.log("Current User (RBAC):", response);
+
       const userData: RBACUser = {
         ...response,
         roles: deriveRoles(response),
@@ -119,7 +127,7 @@ export function RBACProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [orgId, projectId]);
 
   /* ------------------------------------------------------------------------ */
   /*                           Initial User Loading                           */
