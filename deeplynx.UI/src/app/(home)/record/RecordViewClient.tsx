@@ -1,11 +1,6 @@
 "use client";
 import Tabs from "@/app/(home)/components/Tabs";
-import {
-  CheckCircleIcon,
-  PencilIcon,
-  XCircleIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -15,7 +10,6 @@ import RecordLoading from "./loading";
 
 // Components
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
-import TagButton from "@/app/(home)/components/TagButton";
 import RelatedRecordsCard, {
   CardColumn,
 } from "./components/RelatedRecordsCard";
@@ -33,10 +27,11 @@ import {
   unattachTagFromRecord,
   updateRecord,
 } from "@/app/lib/client_service/record_services.client";
+import { getAllTagsOrg } from "@/app/lib/client_service/tag_services.client";
 import GraphClientPage from "../graph/GraphClientPage";
 import { RelatedRecordsResponseDto } from "../types/responseDTOs";
+import RecordTagsPanel from "./components/RecordTagsPanel";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
-import { getAllTags, getAllTagsOrg, getTagOrg } from "@/app/lib/client_service/tag_services.client";
 
 // ============= TYPE DEFINITIONS =============
 interface Props {
@@ -88,6 +83,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   >([]);
   const [isLoadingOrigins, setIsLoadingOrigins] = useState(false);
   const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
 
   // Modal State
   const [modal, setModal] = useState<ModalState>({
@@ -470,15 +466,16 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     if (!record?.properties) return [];
 
     // Check if properties is a string and parse it, otherwise use it directly
-    const parsedProperties = typeof record.properties === "string"
-      ? JSON.parse(record.properties)
-      : record.properties;
+    const parsedProperties =
+      typeof record.properties === "string"
+        ? JSON.parse(record.properties)
+        : record.properties;
 
     return Object.entries(parsedProperties).map(([key, value]) => ({
       label: key
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' '), // Optional: convert snake_case to Title Case
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "), // Optional: convert snake_case to Title Case
       value: typeof value === "object" ? JSON.stringify(value) : String(value),
     }));
   }, [record?.properties]);
@@ -507,6 +504,27 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     },
     { key: "actions", label: t.translations.ACTIONS },
   ];
+
+  const handleRemoveTag = async (tagId: number) => {
+    if (!organization?.organizationId) return;
+
+    try {
+      await unattachTagFromRecord(
+        organization.organizationId as number,
+        projectId,
+        recordId,
+        tagId
+      );
+
+      setSelectedTags((prev) => prev.filter((t) => t.id !== tagId));
+      setSelectedIds((prev) => prev.filter((id) => id !== String(tagId)));
+
+      toast.success("Tag(s) removed!");
+    } catch (error) {
+      console.error("Error removing tag:", error);
+      toast.error(t.translations.FAILED_TO_UPDATE_TAGS);
+    }
+  };
 
   // ============= RENDER HELPERS =============
   if (!hasLoaded || !organization) {
@@ -543,66 +561,18 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
           {/* Right Column - Tags & Relations */}
           <div className="flex-1 space-y-4">
             {/* Tags Card */}
-            <div className="card bg-base-100 shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-base-content">
-                  {t.translations.TAGS}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <TagButton
-                    tags={tags}
-                    onSelectionChange={handleTagSelectionChange}
-                    projectId={projectId}
-                    recordId={recordId}
-                    selectedIds={selectedIds}
-                    setSelectedIds={setSelectedIds}
-                    setTags={setTags}
-                    setSelectedTags={setSelectedTags}
-                  />
-                  {!isEditing ? (
-                    <PencilIcon
-                      className="w-6 h-6 cursor-pointer text-primary hover:text-primary-content"
-                      onClick={toggleEditMode}
-                    />
-                  ) : (
-                    <>
-                      <CheckCircleIcon
-                        className="w-6 h-6 cursor-pointer text-success hover:text-success-content"
-                        onClick={handleSaveTagChanges}
-                      />
-                      <XCircleIcon
-                        className="w-6 h-6 cursor-pointer text-error hover:text-error-content"
-                        onClick={toggleEditMode}
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {selectedTags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="flex items-center border-2 border-primary text-primary rounded-full px-3 py-1 hover:bg-primary hover:text-primary-content transition-colors"
-                  >
-                    {tag.name}
-                    {isEditing && !tagsToRemove.includes(tag.id.toString()) && (
-                      <XMarkIcon
-                        className="w-4 h-4 ml-1 cursor-pointer text-error hover:text-error-content"
-                        onClick={() =>
-                          handleOpenModal(
-                            tag.id.toString(),
-                            tag.name,
-                            record.name,
-                            "tag"
-                          )
-                        }
-                      />
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <RecordTagsPanel
+              tags={tags}
+              selectedTags={selectedTags}
+              selectedIds={selectedIds}
+              onSelectionChange={handleTagSelectionChange}
+              onRemoveTag={handleRemoveTag}
+              projectId={projectId}
+              recordId={recordId}
+              setTags={setTags}
+              setSelectedTags={setSelectedTags}
+              title={t.translations.TAGS}
+            />
 
             {/* Related Records Card - Origins */}
             {isLoadingOrigins && originPage === 1 ? (
@@ -647,15 +617,13 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     },
     {
       label: "Graph",
-      content: (
-        <GraphClientPage projectId={projectId} recordId={recordId} />
-      ),
+      content: <GraphClientPage projectId={projectId} recordId={recordId} />,
     },
   ];
 
   // ============= MAIN RENDER =============
   return (
-    <div>
+    <div className="mr-4">
       <div className="bg-base-200/40 pl-12 p-4">
         <h1 className="text-2xl font-bold text-base-content">{record.name}</h1>
       </div>
