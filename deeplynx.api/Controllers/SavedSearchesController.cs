@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve class information.
 /// </remarks>
 [ApiController]
-[Route("users/{userId:long}/saved-searches")]
+[Route("saved-searches")]
 [Authorize]
 public class SavedSearchController : ControllerBase
 {
@@ -31,7 +31,7 @@ public class SavedSearchController : ControllerBase
     }
 
     /// <summary>
-    ///     Saved searches
+    ///     Save Searches
     /// </summary>
     /// <param name="filterArray">Array of QueryComponent dtos</param>
     /// <param name="textSearch">Full text search phrase</param>
@@ -59,7 +59,7 @@ public class SavedSearchController : ControllerBase
     }
 
     /// <summary>
-    ///     Get saved searches
+    ///     Get Saved Searches
     /// </summary>
     /// <returns>A list of saved searches belonging to the user.</returns>
     [HttpGet(Name = "api_query_get_saved_searches")]

@@ -16,7 +16,9 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("projects/{projectId:long}/relationships")]
 [Authorize]
-[Tags("Project Management", "Relationship")]
+[Tags(
+    // "Project Management",
+    "Relationship")]
 public class RelationshipProjectController : ControllerBase
 {
     private readonly ILogger<RelationshipProjectController> _logger;
@@ -35,7 +37,7 @@ public class RelationshipProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Relationships
+    ///     Get All Relationships (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project whose relationships are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
@@ -62,7 +64,7 @@ public class RelationshipProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Relationship
+    ///     Get a Relationship (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="relationshipId">The ID of the relationship to retrieve</param>
@@ -95,7 +97,7 @@ public class RelationshipProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Relationship
+    ///     Create a Relationship (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="dto">The relationship request data transfer object containing relationship details</param>
@@ -122,7 +124,7 @@ public class RelationshipProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Bulk Create Relationships
+    ///     Bulk Create Relationships (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationships belong</param>
     /// <param name="relationships">List of relationship request data transfer objects containing relationship details</param>
@@ -151,7 +153,7 @@ public class RelationshipProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Relationship
+    ///     Update a Relationship (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="relationshipId">The ID of the relationship to update</param>
@@ -182,7 +184,7 @@ public class RelationshipProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Relationship
+    ///     Delete a Relationship (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="relationshipId">The ID of the relationship to delete</param>
@@ -209,7 +211,7 @@ public class RelationshipProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Relationship
+    ///     Archive or Unarchive a Relationship (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
     /// <param name="relationshipId">The ID of the relationship to archive or unarchive</param>

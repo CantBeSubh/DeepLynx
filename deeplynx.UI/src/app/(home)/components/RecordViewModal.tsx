@@ -2,7 +2,7 @@
 
 import React from "react";
 import PropertyTable from "./PropertyTable";
-import { Column, FileViewerTableRow } from "../types/types";
+import { Column, RecordTableRow } from "../types/types";
 import GenericTable from "./GenericTable";
 import { RelatedRecordsResponseDto } from "../types/responseDTOs";
 import { TagResponseDto } from '../types/responseDTOs';
@@ -10,7 +10,7 @@ import { TagResponseDto } from '../types/responseDTOs';
 interface RecordViewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  record: FileViewerTableRow | null;
+  record: RecordTableRow | null;
   relatedRecords: RelatedRecordsResponseDto[];
   tags: TagResponseDto[];
 }

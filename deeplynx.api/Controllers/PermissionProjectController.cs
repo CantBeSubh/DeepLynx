@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers;
 
@@ -14,7 +15,10 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Route("organizations/{organizationId:long}/projects/{projectId:long}/permissions")]
-[Tags("Project Management", "Permission")]
+[Authorize]
+[Tags(
+    // "Project Management", 
+    "Permission")]
 public class PermissionProjectController : ControllerBase
 {
     private readonly ILogger<PermissionProjectController> _logger;
@@ -32,7 +36,7 @@ public class PermissionProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Permissions
+    ///     Get All Permissions (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project whose permissions are to be retrieved</param>
@@ -63,7 +67,7 @@ public class PermissionProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Permission
+    ///     Get a Permission (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="projectId">The ID of the project to which the permission belongs</param>
@@ -92,7 +96,7 @@ public class PermissionProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Permission
+    ///     Create a Permission (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="projectId">The ID of the project to which the permission belongs</param>
@@ -122,7 +126,7 @@ public class PermissionProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Permission
+    ///     Update a Permission (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="projectId">The ID of the project to which the permission belongs</param>
@@ -152,7 +156,7 @@ public class PermissionProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Permission
+    ///     Delete a Permission (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="projectId">The ID of the project to which the permission belongs</param>
@@ -180,7 +184,7 @@ public class PermissionProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Permission
+    ///     Archive or Unarchive a Permission (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="projectId">The ID of the project to which the permission belongs</param>

@@ -27,7 +27,7 @@ public class MetadataController : ControllerBase
     }
 
     /// <summary>
-    ///     Parses metadata from raw JSON
+    ///     Parse Metadata from Raw JSON
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
@@ -63,7 +63,7 @@ public class MetadataController : ControllerBase
     }
 
     /// <summary>
-    ///     Parses metadata from a JSON file
+    ///     Parse Metadata from a JSON File
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>

@@ -41,12 +41,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   const [projects, setProjects] =
     useState<ProjectResponseDto[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
-  const [canCustomize, setCanCustomize] = useState(false);
-  const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
-    "Links",
-    "DataOverview",
-    "Graph",
-  ]);
 
   const isRefreshing = useRef(false);
 
@@ -137,10 +131,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     },
   ];
 
-  const handleSave = (newWidgets: WidgetType[]) => {
-    setHomeWidgets(newWidgets);
-    setCanCustomize(false);
-  };
 
   const formatUserName = (fullName?: string | null): string => {
     if (!fullName) return "";

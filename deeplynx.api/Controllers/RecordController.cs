@@ -130,14 +130,14 @@ public class RecordController : ControllerBase
     }
 
     /// <summary>
-    ///     Get record count for a data source
+    ///     Get Record Count for a Data Source
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the records belong</param>
     /// <param name="dataSourceId">The ID of the datasource by which to count records for</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
     /// <returns>The record count for the given data source</returns>
-    [HttpGet(Name = "api_get_records_count_by_data_source")]
+    [HttpGet("count", Name = "api_get_records_count_by_data_source")]
     [Auth("read", "record")]
     public async Task<ActionResult<int>> GetRecordsCountByDataSource(
         long organizationId,

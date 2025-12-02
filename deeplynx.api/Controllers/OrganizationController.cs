@@ -3,11 +3,13 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers;
 
 [ApiController]
 [Route("organizations")]
+[Authorize]
 public class OrganizationController : ControllerBase
 {
     private readonly ILogger<OrganizationController> _logger;
@@ -26,7 +28,7 @@ public class OrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///  List all organizations
+    ///  Get All Organizations
     /// </summary>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
@@ -50,7 +52,7 @@ public class OrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///  List organizations for user
+    ///  Get Organizations for User
     /// </summary>
     /// <param name="hideArchived">Flag indicating whether to hide or show archived orgs</param>
     /// <returns></returns>
@@ -149,7 +151,7 @@ public class OrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete an organization
+    ///     Delete an Organization
     /// </summary>
     /// <param name="organizationId">ID of the organization to hard delete</param>
     /// <returns></returns>
@@ -259,7 +261,7 @@ public class OrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Remove user from organization
+    ///     Remove User from Organization
     /// </summary>
     /// <param name="organizationId">ID of the organization to remove from</param>
     /// <param name="userId">ID of user to be removed</param>

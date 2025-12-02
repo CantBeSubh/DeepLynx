@@ -152,10 +152,10 @@ const LoadingProjectDetail = () => {
           {/* right column */}
           <div className="w-full md:w-2/5 px-4">
             <div className="flex justify-between items-center mb-4">
-              <button className="btn btn-outline btn-secondary flex items-center mr-2">
+              {/* <button className="btn btn-outline btn-secondary flex items-center mr-2">
                 <Cog6ToothIcon className="h-6 w-6" />
                 {t.translations.CUSTOMIZE}
-              </button>
+              </button> */}
               <button className="btn btn-secondary text-secondary-content flex items-center">
                 <PlusIcon className="h-6 w-6" />
                 {t.translations.WIDGET}

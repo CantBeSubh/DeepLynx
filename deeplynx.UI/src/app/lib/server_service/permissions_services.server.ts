@@ -19,7 +19,9 @@ export async function getAllPermissionsServer(
   searchParams.append("hideArchived", hideArchived.toString());
 
   const queryString = searchParams.toString();
-  const path = `/organizations/${organizationId}/projects/${projectId}/permissions${queryString ? `?${queryString}` : ""}`;
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions${
+    queryString ? `?${queryString}` : ""
+  }`;
 
   const res = await apiFetch(path);
   return asJson<PermissionResponseDto[]>(res);
@@ -35,7 +37,9 @@ export async function getPermissionByIdServer(
   searchParams.append("hideArchived", hideArchived.toString());
 
   const queryString = searchParams.toString();
-  const path = `/organizations/${organizationId}/projects/${projectId}/permissions/${permissionId}${queryString ? `?${queryString}` : ""}`;
+  const path = `/organizations/${organizationId}/projects/${projectId}/permissions/${permissionId}${
+    queryString ? `?${queryString}` : ""
+  }`;
 
   const res = await apiFetch(path);
   return asJson<PermissionResponseDto>(res);
@@ -110,4 +114,22 @@ export async function archivePermissionServer(
   await apiFetch(path, {
     method: "PATCH",
   });
+}
+
+/**
+ * Get permissions for a specific role (server-side)
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param roleId - The ID of the role whose permissions to retrieve
+ * @returns Promise with array of PermissionResponseDto
+ */
+export async function getPermissionsForRoleServer(
+  organizationId: number,
+  projectId: number,
+  roleId: number
+): Promise<PermissionResponseDto[]> {
+  const path = `/organizations/${organizationId}/projects/${projectId}/roles/${roleId}/permissions`;
+
+  const res = await apiFetch(path);
+  return asJson<PermissionResponseDto[]>(res);
 }

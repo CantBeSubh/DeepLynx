@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers;
 
@@ -14,7 +15,10 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Route("organizations/{organizationId:long}/roles")]
-[Tags("Organization Management", "Role")]
+[Authorize]
+[Tags(
+    // "Organization Management",
+    "Role")]
 public class RoleOrganizationController : ControllerBase
 {
     private readonly ILogger<RoleProjectController> _logger;
@@ -32,7 +36,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Roles
+    ///     Get All Roles (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived roles from the result (Default true)</param>
@@ -57,7 +61,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Role
+    ///     Get a Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role to retrieve</param>
@@ -84,7 +88,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Role
+    ///     Create a Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="dto">The data transfer object containing role details</param>
@@ -110,7 +114,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Role
+    ///     Update a Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role to update</param>
@@ -138,7 +142,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Role
+    ///     Delete a Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role to delete</param>
@@ -164,7 +168,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Role
+    ///     Archive or Unarchive a Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role to archive or unarchive</param>
@@ -199,7 +203,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get Permissions for a Role
+    ///     Get Permissions for a Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role whose permissions to retrieve</param>
@@ -224,7 +228,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Add Permission to Role
+    ///     Add Permission to Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role</param>
@@ -251,7 +255,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Remove Permission from Role
+    ///     Remove Permission from Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role</param>
@@ -278,7 +282,7 @@ public class RoleOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Set All Permissions for a Role
+    ///     Set All Permissions for a Role (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the role belongs</param>
     /// <param name="roleId">The ID of the role</param>

@@ -102,7 +102,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Query Events by subscriptions 
+        /// Query Events by Subscriptions 
         /// </summary>
         /// <param name="organizationId">The ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the events belong</param>
