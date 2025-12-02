@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-import EditSysUser from "../../components/SiteManagementPortal/EditSysUser";
+import EditSysUser from "../SiteManagementPortal/EditSysUser";
 import {
   ProjectResponseDto,
   RoleResponseDto,
@@ -29,6 +29,8 @@ import { UsersTableRow } from "../../types/types";
 
 interface Props {
   members: UserResponseDto[];
+  header: string;
+  description: string;
 }
 
 type ConfirmModalState = {
@@ -78,7 +80,7 @@ const buildTableData = (users: UserResponseDto[]): UsersTableRow[] => {
 /*                           UsersTable Component                             */
 /* -------------------------------------------------------------------------- */
 
-const UsersTable = ({ members }: Props) => {
+const UsersTable = ({ members, header, description }: Props) => {
   /* ------------------------------------------------------------------------ */
   /*                               Core State                                */
   /* ------------------------------------------------------------------------ */
@@ -330,6 +332,8 @@ const UsersTable = ({ members }: Props) => {
             totalCount={totalCount}
             loading={loading}
             onInviteClick={handleOpenInviteModal}
+            header={header}
+            description={description}
           />
 
           {/* Combined Users & Pending Invites Table */}

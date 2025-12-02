@@ -26,7 +26,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Get all users
+    ///     Get All Users
     /// </summary>
     /// <param name="projectId">(Optional) ID of project that users are associated with</param>
     /// <param name="organizationId">(Optional) ID of organization that users are associated with</param>
@@ -50,7 +50,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a user
+    ///     Get a User
     /// </summary>
     /// <param name="userId">ID of user</param>
     /// <returns>User response DTO</returns>
@@ -71,7 +71,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Get the local development user
+    ///     Get the Local Development User
     /// </summary>
     /// <returns>User response DTO with the local dev user info</returns>
     [HttpGet("superuser", Name = "api_get_local_dev_user")]
@@ -91,7 +91,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a user
+    ///     Create a User
     /// </summary>
     /// <param name="dto">User request DTO</param>
     /// <returns>User response DTO</returns>
@@ -112,7 +112,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a user
+    ///     Update a User
     /// </summary>
     /// ///
     /// <param name="userId">ID of user</param>
@@ -135,7 +135,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Deletes a user
+    ///     Deletes a User
     /// </summary>
     /// <param name="userId">The ID of the user to delete.</param>
     /// <returns>A message stating the user was successfully deleted.</returns>
@@ -156,7 +156,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive an User
+    ///     Archive or Unarchive a User
     /// </summary>
     /// <param name="userId">The ID of the user</param>
     /// <param name="archive">True to archive the user, false to unarchive it.</param>
@@ -210,7 +210,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Get data overview for user
+    ///     Get Data Overview for User
     /// </summary>
     /// <param name="userId">ID of user</param>
     /// <returns>Data overview DTO</returns>
@@ -231,7 +231,7 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    ///     Get the current authenticated user
+    ///     Get the Current Authenticated User
     /// </summary>
     /// <returns>User response DTO</returns>
     [HttpGet("current", Name = "api_get_current_user")]

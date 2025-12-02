@@ -116,7 +116,7 @@ public class TokenController : ControllerBase
     }
 
     /// <summary>
-    ///     Get all API keys associated with the current user
+    ///     Get all API Keys Associated with the Current User
     /// </summary>
     /// <returns>List of API keys (secrets are never returned)</returns>
     [HttpGet("keys", Name = "api_get_all_user_keys")]
@@ -137,7 +137,7 @@ public class TokenController : ControllerBase
     }
 
     /// <summary>
-    ///     Revoke all active tokens for the current user
+    ///     Revoke All Active Tokens for the Current User
     /// </summary>
     /// <returns>Number of tokens revoked</returns>
     [HttpDelete("tokens/revoke", Name = "api_revoke_all_user_tokens")]

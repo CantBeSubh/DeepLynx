@@ -17,6 +17,8 @@ interface UsersHeaderStatsProps {
   totalCount: number;
   loading: boolean;
   onInviteClick: () => void;
+  header: string;
+  description: string;
 }
 
 const UsersHeaderStats: React.FC<UsersHeaderStatsProps> = ({
@@ -25,16 +27,17 @@ const UsersHeaderStats: React.FC<UsersHeaderStatsProps> = ({
   totalCount,
   loading,
   onInviteClick,
+  header,
+  description
 }) => {
   return (
     <>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold">Organization Users</h2>
+          <h2 className="text-2xl font-bold">{header}</h2>
           <p className="text-base-content/70 text-sm mt-1">
-            Manage users in your organization. Invite new users via email or add
-            them directly.
+            {description}
           </p>
         </div>
         <button
@@ -48,7 +51,7 @@ const UsersHeaderStats: React.FC<UsersHeaderStatsProps> = ({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-primary">
             <UserIcon className="w-8 h-8" />
@@ -56,14 +59,14 @@ const UsersHeaderStats: React.FC<UsersHeaderStatsProps> = ({
           <div className="stat-title">Active Users</div>
           <div className="stat-value text-primary">{activeUserCount}</div>
         </div>
-        <div className="stat bg-base-200 rounded-lg">
+        {/* <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-warning">
             <EnvelopeIcon className="w-8 h-8" />
           </div>
           <div className="stat-title">Pending Invites</div>
-          {/* <div className="stat-value text-warning">{pendingCount}</div> */}
+          
           <div className="stat-value text-warning">0</div>
-        </div>
+        </div> */}
         <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-secondary">
             <UserGroupIcon className="w-8 h-8" />

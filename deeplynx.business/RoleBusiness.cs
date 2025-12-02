@@ -43,6 +43,9 @@ public class RoleBusiness : IRoleBusiness
                         && (!hideArchived || !r.IsArchived)
                         && (!projectId.HasValue || r.ProjectId == projectId.Value));
 
+        if (!projectId.HasValue)
+            roleQuery = roleQuery.Where(r => r.ProjectId == null);
+
         if (roleQuery == null)
             throw new KeyNotFoundException(
                 "Roles not found or do not belong to the specified organization/project context");

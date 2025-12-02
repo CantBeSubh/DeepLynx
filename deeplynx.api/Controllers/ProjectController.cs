@@ -83,7 +83,7 @@ public class ProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a project
+    ///     Get a Project
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID by which to retrieve the project</param>
@@ -110,7 +110,7 @@ public class ProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a project
+    ///     Create a Project
     /// </summary>
     /// <param name="organizationId">The organization to which the project will belong</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
@@ -136,7 +136,7 @@ public class ProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a project
+    ///     Update a Project
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to update</param>
@@ -164,7 +164,7 @@ public class ProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a project
+    ///     Delete a Project
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">ID of the project to delete.</param>
@@ -223,7 +223,7 @@ public class ProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get project stats
+    ///     Get Project Stats
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">ID of the project to display stats about.</param>
@@ -246,7 +246,7 @@ public class ProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     List Project Members
+    ///     Get Project Members
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the project belongs</param>
     /// <param name="projectId">(Optional)ID of the project</param>

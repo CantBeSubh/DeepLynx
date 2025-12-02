@@ -16,7 +16,9 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId:long}/projects/{projectId:long}/storages")]
 [Authorize]
-[Tags("Project Management", "ObjectStorage")]
+[Tags(
+    // "Project Management",
+    "ObjectStorage")]
 public class ObjectStorageProjectController : ControllerBase
 {
     private readonly ILogger<ObjectStorageProjectController> _logger;
@@ -36,7 +38,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Object Storages
+    ///     Get All Object Storages (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project whose object storages are to be retrieved</param>
@@ -65,7 +67,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get an Object Storage
+    ///     Get an Object Storage (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
@@ -96,7 +98,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Create an Object Storage
+    ///     Create an Object Storage (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
@@ -125,7 +127,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Update an Object Storage
+    ///     Update an Object Storage (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
@@ -156,7 +158,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete an Object Storage
+    ///     Delete an Object Storage (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
@@ -185,7 +187,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive an Object Storage
+    ///     Archive or Unarchive an Object Storage (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
@@ -224,7 +226,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get Default Object Storage
+    ///     Get Default Object Storage (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
@@ -251,7 +253,7 @@ public class ObjectStorageProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Set Default Object Storage
+    ///     Set Default Object Storage (Project)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>

@@ -10,7 +10,7 @@ import {
   RoleResponseDto,
   PermissionResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "./users/UsersTable";
+import UsersTable from "../components/users/UsersTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import InlineGroupsTable from "./groups/InlineGroupsTable";
@@ -45,7 +45,7 @@ const OrganizationManagementClient = ({
   const tabData = [
     {
       label: "Users",
-      content: <UsersTable members={members} />,
+      content: <UsersTable members={members} header={"Organization Users"} description={"Manage users in your organization. Invite new users via email or add them directly."} />,
     },
     {
       label: "Roles & Permissions",

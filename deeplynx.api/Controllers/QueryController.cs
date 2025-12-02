@@ -31,7 +31,7 @@ public class QueryController : ControllerBase
     }
 
     /// <summary>
-    ///     Full text search for records
+    ///     Full Text Search for Records
     /// </summary>
     /// <param name="organizationId">The organization to which the records/projects belong</param>
     /// <param name="userQuery">String phrase entered by user</param>
@@ -56,7 +56,7 @@ public class QueryController : ControllerBase
     }
 
     /// <summary>
-    ///     Build a query for records
+    ///     Build a Query for Records
     /// </summary>
     /// <param name="organizationId">The organization to which the records/projects belong</param>
     /// <param name="filterArray">Array of QueryComponent dtos</param>
@@ -83,7 +83,7 @@ public class QueryController : ControllerBase
     }
 
     /// <summary>
-    ///     Get recent records
+    ///     Get Recent Records
     /// </summary>
     /// <param name="organizationId"> Orginization Id of projects</param>
     /// <param name="projectIds">Array of project ids</param>
@@ -108,7 +108,7 @@ public class QueryController : ControllerBase
 
 
     /// <summary>
-    ///     Retrieves all records for multiple projects.
+    ///     Retrieve All Records for Multiple Projects
     /// </summary>
     /// <param name="organizationId">ID of the organization to which the projects belong</param>
     /// <param name="projects">Array of project ids whose records are to be retrieved</param>

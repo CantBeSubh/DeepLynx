@@ -1,9 +1,9 @@
+using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -16,7 +16,9 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("projects/{projectId:long}/datasources")]
 [Authorize]
-[Tags("Project Management", "DataSource")]
+[Tags(
+    // "Project Management",
+    "DataSource")]
 public class DataSourceProjectController : ControllerBase
 {
     private readonly IDataSourceBusiness _dataSourceBusiness;
@@ -35,7 +37,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Data Sources
+    ///     Get All Data Sources (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
@@ -61,7 +63,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Data Source
+    ///     Get a Data Source (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
@@ -90,7 +92,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Get Default Data Source
+    ///     Get Default Data Source (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <returns>The default data source for the project</returns>
@@ -114,7 +116,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Data Source
+    ///     Create a Data Source (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dto">The data transfer object containing data source details</param>
@@ -127,10 +129,9 @@ public class DataSourceProjectController : ControllerBase
     {
         try
         {
-           
             var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto );
+            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -142,7 +143,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Data Source
+    ///     Update a Data Source (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to update</param>
@@ -172,7 +173,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Data Source
+    ///     Delete a Data Source (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to delete</param>
@@ -180,13 +181,13 @@ public class DataSourceProjectController : ControllerBase
     [HttpDelete("{dataSourceId:long}", Name = "api_delete_a_data_source_for_project")]
     [Auth("write", "data_source")]
     public async Task<IActionResult> DeleteDataSource(
-        long dataSourceId,
-        long projectId)
+        long projectId,
+        long dataSourceId)
     {
         try
         {
             var organizationId = UserContextStorage.OrganizationId;
-            await _dataSourceBusiness.DeleteDataSource(organizationId, dataSourceId, projectId);
+            await _dataSourceBusiness.DeleteDataSource(organizationId, projectId, dataSourceId);
             return Ok(new { message = $"Deleted data source {dataSourceId}" });
         }
         catch (Exception exc)
@@ -198,7 +199,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Data Source
+    ///     Archive or Unarchive a Data Source (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to archive or unarchive</param>
@@ -235,7 +236,7 @@ public class DataSourceProjectController : ControllerBase
     }
 
     /// <summary>
-    ///     Set Default Data Source
+    ///     Set Default Data Source (Project)
     /// </summary>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dataSourceId">The ID of the data source to set as default</param>
