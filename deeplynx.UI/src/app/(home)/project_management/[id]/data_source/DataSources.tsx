@@ -7,10 +7,10 @@ import type {
 } from "@/app/(home)/types/responseDTOs";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import {
-  archiveProjectDataSource,
+  archiveDataSource,
   createDataSource,
-  getAllDataSources,
-  setDefaultDataSourceForProject,
+  getAllDataSourcesOrg,
+  setDefaultDataSource,
 } from "@/app/lib/client_service/data_source_services.client";
 import { getProjectStats } from "@/app/lib/client_service/projects_services.client";
 // import { getRecordCountsByDataSource } from "@/app/lib/client_service/record_services.client";
@@ -92,7 +92,7 @@ const DataSources = ({ projectId }: Props) => {
     setError(null);
     try {
       const [dataSourceList, projectStats, keys] = await Promise.all([
-        getAllDataSources(
+        getAllDataSourcesOrg(
           organization?.organizationId as number,
           [projectId],
           hideArchived
@@ -158,7 +158,7 @@ const DataSources = ({ projectId }: Props) => {
   const onArchiveToggle = async (s: DataSourceResponseDto) => {
     setSaving(true);
     try {
-      await archiveProjectDataSource(projectId, Number(s.id), !s.isArchived);
+      await archiveDataSource(projectId, Number(s.id), !s.isArchived);
       await fetchAll();
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "Operation failed.";
@@ -171,7 +171,7 @@ const DataSources = ({ projectId }: Props) => {
   const onSetDefault = async (id: number) => {
     setSaving(true);
     try {
-      await setDefaultDataSourceForProject(projectId, id);
+      await setDefaultDataSource(projectId, id);
       await fetchAll();
     } catch (e) {
       const errorMessage =
@@ -445,9 +445,8 @@ const DataSources = ({ projectId }: Props) => {
             return (
               <div
                 key={source.id ?? `ds-${source.name}`}
-                className={`card bg-base-100 shadow-xl border-l-4 ${
-                  source.isArchived ? "border-l-warning" : "border-l-success"
-                }`}
+                className={`card bg-base-100 shadow-xl border-l-4 ${source.isArchived ? "border-l-warning" : "border-l-success"
+                  }`}
               >
                 <div className="card-body">
                   {/* Header row */}
@@ -514,15 +513,14 @@ const DataSources = ({ projectId }: Props) => {
                             Health
                           </div>
                           <div
-                            className={`text-lg font-bold ${
-                              Number.isFinite(health)
+                            className={`text-lg font-bold ${Number.isFinite(health)
                                 ? health > 80
                                   ? "text-success"
                                   : health > 50
-                                  ? "text-warning"
-                                  : "text-error"
+                                    ? "text-warning"
+                                    : "text-error"
                                 : ""
-                            }`}
+                              }`}
                           >
                             {Number.isFinite(health) ? `${health}%` : "—"}
                           </div>
@@ -622,11 +620,10 @@ const DataSources = ({ projectId }: Props) => {
                                 Expires:
                               </span>
                               <span
-                                className={`ml-2 font-semibold ${
-                                  apiKey.expiresIn === "Expired"
+                                className={`ml-2 font-semibold ${apiKey.expiresIn === "Expired"
                                     ? "text-error"
                                     : ""
-                                }`}
+                                  }`}
                               >
                                 {apiKey.expiresIn}
                               </span>

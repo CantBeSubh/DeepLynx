@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DataSourceResponseDto } from "../../../types/responseDTOs";
 import { UpdateDataSourceRequestDto } from "../../../types/requestDTOs";
-import { updateProjectDataSource } from "@/app/lib/client_service/data_source_services.client";
+import { updateDataSource } from "@/app/lib/client_service/data_source_services.client";
 
 type DetailsFormState = {
   name: string;
@@ -76,7 +76,7 @@ const DetailsEditor = ({
     };
 
     try {
-      await updateProjectDataSource(projectId, Number(source.id), payload);
+      await updateDataSource(projectId, Number(source.id), payload);
       await onSaved();
       onClose();
     } catch (e) {
