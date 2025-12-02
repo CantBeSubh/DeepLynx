@@ -1,8 +1,16 @@
-// src/app/lib/projects_services.server.ts
+// src/app/lib/server_service/projects_services.server.ts
 import "server-only";
-import { ProjectResponseDto, ProjectStatResponseDto } from "../../(home)/types/responseDTOs";
+import {
+  ProjectResponseDto,
+  ProjectStatResponseDto,
+  ProjectMemberResponseDto,
+} from "../../(home)/types/responseDTOs";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
 import { apiFetch, asJson } from "./api.server";
+
+/* -------------------------------------------------------------------------- */
+/*                 Organization-scoped project operations                     */
+/* -------------------------------------------------------------------------- */
 
 export async function getAllProjectsServer(
   organizationId?: number,
@@ -10,12 +18,14 @@ export async function getAllProjectsServer(
 ): Promise<ProjectResponseDto[]> {
   // If no organizationId provided, return empty array or fetch from a different endpoint
   if (!organizationId) {
-    console.log("[getAllProjectsServer] No organizationId provided, returning empty array");
+    console.log(
+      "[getAllProjectsServer] No organizationId provided, returning empty array"
+    );
     return [];
   }
 
   const params = new URLSearchParams();
-  params.append('hideArchived', String(hideArchived));
+  params.append("hideArchived", String(hideArchived));
 
   const res = await apiFetch(
     `/organizations/${organizationId}/projects?${params.toString()}`
@@ -23,13 +33,32 @@ export async function getAllProjectsServer(
   return asJson<ProjectResponseDto[]>(res);
 }
 
+export async function createProjectServer(
+  organizationId: number,
+  data: {
+    name: string;
+    abbreviation?: string | null;
+    description?: string | null;
+  }
+): Promise<ProjectResponseDto> {
+  const res = await apiFetch(`/organizations/${organizationId}/projects`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return asJson<ProjectResponseDto>(res);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                         Single-project operations                          */
+/* -------------------------------------------------------------------------- */
+
 export async function getProjectServer(
   organizationId: number,
   projectId: number,
   hideArchived: boolean = true
 ): Promise<ProjectResponseDto> {
   const params = new URLSearchParams();
-  params.append('hideArchived', String(hideArchived));
+  params.append("hideArchived", String(hideArchived));
 
   const res = await apiFetch(
     `/organizations/${organizationId}/projects/${projectId}?${params.toString()}`
@@ -45,24 +74,6 @@ export async function getProjectStatsServer(
     `/organizations/${organizationId}/projects/${projectId}/stats`
   );
   return asJson<ProjectStatResponseDto>(res);
-}
-
-export async function createProjectServer(
-  organizationId: number,
-  data: {
-    name: string;
-    abbreviation?: string | null;
-    description?: string | null;
-  }
-): Promise<ProjectResponseDto> {
-  const res = await apiFetch(
-    `/organizations/${organizationId}/projects`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
-  return asJson<ProjectResponseDto>(res);
 }
 
 export async function updateProjectServer(
@@ -98,6 +109,21 @@ export async function deleteProjectServer(
   return asJson<{ message: string }>(res);
 }
 
+/* -------------------------------------------------------------------------- */
+/*                          Project member operations                         */
+/* -------------------------------------------------------------------------- */
+
+export async function getProjectMembersServer(
+  organizationId: number,
+  projectId: number
+): Promise<ProjectMemberResponseDto[]> {
+  const res = await apiFetch(
+    `/organizations/${organizationId}/projects/${projectId}/members`
+  );
+  // API docs say "A list of groups and users in the project"
+  return asJson<ProjectMemberResponseDto[]>(res);
+}
+
 export async function addMemberServer(
   organizationId: number,
   projectId: number,
@@ -108,9 +134,9 @@ export async function addMemberServer(
   }
 ): Promise<{ message: string }> {
   const params = new URLSearchParams();
-  if (data.roleId !== undefined) params.append('roleId', String(data.roleId));
-  if (data.userId !== undefined) params.append('userId', String(data.userId));
-  if (data.groupId !== undefined) params.append('groupId', String(data.groupId));
+  if (data.roleId !== undefined) params.append("roleId", String(data.roleId));
+  if (data.userId !== undefined) params.append("userId", String(data.userId));
+  if (data.groupId !== undefined) params.append("groupId", String(data.groupId));
 
   const res = await apiFetch(
     `/organizations/${organizationId}/projects/${projectId}/members?${params.toString()}`,
@@ -131,9 +157,9 @@ export async function updateProjectMemberRoleServer(
   }
 ): Promise<{ message: string }> {
   const params = new URLSearchParams();
-  params.append('roleId', String(data.roleId));
-  if (data.userId !== undefined) params.append('userId', String(data.userId));
-  if (data.groupId !== undefined) params.append('groupId', String(data.groupId));
+  params.append("roleId", String(data.roleId));
+  if (data.userId !== undefined) params.append("userId", String(data.userId));
+  if (data.groupId !== undefined) params.append("groupId", String(data.groupId));
 
   const res = await apiFetch(
     `/organizations/${organizationId}/projects/${projectId}/members?${params.toString()}`,
@@ -153,8 +179,8 @@ export async function removeMemberFromProjectServer(
   }
 ): Promise<{ message: string }> {
   const params = new URLSearchParams();
-  if (data.userId !== undefined) params.append('userId', String(data.userId));
-  if (data.groupId !== undefined) params.append('groupId', String(data.groupId));
+  if (data.userId !== undefined) params.append("userId", String(data.userId));
+  if (data.groupId !== undefined) params.append("groupId", String(data.groupId));
 
   const res = await apiFetch(
     `/organizations/${organizationId}/projects/${projectId}/members?${params.toString()}`,
@@ -164,6 +190,10 @@ export async function removeMemberFromProjectServer(
   );
   return asJson<{ message: string }>(res);
 }
+
+/* -------------------------------------------------------------------------- */
+/*                    Multi-project / cross-project operations                */
+/* -------------------------------------------------------------------------- */
 
 export async function getAllRecordsForMultipleProjectsServer(
   projectIds: number[],
