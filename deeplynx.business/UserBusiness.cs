@@ -2,6 +2,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -79,6 +80,41 @@ public class UserBusiness : IUserBusiness
             IsArchived = user.IsArchived,
             IsActive = user.IsActive
         };
+    }
+
+    /// <summary>
+    ///     Retrieves user info and domain admin info by user ID
+    /// </summary>
+    /// <param name="userId">The ID by which to retrieve the user</param>
+    /// <param name="organizationId">Returns info on whether a user is an admin of this org if specified</param>
+    /// <param name="projectId">Returns info on whether a user is an admin of this project if specified</param>
+    /// <returns>The given user to return</returns>
+    /// <exception cref="KeyNotFoundException">Returned if user not found</exception>
+    public async Task<UserAdminInfoDto> GetUserAdminInfo(
+        long userId,
+        long? organizationId = null,
+        long? projectId = null)
+    {
+        var sql = @"
+        SELECT * FROM deeplynx.get_user_admin_info(
+            @p_user_id, 
+            @p_organization_id, 
+            @p_project_id
+        )";
+
+        var user = await _context.Database
+            .SqlQueryRaw<UserAdminInfoDto>(
+                sql,
+                new NpgsqlParameter("@p_user_id", userId),
+                new NpgsqlParameter("@p_organization_id", (object?)organizationId ?? DBNull.Value),
+                new NpgsqlParameter("@p_project_id", (object?)projectId ?? DBNull.Value)
+            )
+            .FirstOrDefaultAsync();
+
+        if (user == null || user.IsArchived) 
+            throw new KeyNotFoundException($"User with id {userId} not found");
+
+        return user;
     }
 
     /// <summary>
@@ -282,11 +318,8 @@ public class UserBusiness : IUserBusiness
     public async Task<DataOverviewDto> GetUserOverview(long userId)
     {
         var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
-        if (!userExists)
-        {
-            throw  new KeyNotFoundException($"User with ID {userId} not found.");
-        }
-        
+        if (!userExists) throw new KeyNotFoundException($"User with ID {userId} not found.");
+
         // Filtering projects by a user
         var projectsTotal = _context.ProjectMembers
             .Count(p => p.UserId == userId);

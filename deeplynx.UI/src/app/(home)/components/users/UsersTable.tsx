@@ -28,9 +28,10 @@ import { UsersTableRow } from "../../types/types";
 /* -------------------------------------------------------------------------- */
 
 interface Props {
-  members: UserResponseDto[];
+  initialMembers: UserResponseDto[];
   header: string;
   description: string;
+  onUsersChange?: () => Promise<void>; // Add this prop
 }
 
 type ConfirmModalState = {
@@ -80,13 +81,13 @@ const buildTableData = (users: UserResponseDto[]): UsersTableRow[] => {
 /*                           UsersTable Component                             */
 /* -------------------------------------------------------------------------- */
 
-const UsersTable = ({ members, header, description }: Props) => {
+const UsersTable = ({ initialMembers, header, description, onUsersChange }: Props) => {
   /* ------------------------------------------------------------------------ */
   /*                               Core State                                */
   /* ------------------------------------------------------------------------ */
 
   const [tableData, setTableData] = useState<UsersTableRow[]>(() =>
-    buildTableData(members)
+    buildTableData(initialMembers)
   );
   const [loading, setLoading] = useState(false);
 
@@ -140,6 +141,9 @@ const UsersTable = ({ members, header, description }: Props) => {
         organization.organizationId
       );
       setTableData(buildTableData(users));
+      if (onUsersChange) {
+        await onUsersChange();
+      }
     } catch (error) {
       console.error("Failed to load data:", error);
     }
@@ -147,8 +151,8 @@ const UsersTable = ({ members, header, description }: Props) => {
 
   // ✅ When server-side members prop changes, sync local state (no extra fetch)
   useEffect(() => {
-    setTableData(buildTableData(members));
-  }, [members]);
+    setTableData(buildTableData(initialMembers));
+  }, [initialMembers]);
 
   /* ------------------------------------------------------------------------ */
   /*                        Invite Flow: Open & Options                       */
