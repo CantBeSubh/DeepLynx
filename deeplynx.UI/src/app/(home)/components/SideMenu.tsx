@@ -20,6 +20,7 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 import { ProjectResponseDto } from "../types/responseDTOs";
 import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
+import { ProjectAdminRoute } from "../rbac/RBACComponents";
 
 interface SideMenuProps {
   onToggle: (isCollapsed: boolean) => void;
@@ -294,26 +295,27 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               {!isCollapsed && <p className="ml-2">Event Management</p>}
             </Link>
           </li>
-
-          <li className="mt-2">
-            <Link
-              href={`/project_management/${project?.projectId || ""}`}
-              onClick={(e) =>
-                handleItemClick(
-                  `/project_management/${project?.projectId || ""}`,
-                  e
-                )
-              }
-              className={getItemClass(
-                `/project_management/${project?.projectId || ""}`
-              )}
-            >
-              <AdjustmentsHorizontalIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
-              )}
-            </Link>
-          </li>
+          <ProjectAdminRoute>
+            <li className="mt-2">
+              <Link
+                href={`/project_management/${project?.projectId || ""}`}
+                onClick={(e) =>
+                  handleItemClick(
+                    `/project_management/${project?.projectId || ""}`,
+                    e
+                  )
+                }
+                className={getItemClass(
+                  `/project_management/${project?.projectId || ""}`
+                )}
+              >
+                <AdjustmentsHorizontalIcon className="size-6" />
+                {!isCollapsed && (
+                  <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
+                )}
+              </Link>
+            </li>
+          </ProjectAdminRoute>
         </ul>
       </aside>
 

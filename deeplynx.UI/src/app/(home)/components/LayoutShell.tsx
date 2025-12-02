@@ -13,7 +13,7 @@ import {
   QuestionMarkCircleIcon,
   UserCircleIcon,
   UserGroupIcon,
-  CommandLineIcon
+  CommandLineIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,7 +22,7 @@ import React, { useState, useEffect } from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
 import { signOut } from "next-auth/react";
-import { RoleGate } from "../rbac/RBACComponents";
+import { OrgAdminRoute, RoleGate, SysAdminRoute } from "../rbac/RBACComponents";
 import { useRBAC } from "../rbac/useRBAC";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { OrganizationResponseDto } from "../types/responseDTOs";
@@ -182,19 +182,26 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <li key={org.id} className="w-full">
                       <a
                         onClick={() => handleOrganizationSwitch(org)}
-                        className={`flex items-center gap-2 w-full max-w-full ${organization?.organizationId === org.id
-                          ? "active bg-info/60"
-                          : ""
-                          }`}
+                        className={`flex items-center gap-2 w-full max-w-full ${
+                          organization?.organizationId === org.id
+                            ? "active bg-info/60"
+                            : ""
+                        }`}
                       >
                         <div className="min-w-0 flex-1 overflow-hidden">
-                          <div className=" font-medium truncate">{org.name}</div>
+                          <div className=" font-medium truncate">
+                            {org.name}
+                          </div>
                           {org.description && (
-                            <div className="text-xs opacity-70 truncate">{org.description}</div>
+                            <div className="text-xs opacity-70 truncate">
+                              {org.description}
+                            </div>
                           )}
                         </div>
                         {organization?.organizationId === org.id && (
-                          <span className="badge badge-sm shrink-0 whitespace-nowrap !text-base-content">Current</span>
+                          <span className="badge badge-sm shrink-0 whitespace-nowrap !text-base-content">
+                            Current
+                          </span>
                         )}
                       </a>
                     </li>
@@ -252,33 +259,38 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <BookOpenIcon className="size-10" />
                 </Link>
               </li>
-              <li className="mt-5">
-                <Link
-                  href="/organization_management"
-                  onClick={(e) =>
-                    handleItemClick("/organization_management", e)
-                  }
-                >
-                  <AdjustmentsHorizontalIcon className="size-10" />
-                </Link>
-              </li>
+              <OrgAdminRoute>
+                <li className="mt-5">
+                  <Link
+                    href="/organization_management"
+                    onClick={(e) =>
+                      handleItemClick("/organization_management", e)
+                    }
+                  >
+                    <AdjustmentsHorizontalIcon className="size-10" />
+                  </Link>
+                </li>
+              </OrgAdminRoute>
             </ul>
 
             {/* Bottom section */}
             <ul className="mt-auto">
               <li className="mt-5">
-                <RoleGate role="sysAdmin">
+                <SysAdminRoute>
                   <Link href={"/site_management"} prefetch={false}>
                     <Cog6ToothIcon className="size-10" />
                   </Link>
-                </RoleGate>
+                </SysAdminRoute>
               </li>
               <li className="mt-5">
-                <Link href={
-                  process.env.NEXT_PUBLIC_API_URL + '/scalar'
-                    ? `${process.env.NEXT_PUBLIC_API_URL + '/scalar'}`
-                    : "/scalar"
-                } prefetch={false}>
+                <Link
+                  href={
+                    process.env.NEXT_PUBLIC_API_URL + "/scalar"
+                      ? `${process.env.NEXT_PUBLIC_API_URL + "/scalar"}`
+                      : "/scalar"
+                  }
+                  prefetch={false}
+                >
                   <CommandLineIcon className="size-10" />
                 </Link>
               </li>
@@ -360,8 +372,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18 ${isMenuCollapsed ? "ml-40" : "ml-82"
-            }`}
+          className={`transition-all duration-300 w-full mt-18 ${
+            isMenuCollapsed ? "ml-40" : "ml-82"
+          }`}
         >
           {children}
         </main>

@@ -189,6 +189,18 @@ export type UserResponseDto =
     role?: string;
   }
 
+  export type UserAdminInfoDto = {
+  id: number;
+  name: string;
+  email: string;
+  username: string | null;
+  isSysAdmin: boolean;
+  isArchived: boolean;
+  isActive: boolean;
+  isOrgAdmin: boolean | null;
+  isProjectAdmin: boolean | null;
+};
+
 export type PendingInviteDto = {
   id: number;
   email: string;

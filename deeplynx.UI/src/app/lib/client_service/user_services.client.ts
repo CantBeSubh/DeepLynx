@@ -1,7 +1,7 @@
 // src/app/lib/user_services.client.ts
 "use client";
 
-import { RecordResponseDto, UserResponseDto } from "@/app/(home)/types/responseDTOs";
+import { RecordResponseDto, UserAdminInfoDto, UserResponseDto } from "@/app/(home)/types/responseDTOs";
 import api from "./api";
 
 /** ---- Browser calls (with session cookies) ---- */
@@ -26,15 +26,32 @@ export async function getAllUsers(organizationId?: number | string, projectId?: 
   }
 }
 
-export async function getCurrentUser() {
+/**
+ * Get the current authenticated user.
+ *
+ * If organizationId and/or projectId are provided, the backend will populate
+ * isOrgAdmin / isProjectAdmin booleans for that org/project context.
+ */
+export async function getCurrentUser(
+  organizationId?: number,
+  projectId?: number
+): Promise<UserAdminInfoDto> {
   try {
-    const res = await api.get(`/users/current`);
+    const res = await api.get<UserAdminInfoDto>("/users/current", {
+      params: {
+        // Only send if defined, to match optional query params
+        ...(organizationId !== undefined && { organizationId }),
+        ...(projectId !== undefined && { projectId }),
+      },
+    });
+
     return res.data;
   } catch (error) {
     console.error("API call failed getting current user:", error);
     throw error;
   }
 }
+
 
 // user_services.client.ts (wherever your service is located)
 
