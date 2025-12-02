@@ -721,6 +721,9 @@ public class DataSourceBusinessTests : IntegrationTestBase
         Assert.Equal("New Project Default", result.Name);
         Assert.Equal(pid, result.ProjectId);
 
+        // ExecuteUpdateAsync bypasses change tracker - must clear to see DB changes
+        Context.ChangeTracker.Clear();
+
         // Assert - Previous default is unset
         var previousDefault = await Context.DataSources.FindAsync(did);
         Assert.False(previousDefault!.Default);
@@ -759,6 +762,9 @@ public class DataSourceBusinessTests : IntegrationTestBase
         // Assert - New data source is default
         Assert.True(result.Default);
         Assert.Null(result.ProjectId);
+
+        // ExecuteUpdateAsync bypasses change tracker - must clear to see DB changes
+        Context.ChangeTracker.Clear();
 
         // Assert - Previous org-level default is unset
         var previousDefault = await Context.DataSources.FindAsync(existingOrgDefault.Id);

@@ -215,7 +215,10 @@ public class DataSourceBusiness : IDataSourceBusiness
         await _context.DataSources.AddAsync(dataSource);
 
         if (dto.Default)
-            await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
+            if (projectId.HasValue)
+                await ResetProjectDefaults(projectId.Value, dataSource.Id);
+            else
+                await ResetOrganizationDefaults(organizationId, dataSource.Id);
 
         await _context.SaveChangesAsync();
 
@@ -475,7 +478,12 @@ public class DataSourceBusiness : IDataSourceBusiness
 
             try
             {
-                await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
+                // reset the defaults at the project or org level
+                if (projectId.HasValue)
+                    await ResetProjectDefaults(projectId.Value, dataSource.Id);
+                else
+                    await ResetOrganizationDefaults(organizationId, dataSource.Id);
+
                 await _context.SaveChangesAsync();
 
                 await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
@@ -516,30 +524,19 @@ public class DataSourceBusiness : IDataSourceBusiness
         };
     }
 
-    private async Task MakePreviousDefaultsFalse(long currentUserId, long organizationId, long? projectId,
-        long defaultDataSourceId)
+    private async Task ResetProjectDefaults(long projectId, long newDefaultId)
     {
-        // Build query based on whether this is org-level or project-level
-        var query = _context.DataSources
-            .Where(ds => ds.OrganizationId == organizationId
-                         && ds.Default == true
-                         && ds.Id != defaultDataSourceId);
+        // check for existing defaults at the project level and remove them from being default
+        await _context.DataSources
+            .Where(d => d.ProjectId == projectId && d.Id != newDefaultId)
+            .ExecuteUpdateAsync(s => s.SetProperty(d => d.Default, false));
+    }
 
-        // If projectId is provided, only update defaults for that specific project
-        // If projectId is null, only update org-level defaults (where ProjectId is null)
-        query = projectId.HasValue
-            ? query.Where(ds => ds.ProjectId == projectId.Value)
-            : query.Where(ds => ds.ProjectId == null);
-
-        var previousDefaults = await query.ToListAsync();
-
-        if (previousDefaults.Count > 0)
-            foreach (var previousDefault in previousDefaults)
-            {
-                previousDefault.Default = false;
-                previousDefault.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                previousDefault.LastUpdatedBy = currentUserId;
-                _context.DataSources.Update(previousDefault);
-            }
+    private async Task ResetOrganizationDefaults(long organizationId, long newDefaultId)
+    {
+        // check for existing defaults at the org level and remove them from being default
+        await _context.DataSources
+            .Where(d => d.OrganizationId == organizationId && d.ProjectId == null && d.Id != newDefaultId)
+            .ExecuteUpdateAsync(s => s.SetProperty(d => d.Default, false));
     }
 }
