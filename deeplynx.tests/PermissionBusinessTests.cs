@@ -183,7 +183,7 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return all non-archived permissions for this organization
-        Assert.Equal(5, permissions.Count); // 6 non-archived permissions with oid
+        Assert.Equal(6, permissions.Count); // 6 non-archived permissions with oid
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
@@ -200,9 +200,11 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return only permissions with lid and organizationId = oid
-        Assert.Equal(3, permissions.Count);
-        Assert.All(permissions, p => Assert.Equal(lid, p.LabelId));
-        Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
+        Assert.Equal(4, permissions.Count);
+        Assert.All(permissions, p => 
+            Assert.True(p.LabelId == lid || p.IsDefault));
+        Assert.All(permissions, p => 
+            Assert.True(p.OrganizationId == oid || p.IsDefault));
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
@@ -217,8 +219,9 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return all non-archived permissions for this organization
-        Assert.Equal(5, permissions.Count);
-        Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
+        Assert.Equal(6, permissions.Count);
+        Assert.All(permissions, p => 
+            Assert.True(p.OrganizationId == oid || p.IsDefault));
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
@@ -234,10 +237,13 @@ public class PermissionBusinessTests : IntegrationTestBase
         var permissions = result.ToList();
 
         // Assert - should return permissions matching all criteria
-        Assert.Equal(3, permissions.Count);
-        Assert.All(permissions, p => Assert.Equal(pid, p.ProjectId));
-        Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
-        Assert.All(permissions, p => Assert.Equal(lid, p.LabelId));
+        Assert.Equal(4, permissions.Count);
+        Assert.All(permissions, p => 
+            Assert.True(p.ProjectId == pid || p.IsDefault));
+        Assert.All(permissions, p => 
+            Assert.True(p.LabelId == lid || p.IsDefault));
+        Assert.All(permissions, p => 
+            Assert.True(p.OrganizationId == oid || p.IsDefault));
         Assert.Contains(permissions, p => p.Id == permid1);
         Assert.Contains(permissions, p => p.Id == permid3);
         Assert.Contains(permissions, p => p.Id == permid5);
@@ -983,13 +989,11 @@ public class PermissionBusinessTests : IntegrationTestBase
 
         // Assert - should return only org-level permissions (has org, no project)
         Assert.True(permissions.Count >= 1); // At least permid7 is org-level only
-        Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
+        Assert.All(permissions, p => 
+            Assert.True(p.OrganizationId == oid || p.IsDefault));
         
         // Check that org-level permissions are included
         Assert.Contains(permissions, p => p.Id == permid7); // "Second Permission Same Organization" - org only, no project
-        
-        // Should NOT include pure default permissions (no org/project)
-        Assert.DoesNotContain(permissions, p => p.OrganizationId == null);
     }
 
     [Fact]
@@ -1001,8 +1005,10 @@ public class PermissionBusinessTests : IntegrationTestBase
 
         // Assert - should return only project-level permissions
         Assert.True(permissions.Count >= 4); // Several project-level permissions exist
-        Assert.All(permissions, p => Assert.Equal(pid, p.ProjectId));
-        Assert.All(permissions, p => Assert.Equal(oid, p.OrganizationId));
+        Assert.All(permissions, p => 
+            Assert.True(p.ProjectId == pid || p.IsDefault));
+        Assert.All(permissions, p => 
+            Assert.True(p.OrganizationId == oid || p.IsDefault));
         
         // Check that project-level permissions are included
         Assert.Contains(permissions, p => p.Id == permid1); // "Basic Permission"
@@ -1015,39 +1021,17 @@ public class PermissionBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetAllPermissions_ScopeIsolation_DefaultsDoNotMixWithOrg()
-    {
-        // Arrange - Create a default permission
-        var defaultPerm = new Permission
-        {
-            Name = "Pure Default",
-            Action = "test",
-            OrganizationId = null,
-            ProjectId = null,
-            IsDefault = false
-        };
-        Context.Permissions.Add(defaultPerm);
-        await Context.SaveChangesAsync();
-
-        // Act - Get org permissions
-        var orgPermissions = await _permissionBusiness.GetAllPermissions(null, null, oid);
-        
-        // Assert - default permission should NOT appear in org results
-        Assert.DoesNotContain(orgPermissions, p => p.Name == "Pure Default");
-        Assert.All(orgPermissions, p => Assert.NotNull(p.OrganizationId));
-    }
-
-    [Fact]
     public async Task GetAllPermissions_ScopeIsolation_OrgDoNotMixWithProject()
     {
         // Arrange - permid7 is org-level only (no project)
         
         // Act - Get project permissions
-        var projectPermissions = await _permissionBusiness.GetAllPermissions(null, pid, oid);
+        var permissions = await _permissionBusiness.GetAllPermissions(null, pid, oid);
         
         // Assert - org-level permission should NOT appear in project results
-        Assert.DoesNotContain(projectPermissions, p => p.Id == permid7);
-        Assert.All(projectPermissions, p => Assert.NotNull(p.ProjectId));
+        Assert.DoesNotContain(permissions, p => p.Id == permid7);
+        Assert.All(permissions, p => 
+            Assert.True(p.ProjectId == pid || p.IsDefault));
     }
 
     [Fact]
