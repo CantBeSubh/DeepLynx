@@ -15,10 +15,10 @@ import type {
 } from "@/app/(home)/types/responseDTOs";
 
 import {
-  archiveTag,
-  createTag,
-  getAllTags,
-  updateTag,
+  archiveTagOrg,
+  createTagOrg,
+  getAllTagsOrg,
+  updateTagOrg,
 } from "@/app/lib/client_service/tag_services.client";
 
 import TagOverviewStrip from "@/app/(home)/organization_management/tag_management/TagOverviewStrip";
@@ -128,9 +128,9 @@ const ProjectTagAndLabelManagementClient: React.FC<Props> = ({
       setTagsLoading(true);
       setTagsError(null);
 
-      const dtoList: TagResponseDto[] = await getAllTags(
+      const dtoList: TagResponseDto[] = await getAllTagsOrg(
         orgId,
-        projectId as number,
+        [projectId as number],
         true // hide archived by default
       );
 
@@ -177,9 +177,8 @@ const ProjectTagAndLabelManagementClient: React.FC<Props> = ({
           name: nameInput.trim(),
         };
 
-        const updated = await updateTag(
+        const updated = await updateTagOrg(
           orgId,
-          projectId as number,
           editingTag.id,
           updatePayload
         );
@@ -192,9 +191,8 @@ const ProjectTagAndLabelManagementClient: React.FC<Props> = ({
           name: nameInput.trim(),
         };
 
-        const created = await createTag(
+        const created = await createTagOrg(
           orgId,
-          projectId as number,
           createPayload
         );
         setTags((prev) => [...prev, created]);
@@ -226,7 +224,7 @@ const ProjectTagAndLabelManagementClient: React.FC<Props> = ({
 
     try {
       setArchivingTagId(tagToArchive.id);
-      await archiveTag(orgId, projectId as number, tagToArchive.id, true);
+      await archiveTagOrg(orgId, tagToArchive.id, true);
 
       setTags((prev) => prev.filter((t) => t.id !== tagToArchive.id));
       toast.success(`Tag "${tagToArchive.name}" archived.`);

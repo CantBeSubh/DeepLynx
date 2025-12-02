@@ -1,7 +1,7 @@
 // app/(home)/(routes)/data_catalog/page.tsx
 import { cookies } from "next/headers";
 import { ProjectResponseDto } from "../../types/responseDTOs";
-import { FileViewerTableRow } from "../../types/types";
+import { RecordTableRow } from "../../types/types";
 import AllRecordsClient from "./AllRecordsClient";
 import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { auth } from "../../../../../auth";
@@ -47,7 +47,7 @@ export default async function Page({
 
   // Let the client fetch records after mount based on the dropdown selection
   const initialSelectedProjects = fromProject ? [fromProject] : [];
-  const initialRecords = [] as FileViewerTableRow[];
+  const initialRecords = [] as RecordTableRow[];
 
   return (
     <AllRecordsClient
