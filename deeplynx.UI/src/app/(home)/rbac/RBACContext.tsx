@@ -10,71 +10,122 @@ import React, {
 } from "react";
 import { Session } from "next-auth";
 import Image from "next/image";
+
 import {
   getCurrentUser,
   getLocalDevUser,
 } from "@/app/lib/client_service/user_services.client";
-import { UserResponseDto } from "../types/responseDTOs";
+import { UserAdminInfoDto } from "../types/responseDTOs";
 import { useSafeSession } from "@/app/hooks/useSafeSession";
+import type { CoreRBACRole } from "./rbacConfig";
+
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
+
+export type RBACRole = CoreRBACRole;
+
+export type RBACUser = UserAdminInfoDto & {
+  roles: RBACRole[];
+};
 
 interface RBACContextType {
-  user: UserResponseDto | null;
-  setUser: React.Dispatch<React.SetStateAction<UserResponseDto | null>>;
+  user: RBACUser | null;
+  setUser: React.Dispatch<React.SetStateAction<RBACUser | null>>;
   refreshUser: () => void;
   session: Session | null;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                RBAC Context                                */
+/* -------------------------------------------------------------------------- */
+
 export const RBACContext = createContext<RBACContextType | undefined>(
   undefined
 );
+
+/* -------------------------------------------------------------------------- */
+/*                               RBAC Provider                                */
+/* -------------------------------------------------------------------------- */
 
 export function RBACProvider({ children }: { children: ReactNode }) {
   const disableAuth =
     process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
 
   const { data: session, status } = useSafeSession();
-  const [user, setUser] = useState<UserResponseDto | null>(null);
+  const [user, setUser] = useState<RBACUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /* ------------------------------------------------------------------------ */
+  /*                            Role Derivation                               */
+  /* ------------------------------------------------------------------------ */
+
+  const deriveRoles = (user: UserAdminInfoDto): RBACRole[] => {
+    const roles: RBACRole[] = [];
+
+    if (user.isSysAdmin) {
+      roles.push("sysAdmin");
+    }
+    if (user.isOrgAdmin) {
+      roles.push("orgAdmin");
+    }
+    if (user.isProjectAdmin) {
+      roles.push("projectAdmin");
+    }
+
+    return roles;
+  };
+
+  /* ------------------------------------------------------------------------ */
+  /*                            User Fetch Helpers                            */
+  /* ------------------------------------------------------------------------ */
+
+  const fetchDevUser = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await getLocalDevUser();
+      const baseUser = response as UserAdminInfoDto;
+      const userData: RBACUser = {
+        ...baseUser,
+        roles: deriveRoles(baseUser),
+      };
+      setUser(userData);
+    } catch (error) {
+      console.error("Failed to fetch dev user:", error);
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
+      }
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchUserData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response: UserAdminInfoDto = await getCurrentUser();
+      const userData: RBACUser = {
+        ...response,
+        roles: deriveRoles(response),
+      };
+      setUser(userData);
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
+      }
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* ------------------------------------------------------------------------ */
+  /*                           Initial User Loading                           */
+  /* ------------------------------------------------------------------------ */
+
   useEffect(() => {
-    const fetchDevUser = async () => {
-      try {
-        const response = await getLocalDevUser();
-        const userData: UserResponseDto = {
-          ...response,
-          role: response.isSysAdmin ? "sysAdmin" : "viewer",
-        };
-        setUser(userData);
-      } catch (error) {
-        console.error("Failed to fetch dev user:", error);
-        if (error instanceof Error) {
-          console.error("Error details:", error.message);
-        }
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchUserData = async () => {
-      try {
-        const response = await getCurrentUser();
-        const userData: UserResponseDto = {
-          ...response,
-          role: response.isSysAdmin ? "sysAdmin" : "viewer",
-        };
-        setUser(userData);
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-        if (error instanceof Error) {
-          console.error("Error details:", error.message);
-        }
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (disableAuth) {
       fetchDevUser();
     } else if (status === "authenticated") {
@@ -83,49 +134,23 @@ export function RBACProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setLoading(false);
     }
-  }, [status, disableAuth]);
+  }, [status, disableAuth, fetchDevUser, fetchUserData]);
+
+  /* ------------------------------------------------------------------------ */
+  /*                              Refresh Handler                             */
+  /* ------------------------------------------------------------------------ */
 
   const refreshUser = useCallback(() => {
-    const fetchDevUser = async () => {
-      setLoading(true);
-      try {
-        const response = await getLocalDevUser();
-        const userData: UserResponseDto = {
-          ...response,
-          role: response.isSysAdmin ? "sysAdmin" : "viewer",
-        };
-        setUser(userData);
-      } catch (error) {
-        console.error("Failed to fetch dev user:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchUserData = async () => {
-      setLoading(true);
-      try {
-        const response = await getCurrentUser();
-        const userData: UserResponseDto = {
-          ...response,
-          role: response.isSysAdmin ? "sysAdmin" : "viewer",
-        };
-        setUser(userData);
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (disableAuth) {
       fetchDevUser();
     } else if (status === "authenticated") {
       fetchUserData();
     }
-  }, [status, disableAuth]);
+  }, [disableAuth, status, fetchDevUser, fetchUserData]);
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Load States                                */
+  /* ------------------------------------------------------------------------ */
 
   if (loading) {
     return (
@@ -174,6 +199,10 @@ export function RBACProvider({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Main Render                                */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <RBACContext.Provider value={{ user, setUser, refreshUser, session }}>
