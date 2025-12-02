@@ -1,9 +1,9 @@
+using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -129,10 +129,9 @@ public class DataSourceProjectController : ControllerBase
     {
         try
         {
-           
             var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto );
+            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -182,13 +181,13 @@ public class DataSourceProjectController : ControllerBase
     [HttpDelete("{dataSourceId:long}", Name = "api_delete_a_data_source_for_project")]
     [Auth("write", "data_source")]
     public async Task<IActionResult> DeleteDataSource(
-        long dataSourceId,
-        long projectId)
+        long projectId,
+        long dataSourceId)
     {
         try
         {
             var organizationId = UserContextStorage.OrganizationId;
-            await _dataSourceBusiness.DeleteDataSource(organizationId, dataSourceId, projectId);
+            await _dataSourceBusiness.DeleteDataSource(organizationId, projectId, dataSourceId);
             return Ok(new { message = $"Deleted data source {dataSourceId}" });
         }
         catch (Exception exc)

@@ -10,6 +10,7 @@ import React, { useEffect, useState } from "react";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 const TeamMembersWidget: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
@@ -17,6 +18,7 @@ const TeamMembersWidget: React.FC = () => {
   const [users, setUsers] = useState<{ name: string; email: string }[]>([]);
   const { project } = useProjectSession();
   const { t } = useLanguage();
+  const { organization } = useOrganizationSession();
 
   const handleToggle = () => {
     setShowTable((prev) => !prev);
@@ -25,7 +27,10 @@ const TeamMembersWidget: React.FC = () => {
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const data = await getAllUsers(Number(project?.projectId));
+        const data = await getAllUsers(
+          organization?.organizationId,
+          project?.projectId
+        );
         setUsers(data);
       } catch (error) {
         console.error("Failed to fetch projects:", error);
