@@ -12,7 +12,6 @@ import {
   DataSourceResponseDto,
   ProjectResponseDto,
 } from "../types/responseDTOs";
-import { CreateRecordPayload } from "../types/types";
 
 import { getAllDataSourcesOrg } from "@/app/lib/client_service/data_source_services.client";
 import { createRecord } from "@/app/lib/client_service/record_services.client";
@@ -42,7 +41,7 @@ const AddRecordModal: React.FC<Props> = ({
   const { organization } = useOrganizationSession();
 
   /* ------------------------------------------------------------------------ */
-  /*                        Project / Data Source State                       */
+  /*                     Derived Values / Initial Selection                   */
   /* ------------------------------------------------------------------------ */
 
   const initialProjectId = useMemo(
@@ -50,13 +49,19 @@ const AddRecordModal: React.FC<Props> = ({
     [initialProjects]
   );
 
+  /* ------------------------------------------------------------------------ */
+  /*                        Project / Data Source State                       */
+  /* ------------------------------------------------------------------------ */
+
   const [selectedProjectId, setSelectedProjectId] = useState<
     number | undefined
   >(initialProjectId);
+
   const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [selectedDataSourceId, setSelectedDataSourceId] = useState<
     number | undefined
   >();
+
   const [dsLoading, setDsLoading] = useState(false);
   const [dsError, setDsError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,8 +87,13 @@ const AddRecordModal: React.FC<Props> = ({
   const [tagsText, setTagsText] = useState<string>("");
   const [labelsText, setLabelsText] = useState<string>("");
 
+  // Tabs for optional fields: IDs / Metadata / Tags & Labels
+  const [optionalTab, setOptionalTab] = useState<"ids" | "meta" | "tags">(
+    "ids"
+  );
+
   /* ------------------------------------------------------------------------ */
-  /*                               Helpers                                    */
+  /*                               Helper Utils                               */
   /* ------------------------------------------------------------------------ */
 
   const parseCommaList = (text: string) =>
@@ -129,6 +139,8 @@ const AddRecordModal: React.FC<Props> = ({
     setTagsText("");
     setLabelsText("");
 
+    // UI
+    setOptionalTab("ids");
     setIsSubmitting(false);
   };
 
@@ -160,6 +172,7 @@ const AddRecordModal: React.FC<Props> = ({
 
     let props: JsonValue;
 
+    // Validate / normalize properties JSON
     try {
       const parsed = JSON.parse(propertiesText);
 
@@ -187,6 +200,7 @@ const AddRecordModal: React.FC<Props> = ({
       return;
     }
 
+    // Optional numeric: object_storage_id
     const objectStorageIdNum =
       objectStorageId.trim() === "" ? undefined : Number(objectStorageId);
 
@@ -205,14 +219,6 @@ const AddRecordModal: React.FC<Props> = ({
       ? parseCommaList(labelsText)
       : undefined;
 
-    const payload: CreateRecordPayload = {
-      name,
-      description,
-      original_id: abbreviation,
-      properties: props,
-      class_id: classId,
-    };
-
     const dto: CreateRecordRequestDto = {
       name,
       description,
@@ -221,14 +227,8 @@ const AddRecordModal: React.FC<Props> = ({
       class_id: classId,
     };
 
-    if (objectStorageIdNum !== undefined) {
-      payload.object_storage_id = objectStorageIdNum;
-    }
-    if (uri.trim()) payload.uri = uri.trim();
-    if (classNameOpt.trim()) payload.class_name = classNameOpt.trim();
-    if (tags?.length) payload.tags = tags;
-    if (sensitivity_labels?.length)
-      payload.sensitivity_labels = sensitivity_labels;
+    // (If later you need to send the richer payload somewhere else, you can
+    // rebuild CreateRecordPayload here; currently not used.)
 
     try {
       await createRecord(
@@ -237,6 +237,10 @@ const AddRecordModal: React.FC<Props> = ({
         selectedDataSourceId,
         dto
       );
+
+      // Future: tags / sensitivity_labels could be sent via a separate
+      // endpoint if backend supports it.
+
       toast.success(t.translations.RECORD_CREATED_SECCESSFULLY);
       resetForm();
       onClose();
@@ -300,15 +304,18 @@ const AddRecordModal: React.FC<Props> = ({
   /* ------------------------------------------------------------------------ */
 
   return (
-    <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
+    <dialog className={`modal mt-6 ${isOpen ? "modal-open" : ""}`}>
       <div className="modal-box">
         <h3 className="text-base-content font-bold text-lg mb-4">
           {t.translations.ADD_A_RECORD}
         </h3>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          {/* Project + Data Source */}
+          {/* ------------------------------------------------------------------ */}
+          {/*                     Project + Data Source Section                  */}
+          {/* ------------------------------------------------------------------ */}
           <div className="flex gap-3">
+            {/* Project select */}
             <div className="w-1/2">
               <label className="label">
                 <span className="label-text">
@@ -336,6 +343,7 @@ const AddRecordModal: React.FC<Props> = ({
               </select>
             </div>
 
+            {/* Data source select */}
             <div className="w-1/2">
               <label className="label">
                 <span className="label-text">
@@ -370,7 +378,9 @@ const AddRecordModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Required Fields */}
+          {/* ------------------------------------------------------------------ */}
+          {/*                            Required Fields                         */}
+          {/* ------------------------------------------------------------------ */}
           <input
             type="text"
             className="input input-primary w-full"
@@ -408,70 +418,122 @@ const AddRecordModal: React.FC<Props> = ({
             <p className="text-error text-sm">{propertiesError}</p>
           )}
 
-          {/* Optional Fields */}
-          <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-lg">
-            <input type="checkbox" />
-            <div className="collapse-title text-md font-medium">
-              {t.translations.OPTIONAL_FIELDS}
+          {/* ------------------------------------------------------------------ */}
+          {/*                          Optional Fields Tabs                      */}
+          {/* ------------------------------------------------------------------ */}
+          <div className="mt-2 border border-base-300 rounded-lg">
+            {/* Tab headers */}
+            <div className="flex border-b border-base-300 bg-base-200/60 rounded-t-lg">
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "ids"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("ids")}
+              >
+                IDs
+              </button>
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "meta"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("meta")}
+              >
+                Metadata
+              </button>
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "tags"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("tags")}
+              >
+                Tags &amp; Labels
+              </button>
             </div>
-            <div className="collapse-content flex flex-col gap-4">
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input input-bordered w-full"
-                placeholder="object_storage_id"
-                value={objectStorageId}
-                onChange={(e) => setObjectStorageId(e.target.value)}
-              />
 
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input input-bordered w-full"
-                placeholder="class_id"
-                value={classId ?? ""}
-                onChange={(e) =>
-                  setClassId(
-                    e.target.value === "" ? undefined : Number(e.target.value)
-                  )
-                }
-              />
+            {/* Tab content */}
+            <div className="p-4 flex flex-col gap-3 bg-base-100 rounded-b-lg">
+              {optionalTab === "ids" && (
+                <>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="input input-bordered w-full"
+                    placeholder="object_storage_id"
+                    value={objectStorageId}
+                    onChange={(e) => setObjectStorageId(e.target.value)}
+                  />
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="uri"
-                value={uri}
-                onChange={(e) => setUri(e.target.value)}
-              />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="input input-bordered w-full"
+                    placeholder="class_id"
+                    value={classId ?? ""}
+                    onChange={(e) =>
+                      setClassId(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value)
+                      )
+                    }
+                  />
+                </>
+              )}
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="class_name"
-                value={classNameOpt}
-                onChange={(e) => setClassNameOpt(e.target.value)}
-              />
+              {optionalTab === "meta" && (
+                <>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="uri"
+                    value={uri}
+                    onChange={(e) => setUri(e.target.value)}
+                  />
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="tags (comma-separated)"
-                value={tagsText}
-                onChange={(e) => setTagsText(e.target.value)}
-              />
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="class_name"
+                    value={classNameOpt}
+                    onChange={(e) => setClassNameOpt(e.target.value)}
+                  />
+                </>
+              )}
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="sensitivity_labels (comma-separated)"
-                value={labelsText}
-                onChange={(e) => setLabelsText(e.target.value)}
-              />
+              {optionalTab === "tags" && (
+                <>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="tags (comma-separated)"
+                    value={tagsText}
+                    onChange={(e) => setTagsText(e.target.value)}
+                  />
+
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="sensitivity_labels (comma-separated)"
+                    value={labelsText}
+                    onChange={(e) => setLabelsText(e.target.value)}
+                  />
+                </>
+              )}
             </div>
           </div>
 
-          {/* Actions */}
+          {/* ------------------------------------------------------------------ */}
+          {/*                                Actions                             */}
+          {/* ------------------------------------------------------------------ */}
           <div className="modal-action">
             <button type="button" className="btn" onClick={handleClose}>
               {t.translations.CANCEL}
