@@ -192,11 +192,7 @@ const DataSources = ({ projectId }: Props) => {
 
     try {
       const [dataSourceList, projectStats, keys] = await Promise.all([
-        getAllDataSources(
-          organization?.organizationId as number,
-          [projectId],
-          hideArchived
-        ),
+        getAllDataSources(projectId, hideArchived),
         getProjectStats(
           organization?.organizationId as number,
           projectId
