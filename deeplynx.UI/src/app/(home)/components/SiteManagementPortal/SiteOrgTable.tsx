@@ -13,10 +13,12 @@ import {
 
 interface OrganizationManagementProps {
   initialOrganizations: OrganizationResponseDto[];
+  onOrganizationsChange?: () => Promise<void>; // Add this prop
 }
 
 const SiteOrganizationManagement = ({
   initialOrganizations,
+  onOrganizationsChange
 }: OrganizationManagementProps) => {
   const { t } = useLanguage();
   const [data, setData] =
@@ -45,6 +47,10 @@ const SiteOrganizationManagement = ({
     try {
       const updatedData = await getAllOrganizations();
       setData(updatedData);
+      // Notify parent component to update its state too
+      if (onOrganizationsChange) {
+        await onOrganizationsChange();
+      }
     } catch (err) {
       console.error("Failed to refresh organizations:", err);
       setError("Failed to refresh organizations.");

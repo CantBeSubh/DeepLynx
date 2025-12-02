@@ -185,7 +185,7 @@ export type CreateRecordRequestDto = {
   description: string;
   object_storage_id?: number;
   uri?: string;
-  properties: string;
+  properties: Record<string, unknown>;
   original_id: string;
   class_id?: number;
   class_name?: string;
