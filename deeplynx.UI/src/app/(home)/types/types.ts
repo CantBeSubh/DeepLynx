@@ -2,32 +2,16 @@
 
 import React, { ReactNode } from 'react';
 import { CustomQueryRequestDto } from './requestDTOs';
+import { HistoricalRecordResponseDto } from './responseDTOs';
 
-// TODO: change Tag[] to string[] and figure out how to display
-export type FileViewerTableRow = {
-  id: number;
-  uri?: string | null;
-  name?: string;
-  properties?: string;
-  originalId?: string;
-  classId?: number;
-  className?: string;
-  dataSourceId?: number;
-  dataSourceName?: string;
-  projectId?: number;
-  projectName?: string;
-  tags: string;
-  archivedAt?: string | null;
-  lastUpdatedAt?: string;
-  description?: string;
+export type RecordTableRow = HistoricalRecordResponseDto & {
   fileType: string;
   timeseries?: boolean;
   fileSize?: number;
   select?: boolean;
   associatedRecords?: string[];
+  archivedAt?: string | null;
 };
-
-export type TableRow = FileViewerTableRow;
 
 export type Column<T extends object> = {
   accessor?: string;

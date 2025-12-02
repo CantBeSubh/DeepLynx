@@ -5,7 +5,7 @@ import {
   ProjectStatResponseDto,
   ProjectMemberResponseDto,
 } from "../../(home)/types/responseDTOs";
-import type { FileViewerTableRow } from "@/app/(home)/types/types";
+import type { RecordTableRow } from "@/app/(home)/types/types";
 import { apiFetch, asJson } from "./api.server";
 
 /* -------------------------------------------------------------------------- */
@@ -198,10 +198,10 @@ export async function removeMemberFromProjectServer(
 export async function getAllRecordsForMultipleProjectsServer(
   projectIds: number[],
   hideArchived = true
-): Promise<FileViewerTableRow[]> {
+): Promise<RecordTableRow[]> {
   const query =
     projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
     `&hideArchived=${hideArchived}`;
   const res = await apiFetch(`/projects/MultiProjectRecords?${query}`); // TODO FIX
-  return asJson<FileViewerTableRow[]>(res);
+  return asJson<RecordTableRow[]>(res);
 }

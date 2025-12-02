@@ -4,7 +4,7 @@ import {
 } from "@/app/(home)/types/responseDTOs";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { getRecentlyAddedRecords } from "@/app/lib/client_service/query_services.client";
-import { createOrganizationTag } from "@/app/lib/client_service/tag_services.client";
+import { createTagOrg } from "@/app/lib/client_service/tag_services.client";
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 
@@ -65,7 +65,7 @@ const CreateTag = ({
     setError(null);
 
     try {
-      const newTag = await createOrganizationTag(
+      const newTag = await createTagOrg(
         organization.organizationId as number,
         { name: tagName }
       );

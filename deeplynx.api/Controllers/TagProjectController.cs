@@ -7,7 +7,7 @@ using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
-[Route("organizations/{organizationId:long}/projects/{projectId:long}/tags")]
+[Route("projects/{projectId:long}/tags")]
 [ApiController]
 [Authorize]
 [Tags("Project Management", "Tag")]
@@ -37,10 +37,11 @@ public class TagProjectController : ControllerBase
     [HttpGet(Name = "api_get_all_tags_project")]
     [Auth("read", "tag")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
-        long organizationId, long projectId, [FromQuery] bool hideArchived = true)
+        long projectId, [FromQuery] bool hideArchived = true)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var tags = await _tagBusiness.GetAllTags(organizationId, [projectId], hideArchived);
             return Ok(tags);
         }
@@ -63,13 +64,13 @@ public class TagProjectController : ControllerBase
     [HttpGet("{tagId:long}", Name = "api_get_a_tag_project")]
     [Auth("read", "tag")]
     public async Task<ActionResult<TagResponseDto>> GetTag(
-        long organizationId,
         long projectId,
         long tagId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var tag = await _tagBusiness.GetTag(organizationId, projectId, tagId, hideArchived);
             return Ok(tag);
         }
@@ -91,11 +92,12 @@ public class TagProjectController : ControllerBase
     [HttpPost(Name = "api_create_a_tag_project")]
     [Auth("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> CreateTag(
-        long organizationId, long projectId,
+        long projectId,
         [FromBody] CreateTagRequestDto tagRequestDto)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             var createdTag = await _tagBusiness.CreateTag(currentUserId, organizationId, projectId, tagRequestDto);
             return Ok(createdTag);
@@ -118,12 +120,12 @@ public class TagProjectController : ControllerBase
     [HttpPost("bulk", Name = "api_create_many_tags_project")]
     [Auth("write", "tag")]
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
-        long organizationId,
         long projectId,
         [FromBody] List<CreateTagRequestDto> tagRequestDto)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(currentUserId, organizationId, projectId, tagRequestDto);
             return Ok(bulkTagResponseDto);
@@ -147,11 +149,12 @@ public class TagProjectController : ControllerBase
     [HttpPut("{tagId:long}", Name = "api_update_a_tag_project")]
     [Auth("write", "tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(
-        long organizationId, long projectId, long tagId,
+       long projectId, long tagId,
         [FromBody] UpdateTagRequestDto tagRequestDto)
     {
         try
-        {
+        { 
+            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
             var updatedTag = await _tagBusiness.UpdateTag(currentUserId, organizationId, projectId, tagId, tagRequestDto);
             return Ok(updatedTag);
@@ -174,10 +177,11 @@ public class TagProjectController : ControllerBase
     [HttpDelete("{tagId:long}", Name = "api_delete_a_tag_project")]
     [Auth("write", "tag")]
     public async Task<IActionResult> DeleteTag(
-        long organizationId, long projectId, long tagId)
+       long projectId, long tagId)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             await _tagBusiness.DeleteTag(organizationId, projectId, tagId);
             return Ok(new { message = "Tag deleted successfully" });
         }
@@ -200,13 +204,13 @@ public class TagProjectController : ControllerBase
     [HttpPatch("{tagId:long}", Name = "api_archive_tag_project")]
     [Auth("write", "tag")]
     public async Task<IActionResult> ArchiveTag(
-        long organizationId,
         long projectId,
         long tagId,
         [FromQuery] bool archive)
     {
         try
         {
+            var organizationId = UserContextStorage.OrganizationId;
             var userId = UserContextStorage.UserId;
             if (archive)
             {

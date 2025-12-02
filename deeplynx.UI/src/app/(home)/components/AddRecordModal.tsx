@@ -14,7 +14,7 @@ import {
 } from "../types/responseDTOs";
 import { CreateRecordPayload } from "../types/types";
 
-import { getAllDataSources } from "@/app/lib/client_service/data_source_services.client";
+import { getAllDataSourcesOrg } from "@/app/lib/client_service/data_source_services.client";
 import { createRecord } from "@/app/lib/client_service/record_services.client";
 
 /* -------------------------------------------------------------------------- */
@@ -268,7 +268,7 @@ const AddRecordModal: React.FC<Props> = ({
         setDsError(null);
         setSelectedDataSourceId(undefined);
 
-        const list = await getAllDataSources(
+        const list = await getAllDataSourcesOrg(
           organization?.organizationId as number,
           [selectedProjectId]
         );
