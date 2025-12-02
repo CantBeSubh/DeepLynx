@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
+FROM node:lts-alpine3.22 AS frontend-build
 
 # Define build arguments
 ARG OKTA_CLIENT_ID
@@ -40,16 +40,16 @@ ENV NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${NEXT_PUBLIC_DISABLE_FRONTEND_A
 WORKDIR /usr/src/app
 
 # Install versioned os packages
-RUN apk update && apk upgrade --no-cache && \
-    apk add --no-cache \
-      openssl=3.3.5-r0 \
-      busybox=1.36.1-r31
+# RUN apk update && apk upgrade --no-cache && \
+#     apk add --no-cache \
+#       openssl=3.3.5-r0 \
+#       busybox=1.36.1-r31
+
+# Install latest npm version and packages
+RUN npm install -g npm@latest
 
 # Copy package.json and package-lock.json first
 COPY deeplynx.UI/package*.json ./
-
-# Install latest npm version
-RUN npm install -g npm@latest
 
 # Install frontend dependencies
 RUN npm install
@@ -61,13 +61,13 @@ COPY deeplynx.UI .
 RUN npm run build
 
 # Stage 2: Create the final image
-FROM node:lts-alpine3.20 AS final
+FROM node:lts-alpine3.22 AS final
 
 # Install versioned os packages
-RUN apk update && apk upgrade --no-cache && \
-    apk add --no-cache \
-      openssl=3.3.5-r0 \
-      busybox=1.36.1-r31
+# RUN apk update && apk upgrade --no-cache && \
+#     apk add --no-cache \
+#       openssl=3.3.5-r0 \
+#       busybox=1.36.1-r31
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -75,7 +75,7 @@ WORKDIR /usr/src/app
 # Copy package files first
 COPY --from=frontend-build /usr/src/app/package*.json ./
 
-# Install latest npm version
+# Install latest npm version and packages
 RUN npm install -g npm@latest
 
 # Install production dependencies BEFORE copying build artifacts
