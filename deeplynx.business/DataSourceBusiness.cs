@@ -54,18 +54,18 @@ public class DataSourceBusiness : IDataSourceBusiness
         bool hideArchived = true)
     {
         var dataSources = _context.DataSources
-            .Where(c => c.OrganizationId == organizationId).AsQueryable(); 
-    
+            .Where(c => c.OrganizationId == organizationId).AsQueryable();
+
         // Filter by projectIds if provided and not empty
         if (projectIds is { Length: > 0 })
             dataSources = dataSources.Where(c => c.ProjectId.HasValue && projectIds.Contains(c.ProjectId.Value));
-    
+
         // Optionally hide archived classes
         if (hideArchived)
             dataSources = dataSources.Where(c => !c.IsArchived);
-    
+
         var dataSourceList = await dataSources.ToListAsync();
-        
+
         return dataSourceList.Select(d => new DataSourceResponseDto
         {
             Id = d.Id,
@@ -76,8 +76,8 @@ public class DataSourceBusiness : IDataSourceBusiness
             Abbreviation = d.Abbreviation,
             Type = d.Type,
             BaseUri = d.BaseUri,
-            Config = string.IsNullOrEmpty(d.Config) 
-                ? null 
+            Config = string.IsNullOrEmpty(d.Config)
+                ? null
                 : JsonNode.Parse(d.Config) as JsonObject,
             ProjectId = d.ProjectId,
             LastUpdatedAt = d.LastUpdatedAt,
@@ -100,11 +100,14 @@ public class DataSourceBusiness : IDataSourceBusiness
         bool hideArchived
     )
     {
-        var dataSource = await _context.DataSources
-            .Where(d => d.OrganizationId == organizationId && d.Id == datasourceId
-                                                           && projectId.HasValue && d.ProjectId == projectId.Value)
-            .FirstOrDefaultAsync();
+        var query = _context.DataSources
+            .Where(d => d.OrganizationId == organizationId && d.Id == datasourceId)
+            .AsQueryable();
 
+        if (projectId is not null)
+            query = query.Where(d => d.ProjectId == projectId);
+
+        var dataSource = await query.FirstOrDefaultAsync();
         if (dataSource == null)
             throw new KeyNotFoundException($"Data Source with id {datasourceId} not found");
 
@@ -121,8 +124,8 @@ public class DataSourceBusiness : IDataSourceBusiness
             Abbreviation = dataSource.Abbreviation,
             Type = dataSource.Type,
             BaseUri = dataSource.BaseUri,
-            Config = string.IsNullOrEmpty(dataSource.Config) 
-                ? null 
+            Config = string.IsNullOrEmpty(dataSource.Config)
+                ? null
                 : JsonNode.Parse(dataSource.Config) as JsonObject,
             ProjectId = dataSource.ProjectId,
             LastUpdatedAt = dataSource.LastUpdatedAt,
@@ -140,13 +143,22 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
     public async Task<DataSourceResponseDto> GetDefaultDataSource(long organizationId, long? projectId)
     {
-        var dataSource = await _context.DataSources
-            .Where(d => d.OrganizationId == organizationId && d.Default == true && !d.IsArchived
-                        && projectId.HasValue && d.ProjectId == projectId.Value)
-            .FirstOrDefaultAsync();
+        var query = _context.DataSources
+            .Where(d => d.OrganizationId == organizationId && d.Default == true && !d.IsArchived)
+            .AsQueryable();
+
+        if (projectId is not null)
+            query = query.Where(d => d.ProjectId == projectId);
+
+        var dataSource = await query.FirstOrDefaultAsync();
 
         if (dataSource == null)
-            throw new KeyNotFoundException($"Default data source for project {projectId} not found");
+        {
+            var context = projectId.HasValue
+                ? $"project {projectId}"
+                : $"organization {organizationId}";
+            throw new KeyNotFoundException($"Default data source for {context} not found");
+        }
 
         return new DataSourceResponseDto
         {
@@ -157,8 +169,8 @@ public class DataSourceBusiness : IDataSourceBusiness
             Abbreviation = dataSource.Abbreviation,
             Type = dataSource.Type,
             BaseUri = dataSource.BaseUri,
-            Config = string.IsNullOrEmpty(dataSource.Config) 
-                ? null 
+            Config = string.IsNullOrEmpty(dataSource.Config)
+                ? null
                 : JsonNode.Parse(dataSource.Config) as JsonObject,
             ProjectId = dataSource.ProjectId,
             LastUpdatedAt = dataSource.LastUpdatedAt,
@@ -166,7 +178,7 @@ public class DataSourceBusiness : IDataSourceBusiness
             IsArchived = dataSource.IsArchived
         };
     }
-    
+
     /// <summary>
     ///     Asynchronously creates a new data source for a specified project.
     /// </summary>
@@ -204,7 +216,7 @@ public class DataSourceBusiness : IDataSourceBusiness
             await MakePreviousDefaultsFalse(currentUserId, organizationId, projectId, dataSource.Id);
 
         await _context.SaveChangesAsync();
-            
+
         // Log DataSource Create Event
         await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
         {
@@ -226,8 +238,8 @@ public class DataSourceBusiness : IDataSourceBusiness
             Abbreviation = dataSource.Abbreviation,
             Type = dataSource.Type,
             BaseUri = dataSource.BaseUri,
-            Config = string.IsNullOrEmpty(dataSource.Config) 
-                ? null 
+            Config = string.IsNullOrEmpty(dataSource.Config)
+                ? null
                 : JsonNode.Parse(dataSource.Config) as JsonObject,
             ProjectId = dataSource.ProjectId,
             LastUpdatedAt = dataSource.LastUpdatedAt,
@@ -299,8 +311,8 @@ public class DataSourceBusiness : IDataSourceBusiness
                 Abbreviation = dataSource.Abbreviation,
                 Type = dataSource.Type,
                 BaseUri = dataSource.BaseUri,
-                Config = string.IsNullOrEmpty(dataSource.Config) 
-                    ? null 
+                Config = string.IsNullOrEmpty(dataSource.Config)
+                    ? null
                     : JsonNode.Parse(dataSource.Config) as JsonObject,
                 ProjectId = dataSource.ProjectId,
                 OrganizationId = dataSource.OrganizationId,
@@ -342,7 +354,7 @@ public class DataSourceBusiness : IDataSourceBusiness
 
         return true;
     }
-    
+
     /// <summary>
     ///     Archives a specific data source by its ID.
     /// </summary>
@@ -352,7 +364,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     /// <param name="dataSourceId">The ID of the data source to archive</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
-    public async Task<bool> ArchiveDataSource(long organizationId,long? projectId, long currentUserId, 
+    public async Task<bool> ArchiveDataSource(long organizationId, long? projectId, long currentUserId,
         long dataSourceId)
     {
         var query = _context.DataSources
@@ -492,8 +504,8 @@ public class DataSourceBusiness : IDataSourceBusiness
             Abbreviation = dataSource.Abbreviation,
             Type = dataSource.Type,
             BaseUri = dataSource.BaseUri,
-            Config = string.IsNullOrEmpty(dataSource.Config) 
-                ? null 
+            Config = string.IsNullOrEmpty(dataSource.Config)
+                ? null
                 : JsonNode.Parse(dataSource.Config) as JsonObject,
             OrganizationId = dataSource.OrganizationId,
             ProjectId = dataSource.ProjectId,
@@ -502,16 +514,16 @@ public class DataSourceBusiness : IDataSourceBusiness
             IsArchived = dataSource.IsArchived
         };
     }
-    
+
     private async Task MakePreviousDefaultsFalse(long currentUserId, long organizationId, long? projectId,
         long defaultDataSourceId)
     {
         var previousDefaults =
             await _context.DataSources
                 .Where(ds => ds.OrganizationId == organizationId &&
-                        (!projectId.HasValue || ds.ProjectId == projectId.Value) &&
-                        ds.Default == true &&
-                        ds.Id != defaultDataSourceId)
+                             (!projectId.HasValue || ds.ProjectId == projectId.Value) &&
+                             ds.Default == true &&
+                             ds.Id != defaultDataSourceId)
                 .ToListAsync();
 
         if (previousDefaults.Count > 0)

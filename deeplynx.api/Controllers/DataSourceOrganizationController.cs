@@ -1,9 +1,9 @@
+using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
@@ -78,7 +78,7 @@ public class DataSourceOrganizationController : ControllerBase
         try
         {
             var dataSource =
-                await _dataSourceBusiness.GetDataSource(organizationId,null, dataSourceId, hideArchived);
+                await _dataSourceBusiness.GetDataSource(organizationId, null, dataSourceId, hideArchived);
             return Ok(dataSource);
         }
         catch (Exception exc)
@@ -106,6 +106,33 @@ public class DataSourceOrganizationController : ControllerBase
         catch (Exception exc)
         {
             var message = $"An error occurred while retrieving default data source for org {organizationId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    ///     Create a Data Source
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the data source belongs</param>
+    /// <param name="dto">The data transfer object containing data source details</param>
+    /// <returns>The created data source</returns>
+    [HttpPost(Name = "api_create_a_data_source_for_organization")]
+    [Auth("write", "data_source")]
+    public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(
+        long projectId,
+        [FromBody] CreateDataSourceRequestDto dto)
+    {
+        try
+        {
+            var organizationId = UserContextStorage.OrganizationId;
+            var currentUserId = UserContextStorage.UserId;
+            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto);
+            return Ok(dataSource);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while creating data source: {exc}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
@@ -217,7 +244,7 @@ public class DataSourceOrganizationController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var dataSource =
-                await _dataSourceBusiness.SetDefaultDataSource(organizationId, null, currentUserId,  dataSourceId);
+                await _dataSourceBusiness.SetDefaultDataSource(organizationId, null, currentUserId, dataSourceId);
             return Ok(dataSource);
         }
         catch (Exception exc)
