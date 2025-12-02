@@ -1,10 +1,6 @@
 // src/app/(home)/project_management/[id]/data_source/DataSourcesClient.tsx
 "use client";
 
-/* -------------------------------------------------------------------------- */
-/*                                   Imports                                  */
-/* -------------------------------------------------------------------------- */
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowPathIcon, KeyIcon, PlusIcon } from "@heroicons/react/24/outline";
 
@@ -17,11 +13,11 @@ import type {
 import type { CreateDataSourceRequestDto } from "@/app/(home)/types/requestDTOs";
 
 import {
-  archiveProjectDataSource,
+  archiveDataSource,
   createDataSource,
   getAllDataSources,
   getRecordCountForDataSource,
-  setDefaultDataSourceForProject,
+  setDefaultDataSource,
 } from "@/app/lib/client_service/data_source_services.client";
 import { getProjectStats } from "@/app/lib/client_service/projects_services.client";
 import { getUserApiKeys } from "@/app/lib/client_service/token_services.client";
@@ -295,7 +291,7 @@ const DataSources = ({ projectId }: Props) => {
   const onArchiveToggle = async (s: DataSourceResponseDto) => {
     setSaving(true);
     try {
-      await archiveProjectDataSource(projectId, Number(s.id), !s.isArchived);
+      await archiveDataSource(projectId, Number(s.id), !s.isArchived);
       await fetchAll();
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "Operation failed.";
@@ -308,7 +304,7 @@ const DataSources = ({ projectId }: Props) => {
   const onSetDefault = async (id: number) => {
     setSaving(true);
     try {
-      await setDefaultDataSourceForProject(projectId, id);
+      await setDefaultDataSource(projectId, id);
       await fetchAll();
     } catch (e) {
       const errorMessage =
