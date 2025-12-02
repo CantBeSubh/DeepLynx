@@ -89,10 +89,10 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
                 />
               </div>
 
-              <div className="divider">Optional Project Assignment</div>
+              {/* <div className="divider">Optional Project Assignment</div> */}
 
               {/* Project Selector */}
-              <div className="form-control">
+              {/* <div className="form-control">
                 <label className="label">
                   <span className="label-text font-semibold mr-2">
                     Assign to Project (Optional)
@@ -110,7 +110,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               {/* Role Selector (conditional) */}
               {selectedProjectId && (
@@ -160,9 +160,8 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
                 Cancel
               </button>
               <button
-                className={`btn btn-primary gap-2 ${
-                  inviteDisabled ? "btn-disabled" : ""
-                }`}
+                className={`btn btn-primary gap-2 ${inviteDisabled ? "btn-disabled" : ""
+                  }`}
                 disabled={inviteDisabled}
                 onClick={onInvite}
               >

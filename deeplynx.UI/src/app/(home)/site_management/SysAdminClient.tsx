@@ -7,9 +7,9 @@ import {
   OrganizationResponseDto,
   UserResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "../organization_management/users/UsersTable";
+import UsersTable from "../components/users/UsersTable";
 import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
-import SiteOrganizationManagement from "../components/SiteManagementPortal/OrgTable";
+import SiteOrganizationManagement from "../components/SiteManagementPortal/SiteOrgTable";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
@@ -37,7 +37,7 @@ const SysAdminClient = ({
     },
     {
       label: "Member Management",
-      content: <UsersTable members={members} />,
+      content: <UsersTable members={members} header={"Site Users"} description={"Manage users for the site. Invite new users via email."} />,
     },
   ];
 
