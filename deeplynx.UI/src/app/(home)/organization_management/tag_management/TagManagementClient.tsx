@@ -3,9 +3,9 @@
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { getRecordsByTags } from "@/app/lib/client_service/record_services.client";
 import {
-  archiveOrganizationTag,
-  getAllOrganizationTags,
-  updateOrganizationTag,
+  archiveTagOrg,
+  getAllTagsOrg,
+  updateTagOrg,
 } from "@/app/lib/client_service/tag_services.client";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -72,7 +72,7 @@ const TagManagementClient = () => {
     setError(null);
 
     try {
-      const allTags = await getAllOrganizationTags(
+      const allTags = await getAllTagsOrg(
         organization.organizationId as number
       );
       setTags(allTags);
@@ -129,8 +129,7 @@ const TagManagementClient = () => {
 
       setRecordsFromTagSearch(recordsWithParsedTags);
       toast.success(
-        `Found ${records.length} record${
-          records.length !== 1 ? "s" : ""
+        `Found ${records.length} record${records.length !== 1 ? "s" : ""
         } with selected tags`
       );
     } catch (error) {
@@ -155,7 +154,7 @@ const TagManagementClient = () => {
 
   const handleUpdateTag = async (tagId: number, newName: string) => {
     try {
-      await updateOrganizationTag(
+      await updateTagOrg(
         organization?.organizationId as number,
         tagId,
         {
@@ -173,7 +172,7 @@ const TagManagementClient = () => {
 
   const handleArchiveTag = async (tagId: number) => {
     try {
-      await archiveOrganizationTag(
+      await archiveTagOrg(
         organization?.organizationId as number,
         tagId,
         true
@@ -192,7 +191,7 @@ const TagManagementClient = () => {
 
   const handleUnarchiveTag = async (tagId: number) => {
     try {
-      await archiveOrganizationTag(
+      await archiveTagOrg(
         organization?.organizationId as number,
         tagId,
         false
@@ -234,11 +233,10 @@ const TagManagementClient = () => {
               <li
                 key={item}
                 onClick={() => setSelectedMenuItems(item)}
-                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-bold ${
-                  selectedMenuItem === item
+                className={`cursor-pointer px-4 py-2 rounded-lg transition-colors font-bold ${selectedMenuItem === item
                     ? "bg-info/50 text-info-content"
                     : "hover:bg-base-200"
-                }`}
+                  }`}
               >
                 {item}
               </li>
