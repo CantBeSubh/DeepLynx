@@ -297,15 +297,15 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
           <li className="mt-2">
             <Link
-              href={`/project/${project?.projectId || ""}/project_settings`}
+              href={`/project_management/${project?.projectId || ""}`}
               onClick={(e) =>
                 handleItemClick(
-                  `/project/${project?.projectId || ""}/project_settings`,
+                  `/project_management/${project?.projectId || ""}`,
                   e
                 )
               }
               className={getItemClass(
-                `/project/${project?.projectId || ""}/project_settings`
+                `/project_management/${project?.projectId || ""}`
               )}
             >
               <AdjustmentsHorizontalIcon className="size-6" />

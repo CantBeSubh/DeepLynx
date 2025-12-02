@@ -370,7 +370,7 @@ public class RelationshipBusinessTests : IntegrationTestBase
     #region BulkCreateRelationships Tests
 
     [Fact]
-    public async Task BulkCreateRelationships_Success_ReturnsMultipleRelationships()
+    public async Task BulkCreateRelationships_Success_ReturnsMultipleRelationshipsProject()
     {
         // Arrange
         var now = DateTime.UtcNow;
@@ -421,6 +421,42 @@ public class RelationshipBusinessTests : IntegrationTestBase
         // Assert.Equal("relationship", secondEvent.EntityType);
         // Assert.Equal(result[1].Id, secondEvent.EntityId);
         // Assert.Equal(result[1].ProjectId, secondEvent.ProjectId);
+    }
+    
+    [Fact]
+    public async Task BulkCreateRelationships_Success_ReturnsMultipleRelationshipsOrganization()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var relationshipDtos = new List<CreateRelationshipRequestDto>
+        {
+            new()
+            {
+                Name = "Bulk Relationship 1",
+                Description = "First bulk relationship",
+                OriginId = cid,
+                DestinationId = cid2
+            },
+            new()
+            {
+                Name = "Bulk Relationship 2",
+                Description = "Second bulk relationship",
+                OriginId = cid2,
+                DestinationId = cid
+            }
+        };
+
+        // Act
+        var result = await _relationshipBusiness.BulkCreateRelationships(uid, oid, null, relationshipDtos);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+        Assert.All(result, r => Assert.True(r.Id > 0));
+        Assert.All(result, r => Assert.True(r.LastUpdatedAt >= now));
+        Assert.All(result, r => Assert.True(r.LastUpdatedBy >= uid));
+        Assert.All(result, r => Assert.True(r.ProjectId == null));
+        Assert.Equal("Bulk Relationship 1", result.First().Name);
+        Assert.Equal("Bulk Relationship 2", result.Last().Name);
     }
 
     [Fact]

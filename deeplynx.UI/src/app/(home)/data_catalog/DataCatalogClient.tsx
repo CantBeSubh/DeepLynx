@@ -1,7 +1,7 @@
 // src/app/(home)/data_catalog/DataCatalogClient.tsx
 "use client";
 
-import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { RecordTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -23,7 +23,7 @@ type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
   initialSearchTerm: string;
-  initialRecords: FileViewerTableRow[];
+  initialRecords: RecordTableRow[];
 };
 
 export default function DataCatalogClient({
@@ -49,10 +49,10 @@ export default function DataCatalogClient({
 
   const [hasInitialSearchRun, setHasInitialSearchRun] = useState(false);
 
-  const [tableData, setTableData] = useState<FileViewerTableRow[]>(
+  const [tableData, setTableData] = useState<RecordTableRow[]>(
     initialRecords ?? []
   );
-  const [records, setQueriedRecords] = useState<FileViewerTableRow[]>(
+  const [records, setQueriedRecords] = useState<RecordTableRow[]>(
     initialRecords ?? []
   );
 
@@ -109,7 +109,7 @@ export default function DataCatalogClient({
     setQueriedRecords([]);
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Clear all fetch failed:", e);
       }
@@ -172,8 +172,8 @@ export default function DataCatalogClient({
       selectedProjects.length > 0
         ? selectedProjects[0]
         : initialSelectedProjectsRef.current.length > 0
-        ? initialSelectedProjectsRef.current[0]
-        : null;
+          ? initialSelectedProjectsRef.current[0]
+          : null;
 
     if (projectToSet && projectToSet !== "ALL") {
       const selectedProject = projects.find(
@@ -207,7 +207,7 @@ export default function DataCatalogClient({
     if (!hasLoaded || activeFilters.length > 0) return;
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Fetch on selection change failed:", e);
       }
@@ -287,17 +287,15 @@ export default function DataCatalogClient({
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${
-                  viewMode === "list" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="h-7 w-7" />
               </button>
               <button
-                className={`btn btn-sm ${
-                  viewMode === "table" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="h-7 w-7" />

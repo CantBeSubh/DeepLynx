@@ -1,23 +1,26 @@
-import { CreateTagRequestDto, UpdateTagRequestDto } from "@/app/(home)/types/requestDTOs";
-import { TagResponseDto } from "@/app/(home)/types/responseDTOs";
-import api from "./api";
+'use client';
 
+import api from './api';
+import { TagResponseDto } from '../../(home)/types/responseDTOs';
+import { CreateTagRequestDto, UpdateTagRequestDto } from '../../(home)/types/requestDTOs';
+
+// ============================================================================
+// PROJECT LEVEL API CALLS
+// ============================================================================
 
 /**
  * Get all tags for a project
- * @param organizationId - The ID of the organization
  * @param projectId - The ID of the project
  * @param hideArchived - Flag to hide archived tags (default: true)
  * @returns Promise with array of TagResponseDto
  */
 export const getAllTags = async (
-  organizationId: number,
   projectId: number,
   hideArchived: boolean = true
 ): Promise<TagResponseDto[]> => {
   try {
     const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/tags`,
+      `/projects/${projectId}/tags`,
       { params: { hideArchived } }
     );
     return res.data;
@@ -28,22 +31,20 @@ export const getAllTags = async (
 };
 
 /**
- * Get a specific tag by ID
- * @param organizationId - The ID of the organization
+ * Get a specific tag
  * @param projectId - The ID of the project
  * @param tagId - The ID of the tag
  * @param hideArchived - Flag to hide archived tags (default: true)
  * @returns Promise with TagResponseDto
  */
 export const getTag = async (
-  organizationId: number,
   projectId: number,
   tagId: number,
   hideArchived: boolean = true
 ): Promise<TagResponseDto> => {
   try {
     const res = await api.get(
-      `/organizations/${organizationId}/projects/${projectId}/tags/${tagId}`,
+      `/projects/${projectId}/tags/${tagId}`,
       { params: { hideArchived } }
     );
     return res.data;
@@ -54,99 +55,65 @@ export const getTag = async (
 };
 
 /**
- * Get all tags from multiple projects
- * @param organizationId - The ID of the organization
- * @param projectId - The ID of the project (required for route)
- * @param projectIds - Array of project IDs to retrieve tags from
- * @param hideArchived - Flag to hide archived tags (default: true)
- * @returns Promise with array of TagResponseDto
- */
-export const getAllTagsMultiProject = async (
-  organizationId: number,
-  projectIds: number[],
-  hideArchived: boolean = true
-): Promise<TagResponseDto[]> => {
-  try {
-    const res = await api.get(
-      `/organizations/${organizationId}/tags`,
-      { params: { projectIds, hideArchived } }
-    );
-    return res.data;
-  } catch (error) {
-    console.error("Error getting tags from multiple projects:", error);
-    throw error;
-  }
-};
-
-/**
  * Create a new tag
- * @param organizationId - The ID of the organization
  * @param projectId - The ID of the project
  * @param dto - The tag creation request DTO
  * @returns Promise with TagResponseDto
  */
-export async function createTag(
-  organizationId: number,
+export const createTag = async (
   projectId: number,
   dto: CreateTagRequestDto
-): Promise<TagResponseDto> {
+): Promise<TagResponseDto> => {
   try {
     const res = await api.post(
-      `/organizations/${organizationId}/projects/${projectId}/tags`,
-      dto,
-      { headers: { "Content-Type": "application/json" } }
+      `/projects/${projectId}/tags`,
+      dto
     );
     return res.data;
   } catch (error) {
     console.error("Error creating tag:", error);
     throw error;
   }
-}
+};
 
 /**
  * Bulk create tags
- * @param organizationId - The ID of the organization
  * @param projectId - The ID of the project
  * @param tags - Array of tag creation request DTOs
  * @returns Promise with array of TagResponseDto
  */
-export async function bulkCreateTags(
-  organizationId: number,
+export const bulkCreateTags = async (
   projectId: number,
   tags: CreateTagRequestDto[]
-): Promise<TagResponseDto[]> {
+): Promise<TagResponseDto[]> => {
   try {
     const res = await api.post(
-      `/organizations/${organizationId}/projects/${projectId}/tags/bulk`,
-      tags,
-      { headers: { "Content-Type": "application/json" } }
+      `/projects/${projectId}/tags/bulk`,
+      tags
     );
     return res.data;
   } catch (error) {
     console.error("Error bulk creating tags:", error);
     throw error;
   }
-}
+};
 
 /**
  * Update a tag
- * @param organizationId - The ID of the organization
  * @param projectId - The ID of the project
  * @param tagId - The ID of the tag to update
  * @param dto - The tag update request DTO
  * @returns Promise with TagResponseDto
  */
 export const updateTag = async (
-  organizationId: number,
   projectId: number,
   tagId: number,
   dto: UpdateTagRequestDto
 ): Promise<TagResponseDto> => {
   try {
     const res = await api.put(
-      `/organizations/${organizationId}/projects/${projectId}/tags/${tagId}`,
-      dto,
-      { headers: { "Content-Type": "application/json" } }
+      `/projects/${projectId}/tags/${tagId}`,
+      dto
     );
     return res.data;
   } catch (error) {
@@ -157,19 +124,17 @@ export const updateTag = async (
 
 /**
  * Delete a tag
- * @param organizationId - The ID of the organization
  * @param projectId - The ID of the project
  * @param tagId - The ID of the tag to delete
  * @returns Promise with success message
  */
 export const deleteTag = async (
-  organizationId: number,
   projectId: number,
   tagId: number
 ): Promise<{ message: string }> => {
   try {
     const res = await api.delete(
-      `/organizations/${organizationId}/projects/${projectId}/tags/${tagId}`
+      `/projects/${projectId}/tags/${tagId}`
     );
     return res.data;
   } catch (error) {
@@ -180,21 +145,19 @@ export const deleteTag = async (
 
 /**
  * Archive or unarchive a tag
- * @param organizationId - The ID of the organization
  * @param projectId - The ID of the project
  * @param tagId - The ID of the tag to archive/unarchive
  * @param archive - True to archive, false to unarchive
  * @returns Promise with success message
  */
 export const archiveTag = async (
-  organizationId: number,
   projectId: number,
   tagId: number,
   archive: boolean
 ): Promise<{ message: string }> => {
   try {
     const res = await api.patch(
-      `/organizations/${organizationId}/projects/${projectId}/tags/${tagId}`,
+      `/projects/${projectId}/tags/${tagId}`,
       null,
       { params: { archive } }
     );
@@ -205,7 +168,9 @@ export const archiveTag = async (
   }
 };
 
-/** --------------ORG Calls -------------- */
+// ============================================================================
+// ORGANIZATION LEVEL API CALLS
+// ============================================================================
 
 /**
  * Get all tags for an organization
@@ -214,7 +179,7 @@ export const archiveTag = async (
  * @param hideArchived - Flag to hide archived tags (default: true)
  * @returns Promise with array of TagResponseDto
  */
-export const getAllOrganizationTags = async (
+export const getAllTagsOrg = async (
   organizationId: number,
   projectIds?: number[],
   hideArchived: boolean = true
@@ -226,42 +191,87 @@ export const getAllOrganizationTags = async (
     );
     return res.data;
   } catch (error) {
-    console.error("Error getting all organization tags:", error);
+    console.error("Error getting all tags for organization:", error);
     throw error;
   }
 };
 
 /**
- * Create a new tag at the organization level
+ * Get a specific tag at organization level
+ * @param organizationId - The ID of the organization
+ * @param tagId - The ID of the tag
+ * @param hideArchived - Flag to hide archived tags (default: true)
+ * @returns Promise with TagResponseDto
+ */
+export const getTagOrg = async (
+  organizationId: number,
+  tagId: number,
+  hideArchived: boolean = true
+): Promise<TagResponseDto> => {
+  try {
+    const res = await api.get(
+      `/organizations/${organizationId}/tags/${tagId}`,
+      { params: { hideArchived } }
+    );
+    return res.data;
+  } catch (error) {
+    console.error(`Error getting tag ${tagId} for organization:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Create a new tag at organization level
  * @param organizationId - The ID of the organization
  * @param dto - The tag creation request DTO
  * @returns Promise with TagResponseDto
  */
-export const createOrganizationTag = async (
+export const createTagOrg = async (
   organizationId: number,
   dto: CreateTagRequestDto
 ): Promise<TagResponseDto> => {
   try {
     const res = await api.post(
       `/organizations/${organizationId}/tags`,
-      dto,
-      { headers: { "Content-Type": "application/json" } }
+      dto
     );
     return res.data;
   } catch (error) {
-    console.error("Error creating organization tag:", error);
+    console.error("Error creating tag for organization:", error);
     throw error;
   }
 };
 
 /**
- * Update a tag at the organization level
+ * Bulk create tags at organization level
+ * @param organizationId - The ID of the organization
+ * @param tags - Array of tag creation request DTOs
+ * @returns Promise with array of TagResponseDto
+ */
+export const bulkCreateTagsOrg = async (
+  organizationId: number,
+  tags: CreateTagRequestDto[]
+): Promise<TagResponseDto[]> => {
+  try {
+    const res = await api.post(
+      `/organizations/${organizationId}/tags/bulk`,
+      tags
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error bulk creating tags for organization:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update a tag at organization level
  * @param organizationId - The ID of the organization
  * @param tagId - The ID of the tag to update
  * @param dto - The tag update request DTO
  * @returns Promise with TagResponseDto
  */
-export const updateOrganizationTag = async (
+export const updateTagOrg = async (
   organizationId: number,
   tagId: number,
   dto: UpdateTagRequestDto
@@ -269,23 +279,22 @@ export const updateOrganizationTag = async (
   try {
     const res = await api.put(
       `/organizations/${organizationId}/tags/${tagId}`,
-      dto,
-      { headers: { "Content-Type": "application/json" } }
+      dto
     );
     return res.data;
   } catch (error) {
-    console.error(`Error updating organization tag ${tagId}:`, error);
+    console.error(`Error updating tag ${tagId} for organization:`, error);
     throw error;
   }
 };
 
 /**
- * Delete a tag at the organization level
+ * Delete a tag at organization level
  * @param organizationId - The ID of the organization
  * @param tagId - The ID of the tag to delete
  * @returns Promise with success message
  */
-export const deleteOrganizationTag = async (
+export const deleteTagOrg = async (
   organizationId: number,
   tagId: number
 ): Promise<{ message: string }> => {
@@ -295,19 +304,19 @@ export const deleteOrganizationTag = async (
     );
     return res.data;
   } catch (error) {
-    console.error(`Error deleting organization tag ${tagId}:`, error);
+    console.error(`Error deleting tag ${tagId} for organization:`, error);
     throw error;
   }
 };
 
 /**
- * Archive or unarchive a tag at the organization level
+ * Archive or unarchive a tag at organization level
  * @param organizationId - The ID of the organization
  * @param tagId - The ID of the tag to archive/unarchive
  * @param archive - True to archive, false to unarchive
  * @returns Promise with success message
  */
-export const archiveOrganizationTag = async (
+export const archiveTagOrg = async (
   organizationId: number,
   tagId: number,
   archive: boolean
@@ -320,7 +329,7 @@ export const archiveOrganizationTag = async (
     );
     return res.data;
   } catch (error) {
-    console.error(`Error ${archive ? 'archiving' : 'unarchiving'} organization tag ${tagId}:`, error);
+    console.error(`Error ${archive ? 'archiving' : 'unarchiving'} tag ${tagId} for organization:`, error);
     throw error;
   }
 };

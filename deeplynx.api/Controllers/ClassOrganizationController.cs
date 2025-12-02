@@ -16,7 +16,9 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId:long}/classes")]
 [Authorize]
-[Tags("Organization Management", "Class")]
+[Tags(
+    // "Organization Management",
+    "Class")]
 public class ClassOrganizationController : ControllerBase
 {
     private readonly IClassBusiness _classBusiness;
@@ -34,7 +36,7 @@ public class ClassOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Classes
+    ///     Get All Classes (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
@@ -62,7 +64,7 @@ public class ClassOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Class
+    ///     Get a Class (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="classId">The ID of the class to retrieve</param>
@@ -90,7 +92,7 @@ public class ClassOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Class
+    ///     Create a Class (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="dto">The request DTO for classes</param>
@@ -117,7 +119,7 @@ public class ClassOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Bulk Create Classes
+    ///     Bulk Create Classes (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="classes">List of request DTOs for classes</param>
@@ -144,7 +146,7 @@ public class ClassOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Class
+    ///     Update a Class (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// ///
@@ -174,7 +176,7 @@ public class ClassOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Class
+    ///     Delete a Class (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="classId">The ID of the class to delete.</param>
@@ -201,7 +203,7 @@ public class ClassOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Class
+    ///     Archive or Unarchive a Class (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the class's project belongs</param>
     /// <param name="classId">The ID of the class to archive or unarchive.</param>

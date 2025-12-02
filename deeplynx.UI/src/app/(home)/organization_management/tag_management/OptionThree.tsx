@@ -9,10 +9,10 @@ import toast from "react-hot-toast";
 
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import {
-  getAllOrganizationTags,
-  createOrganizationTag,
-  archiveOrganizationTag,
-  updateOrganizationTag,
+  getAllTagsOrg,
+  createTagOrg,
+  archiveTagOrg,
+  updateTagOrg,
 } from "@/app/lib/client_service/tag_services.client";
 import type {
   ProjectResponseDto,
@@ -133,7 +133,7 @@ const TagManagementClientOption3: React.FC<Props> = ({ projects }) => {
       setTagsLoading(true);
       setTagsError(null);
 
-      const dtoList: TagResponseDto[] = await getAllOrganizationTags(
+      const dtoList: TagResponseDto[] = await getAllTagsOrg(
         orgId,
         undefined,
         true // hide archived by default
@@ -178,7 +178,7 @@ const TagManagementClientOption3: React.FC<Props> = ({ projects }) => {
           name: nameInput.trim(),
         };
 
-        const updated = await updateOrganizationTag(
+        const updated = await updateTagOrg(
           orgId,
           editingTag.id,
           updatePayload
@@ -198,7 +198,7 @@ const TagManagementClientOption3: React.FC<Props> = ({ projects }) => {
           archivedAt: null,
         };
 
-        const created = await createOrganizationTag(orgId, createPayload);
+        const created = await createTagOrg(orgId, createPayload);
         setTags((prev) => [...prev, created]);
         toast.success("Organization tag created.");
       }
@@ -217,7 +217,7 @@ const TagManagementClientOption3: React.FC<Props> = ({ projects }) => {
 
     try {
       setArchivingTagId(tagToArchive.id);
-      await archiveOrganizationTag(orgId, tagToArchive.id, true);
+      await archiveTagOrg(orgId, tagToArchive.id, true);
 
       setTags((prev) => prev.filter((t) => t.id !== tagToArchive.id));
       toast.success(`Tag "${tagToArchive.name}" archived.`);

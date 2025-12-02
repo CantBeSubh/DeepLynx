@@ -10,7 +10,9 @@ namespace deeplynx.api.Controllers;
 [Route("organizations/{organizationId:long}/tags")]
 [ApiController]
 [Authorize]
-[Tags("Organization Management", "Tag")]
+[Tags(
+    // "Organization Management", 
+    "Tag")]
 public class TagOrganizationController : ControllerBase
 {
     private readonly ITagBusiness _tagBusiness;
@@ -28,7 +30,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get all tags
+    ///     Get All Tags (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
@@ -53,7 +55,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a tag
+    ///     Get a Tag (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
@@ -80,7 +82,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Creates a tag
+    ///     Create a Tag (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
@@ -94,7 +96,7 @@ public class TagOrganizationController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var createdTag = await _tagBusiness.CreateTag(currentUserId, organizationId, null, tagRequestDto);
+            var createdTag = await _tagBusiness.CreateTag(organizationId, currentUserId, null, tagRequestDto);
             return Ok(createdTag);
         }
         catch (Exception exception)
@@ -106,7 +108,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Creates many tags
+    ///     Create Many Tags (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
@@ -120,7 +122,7 @@ public class TagOrganizationController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(currentUserId, organizationId, null, tagRequestDto);
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(organizationId, currentUserId, null, tagRequestDto);
             return Ok(bulkTagResponseDto);
         }
         catch (Exception exception)
@@ -132,7 +134,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    /// Update a tag
+    /// Update a Tag (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="tagId">The ID of the tag to update.</param>
@@ -147,7 +149,7 @@ public class TagOrganizationController : ControllerBase
         try
         {
             var currentUserId = UserContextStorage.UserId;
-            var updatedTag = await _tagBusiness.UpdateTag(currentUserId, organizationId, null, tagId, tagRequestDto);
+            var updatedTag = await _tagBusiness.UpdateTag(organizationId, currentUserId, null, tagId, tagRequestDto);
             return Ok(updatedTag);
         }
         catch (Exception exception)
@@ -159,7 +161,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a tag
+    ///     Delete a Tag (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the project belongs</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
@@ -183,7 +185,7 @@ public class TagOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Tag
+    ///     Archive or Unarchive a Tag (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the tag's project belongs</param>
     /// <param name="tagId">The ID of the tag to archive or unarchive.</param>

@@ -16,7 +16,9 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId:long}/datasources")]
 [Authorize]
-[Tags("Organization Management", "DataSource")]
+[Tags(
+    // "Organization Management",
+    "DataSource")]
 public class DataSourceOrganizationController : ControllerBase
 {
     private readonly IDataSourceBusiness _dataSourceBusiness;
@@ -35,7 +37,7 @@ public class DataSourceOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Data Sources
+    ///     Get All Data Sources (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="projectIds">(Optional)An array of project IDs within the organization to filter by</param>
@@ -62,7 +64,7 @@ public class DataSourceOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Data Source
+    ///     Get a Data Source (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
@@ -90,7 +92,7 @@ public class DataSourceOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get Default Data Source
+    ///     Get Default Data Source (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <returns>The default data source for the project</returns>
@@ -140,7 +142,7 @@ public class DataSourceOrganizationController : ControllerBase
 
 
     /// <summary>
-    ///     Update a Data Source
+    ///     Update a Data Source (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dataSourceId">The ID of the data source to update</param>
@@ -169,7 +171,7 @@ public class DataSourceOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Data Source
+    ///     Delete a Data Source (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dataSourceId">The ID of the data source to delete</param>
@@ -194,7 +196,7 @@ public class DataSourceOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Data Source
+    ///     Archive or Unarchive a Data Source (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dataSourceId">The ID of the data source to archive or unarchive</param>
@@ -229,7 +231,7 @@ public class DataSourceOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Set Default Data Source
+    ///     Set Default Data Source (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dataSourceId">The ID of the data source to set as default</param>

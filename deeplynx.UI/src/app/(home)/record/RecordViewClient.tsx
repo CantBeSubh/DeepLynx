@@ -33,10 +33,10 @@ import {
   unattachTagFromRecord,
   updateRecord,
 } from "@/app/lib/client_service/record_services.client";
-import { getAllTagsMultiProject } from "@/app/lib/client_service/tag_services.client";
 import GraphClientPage from "../graph/GraphClientPage";
 import { RelatedRecordsResponseDto } from "../types/responseDTOs";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
+import { getAllTags, getAllTagsOrg, getTagOrg } from "@/app/lib/client_service/tag_services.client";
 
 // ============= TYPE DEFINITIONS =============
 interface Props {
@@ -403,7 +403,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
       if (!projectId || !organization?.organizationId) return;
 
       try {
-        const data = await getAllTagsMultiProject(
+        const data = await getAllTagsOrg(
           organization.organizationId as number,
           [projectId]
         );

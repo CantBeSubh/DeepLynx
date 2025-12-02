@@ -28,7 +28,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Query timeseries
+    ///     Query Timeseries
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -63,7 +63,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Upload timeseries file
+    ///     Upload Timeseries File
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -91,7 +91,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Start timeseries upload
+    ///     Start Timeseries Upload
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -118,7 +118,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Upload timeseries chunk
+    ///     Upload Timeseries Chunk
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -149,7 +149,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Complete timeseries upload
+    ///     Complete Timeseries Upload
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -180,7 +180,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Append file to DuckDB table
+    ///     Append File to DuckDB Table
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -207,7 +207,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Get every nth timeseries table row
+    ///     Get Every Nth Timeseries Table Row
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
@@ -240,7 +240,7 @@ public class TimeseriesController : ControllerBase
     }
 
     /// <summary>
-    ///     Exports table to file
+    ///     Exports Table to File
     /// </summary>
     /// <param name="organizationId">ID of organization that timeseries data is associated with</param>
     /// <param name="projectId">ID of project that timeseries data is associated with</param>
