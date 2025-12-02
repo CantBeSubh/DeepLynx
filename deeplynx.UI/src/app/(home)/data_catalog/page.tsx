@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { auth } from "../../../../auth";
 import { ProjectResponseDto } from "../types/responseDTOs";
-import { FileViewerTableRow } from "../types/types";
+import { RecordTableRow } from "../types/types";
 import DataCatalogClient from "./DataCatalogClient";
 import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 
@@ -48,7 +48,7 @@ export default async function Page({
   }));
 
   const initialSelectedProjects = fromProject ? [fromProject] : [];
-  const initialRecords = [] as FileViewerTableRow[];
+  const initialRecords = [] as RecordTableRow[];
 
   return (
     <DataCatalogClient

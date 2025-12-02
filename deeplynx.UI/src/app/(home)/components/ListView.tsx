@@ -4,11 +4,11 @@ import { useLanguage } from "@/app/contexts/Language";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import { FileViewerTableRow } from "../types/types";
+import { RecordTableRow } from "../types/types";
 import { TagResponseDto } from "../types/responseDTOs";
 
 interface ListViewProps {
-  data: FileViewerTableRow[];
+  data: RecordTableRow[];
   activeSearchTerms?: string[];
   selectedProjects?: number[];
 }
