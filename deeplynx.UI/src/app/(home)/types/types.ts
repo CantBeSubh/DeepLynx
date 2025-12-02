@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import { CustomQueryRequestDto } from './requestDTOs';
-import { HistoricalRecordResponseDto } from './responseDTOs';
+import { HistoricalRecordResponseDto, RecordResponseDto } from './responseDTOs';
 
 export type RecordTableRow = HistoricalRecordResponseDto & {
   fileType: string;
