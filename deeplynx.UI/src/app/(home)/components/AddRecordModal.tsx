@@ -81,6 +81,10 @@ const AddRecordModal: React.FC<Props> = ({
   const [classNameOpt, setClassNameOpt] = useState<string>("");
   const [tagsText, setTagsText] = useState<string>("");
   const [labelsText, setLabelsText] = useState<string>("");
+  const [optionalTab, setOptionalTab] = useState<"ids" | "meta" | "tags">(
+    "ids"
+  );
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   /* ------------------------------------------------------------------------ */
   /*                               Helpers                                    */
@@ -300,7 +304,7 @@ const AddRecordModal: React.FC<Props> = ({
   /* ------------------------------------------------------------------------ */
 
   return (
-    <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
+    <dialog className={`modal mt-6 ${isOpen ? "modal-open" : ""}`}>
       <div className="modal-box">
         <h3 className="text-base-content font-bold text-lg mb-4">
           {t.translations.ADD_A_RECORD}
@@ -408,66 +412,112 @@ const AddRecordModal: React.FC<Props> = ({
             <p className="text-error text-sm">{propertiesError}</p>
           )}
 
-          {/* Optional Fields */}
-          <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-lg">
-            <input type="checkbox" />
-            <div className="collapse-title text-md font-medium">
-              {t.translations.OPTIONAL_FIELDS}
+          {/* Optional Fields Tabs */}
+          <div className="mt-2 border border-base-300 rounded-lg">
+            <div className="flex border-b border-base-300 bg-base-200/60 rounded-t-lg">
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "ids"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("ids")}
+              >
+                IDs
+              </button>
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "meta"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("meta")}
+              >
+                Metadata
+              </button>
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "tags"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("tags")}
+              >
+                Tags & Labels
+              </button>
             </div>
-            <div className="collapse-content flex flex-col gap-4">
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input input-bordered w-full"
-                placeholder="object_storage_id"
-                value={objectStorageId}
-                onChange={(e) => setObjectStorageId(e.target.value)}
-              />
 
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input input-bordered w-full"
-                placeholder="class_id"
-                value={classId ?? ""}
-                onChange={(e) =>
-                  setClassId(
-                    e.target.value === "" ? undefined : Number(e.target.value)
-                  )
-                }
-              />
+            <div className="p-4 flex flex-col gap-3 bg-base-100 rounded-b-lg">
+              {optionalTab === "ids" && (
+                <>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="input input-bordered w-full"
+                    placeholder="object_storage_id"
+                    value={objectStorageId}
+                    onChange={(e) => setObjectStorageId(e.target.value)}
+                  />
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="uri"
-                value={uri}
-                onChange={(e) => setUri(e.target.value)}
-              />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="input input-bordered w-full"
+                    placeholder="class_id"
+                    value={classId ?? ""}
+                    onChange={(e) =>
+                      setClassId(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value)
+                      )
+                    }
+                  />
+                </>
+              )}
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="class_name"
-                value={classNameOpt}
-                onChange={(e) => setClassNameOpt(e.target.value)}
-              />
+              {optionalTab === "meta" && (
+                <>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="uri"
+                    value={uri}
+                    onChange={(e) => setUri(e.target.value)}
+                  />
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="tags (comma-separated)"
-                value={tagsText}
-                onChange={(e) => setTagsText(e.target.value)}
-              />
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="class_name"
+                    value={classNameOpt}
+                    onChange={(e) => setClassNameOpt(e.target.value)}
+                  />
+                </>
+              )}
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="sensitivity_labels (comma-separated)"
-                value={labelsText}
-                onChange={(e) => setLabelsText(e.target.value)}
-              />
+              {optionalTab === "tags" && (
+                <>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="tags (comma-separated)"
+                    value={tagsText}
+                    onChange={(e) => setTagsText(e.target.value)}
+                  />
+
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="sensitivity_labels (comma-separated)"
+                    value={labelsText}
+                    onChange={(e) => setLabelsText(e.target.value)}
+                  />
+                </>
+              )}
             </div>
           </div>
 
