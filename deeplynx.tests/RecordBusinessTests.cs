@@ -1477,6 +1477,31 @@ public class RecordBusinessTests : IntegrationTestBase
         var updatedRecord = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == record.Id);
         Assert.Contains(updatedRecord.Tags, t => t.Id == newTag.Id);
     }
+    
+    [Fact]
+    public async Task AttachTag_SuccessfullyAttachesOrgTagToRecord()
+    {
+        // Arrange
+        var newTag = new Tag
+        {
+            Name = "Tag to Attach",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
+        };
+        Context.Tags.Add(newTag);
+
+        var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == rid);
+        record.Tags.Clear(); // ensure tag not already attached
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.AttachTag(organizationId, pid, record.Id, newTag.Id);
+
+        // Assert
+        Assert.True(result);
+        var updatedRecord = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == record.Id);
+        Assert.Contains(updatedRecord.Tags, t => t.Id == newTag.Id);
+    }
 
     [Fact]
     public async Task AttachTag_RecordNotFound_ThrowsKeyNotFound()
@@ -1514,7 +1539,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == rid);
         Assert.Contains(record.Tags, t => t.Id == tid);
-
+        
+        //ensures that the record tags are not in the record context
+        Context.ChangeTracker.Clear();
+        
         // Act
         var result = await _recordBusiness.UnattachTag(organizationId, pid, record.Id, tid);
 
