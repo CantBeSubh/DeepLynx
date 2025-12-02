@@ -1104,6 +1104,13 @@ public class UserBusinessTests : IntegrationTestBase
         Assert.Equal(0, result.Records);
         Assert.Equal(0, result.Tags);
     }
+    
+    [Fact]
+    public async Task GetUserOverview_Fails_WhenUserDoesNotExist()
+    {
+        // Act
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _userBusiness.GetUserOverview(uid5 + 999999));
+    }
 
     #endregion
 

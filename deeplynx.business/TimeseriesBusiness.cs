@@ -125,7 +125,7 @@ public class TimeseriesBusiness(
                 FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             };
 
-            return await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, dataSourceId,
+            return await _recordBusiness.CreateRecord(currentUserId, organizationId, projectId, dataSourceId,
                 recordRequest);
         }
         catch (Exception)
@@ -307,7 +307,7 @@ public class TimeseriesBusiness(
                 FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             };
 
-            return await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, dataSourceId,
+            return await _recordBusiness.CreateRecord(currentUserId, organizationId, projectId, dataSourceId,
                 recordRequest);
         }
         catch (Exception)
@@ -473,7 +473,7 @@ public class TimeseriesBusiness(
         };
 
         var recordResponse =
-            await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, dataSourceId, recordRequest);
+            await _recordBusiness.CreateRecord(currentUserId, organizationId, projectId, dataSourceId, recordRequest);
 
         // meant to run in background so don't await!
         RunBackgroundJob(recordResponse, request.Query, organizationId, projectId, dataSourceId, fileName, fileType);
@@ -545,7 +545,7 @@ public class TimeseriesBusiness(
         };
 
         var recordResponse =
-            await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, dataSourceId, recordRequest);
+            await _recordBusiness.CreateRecord(currentUserId, organizationId, projectId, dataSourceId, recordRequest);
 
         // meant to run in background so don't await!
         RunBackgroundJob(recordResponse, request.Query, organizationId, projectId, dataSourceId, fileName, fileType);
@@ -605,7 +605,7 @@ public class TimeseriesBusiness(
             FileType = fileType
         };
         var recordResponse =
-            await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, dataSourceId, recordRequest);
+            await _recordBusiness.CreateRecord(currentUserId, organizationId, projectId, dataSourceId, recordRequest);
 
         // meant to run in background so don't await!
         RunBackgroundJob(recordResponse, request.Query, organizationId, projectId, dataSourceId, fileName, fileType);

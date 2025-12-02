@@ -13,7 +13,9 @@ namespace deeplynx.api.Controllers;
 ///     This controller provides endpoints to create, update, delete, and retrieve organization permission information.
 /// </remarks>
 [ApiController]
-[Tags("Organization Management", "Permission")]
+[Tags(
+    // "Organization Management",
+    "Permission")]
 public class PermissionOrganizationController : ControllerBase
 {
     private readonly ILogger<PermissionOrganizationController> _logger;
@@ -31,7 +33,7 @@ public class PermissionOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get All Permissions
+    ///     Get All Permissions (Organization)
     /// </summary>
     /// <param name="organizationId">(Optional)The ID of the organization to which the project belongs. If not supplied, will get all defaults.</param>
     /// <param name="labelId">Optional sensitivity label ID to filter permissions</param>
@@ -60,7 +62,7 @@ public class PermissionOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Get a Permission
+    ///     Get a Permission (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="permissionId">The ID of the permission to retrieve</param>
@@ -87,7 +89,7 @@ public class PermissionOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Permission
+    ///     Create a Permission (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="dto">The data transfer object containing permission details</param>
@@ -115,7 +117,7 @@ public class PermissionOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Update a Permission
+    ///     Update a Permission (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="permissionId">The ID of the permission to update</param>
@@ -143,7 +145,7 @@ public class PermissionOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Delete a Permission
+    ///     Delete a Permission (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="permissionId">The ID of the permission to delete</param>
@@ -169,7 +171,7 @@ public class PermissionOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Archive or Unarchive a Permission
+    ///     Archive or Unarchive a Permission (Organization)
     /// </summary>
     /// <param name="organizationId">The ID of the organization to which the permission belongs</param>
     /// <param name="permissionId">The ID of the permission to archive or unarchive</param>
