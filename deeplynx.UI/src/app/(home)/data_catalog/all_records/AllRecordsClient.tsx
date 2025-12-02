@@ -73,11 +73,11 @@ export default function DataCatalogClient({
 
   // Project session (client provider)
   const { hasLoaded } = useProjectSession();
-  const { organization} = useOrganizationSession();
+  const { organization } = useOrganizationSession();
 
   // Local state
   const [projects] = useState(initialProjects);
- 
+
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
@@ -123,7 +123,6 @@ export default function DataCatalogClient({
         setTableData([]);
         return;
       }
-      const { organization} = useOrganizationSession();
       const data = await getMultiProjectRecords(organization?.organizationId as number, idsNum, true);
       const transformedData: RecordTableRow[] = data.map((record) => ({
         id: record.id || 0,
@@ -170,11 +169,11 @@ export default function DataCatalogClient({
       if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
 
       const newFilter = { id: nextFilterId, term: trimmed };
-      const results = await fullTextSearch(organization?.organizationId as number,trimmed, projects.map((p) => Number(p.id)));
+      const results = await fullTextSearch(organization?.organizationId as number, trimmed, projects.map((p) => Number(p.id)));
 
       // Convert HistoricalRecordResponseDto[] to RecordTableRow[]
       const convertedResults: RecordTableRow[] = results.map((dto: HistoricalRecordResponseDto) => ({
-        ...dto, 
+        ...dto,
         fileType: '', // TODO: Determine file type from uri/name
         timeseries: undefined,
         fileSize: undefined,
