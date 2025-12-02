@@ -114,22 +114,21 @@ public class DataSourceOrganizationController : ControllerBase
     }
 
     /// <summary>
-    ///     Create a Data Source
+    ///     Create a Data Source (Organization)
     /// </summary>
-    /// <param name="projectId">The ID of the project to which the data source belongs</param>
+    /// <param name="organizationId">The ID of the organization to which the projectID belongs</param>
     /// <param name="dto">The data transfer object containing data source details</param>
     /// <returns>The created data source</returns>
     [HttpPost(Name = "api_create_a_data_source_for_organization")]
     [Auth("write", "data_source")]
     public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(
-        long projectId,
+        long organizationId,
         [FromBody] CreateDataSourceRequestDto dto)
     {
         try
         {
-            var organizationId = UserContextStorage.OrganizationId;
             var currentUserId = UserContextStorage.UserId;
-            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, dto);
+            var dataSource = await _dataSourceBusiness.CreateDataSource(organizationId, null, currentUserId, dto);
             return Ok(dataSource);
         }
         catch (Exception exc)

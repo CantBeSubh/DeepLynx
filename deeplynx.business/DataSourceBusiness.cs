@@ -42,7 +42,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     }
 
     /// <summary>
-    ///     Retrieves all data sources for a specific project.
+    ///     Retrieves all data sources for a specific organization or project.
     /// </summary>
     /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectIds">ID's of the projects whose data sources are to be retrieved</param>
@@ -87,7 +87,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     }
 
     /// <summary>
-    ///     Retrieve a specific data source by its ID
+    ///     Retrieve a specific data source by its ID.
     /// </summary>
     /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
@@ -135,7 +135,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     }
 
     /// <summary>
-    ///     Retrieve a project's default data source.
+    ///     Retrieve a organization or project's default data source.
     /// </summary>
     /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
@@ -144,11 +144,13 @@ public class DataSourceBusiness : IDataSourceBusiness
     public async Task<DataSourceResponseDto> GetDefaultDataSource(long organizationId, long? projectId)
     {
         var query = _context.DataSources
-            .Where(d => d.OrganizationId == organizationId && d.Default == true && !d.IsArchived)
-            .AsQueryable();
+            .Where(d => d.OrganizationId == organizationId && d.Default == true && !d.IsArchived);
 
-        if (projectId is not null)
-            query = query.Where(d => d.ProjectId == projectId);
+        // If projectId is provided, get project-level default
+        // If projectId is null, get org-level default (where ProjectId IS NULL)
+        query = projectId.HasValue
+            ? query.Where(d => d.ProjectId == projectId.Value)
+            : query.Where(d => d.ProjectId == null);
 
         var dataSource = await query.FirstOrDefaultAsync();
 
@@ -180,15 +182,15 @@ public class DataSourceBusiness : IDataSourceBusiness
     }
 
     /// <summary>
-    ///     Asynchronously creates a new data source for a specified project.
+    ///     Asynchronously creates a new data source for a specified organization or project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
     /// <param name="projectId">The ID of the project to which the data source belongs</param>
     /// <param name="dto">The data transfer object containing data source details</param>
     /// <returns>The created data source.</returns>
-    public async Task<DataSourceResponseDto> CreateDataSource(long organizationId, long? projectId
-        , long currentUserId, CreateDataSourceRequestDto dto)
+    public async Task<DataSourceResponseDto> CreateDataSource(long organizationId, long? projectId, long currentUserId,
+        CreateDataSourceRequestDto dto)
     {
         ValidationHelper.ValidateModel(dto);
         if (dto == null)
@@ -441,7 +443,7 @@ public class DataSourceBusiness : IDataSourceBusiness
     }
 
     /// <summary>
-    ///     Sets an existing data source as default for a project.
+    ///     Sets an existing data source as default for an organization or project.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="organizationId">The ID of the organization for which the data source belongs to</param>
@@ -454,7 +456,6 @@ public class DataSourceBusiness : IDataSourceBusiness
         long dataSourceId)
     {
         var dataSource = await _context.DataSources
-            .AsNoTracking()
             .FirstOrDefaultAsync(d =>
                 d.Id == dataSourceId &&
                 d.OrganizationId == organizationId &&
@@ -491,7 +492,7 @@ public class DataSourceBusiness : IDataSourceBusiness
             catch
             {
                 await transaction.RollbackAsync();
-                throw new Exception("Unable to create object storage");
+                throw new Exception("Unable to set data source to default");
             }
         }
 
@@ -518,13 +519,19 @@ public class DataSourceBusiness : IDataSourceBusiness
     private async Task MakePreviousDefaultsFalse(long currentUserId, long organizationId, long? projectId,
         long defaultDataSourceId)
     {
-        var previousDefaults =
-            await _context.DataSources
-                .Where(ds => ds.OrganizationId == organizationId &&
-                             (!projectId.HasValue || ds.ProjectId == projectId.Value) &&
-                             ds.Default == true &&
-                             ds.Id != defaultDataSourceId)
-                .ToListAsync();
+        // Build query based on whether this is org-level or project-level
+        var query = _context.DataSources
+            .Where(ds => ds.OrganizationId == organizationId
+                         && ds.Default == true
+                         && ds.Id != defaultDataSourceId);
+
+        // If projectId is provided, only update defaults for that specific project
+        // If projectId is null, only update org-level defaults (where ProjectId is null)
+        query = projectId.HasValue
+            ? query.Where(ds => ds.ProjectId == projectId.Value)
+            : query.Where(ds => ds.ProjectId == null);
+
+        var previousDefaults = await query.ToListAsync();
 
         if (previousDefaults.Count > 0)
             foreach (var previousDefault in previousDefaults)
