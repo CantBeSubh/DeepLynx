@@ -37,7 +37,7 @@ public class PermissionOrganizationController : ControllerBase
     /// <param name="labelId">Optional sensitivity label ID to filter permissions</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
     /// <returns>A list of permissions for the given organization/project.</returns>
-    [HttpGet("organizations/permissions", Name = "api_get_all_organization_permissions")]
+    [HttpGet("organizations/permissions", Name = "api_get_all_permissions")]
     [Auth("read", "permission")]
     public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetAllPermissions(
         [FromQuery] long? organizationId,
@@ -49,6 +49,35 @@ public class PermissionOrganizationController : ControllerBase
             var permissions =
                 await _permissionBusiness.GetAllPermissions(labelId, null, organizationId,
                     hideArchived); 
+            return Ok(permissions);
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while listing permissions: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+    
+    /// <summary>
+    ///     Get All Permissions- Organization level
+    /// </summary>
+    /// <param name="organizationId">(Optional)The ID of the organization to which the project belongs. If not supplied, will get all defaults.</param>
+    /// <param name="labelId">Optional sensitivity label ID to filter permissions</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived permissions from the result (Default true)</param>
+    /// <returns>A list of permissions for the given organization/project.</returns>
+    [HttpGet("organizations/{organizationId:long}/permissions", Name = "api_get_all_organization_permissions")]
+    [Auth("read", "permission")]
+    public async Task<ActionResult<IEnumerable<PermissionResponseDto>>> GetAllPermissionsOrgLevel(
+        long organizationId,
+        [FromQuery] long? labelId = null,
+        [FromQuery] bool hideArchived = true)
+    {
+        try
+        {
+            var permissions =
+                await _permissionBusiness.GetAllPermissions(
+                    labelId, null, organizationId, hideArchived); 
             return Ok(permissions);
         }
         catch (Exception exc)

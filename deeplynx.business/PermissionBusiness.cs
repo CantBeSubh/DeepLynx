@@ -48,9 +48,10 @@ public class PermissionBusiness : IPermissionBusiness
     {
         //Returns permission defaults if no project or organization IDs 
         var permissionQuery = _context.Permissions.Where(p =>
+            p.IsDefault || (!p.IsDefault &&
             (!projectId.HasValue || p.ProjectId == projectId) && 
             p.OrganizationId == organizationId &&
-            (!labelId.HasValue || p.LabelId == labelId));
+            (!labelId.HasValue || p.LabelId == labelId)));
 
         if (hideArchived)
             permissionQuery = permissionQuery.Where(p => !p.IsArchived);
