@@ -1,3 +1,5 @@
+// src/app/(home)/record/RecordViewClient.tsx
+
 "use client";
 import Tabs from "@/app/(home)/components/Tabs";
 import { XMarkIcon } from "@heroicons/react/24/outline";
@@ -45,7 +47,7 @@ interface RelatedRecordViewModel extends RelatedRecordsResponseDto {
 
 interface ModalState {
   isOpen: boolean;
-  type: "tag" | "relatedRecord" | null;
+  type: "relatedRecord" | null;
   nameToRemove: string;
   recordNameToRemove?: string;
   idToRemove: string | null;
@@ -64,8 +66,6 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagResponseDto[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
 
   // Pagination State
   const [originPage, setOriginPage] = useState(1);
@@ -83,7 +83,6 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   >([]);
   const [isLoadingOrigins, setIsLoadingOrigins] = useState(false);
   const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
-  const [tagSearch, setTagSearch] = useState("");
 
   // Modal State
   const [modal, setModal] = useState<ModalState>({
@@ -129,8 +128,6 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     setRecord(null);
     setSelectedTags([]);
     setSelectedIds([]);
-    setIsEditing(false);
-    setTagsToRemove([]);
     setOriginPage(1);
     setDestinationPage(1);
     setOriginRecords([]);
@@ -233,66 +230,18 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     setModal((prev) => ({ ...prev, isOpen: false }));
   };
 
-  const handleTagSelectionChange = async (selected: string[]) => {
+  const handleTagSelectionChange = (selected: string[]) => {
     const newTags = tags.filter((tag) => selected.includes(tag.id.toString()));
-
-    if (
-      JSON.stringify(selected) === JSON.stringify(selectedIds) &&
-      JSON.stringify(newTags) === JSON.stringify(selectedTags)
-    ) {
-      return;
-    }
-
     setSelectedTags(newTags);
     setSelectedIds(selected);
-  };
-
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-    if (isEditing) setTagsToRemove([]);
-  };
-
-  const handleSaveTagChanges = async () => {
-    if (!organization?.organizationId) return;
-
-    try {
-      for (const tagId of tagsToRemove) {
-        await unattachTagFromRecord(
-          organization.organizationId as number,
-          projectId,
-          recordId,
-          Number(tagId)
-        );
-      }
-
-      setSelectedTags((prev) =>
-        prev.filter((tag) => !tagsToRemove.includes(tag.id.toString()))
-      );
-      setSelectedIds((prev) => prev.filter((id) => !tagsToRemove.includes(id)));
-      setTagsToRemove([]);
-      setIsEditing(false);
-      toast.success(t.translations.TAGS_UPDATED_SUCCESS);
-    } catch (error) {
-      console.error("Error saving tags:", error);
-      toast.error(t.translations.FAILED_TO_UPDATE_TAGS);
-    }
   };
 
   const handleConfirmUnlink = async () => {
     if (!organization?.organizationId) return;
 
-    const { type, idToRemove, nameToRemove, originId, destinationId } = modal;
+    const { type, idToRemove, originId, destinationId } = modal;
 
-    if (type === "tag" && idToRemove) {
-      setTagsToRemove((prev) =>
-        prev.includes(idToRemove)
-          ? prev.filter((id) => id !== idToRemove)
-          : [...prev, idToRemove]
-      );
-      toast.success(
-        `${t.translations.TAG_} ${nameToRemove} ${t.translations._MARKED_FOR_REMOVAL}`
-      );
-    } else if (type === "relatedRecord" && originId && destinationId) {
+    if (type === "relatedRecord" && originId && destinationId) {
       try {
         const edgeExists = await getEdgeByRelationship(
           organization.organizationId as number,
@@ -336,7 +285,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
       id: string,
       name: string,
       recordName: string | undefined,
-      type: "tag" | "relatedRecord"
+      type: "relatedRecord"
     ) => {
       setModal({
         isOpen: true,
@@ -475,7 +424,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
       label: key
         .split("_")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" "), // Optional: convert snake_case to Title Case
+        .join(" "),
       value: typeof value === "object" ? JSON.stringify(value) : String(value),
     }));
   }, [record?.properties]);
@@ -571,6 +520,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
               recordId={recordId}
               setTags={setTags}
               setSelectedTags={setSelectedTags}
+              setSelectedIds={setSelectedIds}
               title={t.translations.TAGS}
             />
 

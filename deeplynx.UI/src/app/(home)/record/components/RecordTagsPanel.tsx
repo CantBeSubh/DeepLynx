@@ -1,3 +1,5 @@
+// src/app/(home)/record/components/RecordTagPanel.tsx
+
 "use client";
 
 import React from "react";
@@ -21,9 +23,10 @@ interface Props {
   recordId: number;
   setTags: React.Dispatch<React.SetStateAction<TagResponseDto[]>>;
   setSelectedTags: React.Dispatch<React.SetStateAction<TagResponseDto[]>>;
+  setSelectedIds: React.Dispatch<React.SetStateAction<string[]>>;
 
   // Translations
-  title: string; // e.g. t.translations.TAGS
+  title: string;
 }
 
 const RecordTagsPanel: React.FC<Props> = ({
@@ -36,6 +39,7 @@ const RecordTagsPanel: React.FC<Props> = ({
   recordId,
   setTags,
   setSelectedTags,
+  setSelectedIds,
   title,
 }) => {
   return (
@@ -58,10 +62,7 @@ const RecordTagsPanel: React.FC<Props> = ({
               projectId={projectId}
               recordId={recordId}
               selectedIds={selectedIds}
-              setSelectedIds={() => {
-                // Selection is driven by onSelectionChange from the parent.
-                // If TagButton requires a real setter, pass it from the parent instead.
-              }}
+              setSelectedIds={setSelectedIds}
               setTags={setTags}
               setSelectedTags={setSelectedTags}
             />
