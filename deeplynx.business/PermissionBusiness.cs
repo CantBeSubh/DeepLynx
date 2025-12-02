@@ -46,7 +46,8 @@ public class PermissionBusiness : IPermissionBusiness
         long? labelId, long? projectId, long? organizationId,
         bool hideArchived = true)
     {
-        //Returns permission defaults if no project or organization IDs 
+        // Always returns default permissions alongside those from the supplied org ID or project ID
+        // This allows the user to see all permissions available for use in the given context (defaults being global)
         var permissionQuery = _context.Permissions.Where(p =>
             p.IsDefault || (!p.IsDefault &&
             (!projectId.HasValue || p.ProjectId == projectId) && 
