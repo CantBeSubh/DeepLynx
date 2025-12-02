@@ -116,7 +116,7 @@ public class QueryController : ControllerBase
     /// <returns>List of record response DTOs</returns>
     [HttpGet("multiproject", Name = "api_multiproject_records")]
     [Auth("read", "record")]
-    public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetMultiProjectRecords(
+    public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetMultiProjectRecords(
         long organizationId,
         [FromQuery] long[] projects,
         [FromQuery] bool hideArchived = true)

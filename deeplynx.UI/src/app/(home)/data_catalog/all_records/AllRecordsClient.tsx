@@ -6,9 +6,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SearchBar from "@/app/(home)/components/SearchBar";
 import { RecordTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getMultiProjectRecords } from "@/app/lib/client_service/query_services.client";
 import GridView from "../../components/GridView";
 import ListView from "../../components/ListView";
+import { HistoricalRecordResponseDto } from "../../types/responseDTOs";
 import ProjectDropdown from "../../components/ProjectDropdown";
 
 import { useLanguage } from "@/app/contexts/Language";
@@ -21,7 +23,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { TagResponseDto } from "../../types/responseDTOs";
 import { fullTextSearch } from "@/app/lib/client_service/query_services.client";
-import { queryRecords } from "@/app/lib/client_service/filter_services.client";
+import { getAllRecordsForMultipleProjectsServer } from "@/app/lib/server_service/projects_services.server";
 
 /* ----------------------------- Types & utils ----------------------------- */
 
@@ -71,9 +73,11 @@ export default function DataCatalogClient({
 
   // Project session (client provider)
   const { hasLoaded } = useProjectSession();
+  const { organization } = useOrganizationSession();
 
   // Local state
   const [projects] = useState(initialProjects);
+
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
@@ -119,12 +123,28 @@ export default function DataCatalogClient({
         setTableData([]);
         return;
       }
-
-      // const data = await getAllRecordsForMultipleProjects(idsNum, true, {
-      //   signal,
-      // });
-      // setTableData(data);
-      // setViewMode("list");
+      const data = await getMultiProjectRecords(organization?.organizationId as number, idsNum, true);
+      const transformedData: RecordTableRow[] = data.map((record) => ({
+        id: record.id || 0,
+        name: record.name,
+        description: record.description ?? undefined,
+        uri: record.uri ?? undefined,
+        properties: typeof record.properties === 'string' ? record.properties : JSON.stringify(record.properties),
+        originalId: record.originalId ?? undefined,
+        classId: record.classId ?? undefined,
+        className: undefined,
+        dataSourceId: record.dataSourceId ?? undefined,
+        dataSourceName: '',
+        projectId: record.projectId ?? undefined,
+        projectName: projects.find((p) => Number(p.id) === record.projectId)?.name || '',
+        tags: typeof record.tags === 'string' ? record.tags : JSON.stringify(record.tags),
+        lastUpdatedAt: record.lastUpdatedAt || '',
+        lastUpdatedBy: record.lastUpdatedBy ?? undefined,
+        isArchived: record.isArchived || false,
+        fileType: '',
+      }));
+      setTableData(transformedData);
+      setViewMode("list");
     },
     [effectiveProjectIds]
   );
@@ -149,13 +169,24 @@ export default function DataCatalogClient({
       if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
 
       const newFilter = { id: nextFilterId, term: trimmed };
-      const results = await queryRecords(trimmed);
+      const results = await fullTextSearch(organization?.organizationId as number, trimmed, projects.map((p) => Number(p.id)));
+
+      // Convert HistoricalRecordResponseDto[] to RecordTableRow[]
+      const convertedResults: RecordTableRow[] = results.map((dto: HistoricalRecordResponseDto) => ({
+        ...dto,
+        fileType: '', // TODO: Determine file type from uri/name
+        timeseries: undefined,
+        fileSize: undefined,
+        select: false,
+        associatedRecords: undefined,
+        archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+      }));
 
       const selectedNums = effectiveProjectIds.map(Number);
       const scoped =
         selectedNums.length === projects.length
-          ? results
-          : results.filter((r: RecordTableRow) =>
+          ? convertedResults
+          : convertedResults.filter((r: RecordTableRow) =>
             selectedNums.includes(Number(r.projectId))
           );
 
