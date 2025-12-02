@@ -101,7 +101,7 @@ export async function getMultiProjectRecords(
     organizationId: number,
     projectIds: number[],
     hideArchived: boolean = true
-): Promise<RecordResponseDto[]> {
+): Promise<HistoricalRecordResponseDto[]> {
     try {
         const projectIdsQuery = projectIds.map(id => `projects=${id}`).join('&');
         const res = await api.get(

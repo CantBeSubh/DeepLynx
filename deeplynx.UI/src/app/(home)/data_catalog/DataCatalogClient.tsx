@@ -18,6 +18,10 @@ import AddRecordModal from "../components/AddRecordModal";
 import ListView from "../components/ListView";
 import ProjectDropdown from "../components/ProjectDropdown";
 import RecentRecordsCard from "../components/RecentRecordsCard";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { fullTextSearch, getMultiProjectRecords } from "@/app/lib/client_service/query_services.client";
+import { HistoricalRecordResponseDto, RecordResponseDto } from "../types/responseDTOs";
+import { getAllRecordsForMultipleProjectsServer } from "@/app/lib/server_service/projects_services.server";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -34,6 +38,7 @@ export default function DataCatalogClient({
 }: Props) {
   const { t } = useLanguage();
   const { hasLoaded, setProject: setProjectSession } = useProjectSession();
+    const { organization} = useOrganizationSession();
 
   // Use ref to store initial values to prevent re-renders
   const initialSelectedProjectsRef = useRef(initialSelectedProjects);
@@ -93,11 +98,18 @@ export default function DataCatalogClient({
         return;
       }
 
-      // const data = await getAllRecordsForMultipleProjects(idsNum, true, {
-      //   signal,
-      // });
-      // setTableData(data);
-      // setViewMode("list");
+      const data = await getMultiProjectRecords(organization?.organizationId as number, idsNum, true);
+      const mappedData: RecordTableRow[] = data.map((dto: HistoricalRecordResponseDto) => ({
+          ...dto,
+          fileType: '',
+          timeseries: undefined,
+          fileSize: undefined,
+          select: false,
+          associatedRecords: undefined,
+          archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+        }));
+      setTableData(mappedData);
+      setViewMode("list");
     },
     [effectiveProjectIds]
   );
@@ -121,24 +133,34 @@ export default function DataCatalogClient({
     async (searchValue: string, projectIds: string[]) => {
       try {
         setIsSearching(true);
-        // const data = await fullTextSearch(searchValue, projectIds);
+        const projects = projectIds.map(Number)
+        const data = await fullTextSearch(organization?.organizationId as number, searchValue, projects);
+        
+        if (data) {
+          const mappedData: RecordTableRow[] = data.map((dto: HistoricalRecordResponseDto) => ({
+          ...dto,
+          fileType: '',
+          timeseries: undefined,
+          fileSize: undefined,
+          select: false,
+          associatedRecords: undefined,
+          archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+        }));
+          setQueriedRecords(mappedData);
+          setTableData(mappedData);
+          setSearchTerm("");
+          setViewMode("list");
 
-        // if (data) {
-        //   setQueriedRecords(data);
-        //   setTableData(data);
-        //   setSearchTerm("");
-        //   setViewMode("list");
-
-        //   // Add to active filters
-        //   const trimmed = searchValue.trim();
-        //   if (trimmed && !activeFilters.some((f) => f.term === trimmed)) {
-        //     setActiveFilters((prev) => [
-        //       ...prev,
-        //       { id: nextFilterId, term: trimmed },
-        //     ]);
-        //     setNextFilterId((n) => n + 1);
-        //   }
-        // }
+          // Add to active filters
+          const trimmed = searchValue.trim();
+          if (trimmed && !activeFilters.some((f) => f.term === trimmed)) {
+            setActiveFilters((prev) => [
+              ...prev,
+              { id: nextFilterId, term: trimmed },
+            ]);
+            setNextFilterId((n) => n + 1);
+          }
+        }
       } catch (error) {
         console.error("Failed to perform full text search:", error);
       } finally {
