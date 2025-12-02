@@ -266,7 +266,7 @@ public class RelationshipBusiness : IRelationshipBusiness
         var parameters = new List<NpgsqlParameter>
         {
             new("@organizationId", organizationId),
-            new("@projectId", projectId),
+            new("@projectId", projectId.HasValue ? projectId : DBNull.Value),
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
             new("@lastUpdatedBy", currentUserId)
         };
@@ -334,16 +334,22 @@ public class RelationshipBusiness : IRelationshipBusiness
         var relationship = await query.FirstOrDefaultAsync();
         if (relationship is null || relationship.IsArchived)
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
+        
+        if (dto.OriginId.HasValue)
+        {
+            var originClass =
+                await _context.Classes.FirstOrDefaultAsync(c =>
+                    c.Id == dto.OriginId && !c.IsArchived);
+            if (originClass == null) throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
+        }
 
-        var orignClass =
-            await _context.Classes.FirstOrDefaultAsync(c =>
-                c.Id == (dto.OriginId ?? relationship.OriginId) && !c.IsArchived);
-        if (orignClass == null) throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
-
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c =>
-            c.Id == (dto.DestinationId ?? relationship.DestinationId) && !c.IsArchived);
-        if (destinationClass == null)
-            throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
+        if (dto.DestinationId.HasValue)
+        {
+            var destinationClass = await _context.Classes.FirstOrDefaultAsync(c =>
+                c.Id == dto.DestinationId && !c.IsArchived);
+            if (destinationClass == null)
+                throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
+        }
 
         relationship.Name = dto.Name ?? relationship.Name;
         relationship.Description = dto.Description ?? relationship.Description;
