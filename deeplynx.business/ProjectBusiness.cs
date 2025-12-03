@@ -90,16 +90,16 @@ public class ProjectBusiness : IProjectBusiness
             );
 
         return await projectQuery.Select(p => new ProjectResponseDto
-        {
-            Id = p.Id,
-            Name = p.Name,
-            Description = p.Description,
-            Abbreviation = p.Abbreviation,
-            LastUpdatedAt = p.LastUpdatedAt,
-            LastUpdatedBy = p.LastUpdatedBy,
-            IsArchived = p.IsArchived,
-            OrganizationId = p.OrganizationId
-        })
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Abbreviation = p.Abbreviation,
+                LastUpdatedAt = p.LastUpdatedAt,
+                LastUpdatedBy = p.LastUpdatedBy,
+                IsArchived = p.IsArchived,
+                OrganizationId = p.OrganizationId
+            })
             .ToListAsync();
     }
 
@@ -162,7 +162,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = projectId,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name }),
+            Properties = JsonSerializer.Serialize(new { project.Name })
         };
 
         await _eventBusiness.CreateEvent(userId, organizationId, projectId, eventLog);
@@ -246,7 +246,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name }),
+            Properties = JsonSerializer.Serialize(new { project.Name })
         });
 
         var updatedProject = new ProjectResponseDto
@@ -493,7 +493,7 @@ public class ProjectBusiness : IProjectBusiness
                         EntityId = project.Id,
                         EntityName = project.Name,
                         DataSourceId = null,
-                        Properties = JsonSerializer.Serialize(new { project.Name }),
+                        Properties = JsonSerializer.Serialize(new { project.Name })
                     });
 
                 return true;
@@ -793,7 +793,8 @@ public class ProjectBusiness : IProjectBusiness
         var defaultDataSource = new CreateDataSourceRequestDto
         {
             Name = "Default Data Source",
-            Description = "This data source was created alongside the project for ease of use."
+            Description = "This data source was created alongside the project for ease of use.",
+            Default = true
         };
         await _dataSourceBusiness.CreateDataSource(organizationId, projectId, currentUserId, defaultDataSource);
 
@@ -835,7 +836,8 @@ public class ProjectBusiness : IProjectBusiness
         var objectStorageRequestDto = new CreateObjectStorageRequestDto
         {
             Name = "Instance Default",
-            Config = config
+            Config = config,
+            Default = true
         };
         await _objectStorageBusiness.CreateObjectStorage(
             currentUserId, organizationId, projectId, objectStorageRequestDto);
