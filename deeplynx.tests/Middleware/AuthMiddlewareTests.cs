@@ -1010,7 +1010,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         // Assert
         Assert.True(nextCalled);
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(projectId1, organizationId1),
+            x => x.CheckExistence(projectId1, organizationId1, false),
             Times.Once);
     }
 
@@ -1045,7 +1045,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         // Assert
         Assert.True(nextCalled);
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(null, organizationId1),
+            x => x.CheckExistence(null, organizationId1, false),
             Times.Once);
     }
 
@@ -1080,7 +1080,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         // Assert
         Assert.True(nextCalled);
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(projectId1, null),
+            x => x.CheckExistence(projectId1, null, false),
             Times.Once);
     }
 
@@ -1097,7 +1097,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
             .ReturnsAsync(true);
     
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(null, organizationId1))
+            .Setup(x => x.CheckExistence(null, organizationId1, false))
             .ReturnsAsync(organizationId1);
 
         var nextCalled = false;
@@ -1116,7 +1116,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         // Assert
         Assert.True(nextCalled);
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(null, organizationId1),
+            x => x.CheckExistence(null, organizationId1, false),
             Times.Once);
     }
 
@@ -1140,7 +1140,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         
         // CheckExistence should throw when project doesn't belong to org
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(projectId1, organizationId2))
+            .Setup(x => x.CheckExistence(projectId1, organizationId2, false))
             .ThrowsAsync(new InvalidOperationException("Project does not belong to the specified organization"));
 
         RequestDelegate next = ctx => Task.CompletedTask;
@@ -1155,7 +1155,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         
         // Verify CheckExistence was called before permission checks
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(projectId1, organizationId2),
+            x => x.CheckExistence(projectId1, organizationId2, false),
             Times.Once);
         
         // Verify permission checks were never called due to exception
@@ -1183,7 +1183,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(projectId1, organizationId1))
+            .Setup(x => x.CheckExistence(projectId1, organizationId1, false))
             .Callback(() => callOrder.Add("CheckExistence"))
             .ReturnsAsync(organizationId1);
         
@@ -1232,7 +1232,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(projectId2, organizationId2))
+            .Setup(x => x.CheckExistence(projectId2, organizationId2, false))
             .ThrowsAsync(new KeyNotFoundException("Project not found"));
 
         RequestDelegate next = ctx => Task.CompletedTask;
@@ -1268,7 +1268,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         
         // Setup successful existence check
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(projectId1, organizationId1))
+            .Setup(x => x.CheckExistence(projectId1, organizationId1, false))
             .ReturnsAsync(organizationId1);
         
         _orgRolePermissionServiceMock
@@ -1296,7 +1296,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         Assert.True(nextCalled);
         // Verify CheckExistence was called with both IDs to validate relationship
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(projectId1, organizationId1),
+            x => x.CheckExistence(projectId1, organizationId1, false),
             Times.Once);
     }
 
@@ -1313,7 +1313,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(99999, null))
+            .Setup(x => x.CheckExistence(99999, null, false))
             .ThrowsAsync(new KeyNotFoundException("Project with ID 99999 not found"));
 
         RequestDelegate next = ctx => Task.CompletedTask;
@@ -1340,7 +1340,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(null, 88888))
+            .Setup(x => x.CheckExistence(null, 88888, false))
             .ThrowsAsync(new KeyNotFoundException("Organization with ID 88888 not found"));
 
         RequestDelegate next = ctx => Task.CompletedTask;
@@ -1370,7 +1370,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         
         // CheckExistence succeeds (no exception thrown)
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(projectId1, organizationId1))
+            .Setup(x => x.CheckExistence(projectId1, organizationId1, false))
             .ReturnsAsync(organizationId1);
         
         _orgRolePermissionServiceMock
@@ -1397,7 +1397,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
         // Assert
         Assert.True(nextCalled);
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(projectId1, organizationId1),
+            x => x.CheckExistence(projectId1, organizationId1, false),
             Times.Once);
     }
 
@@ -1417,7 +1417,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
     
         // CheckExistence should throw when project doesn't belong to org, even for sysadmin
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(projectId1, organizationId2))
+            .Setup(x => x.CheckExistence(projectId1, organizationId2, false))
             .ThrowsAsync(new InvalidOperationException($"Project {projectId1} does not belong to organization {organizationId2}"));
 
         var nextCalled = false;
@@ -1439,7 +1439,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
     
         // Verify CheckExistence was called even for sysadmin
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(projectId1, organizationId2),
+            x => x.CheckExistence(projectId1, organizationId2, false),
             Times.Once);
     }
 
@@ -1554,7 +1554,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
             .Setup(x => x.SysAdminCheck(userId1))
             .ReturnsAsync(false);
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(It.IsAny<long?>(), It.IsAny<long?>()))
+            .Setup(x => x.CheckExistence(It.IsAny<long?>(), It.IsAny<long?>(), false))
             .ThrowsAsync(new Exception("Organization not found"));
 
         RequestDelegate next = ctx => Task.CompletedTask;
@@ -1882,7 +1882,7 @@ public class AuthMiddlewareTests : IntegrationTestBase
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>()))
+            .Setup(x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>(), false))
             .ReturnsAsync(organizationId1);
 
         _projectRolePermissionServiceMock
@@ -1933,11 +1933,11 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
     
     // Set up specific mocks for each project ID with explicit casts
     _organizationServiceMock
-        .Setup(x => x.CheckExistence((long)projectId1, (long)organizationId1))
+        .Setup(x => x.CheckExistence((long)projectId1, (long)organizationId1, false))
         .ReturnsAsync(organizationId1);
     
     _organizationServiceMock
-        .Setup(x => x.CheckExistence((long)projectId2, (long)organizationId1))
+        .Setup(x => x.CheckExistence((long)projectId2, (long)organizationId1, false))
         .ReturnsAsync(organizationId1);
 
     _projectRolePermissionServiceMock
@@ -1990,7 +1990,7 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>()))
+            .Setup(x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>(), false))
             .ReturnsAsync(organizationId1);
 
         // User has permission in project1 but NOT in project2
@@ -2026,7 +2026,7 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(null, organizationId1))
+            .Setup(x => x.CheckExistence(null, organizationId1, false))
             .ReturnsAsync(organizationId1);
 
         _orgRolePermissionServiceMock
@@ -2075,7 +2075,7 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(null, organizationId1))
+            .Setup(x => x.CheckExistence(null, organizationId1, false))
             .ReturnsAsync(organizationId1);
 
         _orgRolePermissionServiceMock
@@ -2143,7 +2143,7 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
             Times.Never);
         // CheckExistence should not be called for sysadmin
         _organizationServiceMock.Verify(
-            x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>()),
+            x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>(), false),
             Times.Never);
     }
 
@@ -2166,7 +2166,7 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
             .ReturnsAsync(false);
     
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(It.IsAny<long?>(), It.IsAny<long?>()))
+            .Setup(x => x.CheckExistence(It.IsAny<long?>(), It.IsAny<long?>(), false))
             .ReturnsAsync(organizationId1);
 
         // Change It.IsAny<int> to It.IsAny<long> to match what middleware passes
@@ -2190,10 +2190,10 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
         // Assert
         Assert.True(nextCalled, $"Next was not called. Response status: {context.Response.StatusCode}");
         _organizationServiceMock.Verify(
-            x => x.CheckExistence((long)projectId1, (long)organizationId1),
+            x => x.CheckExistence((long)projectId1, (long)organizationId1, false),
             Times.Once);
         _organizationServiceMock.Verify(
-            x => x.CheckExistence((long)projectId2, (long)organizationId1),
+            x => x.CheckExistence((long)projectId2, (long)organizationId1, false),
             Times.Once);
     }
 
@@ -2218,11 +2218,11 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
         
         // Set up specific mocks for each project ID
         _organizationServiceMock
-            .Setup(x => x.CheckExistence((long)projectId1, (long)organizationId1))
+            .Setup(x => x.CheckExistence((long)projectId1, (long)organizationId1, false))
             .ReturnsAsync(organizationId1);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence((long)projectId2, (long)organizationId1))
+            .Setup(x => x.CheckExistence((long)projectId2, (long)organizationId1, false))
             .ReturnsAsync(organizationId1);
 
         _projectRolePermissionServiceMock
@@ -2277,7 +2277,7 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
         
         // CheckExistence should throw when project doesn't belong to org
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(projectId1, organizationId2))
+            .Setup(x => x.CheckExistence(projectId1, organizationId2, false))
             .ThrowsAsync(new InvalidOperationException("Project does not belong to the specified organization"));
 
         RequestDelegate next = ctx => Task.CompletedTask;
@@ -2311,7 +2311,7 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
             .ReturnsAsync(false);
         
         _organizationServiceMock
-            .Setup(x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>()))
+            .Setup(x => x.CheckExistence(It.IsAny<int?>(), It.IsAny<int?>(), false))
             .ReturnsAsync(organizationId1);
 
         _projectRolePermissionServiceMock
@@ -2358,11 +2358,11 @@ public async Task InvokeAsync_WithMultipleProjectIdsCommaSeparated_ChecksPermiss
             .ReturnsAsync(false);
     
         _organizationServiceMock
-            .Setup(x => x.CheckExistence((long)projectId1, (long)organizationId1))
+            .Setup(x => x.CheckExistence((long)projectId1, (long)organizationId1, false))
             .ReturnsAsync(organizationId1);
     
         _organizationServiceMock
-            .Setup(x => x.CheckExistence((long)projectId2, (long)organizationId1))
+            .Setup(x => x.CheckExistence((long)projectId2, (long)organizationId1, false))
             .ReturnsAsync(organizationId1);
 
         _projectRolePermissionServiceMock
@@ -2415,11 +2415,11 @@ public async Task InvokeAsync_WithProjectIdInRouteAndProjectIdsInQuery_Prioritiz
     
     // Set up mock for EACH specific project ID
     _organizationServiceMock
-        .Setup(x => x.CheckExistence(projectId1, organizationId1))
+        .Setup(x => x.CheckExistence(projectId1, organizationId1, false))
         .ReturnsAsync(organizationId1);
     
     _organizationServiceMock
-        .Setup(x => x.CheckExistence(projectId2, organizationId1))
+        .Setup(x => x.CheckExistence(projectId2, organizationId1, false))
         .ReturnsAsync(organizationId1);
 
     // Change It.IsAny<int> to It.IsAny<long> to match the actual parameter type

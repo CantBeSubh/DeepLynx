@@ -195,7 +195,7 @@ public class ProjectController : ControllerBase
     /// <param name="archive">True to archive the project, false to unarchive it.</param>
     /// <returns>A message stating the project was successfully archived or unarchived.</returns>
     [HttpPatch("{projectId:long}", Name = "api_archive_project")]
-    [Auth("write", "project")]
+    [Auth("write", "project", includeArchived: true)]
     public async Task<IActionResult> ArchiveProject(
         long organizationId,
         long projectId,

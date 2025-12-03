@@ -179,7 +179,7 @@ public class OrganizationController : ControllerBase
     /// <param name="archive">True to archive the organization, false to unarchive it.</param>
     /// <returns>A message stating the organization was successfully archived or unarchived.</returns>
     [HttpPatch("{organizationId:long}", Name = "api_archive_organization")]
-    [Auth("write", "organization")]
+    [Auth("write", "organization", includeArchived: true)]
     public async Task<IActionResult> ArchiveOrganization(
         long organizationId,
         [FromQuery] bool archive)
