@@ -38,24 +38,24 @@ namespace deeplynx.datalayer.Migrations
 
             // Add with CASCADE to match CascadingConstraintsForFKs
             migrationBuilder.AddForeignKey(
-                name: "events_data_source_id_fkey",  // ✅ Match the name used in CascadingConstraintsForFKs
+                name: "events_data_source_id_fkey",
                 schema: "deeplynx",
                 table: "events",
                 column: "data_source_id",
                 principalSchema: "deeplynx",
                 principalTable: "data_sources",
                 principalColumn: "id",
-                onDelete: ReferentialAction.Cascade);  // ✅ Add CASCADE
+                onDelete: ReferentialAction.Cascade); 
 
             migrationBuilder.AddForeignKey(
-                name: "events_project_id_fkey",  // ✅ Match the name
+                name: "events_project_id_fkey",  
                 schema: "deeplynx",
                 table: "events",
                 column: "project_id",
                 principalSchema: "deeplynx",
                 principalTable: "projects",
                 principalColumn: "id",
-                onDelete: ReferentialAction.Cascade);  // ✅ Add CASCADE
+                onDelete: ReferentialAction.Cascade); 
         }
 
         /// <inheritdoc />
