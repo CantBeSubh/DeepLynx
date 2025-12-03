@@ -40,7 +40,7 @@ function SigninContent() {
       // If authenticated but no returnUrl, go home
       router.push("/");
     }
-  }, [status, router, isAuthDisabled]);
+  }, [status, router, isAuthDisabled, returnUrl]);
 
   // If auth is disabled, show loading while redirecting
   if (isAuthDisabled) {
@@ -115,7 +115,7 @@ function SigninContent() {
 
     await signIn("okta", {
       callbackUrl: callbackUrl,
-      redirect: true
+      redirect: true,
     });
   };
 

@@ -53,7 +53,7 @@ export default function ProjectSettingsClient({
       setRoles(rolesData);
     };
     fetchRoles();
-  }, [selectedProjectId]);
+  }, [selectedProjectId, organization?.organizationId]);
 
   useEffect(() => {
     if (!selectedProjectId) return;
@@ -70,7 +70,7 @@ export default function ProjectSettingsClient({
         console.error(err);
       }
     })();
-  }, [selectedProjectId]);
+  }, [selectedProjectId, organization?.organizationId]);
 
   const refreshMembers = async () => {
     if (selectedProjectId) {

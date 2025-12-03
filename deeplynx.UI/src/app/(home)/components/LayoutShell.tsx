@@ -285,9 +285,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <li className="mt-5">
                 <Link
                   href={
-                    process.env.NEXT_PUBLIC_API_URL + "/scalar"
-                      ? `${process.env.NEXT_PUBLIC_API_URL + "/scalar"}`
-                      : "/scalar"
+                    process.env.NEXT_PUBLIC_API_URL + "/api/v1/scalar"
+                      ? `${process.env.NEXT_PUBLIC_API_URL + "/api/v1/scalar"}`
+                      : "/api/v1/scalar"
                   }
                   prefetch={false}
                 >
