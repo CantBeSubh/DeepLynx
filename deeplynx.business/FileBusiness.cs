@@ -42,15 +42,15 @@ public class FileBusiness
     ///     Uploads file using specified object storage method
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="projectId">ID of the project to which the file belongs</param>
     /// <param name="organizationId">ID of the Organization to which the project belongs</param>
+    /// <param name="projectId">ID of the project to which the file belongs</param>
     /// <param name="dataSourceId">ID of the data source to which the file belongs</param>
     /// <param name="objectStorageId">ID of the object storage method to use</param>
     /// <param name="file">file to upload</param>
     public async Task<RecordResponseDto> UploadFile(
         long currentUserId,
-        long projectId,
         long organizationId,
+        long projectId,
         long? dataSourceId,
         long? objectStorageId,
         IFormFile file)
@@ -115,7 +115,7 @@ public class FileBusiness
         };
 
         // return the newly created metadata record for the file
-        return await _recordBusiness.CreateRecord(currentUserId, projectId, organizationId, realDataSourceId,
+        return await _recordBusiness.CreateRecord(currentUserId, organizationId, projectId, realDataSourceId,
             recordRequest);
     }
 

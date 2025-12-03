@@ -54,7 +54,7 @@ public class FileController : ControllerBase
         {
             var currentUserId = UserContextStorage.UserId;
             var fileUploadInfo =
-                await _fileBusiness.UploadFile(currentUserId, projectId, organizationId, dataSourceId, objectStorageId,
+                await _fileBusiness.UploadFile(currentUserId, organizationId, projectId, dataSourceId, objectStorageId,
                     file);
             return Ok(fileUploadInfo);
         }
