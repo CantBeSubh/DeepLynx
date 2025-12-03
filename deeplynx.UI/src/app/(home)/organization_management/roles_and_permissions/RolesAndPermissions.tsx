@@ -483,13 +483,13 @@ const RolesAndPermissions = ({
     if (!initialLoadComplete && roles.length > 0) {
       fetchAllRolePermissions();
     }
-  }, [roles, initialLoadComplete]);
+  }, [roles, initialLoadComplete, fetchAllRolePermissions]);
 
   useEffect(() => {
     if (selectedRoleId && initialLoadComplete) {
       fetchRolePermissions(selectedRoleId);
     }
-  }, [selectedRoleId, initialLoadComplete]);
+  }, [selectedRoleId, initialLoadComplete, fetchRolePermissions]);
 
   /* ------------------------------------------------------------------------ */
   /*                          Permission Check Helper                         */
