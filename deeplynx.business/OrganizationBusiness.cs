@@ -57,7 +57,8 @@ public class OrganizationBusiness : IOrganizationBusiness
                 Description = o.Description,
                 LastUpdatedAt = o.LastUpdatedAt,
                 LastUpdatedBy = o.LastUpdatedBy,
-                IsArchived = o.IsArchived
+                IsArchived = o.IsArchived,
+                DefaultOrg = o.DefaultOrg,
             });
     }
 
@@ -93,7 +94,8 @@ public class OrganizationBusiness : IOrganizationBusiness
                 Description = o.Description,
                 LastUpdatedAt = o.LastUpdatedAt,
                 LastUpdatedBy = o.LastUpdatedBy,
-                IsArchived = o.IsArchived
+                IsArchived = o.IsArchived,
+                DefaultOrg = o.DefaultOrg,
             })
             .ToListAsync();
     }
@@ -124,7 +126,8 @@ public class OrganizationBusiness : IOrganizationBusiness
             Description = organization.Description,
             LastUpdatedAt = organization.LastUpdatedAt,
             LastUpdatedBy = organization.LastUpdatedBy,
-            IsArchived = organization.IsArchived
+            IsArchived = organization.IsArchived,
+            DefaultOrg = organization.DefaultOrg,
         };
     }
 
@@ -177,7 +180,8 @@ public class OrganizationBusiness : IOrganizationBusiness
             Description = organization.Description,
             LastUpdatedAt = organization.LastUpdatedAt,
             LastUpdatedBy = organization.LastUpdatedBy,
-            IsArchived = organization.IsArchived
+            IsArchived = organization.IsArchived,
+            DefaultOrg = organization.DefaultOrg,
         };
     }
 
@@ -230,7 +234,8 @@ public class OrganizationBusiness : IOrganizationBusiness
             Description = organization.Description,
             LastUpdatedAt = organization.LastUpdatedAt,
             LastUpdatedBy = organization.LastUpdatedBy,
-            IsArchived = organization.IsArchived
+            IsArchived = organization.IsArchived,
+            DefaultOrg = organization.DefaultOrg,
         };
     }
 
