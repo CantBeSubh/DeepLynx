@@ -369,17 +369,10 @@ public class ProjectBusiness : IProjectBusiness
                     $"unable to archive project {projectId} or its downstream dependents: {exc}");
             }
         }
-
-        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
-        {
-            Operation = "archive",
-            EntityType = "project",
-            EntityId = project.Id,
-            EntityName = project.Name,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name })
-        });
-
+        
+        // Refresh the entity from the database to get updated values
+        await _context.Entry(project).ReloadAsync();
+        
         var projectResponse = new ProjectResponseDto
         {
             Id = project.Id,
@@ -399,15 +392,27 @@ public class ProjectBusiness : IProjectBusiness
         if (cachedProjectList == null)
         {
             await RefreshProjectsCache();
-            return true;
+        }
+        else
+        {
+            // If cache exists, update the project in the list
+            var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
+            if (projectIndex != -1) cachedProjectList[projectIndex] = projectResponse;
+    
+            // Set the updated list back to the cache
+            await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
         }
 
-        // If cache exists, update the project in the list
-        var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
-        if (projectIndex != -1) cachedProjectList[projectIndex] = projectResponse;
-
-        // Set the updated list back to the cache
-        await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
+        // Log the archive event
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+        {
+            Operation = "archive",
+            EntityType = "project",
+            EntityId = project.Id,
+            EntityName = project.Name,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new { project.Name })
+        });
 
         return true;
     }
@@ -451,52 +456,6 @@ public class ProjectBusiness : IProjectBusiness
                         $"unable to unarchive project {projectId} or its downstream dependents.");
 
                 await transaction.CommitAsync();
-
-                var projectResponse = new ProjectResponseDto
-                {
-                    Id = project.Id,
-                    OrganizationId = organizationId,
-                    Name = project.Name,
-                    Description = project.Description,
-                    Abbreviation = project.Abbreviation,
-                    LastUpdatedAt = project.LastUpdatedAt,
-                    LastUpdatedBy = project.LastUpdatedBy,
-                    IsArchived = project.IsArchived
-                };
-
-                // Update the Project Cache List
-                var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-
-                // If cache list is empty, refresh it to match the database and return
-                if (cachedProjectList == null)
-                {
-                    await RefreshProjectsCache();
-                    return true;
-                }
-
-                // If cache exists, update the project in the list
-                var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
-                if (projectIndex != -1) cachedProjectList[projectIndex] = projectResponse;
-
-                // Set the updated list back to the cache
-                await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
-
-                // Log the event
-                await _eventBusiness.CreateEvent(
-                    currentUserId,
-                    organizationId,
-                    projectId,
-                    new CreateEventRequestDto
-                    {
-                        Operation = "unarchive",
-                        EntityType = "project",
-                        EntityId = project.Id,
-                        EntityName = project.Name,
-                        DataSourceId = null,
-                        Properties = JsonSerializer.Serialize(new { project.Name })
-                    });
-
-                return true;
             }
             catch (Exception exc)
             {
@@ -504,6 +463,52 @@ public class ProjectBusiness : IProjectBusiness
                 throw new DependencyDeletionException(
                     $"unable to unarchive project {projectId} or its downstream dependents: {exc}");
             }
+            
+            // Refresh the entity from the database to get updated values
+            await _context.Entry(project).ReloadAsync();
+        
+            var projectResponse = new ProjectResponseDto
+            {
+                Id = project.Id,
+                OrganizationId = organizationId,
+                Name = project.Name,
+                Description = project.Description,
+                Abbreviation = project.Abbreviation,
+                LastUpdatedAt = project.LastUpdatedAt,
+                LastUpdatedBy = project.LastUpdatedBy,
+                IsArchived = project.IsArchived
+            };
+
+            // Update the Project Cache List
+            var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+
+            // If cache list is empty, refresh it to match the database and return
+            if (cachedProjectList == null)
+            {
+                await RefreshProjectsCache();
+            }
+            else
+            {
+                // If cache exists, update the project in the list
+                var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
+                if (projectIndex != -1) cachedProjectList[projectIndex] = projectResponse;
+    
+                // Set the updated list back to the cache
+                await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
+            }
+            
+            // Log the unarchive event
+            await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, new CreateEventRequestDto
+            {
+                Operation = "unarchive",
+                EntityType = "project",
+                EntityId = project.Id,
+                EntityName = project.Name,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new { project.Name })
+            });
+
+            return true;
         }
     }
 
