@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("projects", Schema = "deeplynx")]
-[Index("Id", Name = "idx_projects_id")]
-[Index("OrganizationId", Name = "idx_projects_organization_id")]
 public partial class Project
 {
     [Key]
@@ -25,7 +20,7 @@ public partial class Project
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("description")]
     public string? Description { get; set; }
@@ -37,7 +32,7 @@ public partial class Project
     public bool IsArchived { get; set; }
 
     [Column("organization_id")]
-    public long? OrganizationId { get; set; }
+    public long OrganizationId { get; set; }
 
     [InverseProperty("Project")]
     public virtual ICollection<Action> Actions { get; set; } = new List<Action>();
@@ -56,7 +51,7 @@ public partial class Project
 
     [ForeignKey("OrganizationId")]
     [InverseProperty("Projects")]
-    public virtual Organization? Organization { get; set; }
+    public virtual Organization Organization { get; set; } = null!;
 
     [InverseProperty("Project")]
     public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
@@ -75,10 +70,22 @@ public partial class Project
 
     [InverseProperty("Project")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
-    
+
     [InverseProperty("Project")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
 
     [InverseProperty("Project")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
+
+    [InverseProperty("LastUpdatedProjects")]
+    public virtual User? LastUpdatedByUser { get; set; }
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<HistoricalEdge> HistoricalEdges { get; set; } = new List<HistoricalEdge>();
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<HistoricalRecord> HistoricalRecords { get; set; } = new List<HistoricalRecord>();
 }

@@ -5,15 +5,23 @@ description: How to bulk upload metadata
 
 # Bulk Upload Your Metadata
 
-If you are looking to upload many metadata records at once, Nexus can support that. All you need is to provide a
-correctly formatted JSON to:
+If you are looking to upload many metadata records at once, Nexus can support that. There are two options:
 
-`https://deeplynx.inl.gov/api/projects/{projectId}/datasources/{dataSourceId}/metadata/CreateMetadata`
+1. Paste raw JSON into the request body here:
 
-## Build a JSON Object
-In the body of your request, you will need a JSON that can be processed by our backend. In the JSON object, there should
+`https://deeplynx.inl.gov/api/v1/projects/{projectId}/datasources/{dataSourceId}/metadata/CreateMetadata`
+
+2. Provide a JSON file here:
+
+`https://deeplynx.inl.gov/api/v1/projects/{projectId}/datasources/{dataSourceId}/metadata/CreateMetadataFromFile`
+
+## Build a raw JSON payload
+
+If opting for raw JSON (option 1), in the body of your request, you will need a JSON that can be processed by our backend. In the JSON object, there should
 be arrays for the types of metadata you want to upload. You can upload classes, relationships, records, edges, and
 tags.
+
+Keep in mind if pursuing file upload (option 2), the JSON in said file also needs to be formatted correctly, similarly to option 1.
 
 ### Classes
 

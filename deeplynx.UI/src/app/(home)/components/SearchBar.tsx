@@ -1,3 +1,4 @@
+// src/app/(home)/components/SearchBar.tsx
 "use client";
 
 import { translations } from "@/app/lib/translations";
@@ -12,27 +13,19 @@ interface Filter {
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void; // existing
-  onEnter?: (value: string) => void;                            // existing (fallback)
-  /** New: full submit payload so backend can vary by option */
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onEnter?: (value: string) => void;
   onSubmit?: (payload: { query: string; option?: string }) => void;
-
   value?: string;
-
-  /** Dropdown options = array of strings (e.g. ["Title", "Author", "Tag"]) */
   options?: { name: string; value: string }[];
-
-  /** Optional controlled dropdown value */
   selectedOption?: string;
-  /** Optional controlled dropdown setter */
   onOptionChange?: (option: string) => void;
-
-  // existing extras, unchanged
   activeFilters?: Filter[];
   onRemoveFilter?: (id: number) => void;
   onClearAll?: () => void;
   resultCount?: number;
   showResultsMessage?: boolean;
+  aditionalFilters?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -42,7 +35,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onEnter,
   onSubmit,
   value,
-  options = [{ name: "Anywhere", value: "Anywhere" }, { name: "Time Range", value: "Time Range" }, { name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
+  options = [
+    { name: "Anywhere", value: "Anywhere" },
+    { name: "Time Range", value: "Time Range" },
+    { name: "Class", value: "ClassName" },
+    { name: "Tag", value: "Tags" },
+    { name: "Original Data ID", value: "OriginalId" },
+    { name: "Data Source", value: "DataSourceName" },
+    { name: "Properties", value: "Properties" },
+  ],
   selectedOption,
   onOptionChange,
   activeFilters = [],
@@ -50,71 +51,93 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onClearAll,
   resultCount,
   showResultsMessage,
+  aditionalFilters = true,
 }) => {
   const locale = "en";
   const t = translations[locale];
-
-  // Input controlled/uncontrolled
-  const [internalValue, setInternalValue] = useState<string>("");
-  const isControlled = value !== undefined && onChange !== undefined;
-  const currentValue = isControlled ? (value as string) : internalValue;
-
-  // Dropdown controlled/uncontrolled
-  const [internalOption, setInternalOption] = useState<string | undefined>(options[0].value);
-  const optionControlled = selectedOption !== undefined && onOptionChange !== undefined;
-  const currentOption = optionControlled ? selectedOption : internalOption;
-
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Handle controlled/uncontrolled input
+  const [internalValue, setInternalValue] = useState<string>("");
+  const isControlled = value !== undefined && onChange !== undefined;
+  const currentValue = isControlled ? value : internalValue;
+
+  // Handle controlled/uncontrolled dropdown
+  const [internalOption, setInternalOption] = useState<string | undefined>(
+    options[0].value
+  );
+  const optionControlled =
+    selectedOption !== undefined && onOptionChange !== undefined;
+  const currentOption = optionControlled ? selectedOption : internalOption;
 
   const handleSubmit = () => {
-    if (onSubmit) onSubmit({ query: currentValue.trim(), option: currentOption });
-    else if (onEnter) onEnter(currentValue.trim());
+    const trimmedValue = currentValue.trim();
+    if (onSubmit) {
+      onSubmit({ query: trimmedValue, option: currentOption });
+    } else if (onEnter) {
+      onEnter(trimmedValue);
+    }
   };
 
+  const handleClearInput = () => {
+    if (isControlled && onChange) {
+      onChange({
+        target: { value: "" },
+      } as React.ChangeEvent<HTMLInputElement>);
+    } else {
+      setInternalValue("");
+    }
+    onClearAll?.();
+  };
+
+  // Determine if we should show the results section
+  const shouldShowResults =
+    showResultsMessage &&
+    (activeFilters.length > 0 || resultCount !== undefined);
+
   return (
-    <div className={`${className}`}>
+    <div className={className}>
       <div className="flex gap-2 w-full">
-        {/* Text input */}
+        {/* Search Input */}
         <div className="relative flex-1 min-w-0">
-          {/* Magnifying glass inside the input */}
-          <MagnifyingGlassIcon
-            className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-neutral size-6"
-          />
+          <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-base-content" />
 
           <input
             ref={inputRef}
             type="text"
             placeholder={placeholder}
-            className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-info-content" // add left padding so text doesn't overlap icon
-            onChange={isControlled ? onChange : (e) => setInternalValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSubmit();
-            }}
+            className="w-full pl-12 pr-4 py-2 rounded-full border border-base-content/25 bg-base-100 shadow-sm shadow-dynamic-shadow focus:outline-none focus:ring-2 focus:ring-dynamic-blue text-info-content"
+            onChange={
+              isControlled ? onChange : (e) => setInternalValue(e.target.value)
+            }
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             value={currentValue}
           />
 
           {currentValue && (
             <button
               type="button"
-              onClick={onClearAll}
+              onClick={handleClearInput}
               className="absolute right-4 top-5 transform -translate-y-1/2 text-base-content opacity-70 hover:opacity-100"
               aria-label={t.translations?.CLEAR_SEARCH ?? "Clear search"}
             >
               <XMarkIcon className="size-6" />
             </button>
           )}
+
           <div className="text-right mt-1">
             <a
               href="/data_catalog/query_builder"
-              className="text-sm underline text-secondary hover:underline"
+              className="text-sm underline text-dynamic-blue hover:underline"
             >
-              {t.translations.ADITIONAL_FILTERS}
+              {aditionalFilters && t.translations.ADITIONAL_FILTERS}
             </a>
           </div>
         </div>
-        {/* TODO: Hook up drop down search select */}
-        {/* <div className="dropdown">
+      </div>
+
+      {/* TODO: Hook up drop down search select */}
+      {/* <div className="dropdown">
           <button
             type="button"
             tabIndex={0}
@@ -150,47 +173,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
             ))}
           </ul>
         </div> */}
-      </div>
-
-      {/* Active filters UI below stays intact (if you still want it) */}
-      {activeFilters?.length ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {activeFilters.map((f) => (
-            <div key={f.id} className="badge badge-neutral gap-1">
-              <span>{f.term}</span>
-              {onRemoveFilter && (
-                <button
-                  type="button"
-                  className="ml-1 hover:opacity-80"
-                  onClick={() => onRemoveFilter(f.id)}
-                  aria-label={t.translations?.REMOVE ?? "Remove"}
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          {onClearAll && (
-            <button type="button" className="btn btn-ghost btn-xs" onClick={onClearAll}>
-              {t.translations?.CLEAR_ALL ?? "Clear all"}
-            </button>
-          )}
-        </div>
-      ) : null}
-
-      {showResultsMessage && (
-        <div className="mt-4 ml-1">
-          {activeFilters?.length && resultCount === 0 ? (
-            <p>{t.translations.NO_RESULTS_FOUND}</p>
-          ) : (
-            <div className="border-b border-base-200">
-              <h2>
-                {t.translations.FOUND} {resultCount} {t.translations.MATCHES}
-              </h2>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

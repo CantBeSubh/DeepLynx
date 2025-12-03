@@ -1,16 +1,12 @@
+// src/app/(home)/data_catalog/DataCatalogClient.tsx
 "use client";
 
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { RecordTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { queryRecords } from "@/app/lib/filter_services.client";
-import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
-
-import ProjectDropdown from "../components/ProjectDropdown";
-import RecentRecordsCard from "../components/RecentRecordsCard";
-import SavedSearches from "../components/SavedSearches";
-
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
+import SearchBar from "@/app/(home)/components/SearchBar";
 import { useLanguage } from "@/app/contexts/Language";
 import {
   EyeIcon,
@@ -18,16 +14,19 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import SearchBar from "@/app/(home)/components/SearchBar";
-import { fullTextSearch } from "@/app/lib/query_services.client";
-import ListView from "../components/ListView";
 import AddRecordModal from "../components/AddRecordModal";
+import ListView from "../components/ListView";
+import ProjectDropdown from "../components/ProjectDropdown";
+import RecentRecordsCard from "../components/RecentRecordsCard";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { fullTextSearch, getMultiProjectRecords } from "@/app/lib/client_service/query_services.client";
+import { HistoricalRecordResponseDto, RecordResponseDto } from "../types/responseDTOs";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
   initialSearchTerm: string;
-  initialRecords: FileViewerTableRow[];
+  initialRecords: RecordTableRow[];
 };
 
 export default function DataCatalogClient({
@@ -37,21 +36,29 @@ export default function DataCatalogClient({
   initialRecords,
 }: Props) {
   const { t } = useLanguage();
-
-  // Project session (client provider)
   const { hasLoaded, setProject: setProjectSession } = useProjectSession();
+  const { organization} = useOrganizationSession();
 
-  // Local state
+  // Use ref to store initial values to prevent re-renders
+  const initialSelectedProjectsRef = useRef(initialSelectedProjects);
+  const initialSearchTermRef = useRef(initialSearchTerm);
+
+  // State management
   const [projects] = useState(initialProjects);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(!!initialSearchTerm);
 
-  const [tableData, setTableData] = useState<FileViewerTableRow[]>(
+  const [hasInitialSearchRun, setHasInitialSearchRun] = useState(false);
+
+  const [tableData, setTableData] = useState<RecordTableRow[]>(
     initialRecords ?? []
   );
-  const [records, setQueriedRecords] = useState<FileViewerTableRow[]>(initialRecords ?? []);
+  const [records, setQueriedRecords] = useState<RecordTableRow[]>(
+    initialRecords ?? []
+  );
 
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<
@@ -63,13 +70,12 @@ export default function DataCatalogClient({
     Boolean(initialSearchTerm) || initialSelectedProjects.length > 0
   );
 
-  // === memoized “complex” deps ===
+  // Memoized values
   const selectedProjectsToken = useMemo(
     () => selectedProjects.join("|"),
     [selectedProjects]
   );
 
-  // Treat ALL / empty as "all projects"
   const effectiveProjectIds = useMemo(() => {
     const allIds = projects.map((p) => String(p.id));
     if (
@@ -82,7 +88,7 @@ export default function DataCatalogClient({
     return selectedProjects.map(String);
   }, [projects, selectedProjects]);
 
-  // Centralized fetch for dropdown-driven changes (no search term here)
+  // Fetch records for selected projects
   const fetchRecordsForSelection = useCallback(
     async (signal?: AbortSignal) => {
       const idsNum = effectiveProjectIds.map(Number).filter(Number.isFinite);
@@ -91,64 +97,110 @@ export default function DataCatalogClient({
         return;
       }
 
-      const data = await getAllRecordsForMultipleProjects(idsNum, true, {
-        signal,
-      });
-      setTableData(data);
-      // setShowAll(true);
+      const data = await getMultiProjectRecords(organization?.organizationId as number, idsNum, true);
+      const mappedData: RecordTableRow[] = data.map((dto: HistoricalRecordResponseDto) => ({
+          ...dto,
+          fileType: '',
+          timeseries: undefined,
+          fileSize: undefined,
+          select: false,
+          associatedRecords: undefined,
+          archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+        }));
+      setTableData(mappedData);
       setViewMode("list");
     },
     [effectiveProjectIds]
   );
 
-  // Clear all now fetches from API for the current scope (not local filtering)
+  // Clear all filters
   const clearAllFilters = useCallback(() => {
     setActiveFilters([]);
     setSearchTerm("");
     setQueriedRecords([]);
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Clear all fetch failed:", e);
       }
     });
   }, [fetchRecordsForSelection]);
 
-  // Search bar (unchanged) — still allowed to query by term and then locally scope
+  // Perform full text search
+  const performFullTextSearch = useCallback(
+    async (searchValue: string, projectIds: string[]) => {
+      try {
+        setIsSearching(true);
+        const projects = projectIds.map(Number)
+        const data = await fullTextSearch(organization?.organizationId as number, searchValue, projects);
+        
+        if (data) {
+          const mappedData: RecordTableRow[] = data.map((dto: HistoricalRecordResponseDto) => ({
+          ...dto,
+          fileType: '',
+          timeseries: undefined,
+          fileSize: undefined,
+          select: false,
+          associatedRecords: undefined,
+          archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+        }));
+          setQueriedRecords(mappedData);
+          setTableData(mappedData);
+          setSearchTerm("");
+          setViewMode("list");
+
+          // Add to active filters
+          const trimmed = searchValue.trim();
+          if (trimmed && !activeFilters.some((f) => f.term === trimmed)) {
+            setActiveFilters((prev) => [
+              ...prev,
+              { id: nextFilterId, term: trimmed },
+            ]);
+            setNextFilterId((n) => n + 1);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to perform full text search:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [activeFilters, nextFilterId]
+  );
+
+  // Handle search from search bar
   const handleSearch = useCallback(
     async (value: string) => {
       const trimmed = value.trim();
       if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
 
-      const newFilter = { id: nextFilterId, term: trimmed };
-      const results = await queryRecords(trimmed);
-
-      const selectedNums = effectiveProjectIds.map(Number);
-      const scoped =
-        selectedNums.length === projects.length
-          ? results
-          : results.filter((r: FileViewerTableRow) =>
-            selectedNums.includes(Number(r.projectId))
-          );
-
-      setTableData(scoped);
-      setActiveFilters((prev) => [...prev, newFilter]);
-      setNextFilterId((n) => n + 1);
-      setSearchTerm("");
-      setViewMode("list");
-      // setShowAll(true);
+      await performFullTextSearch(trimmed, selectedProjects);
     },
-    [activeFilters, nextFilterId, effectiveProjectIds, projects.length]
+    [activeFilters, selectedProjects, performFullTextSearch]
   );
 
-  // Update project session when selectedProjects change
+  // Handle submit from search bar
+  const handleSubmit = async () => {
+    await performFullTextSearch(searchTerm, selectedProjects);
+  };
+
   useEffect(() => {
     if (!hasLoaded) return;
-    if (selectedProjects.length > 0) {
+
+    // Determine which project to set - prioritize current selection, fall back to initial
+    const projectToSet =
+      selectedProjects.length > 0
+        ? selectedProjects[0]
+        : initialSelectedProjectsRef.current.length > 0
+          ? initialSelectedProjectsRef.current[0]
+          : null;
+
+    if (projectToSet && projectToSet !== "ALL") {
       const selectedProject = projects.find(
-        (project) => project.id === selectedProjects[0]
+        (project) => project.id === projectToSet
       );
+
       if (selectedProject) {
         setProjectSession({
           projectId: selectedProject.id,
@@ -156,23 +208,27 @@ export default function DataCatalogClient({
         });
       }
     }
-  }, [selectedProjects, hasLoaded, projects, setProjectSession]);
+  }, [hasLoaded, selectedProjects, projects, setProjectSession]);
 
-  // If we arrive with a search term, run it once after session is ready
+  // Handle initial search term
   useEffect(() => {
-    if (!hasLoaded) return;
-    if (initialSearchTerm) {
-      handleSearch(initialSearchTerm);
+    if (!hasLoaded || hasInitialSearchRun) return;
+
+    const initialTerm = initialSearchTermRef.current;
+    const initialProjects = initialSelectedProjectsRef.current;
+
+    if (initialTerm && initialProjects.length > 0) {
+      setHasInitialSearchRun(true);
+      performFullTextSearch(initialTerm, initialProjects);
     }
-  }, [hasLoaded, initialSearchTerm, handleSearch]);
+  }, [hasLoaded, hasInitialSearchRun, performFullTextSearch]);
 
-  // Fetch from API whenever dropdown selection changes and there are no active search filters
+  // Fetch records when selection changes (if no active filters)
   useEffect(() => {
-    if (!hasLoaded) return;
-    if (activeFilters.length > 0) return; // search takes precedence
+    if (!hasLoaded || activeFilters.length > 0) return;
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Fetch on selection change failed:", e);
       }
@@ -186,31 +242,16 @@ export default function DataCatalogClient({
     fetchRecordsForSelection,
   ]);
 
-
-  const handleSubmit = async () => {
-    try {
-
-      const data = await fullTextSearch(searchTerm, selectedProjects);
-      if (data) {
-        setQueriedRecords(data);
-      }
-    }
-    catch (error) {
-      console.error("Failed to send query")
-    }
-
-  };
-
   if (!hasLoaded) return null;
 
   return (
-    <div>
+    <div className="mt-3">
+      {/* Header */}
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
         <div>
           <h1 className="text-2xl font-bold text-info-content">
             {t.translations.DATA_CATALOG}
           </h1>
-
           <ProjectDropdown
             projects={projects}
             onSelectionChange={setSelectedProjects}
@@ -223,8 +264,8 @@ export default function DataCatalogClient({
         </div>
       </div>
 
+      {/* Search and Actions Bar */}
       <div className="flex justify-between gap-4 mb-4 pt-20 pl-8 w-full box-border">
-        {/* Left: Search */}
         <div className="flex flex-col md:w-1/2">
           <SearchBar
             placeholder="Search"
@@ -242,11 +283,10 @@ export default function DataCatalogClient({
           />
         </div>
 
-        {/* Right: actions */}
         <div className="flex gap-4 pr-4">
           <Link
             href="data_catalog/all_records"
-            className="btn btn-outline btn-primary"
+            className="btn btn-outline btn-primary text-dynamic-blue border-dynamic-blue hover:text-white hover:bg-dynamic-blue"
             onClick={() => {
               setShowAll(true);
               setViewMode("list");
@@ -256,9 +296,10 @@ export default function DataCatalogClient({
             <EyeIcon className="h-6 w-6" />
             {t.translations.EXPLORE_ALL_RECORDS}
           </Link>
+
           <button
             onClick={() => setIsRecordModalOpen(true)}
-            className="btn btn-primary text-white"
+            className="btn btn-primary text-white border-dynamic-blue bg-dynamic-blue"
           >
             <PlusIcon className="size-5" />
             <span>{t.translations.RECORD}</span>
@@ -284,19 +325,27 @@ export default function DataCatalogClient({
           )}
         </div>
       </div>
-      <div className="flex w-full gap-8 p-8 justify-center">
 
-        {records && records?.length > 0 ? (
-          <ListView data={records} />
-        ) : (records &&
-          <div className="w-2/3">
-            <RecentRecordsCard selectedProjects={selectedProjects} />
+      {/* Main Content */}
+      <div className="flex w-full gap-8 p-8 justify-center">
+        {isSearching ? (
+          <div className="flex flex-col items-center justify-center w-2/3">
+            <div className="loading loading-spinner loading-lg"></div>
+            <p className="mt-4 text-base-content/70">
+              {t.translations.LOADING || "Loading..."}
+            </p>
           </div>
+        ) : records && records?.length > 0 ? (
+          <ListView data={records} />
+        ) : (
+          records && (
+            <div className="w-2/3">
+              <RecentRecordsCard selectedProjects={selectedProjects} />
+            </div>
+          )
         )}
-        {/* <div className="w-1/3">
-          <SavedSearches />
-        </div> */}
       </div>
+
       <AddRecordModal
         isOpen={isRecordModalOpen}
         onClose={() => setIsRecordModalOpen(false)}

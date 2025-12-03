@@ -11,14 +11,14 @@ import React, {
 
 // Define shape of a project session
 export interface ProjectSession {
-  projectId: string;
+  projectId: string | number;
   projectName: string;
 }
 
 // Define context value shape
 interface ProjectSessionContextType {
   project: ProjectSession | null;
-  setProject: (project: ProjectSession) => void;
+  setProject: (project: ProjectSession | null) => void;
   hasLoaded: boolean;
 }
 
@@ -62,7 +62,7 @@ export const ProjectSessionProvider = ({
   }, []);
 
   // On project update, persist to localStorage
-  const setProject = useCallback((project: ProjectSession) => {
+  const setProject = useCallback((project: ProjectSession | null) => {
     setProjectState(project);
     localStorage.setItem("projectSession", JSON.stringify(project));
   }, []);

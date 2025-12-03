@@ -19,13 +19,17 @@ public class EventResponseDto
 
     [Column("organization_id")]
     public long? OrganizationId { get; set; }
+    public string OrganizationName { get; set; }
 
     [Column("data_source_id")]
     public long? DataSourceId { get; set; }
 
     [Column("properties")]
     public string Properties { get; set; }
+    public string? ProjectName { get; set; }
+    public string? EntityName { get; set; }
+    public string? DataSourceName { get; set; }
     public DateTime LastUpdatedAt { get; set; }
-    public string? LastUpdatedBy { get; set; }
-    
+    public long? LastUpdatedBy { get; set; }
+    public string? LastUpdatedByUserName { get; set; }
 }

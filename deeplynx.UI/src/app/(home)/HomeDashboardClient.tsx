@@ -1,42 +1,72 @@
-// app/(home)/HomeDashboardClient.tsx  — Client Component
+// app/(home)/HomeDashboardClient.tsx
 "use client";
 
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
-import { WidgetType } from "@/app/(home)/components/Widgets";
-import { ProjectsList } from "@/app/(home)/types/types";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { WidgetType } from "./types/types";
+import { PlusIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "../contexts/Language";
-import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 import { format } from "date-fns";
-
-import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
+import { useDashboardTour } from "./tours/useDashboardTour";
+import { ProjectResponseDto } from "./types/responseDTOs";
+import { useOrganizationSession } from "../contexts/OrganizationSessionProvider";
+import { useRBAC } from "./rbac/useRBAC";
+import { useSafeSession } from "../hooks/useSafeSession";
+import { useProjectSession } from "../contexts/ProjectSessionProvider";
+import { getAllProjects } from "../lib/client_service/projects_services.client";
 
-type Props = { initialProjects: ProjectsList[] };
+type Props = { initialProjects: ProjectResponseDto[] };
 
 export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
 
-  const { data: session, status } = useSession();
+  const isAuthDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
+  const { data: session } = useSafeSession();
+  const { user } = useRBAC();
+  const { organization, hasLoaded } = useOrganizationSession();
+  const { setProject } = useProjectSession();
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
-  const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);
+  const [projects, setProjects] =
+    useState<ProjectResponseDto[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
-  const [canCustomize, setCanCustomize] = useState(false);
-  const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
-    "Links",
-    "DataOverview",
-    "Graph",
-  ]);
+
+  const isRefreshing = useRef(false);
+
+  const refreshProjects = useCallback(async () => {
+    if (!organization || isRefreshing.current) return;
+
+    isRefreshing.current = true;
+    try {
+      const data = await getAllProjects(
+        organization.organizationId as number,
+        true
+      );
+      setProjects(data);
+    } catch (err) {
+      console.error("Failed to refresh projects:", err);
+    } finally {
+      isRefreshing.current = false;
+    }
+  }, [organization]);
+
+  useEffect(() => {
+    if (organization && hasLoaded) {
+      refreshProjects();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organization?.organizationId, hasLoaded, refreshProjects]);
 
   const filteredProjects = projects
     .filter((project) => {
@@ -52,26 +82,34 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       return dateB - dateA;
     });
 
-  const refreshProjects = async () => {
-    try {
-      const data = await getAllProjects();
-      setProjects(data);
-    } catch (err) {
-      console.error("Failed to refresh projects:", err);
-    }
-  };
+  const { startTour } = useDashboardTour({
+    filteredProjects,
+    initialProjects,
+  });
 
-  const onExplore = (row: ProjectsList) => {
+  const onExplore = (row: ProjectResponseDto) => {
+    setProject({
+      projectId: row.id.toString(),
+      projectName: row.name,
+    });
     router.push(`/project/${row.id}`);
   };
 
   const columns = [
     {
       header: t.translations.PROJECT_NAME,
-      data: (row: ProjectsList) => (
+      data: (row: ProjectResponseDto) => (
         <Link
           href={`/project/${row.id}`}
-          className="font-bold text-secondary hover:text-primary/80 underline underline-offset-2 transition-colors"
+          onClick={(e) => {
+            e.preventDefault();
+            setProject({
+              projectId: row.id.toString(),
+              projectName: row.name,
+            });
+            router.push(`/project/${row.id}`);
+          }}
+          className="font-bold text-secondary hover:text-base-content/80 underline underline-offset-2 transition-colors"
         >
           {row.name}
         </Link>
@@ -79,52 +117,81 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     },
     {
       header: t.translations.DESCRIPTION,
-      data: (row: ProjectsList) => (
+      data: (row: ProjectResponseDto) => (
         <span className="text-base-content/80">{row.description || "—"}</span>
       ),
     },
     {
       header: t.translations.LAST_UPDATED_AT,
-      data: (row: ProjectsList) => (
-        <span className="text-base-content/60 text-sm">{format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}</span>
+      data: (row: ProjectResponseDto) => (
+        <span className="text-base-content/60 text-sm">
+          {format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
+        </span>
       ),
     },
   ];
 
-  const handleSave = (newWidgets: WidgetType[]) => {
-    setHomeWidgets(newWidgets);
-    setCanCustomize(false);
+
+  const formatUserName = (fullName?: string | null): string => {
+    if (!fullName) return "";
+
+    const parts = fullName.trim().split(/\s+/);
+    const firstName = parts[0] ?? "";
+    const lastName = parts[parts.length - 1] ?? "";
+    return [firstName, lastName].filter(Boolean).join(" ");
   };
 
-  const handleCancel = () => {
-    setCanCustomize(false);
-  };
+  const displayName = isAuthDisabled
+    ? user?.name || ""
+    : session?.user?.name || "";
+
+  if (!hasLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-base-100">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
+
+  if (!organization) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-base-100">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-base-100">
-      {/* Header Section */}
-      <header className="bg-base-200/50 border-b border-base-300/30 sticky top-0 z-10 backdrop-blur-sm">
+    <div className="min-h-screen bg-base-100 mt-3">
+      <header className="bg-base-200/50 border-b border-base-300/30 sticky z-10 backdrop-blur-sm">
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
-          <h1 className="text-2xl font-bold text-base-content">
-            {t.translations.WELECOME}
-          </h1>
-          <SearchInput
-            placeholder="Search Projects"
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-base-content">
+              {`${t.translations.WELECOME}, ${formatUserName(displayName)}`}
+            </h1>
+            <button
+              onClick={startTour}
+              className="btn btn-ghost btn-sm btn-circle"
+              title="Start Tour"
+            >
+              <QuestionMarkCircleIcon className="w-5 h-5" />
+            </button>
+          </div>
+          <div data-tour="search-input">
+            <SearchInput
+              placeholder="Search Projects"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="p-6">
-        <div
-          //This is commented out till we get digets
-          // className={`w-full md:w-3/5 px-4 ${
-          //   canCustomize ? "grayed-out" : ""
-          // }`}
-          className="w-4/5 mx-auto"
-        >
-          <div className="card card-border p-4">
+        <div className="w-4/5 mx-auto">
+          <div
+            className="card card-border shadow-md shadow-dynamic-shadow p-4"
+            data-tour="projects-section"
+          >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-info-content text-lg font-semibold">
                 {t.translations.YOUR_PROJECTS}
@@ -134,6 +201,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 <button
                   onClick={() => setIsRecordModalOpen(true)}
                   className="btn btn-outline btn-secondary btn-sm flex-1 sm:flex-initial"
+                  data-tour="add-record"
                 >
                   <PlusIcon className="size-5" />
                   <span>{t.translations.RECORD}</span>
@@ -141,6 +209,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 <button
                   onClick={() => setIsProjectModalOpen(true)}
                   className="btn btn-secondary btn-sm flex-1 sm:flex-initial"
+                  data-tour="create-project"
                 >
                   <PlusIcon className="size-5" />
                   <span>{t.translations.PROJECT}</span>
@@ -155,27 +224,12 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 <ExpandedProjectCard project={project} onClose={onClose} />
               )}
               onExplore={onExplore}
+              getRowId={(p) => p.id}
             />
           </div>
         </div>
-
-        {/*
-          This will be added later ...
-        <div className="w-full md:w-2/5 px-4">
-            <WidgetCard
-              widgets={homeWidgets}
-              onSave={handleSave}
-              onCustomizeChange={setCanCustomize}
-            />
-            {session?.user && (
-              <div className="bg-green-100 p-4 m-4 rounded">
-                <p>Welcome back, {session.user.name}!</p>
-              </div>
-            )}
-          </div> */}
       </div>
 
-      {/* Modals */}
       <AddRecordModal
         isOpen={isRecordModalOpen}
         onClose={() => setIsRecordModalOpen(false)}

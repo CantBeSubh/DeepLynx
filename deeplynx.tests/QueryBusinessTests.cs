@@ -1,851 +1,73 @@
 using System.Text.Json;
 using deeplynx.business;
-using FluentAssertions;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
-using Microsoft.EntityFrameworkCore;
 using Record = deeplynx.datalayer.Models.Record;
 
-namespace deeplynx.tests
+namespace deeplynx.tests;
+
+[Collection("Test Suite Collection")]
+public class QueryBusinessTests : IntegrationTestBase
 {
-    [Collection("Test Suite Collection")]
-    public class QueryBusinessTests : IntegrationTestBase
+    private readonly CacheBusiness _cacheBusiness = null!;
+    private QueryBusiness _queryBusiness = null!;
+    private long cid;
+    private long did;
+    private long organizationId;
+
+    private long pid; // project ID
+    private long pid2;
+    private long pid3;
+    private long pid4;
+    private long rid; // record ID
+
+    public QueryBusinessTests(TestSuiteFixture fixture) : base(fixture)
     {
-        private QueryBusiness _queryBusiness = null!;
-        private CacheBusiness _cacheBusiness = null!;
-        public long pid;
-        public long did;
-        public long cid;
-        public DateTime timeGrab;
-        private DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        private long mockUserId;
-        private long mockUser2Id;
-        private long mockActionId;
-        private long mockDataSourceId;
-        private long mockDataSource2Id;
+    }
 
-        public QueryBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
+    private long[] pids => [pid, pid2, pid3, pid4];
 
-        public override async Task InitializeAsync()
-        {
-            await base.InitializeAsync();
-            _queryBusiness = new QueryBusiness(Context, _cacheBusiness);
-        }
+    public override async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
+        _queryBusiness = new QueryBusiness(Context, _cacheBusiness);
+    }
 
-       [Fact]
-        public async Task FullTextSearchForSpecificCloneResultsIn1Async()
-        {
-            var result = await _queryBusiness.Search("rex", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
+    #region GetMultiProjectRecords Tests
 
-        [Fact]
-        public async Task FullTextSearchForCloneForce99TagResultsIn4Async()
-        {
-            var result = await _queryBusiness.Search("99", new[] { pid });
-            result.Should().HaveCount(4);
-        }
+    [Fact]
+    public async Task GetMultiProjectRecords_Success_ReturnsRecordsFromMultipleProjects()
+    {
+        // Arrange
+        var projectIds = new[] { pid, pid2 };
 
-        [Fact]
-        public async Task FullTextSearchForCloneOriginalIdResultsIn1Async()
-        {
-            var result = await _queryBusiness.Search("CT-9901", new[] { pid });
-            result.Should().HaveCount(1);
-        }
+        // Act
+        var result = await _queryBusiness.GetMultiProjectRecords(organizationId, projectIds, true);
+        var records = result.ToList();
 
-        [Fact]
-        public async Task QueryBuilderFindSpecificCloneWithCommonDataSourceAndOriginalIdResultsIn1Async()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, "CT-7567");
-            result.Should().HaveCount(1);
-        }
+        // Assert
+        Assert.NotEmpty(records);
+        Assert.Contains(records, r => r.ProjectId == pid);
+        Assert.Contains(records, r => r.ProjectId == pid2);
+    }
 
-        [Fact]
-        public async Task FullTextSearchEmptyStringThrowsExceptionAsync()
-        {
-            await Assert.ThrowsAsync<Exception>(() => 
-                _queryBusiness.Search("", new[] { pid }));
-        }
+    #endregion
 
-        [Fact]
-        public async Task FullTextSearchNullThrowsExceptionAsync()
-        {
-            await Assert.ThrowsAsync<Exception>(() => 
-                _queryBusiness.Search(null, new[] { pid }));
-        }
-
-        [Fact]
-        public async Task FullTextSearchWhitespaceOnlyThrowsExceptionAsync()
-        {
-            await Assert.ThrowsAsync<Exception>(() => 
-                    _queryBusiness.Search("     ", new[] { pid }));
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchInDescriptionAsync()
-        {
-            var result = await _queryBusiness.Search("Omega", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Hunter");
-        }
-
-        [Fact]
-        public async Task FullTextSearchInPropertiesJsonAsync()
-        {
-            var result = await _queryBusiness.Search("501st", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
-
-        [Fact]
-        public async Task FullTextSearchSpecialCharactersAsync()
-        {
-            var result = await _queryBusiness.Search("CT-", new[] { pid });
-            result.Should().HaveCount(5);
-        }
-
-        [Fact]
-        public async Task FullTextSearchForJediAcrossAllProjectsAsync()
-        {
-            var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
-            var result = await _queryBusiness.Search("Jedi", allProjectIds);
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Luke Skywalker");
-        }
-
-        [Fact]
-        public async Task FullTextSearchForBeskarReturnsMandalorianAsync()
-        {
-            var mandoProjectId = await Context.Projects
-                .Where(p => p.Name == "Mandalorians")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = await _queryBusiness.Search("Beskar", new[] { mandoProjectId });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Din Djarin");
-        }
-
-        [Fact]
-        public async Task FullTextSearchForSithReturnsVaderAsync()
-        {
-            var empireProjectId = await Context.Projects
-                .Where(p => p.Name == "The Galactic Empire")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = await _queryBusiness.Search("Sith", new[] { empireProjectId });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Darth Vader");
-        }
-
-        [Fact]
-        public async Task QueryBuilderWithNullFiltersThrowsException()
-        {
-            Assert.Throws<ArgumentException>(() => 
-                _queryBusiness.QueryBuilder(null, new[] { pid }, null));
-        }
-
-        [Fact]
-        public async Task QueryBuilderEqualityOperatorAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "name", Operator = "=", Value = "Tech"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Tech");
-        }
-
-        [Fact]
-        public async Task QueryBuilderLikeOperatorCaseInsensitiveAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "name", Operator = "LIKE", Value = "tech"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Tech");
-        }
-
-        [Fact]
-        public async Task QueryBuilderGreaterThanDateOperatorAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, 
-                Filter = "last_updated_at", 
-                Operator = ">", 
-                Value = DateTime.Now.AddMinutes(-30).ToString("yyyy-MM-dd HH:mm:ss")
-            };
-            
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(5); 
-            result.All(r => r.LastUpdatedAt > DateTime.Now.AddMinutes(-30)).Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task QueryBuilderDateRangeAsync()
-        {
-            var ahsoka = new Record
-            {
-                Name = "Ahsoka Tano",
-                Description = "Favorite",
-                OriginalId = "Snips",
-                Properties = JsonSerializer.Serialize(new { Jedi = "Apprentice" }),
-                ProjectId = pid,
-                DataSourceId = did,
-                ClassId = cid,
-                Uri = "localhost:8090"
-            };
-            await Context.Records.AddAsync(ahsoka);
-            await Context.SaveChangesAsync();
-            
-            var rexRecord = await Context.Records
-                .Where(r => r.Name == "Captain Rex")
-                .FirstAsync();
-
-            var baselineRex = rexRecord.LastUpdatedAt;
-            var baselineAhsoka = ahsoka.LastUpdatedAt.AddMinutes(10);
-            
-            var dto1 = new CustomQueryRequestDto
-            {
-                Connector = null, 
-                Filter = "last_updated_at", 
-                Operator = ">", 
-                Value = baselineRex.ToString("yyyy-MM-dd HH:mm:ss")
-            };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "AND", 
-                Filter = "last_updated_at", 
-                Operator = "<", 
-                Value = baselineAhsoka.ToString("yyyy-MM-dd HH:mm:ss")
-            };
-            
-            var result = _queryBusiness.QueryBuilder([dto1, dto2], new[] { pid }, null);
-            result.Should().HaveCount(6); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderMultipleAndConditionsAsync()
-        {
-            var dto1 = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
-            };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-7567"
-            };
-            var result = _queryBusiness.QueryBuilder([dto1, dto2], new[] { pid }, null);
-            result.Should().HaveCount(1); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderOrConditionAsync()
-        {
-            var dto1 = new CustomQueryRequestDto
-            {
-                Connector = "", Filter = "name", Operator = "=", Value = "Tech"
-            };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "OR", Filter = "name", Operator = "=", Value = "Wrecker"
-            };
-            var result = _queryBusiness.QueryBuilder([dto1, dto2], new[] { pid });
-            result.Should().HaveCount(2); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderNullAndOrConditionsAsync()
-        {
-            var dto1 = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "name", Operator = "LIKE", Value = "rex"
-            };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "OR", Filter = "name", Operator = "=", Value = "Tech"
-            };
-            var dto3 = new CustomQueryRequestDto
-            {
-                Connector = "OR", Filter = "name", Operator = "=", Value = "Hunter"
-            };
-            var result = _queryBusiness.QueryBuilder([dto1, dto2, dto3], new[] { pid }, null);
-            result.Should().HaveCount(3); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderMixedAndOrConditionsAsync()
-        {
-            var dto1 = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Anakin"
-            };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "name", Operator = "=", Value = "Tech"
-            };
-            var dto3 = new CustomQueryRequestDto
-            {
-                Connector = "OR", Filter = "name", Operator = "=", Value = "Hunter"
-            };
-            var result = _queryBusiness.QueryBuilder([dto1, dto2, dto3], new[] { pid }, null);
-            result.Should().HaveCount(2); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderWithSearchTermCombinedAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, "Captain");
-            result.Should().HaveCount(1); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderInvalidFilterFieldThrowsExceptionAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "InvalidField", Operator = "=", Value = "test"
-            };
-            Assert.Throws<ArgumentException>(() => 
-                _queryBusiness.QueryBuilder([dto], new[] { pid }));
-        }
-
-        [Fact]
-        public async Task QueryBuilderInvalidOperatorThrowsExceptionAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "name", Operator = "INVALID", Value = "test"
-            };
-            Assert.Throws<ArgumentException>(() => 
-                _queryBusiness.QueryBuilder([dto], new[] { pid }));
-        }
-
-        [Fact]
-        public async Task QueryBuilderInvalidDateFormatThrowsExceptionAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "invalid-date"
-            };
-            Assert.Throws<ArgumentException>(() => 
-                _queryBusiness.QueryBuilder([dto], new[] { pid }));
-        }
-
-        [Fact]
-        public async Task QueryBuilderNullValueThrowsExceptionAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "name", Operator = "=", Value = null
-            };
-            Assert.Throws<ArgumentException>(() => 
-                _queryBusiness.QueryBuilder([dto], new[] { pid }));
-        }
-
-        [Fact]
-        public async Task QueryBuilderEmptyValueThrowsExceptionAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "name", Operator = "=", Value = ""
-            };
-            Assert.Throws<ArgumentException>(() => 
-                _queryBusiness.QueryBuilder([dto], new[] { pid }));
-        }
-
-        [Fact]
-        public async Task QueryBuilderContainsOperatorInDescriptionAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "description", Operator = "LIKE", Value = "stop"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Hunter");
-        }
-
-        [Fact]
-        public async Task QueryBuilderFilterByOriginalIdPrefixAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-99"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(4);
-        }
-        
-        [Fact]
-        public async Task QueryBuilderFilterByMultipleProjectIdsAsync()
-        {
-            var anakinId = await Context.Projects.Where(p => p.Name == "Anakin").Select(p => p.Id).FirstAsync();
-            var rebellionId = await Context.Projects.Where(p => p.Name == "The Rebellion").Select(p => p.Id).FirstAsync();
-            
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { anakinId, rebellionId }, null);
-            result.Should().HaveCount(6); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderFilterByProjectNameRebellionAsync()
-        {
-            var rebellionId =
-                await Context.Projects.Where(p => p.Name == "The Rebellion").Select(p => p.Id).FirstAsync();
-
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Rebellion"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { rebellionId }, null);
-            result.Should().HaveCount(4);
-        }
-
-
-        [Fact]
-        public async Task QueryBuilderFilterByProjectNameEmpireAsync()
-        {
-            var empireId = await Context.Projects.Where(p => p.Name == "The Galactic Empire").Select(p => p.Id).FirstAsync();
-            
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "project_name", Operator = "=", Value = "The Galactic Empire"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { empireId }, null);
-            result.Should().HaveCount(3); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderFilterByProjectNameMandoAsync()
-        {
-            var mandoId = await Context.Projects.Where(p => p.Name == "Mandalorians").Select(p => p.Id).FirstAsync();
-            
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Mandalorians"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { mandoId }, null);
-            result.Should().HaveCount(4); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderUserAccessToSpecificProjectsOnlyAsync()
-        {
-            var anakinId = await Context.Projects.Where(p => p.Name == "Anakin").Select(p => p.Id).FirstAsync();
-            var empireId = await Context.Projects.Where(p => p.Name == "The Galactic Empire").Select(p => p.Id).FirstAsync();
-            
-            var result = _queryBusiness.QueryBuilder([], new[] { anakinId, empireId }, null);
-            result.Should().HaveCount(8); 
-        }
-
-        [Fact]
-        public async Task FullTextSearchRestrictedToUserProjectsAsync()
-        {
-            var rebellionId = await Context.Projects.Where(p => p.Name == "The Rebellion").Select(p => p.Id).FirstAsync();
-            
-            var result = await _queryBusiness.Search("the", new[] { rebellionId });
-            result.All(r => r.ProjectId == rebellionId).Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task QueryBuilderRecordsInAnakinProjectWithCrossProjectResourcesAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "project_name", Operator = "=", Value = "Anakin"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(5);
-        }
-
-        [Fact]
-        public async Task QueryBuilderFilterByDataSourceAcrossAllowedProjectsAsync()
-        {
-            var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
-            
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "data_source_name", Operator = "LIKE", Value = "Yavin"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], allProjectIds, null);
-            result.Should().HaveCount(4); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderNoAccessToProjectReturnsEmptyAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], Array.Empty<long>(), null);
-            result.Should().BeEmpty();
-        }
-
-        [Fact]
-        public async Task FullTextSearchAcrossAllProjectsUserHasAccessToAsync()
-        {
-            var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
-            var result = await _queryBusiness.Search("Captain", allProjectIds);
-            result.Should().HaveCount(2); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderFilterByOriginalIdPrefixREBWithProjectAccessAsync()
-        {
-            var rebellionId = await Context.Projects.Where(p => p.Name == "The Rebellion").Select(p => p.Id).FirstAsync();
-            
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "original_id", Operator = "LIKE", Value = "REB-"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { rebellionId }, null);
-            result.Should().HaveCount(4); 
-        }
-
-        [Fact]
-        public async Task QueryBuilderComplexQueryWithLimitedProjectAccessAsync()
-        {
-            var anakinId = await Context.Projects.Where(p => p.Name == "Anakin").Select(p => p.Id).FirstAsync();
-            var mandoId = await Context.Projects.Where(p => p.Name == "Mandalorians").Select(p => p.Id).FirstAsync();
-            
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "original_id", Operator = "LIKE", Value = "CT-"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { anakinId, mandoId }, null);
-            result.Should().HaveCount(5); 
-        }
-
-        [Fact]
-        public async Task FullTextSearchWithProjectFilterFindsRecordsUsingCrossProjectResourcesAsync()
-        {
-            var result = await _queryBusiness.Search("Death Star", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Tech");
-            result.First().ProjectId.Should().Be(pid);
-        }
-
-        [Fact]
-        public async Task QueryBuilderMultipleProjectsWithOrConditionAsync()
-        {
-            var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
-            
-            var dto1 = new CustomQueryRequestDto
-            {
-                Connector = null, Filter = "project_name", Operator = "=", Value = "Anakin"
-            };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "OR", Filter = "project_name", Operator = "=", Value = "The Galactic Empire"
-            };
-            var result = _queryBusiness.QueryBuilder([dto1, dto2], allProjectIds, null);
-            result.Should().HaveCount(8); 
-        }
-        
-        [Fact]
-        public async Task FullTextSearchPartialTagNameAsync()
-        {
-            var result = await _queryBusiness.Search("Padme", new[] { pid });
-            result.Should().HaveCount(4); 
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialTagNameCaseInsensitiveAsync()
-        {
-            var result = await _queryBusiness.Search("padme", new[] { pid });
-            result.Should().HaveCount(4);
-        }
-
-        [Fact]
-        public async Task FullTextSearchInTagsAcrossProjectsAsync()
-        {
-            var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
-            var result = await _queryBusiness.Search("Bounty", allProjectIds);
-            result.Should().HaveCount(2); 
-        }
-        [Fact]
-        public async Task QueryBuilderKeyValueSearchForLegion501stAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null,
-                Filter = "properties",
-                Operator = "KEY_VALUE",
-                Json = JsonSerializer.Serialize(new { Legion = "501st" })
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
-
-        [Fact]
-        public async Task QueryBuilderKeyValueSearchForCloneForce99Async()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null,
-                Filter = "properties",
-                Operator = "KEY_VALUE",
-                Json = JsonSerializer.Serialize(new { CloneForce = "99" })
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(4); 
-        }
-        
-        [Fact]
-        public async Task QueryBuilderLikeOperatorOnPropertiesJsonbAsync()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null,
-                Filter = "properties",
-                Operator = "LIKE",
-                Value = "501"
-            };
-            var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
-        
-        [Fact]
-        public async Task FullTextSearchPartialNameMatchAsync()
-        {
-            // Search for "Rex" should find "Captain Rex"
-            var result = await _queryBusiness.Search("capt", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialNameMatchMultipleResultsAsync()
-        {
-            // Search for "Dar" should find "Darth Vader"
-            var empireId = await Context.Projects
-                .Where(p => p.Name == "The Galactic Empire")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = await _queryBusiness.Search("dar", new[] { empireId });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Darth Vader");
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialOriginalIdMatchAsync()
-        {
-            // Search for "CT-99" should find all Bad Batch members
-            var result = await _queryBusiness.Search("CT-99", new[] { pid });
-            result.Should().HaveCount(4);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialOriginalIdSingleDigitAsync()
-        {
-            // Search for just "99" should find Clone Force 99 members
-            var result = await _queryBusiness.Search("99", new[] { pid });
-            result.Should().HaveCount(4);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialDescriptionMatchAsync()
-        {
-            // Search for "stop" should find Hunter (description: "Omega, stop doing that")
-            var result = await _queryBusiness.Search("stop", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Hunter");
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialDataSourceNameAsync()
-        {
-            // Search for "Yav" should find records using "Yavin IV Base"
-            var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
-            var result = await _queryBusiness.Search("Yav", allProjectIds);
-            result.Should().HaveCount(4);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialProjectNameAsync()
-        {
-            // Search for "Rebel" should find records in "The Rebellion" project
-            var rebellionId = await Context.Projects
-                .Where(p => p.Name == "The Rebellion")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = await _queryBusiness.Search("Rebel", new[] { rebellionId });
-            result.Should().HaveCount(4);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialPropertyValueAsync()
-        {
-            // Search for "501" should find Captain Rex (Legion: "501st")
-            var result = await _queryBusiness.Search("501", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialTagName2Async()
-        {
-            // Search for "Pad" should find records tagged with "Padme"
-            var result = await _queryBusiness.Search("Pad", new[] { pid });
-            result.Should().HaveCount(4);
-        }
-
-        [Fact]
-        public async Task FullTextSearchVeryShortPartialMatchAsync()
-        {
-            var mandoId = await Context.Projects
-                .Where(p => p.Name == "Mandalorians")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = await _queryBusiness.Search("Bo", new[] { mandoId });
-            result.Should().HaveCount(3);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchCaseInsensitiveAsync()
-        {
-            // Search for "CAPT" (uppercase) should find "Captain Rex"
-            var result = await _queryBusiness.Search("CAPT", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchMultipleWordsAsync()
-        {
-            // Search for "grand adm" should find "Grand Admiral Thrawn"
-            var empireId = await Context.Projects
-                .Where(p => p.Name == "The Galactic Empire")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = await _queryBusiness.Search("grand adm", new[] { empireId });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Grand Admiral Thrawn");
-        }
-        
-        [Fact]
-        public async Task FullTextSearchPartialMatchMiddleOfWordAsync()
-        {
-            // Search for "eck" should find "Wrecker"
-            var result = await _queryBusiness.Search("eck", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Wrecker");
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchInUriAsync()
-        {
-            // Search for "8090" should find all records with that port
-            var result = await _queryBusiness.Search("8090", new[] { pid });
-            result.Should().HaveCount(5);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchBeginningOfWordAsync()
-        {
-            // Search for "Wre" should find "Wrecker"
-            var result = await _queryBusiness.Search("Wre", new[] { pid });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Wrecker");
-        }
-
-        [Fact]
-        public async Task QueryBuilderPartialMatchWithLikeOperatorAsync()
-        {
-            // LIKE operator should do partial matching
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null,
-                Filter = "name",
-                Operator = "LIKE",
-                Value = "Prin" // Partial match for "Princess Leia"
-            };
-            var rebellionId = await Context.Projects
-                .Where(p => p.Name == "The Rebellion")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = _queryBusiness.QueryBuilder([dto], new[] { rebellionId }, null);
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Princess Leia");
-        }
-
-        [Fact]
-        public async Task QueryBuilderPartialMatchOriginalIdAsync()
-        {
-            // Partial match on original_id
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = null,
-                Filter = "original_id",
-                Operator = "LIKE",
-                Value = "MANDO-00" // Should find all Mandalorian records
-            };
-            var mandoId = await Context.Projects
-                .Where(p => p.Name == "Mandalorians")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = _queryBusiness.QueryBuilder([dto], new[] { mandoId }, null);
-            result.Should().HaveCount(4);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchWithSpecialCharactersAsync()
-        {
-            // Search for "CT-" should find all clone troopers
-            var result = await _queryBusiness.Search("CT-", new[] { pid });
-            result.Should().HaveCount(5);
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchAcrossMultipleFieldsAsync()
-        {
-            // Search for "Sith" appears in Vader's properties
-            var empireId = await Context.Projects
-                .Where(p => p.Name == "The Galactic Empire")
-                .Select(p => p.Id)
-                .FirstAsync();
-            var result = await _queryBusiness.Search("Sith", new[] { empireId });
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Darth Vader");
-        }
-
-        [Fact]
-        public async Task FullTextSearchPartialMatchNoResultsAsync()
-        {
-            // Search for something that doesn't exist
-            var result = await _queryBusiness.Search("Wookiee", new[] { pid });
-            result.Should().BeEmpty();
-        }
-        
-        
-        protected override async Task SeedTestDataAsync()
-{
+    protected override async Task SeedTestDataAsync()
+    {
         await base.SeedTestDataAsync();
-        
+
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
+
         // Project 1: Anakin
         var project = new Project
         {
             Name = "Anakin",
-            Description = "You turned her against me"
+            Description = "You turned her against me",
+            OrganizationId = organizationId
         };
         await Context.Projects.AddAsync(project);
         await Context.SaveChangesAsync();
@@ -854,7 +76,8 @@ namespace deeplynx.tests
         var tag = new Tag
         {
             Name = "Padme",
-            ProjectId = project.Id
+            ProjectId = project.Id,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(tag);
         await Context.SaveChangesAsync();
@@ -863,17 +86,19 @@ namespace deeplynx.tests
         {
             Name = "R2D2",
             Description = "Weeeeeeeee!",
-            ProjectId = project.Id
+            ProjectId = project.Id,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(dataSource);
         await Context.SaveChangesAsync();
         did = dataSource.Id;
-        
+
         var testClass = new Class
         {
             Name = "Darth Maul",
             Description = "My legs!",
-            ProjectId = project.Id
+            ProjectId = project.Id,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(testClass);
         await Context.SaveChangesAsync();
@@ -883,15 +108,18 @@ namespace deeplynx.tests
         var rebellionProject = new Project
         {
             Name = "The Rebellion",
-            Description = "Hope is like the sun"
+            Description = "Hope is like the sun",
+            OrganizationId = organizationId
         };
         await Context.Projects.AddAsync(rebellionProject);
         await Context.SaveChangesAsync();
+        pid2 = rebellionProject.Id;
 
         var rebelTag = new Tag
         {
             Name = "Alliance",
-            ProjectId = rebellionProject.Id
+            ProjectId = pid2,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(rebelTag);
         await Context.SaveChangesAsync();
@@ -900,7 +128,8 @@ namespace deeplynx.tests
         {
             Name = "Yavin IV Base",
             Description = "May the Force be with you",
-            ProjectId = rebellionProject.Id
+            ProjectId = pid2,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(rebelDataSource);
         await Context.SaveChangesAsync();
@@ -909,7 +138,8 @@ namespace deeplynx.tests
         {
             Name = "Rebel Leaders",
             Description = "Leaders of the Rebellion",
-            ProjectId = rebellionProject.Id
+            ProjectId = pid2,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(rebelClass);
         await Context.SaveChangesAsync();
@@ -918,15 +148,18 @@ namespace deeplynx.tests
         var empireProject = new Project
         {
             Name = "The Galactic Empire",
-            Description = "Peace through power"
+            Description = "Peace through power",
+            OrganizationId = organizationId
         };
         await Context.Projects.AddAsync(empireProject);
         await Context.SaveChangesAsync();
+        pid3 = empireProject.Id;
 
         var imperialTag = new Tag
         {
             Name = "Imperial Officer",
-            ProjectId = empireProject.Id
+            ProjectId = pid3,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(imperialTag);
         await Context.SaveChangesAsync();
@@ -935,7 +168,8 @@ namespace deeplynx.tests
         {
             Name = "Death Star",
             Description = "That's no moon",
-            ProjectId = empireProject.Id
+            ProjectId = pid3,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(empireDataSource);
         await Context.SaveChangesAsync();
@@ -944,7 +178,8 @@ namespace deeplynx.tests
         {
             Name = "Imperial Command",
             Description = "High-ranking Imperial officers",
-            ProjectId = empireProject.Id
+            ProjectId = pid3,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(empireClass);
         await Context.SaveChangesAsync();
@@ -953,20 +188,24 @@ namespace deeplynx.tests
         var mandoProject = new Project
         {
             Name = "Mandalorians",
-            Description = "This is the Way"
+            Description = "This is the Way",
+            OrganizationId = organizationId
         };
         await Context.Projects.AddAsync(mandoProject);
         await Context.SaveChangesAsync();
+        pid4 = mandoProject.Id;
 
         var mandoTag = new Tag
         {
             Name = "Bounty Hunter",
-            ProjectId = mandoProject.Id
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         var clanTag = new Tag
         {
             Name = "Clan Leader",
-            ProjectId = mandoProject.Id
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         await Context.Tags.AddAsync(mandoTag);
         await Context.Tags.AddAsync(clanTag);
@@ -976,7 +215,8 @@ namespace deeplynx.tests
         {
             Name = "Nevarro",
             Description = "Covert hideout",
-            ProjectId = mandoProject.Id
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         await Context.DataSources.AddAsync(mandoDataSource);
         await Context.SaveChangesAsync();
@@ -985,7 +225,8 @@ namespace deeplynx.tests
         {
             Name = "Warriors",
             Description = "Mandalorian warriors and bounty hunters",
-            ProjectId = mandoProject.Id
+            ProjectId = pid4,
+            OrganizationId = organizationId
         };
         await Context.Classes.AddAsync(mandoClass);
         await Context.SaveChangesAsync();
@@ -1000,10 +241,12 @@ namespace deeplynx.tests
             ProjectId = project.Id,
             DataSourceId = dataSource.Id, // R2D2 datasource
             ClassId = testClass.Id, // Darth Maul class
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(rex);
         await Context.SaveChangesAsync();
+        rid = rex.Id;
 
         var hunter = new Record
         {
@@ -1015,7 +258,8 @@ namespace deeplynx.tests
             DataSourceId = rebelDataSource.Id, // Using Rebellion datasource!
             ClassId = testClass.Id,
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(hunter);
         await Context.SaveChangesAsync();
@@ -1030,7 +274,8 @@ namespace deeplynx.tests
             DataSourceId = empireDataSource.Id, // Using Empire datasource!
             ClassId = rebelClass.Id, // Using Rebel class!
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(tech);
         await Context.SaveChangesAsync();
@@ -1045,7 +290,8 @@ namespace deeplynx.tests
             DataSourceId = mandoDataSource.Id, // Using Mando datasource!
             ClassId = mandoClass.Id, // Using Mando class!
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(wrecker);
         await Context.SaveChangesAsync();
@@ -1060,11 +306,11 @@ namespace deeplynx.tests
             DataSourceId = dataSource.Id,
             ClassId = empireClass.Id, // Using Empire class!
             Tags = new List<Tag> { tag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(crosshair);
         await Context.SaveChangesAsync();
-        timeGrab = rex.LastUpdatedAt;
 
         // MIXED RECORDS - Project 2 (Rebellion) with cross-project references
         var leia = new Record
@@ -1073,11 +319,12 @@ namespace deeplynx.tests
             Description = "Rebel leader and princess",
             OriginalId = "REB-001",
             Properties = JsonSerializer.Serialize(new { Homeworld = "Alderaan", Rank = "General" }),
-            ProjectId = rebellionProject.Id,
+            ProjectId = pid2,
             DataSourceId = rebelDataSource.Id,
             ClassId = rebelClass.Id,
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(leia);
         await Context.SaveChangesAsync();
@@ -1088,11 +335,12 @@ namespace deeplynx.tests
             Description = "Last of the Jedi",
             OriginalId = "REB-002",
             Properties = JsonSerializer.Serialize(new { Homeworld = "Tatooine", Rank = "Commander" }),
-            ProjectId = rebellionProject.Id,
+            ProjectId = pid2,
             DataSourceId = dataSource.Id, // Using Anakin's R2D2 datasource!
             ClassId = rebelClass.Id,
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(luke);
         await Context.SaveChangesAsync();
@@ -1103,11 +351,12 @@ namespace deeplynx.tests
             Description = "Smuggler turned hero",
             OriginalId = "REB-003",
             Properties = JsonSerializer.Serialize(new { Ship = "Millennium Falcon", Rank = "Captain" }),
-            ProjectId = rebellionProject.Id,
+            ProjectId = pid2,
             DataSourceId = mandoDataSource.Id, // Using Mando datasource!
             ClassId = mandoClass.Id, // Using Mando class!
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(han);
         await Context.SaveChangesAsync();
@@ -1118,11 +367,12 @@ namespace deeplynx.tests
             Description = "Best pilot in the galaxy",
             OriginalId = "REB-004",
             Properties = JsonSerializer.Serialize(new { Squadron = "Rogue Squadron", Rank = "Wing Commander" }),
-            ProjectId = rebellionProject.Id,
+            ProjectId = pid2,
             DataSourceId = empireDataSource.Id, // Using Empire datasource!
             ClassId = testClass.Id, // Using Anakin's Darth Maul class!
             Tags = new List<Tag> { rebelTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(wedge);
         await Context.SaveChangesAsync();
@@ -1134,11 +384,12 @@ namespace deeplynx.tests
             Description = "I find your lack of faith disturbing",
             OriginalId = "IMP-001",
             Properties = JsonSerializer.Serialize(new { Title = "Dark Lord of the Sith", Rank = "Supreme Commander" }),
-            ProjectId = empireProject.Id,
+            ProjectId = pid3,
             DataSourceId = empireDataSource.Id,
             ClassId = empireClass.Id,
             Tags = new List<Tag> { imperialTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(vader);
         await Context.SaveChangesAsync();
@@ -1149,11 +400,12 @@ namespace deeplynx.tests
             Description = "You may fire when ready",
             OriginalId = "IMP-002",
             Properties = JsonSerializer.Serialize(new { Title = "Grand Moff", Station = "Death Star" }),
-            ProjectId = empireProject.Id,
+            ProjectId = pid3,
             DataSourceId = rebelDataSource.Id, // Using Rebellion datasource!
             ClassId = rebelClass.Id, // Using Rebel class! (Infiltration?)
             Tags = new List<Tag> { imperialTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(tarkin);
         await Context.SaveChangesAsync();
@@ -1164,11 +416,12 @@ namespace deeplynx.tests
             Description = "Tactical genius",
             OriginalId = "IMP-003",
             Properties = JsonSerializer.Serialize(new { Species = "Chiss", Rank = "Grand Admiral" }),
-            ProjectId = empireProject.Id,
+            ProjectId = pid3,
             DataSourceId = dataSource.Id, // Using Anakin's datasource!
             ClassId = mandoClass.Id, // Using Mando class!
             Tags = new List<Tag> { imperialTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(thrawn);
         await Context.SaveChangesAsync();
@@ -1180,11 +433,12 @@ namespace deeplynx.tests
             Description = "The Mandalorian",
             OriginalId = "MANDO-001",
             Properties = JsonSerializer.Serialize(new { Armor = "Beskar", Title = "Mand'alor" }),
-            ProjectId = mandoProject.Id,
+            ProjectId = pid4,
             DataSourceId = mandoDataSource.Id,
             ClassId = mandoClass.Id,
             Tags = new List<Tag> { mandoTag, clanTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(dinDjarin);
         await Context.SaveChangesAsync();
@@ -1195,11 +449,12 @@ namespace deeplynx.tests
             Description = "Rightful ruler of Mandalore",
             OriginalId = "MANDO-002",
             Properties = JsonSerializer.Serialize(new { Clan = "Kryze", Title = "Leader of Mandalore" }),
-            ProjectId = mandoProject.Id,
+            ProjectId = pid4,
             DataSourceId = rebelDataSource.Id, // Using Rebellion datasource!
             ClassId = rebelClass.Id, // Using Rebel class!
             Tags = new List<Tag> { clanTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(boKatan);
         await Context.SaveChangesAsync();
@@ -1210,11 +465,12 @@ namespace deeplynx.tests
             Description = "Like my father before me",
             OriginalId = "MANDO-003",
             Properties = JsonSerializer.Serialize(new { Ship = "Slave I", Occupation = "Daimyo" }),
-            ProjectId = mandoProject.Id,
+            ProjectId = pid4,
             DataSourceId = empireDataSource.Id, // Using Empire datasource!
             ClassId = empireClass.Id, // Using Empire class!
             Tags = new List<Tag> { mandoTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(bobafett);
         await Context.SaveChangesAsync();
@@ -1225,14 +481,1031 @@ namespace deeplynx.tests
             Description = "Heavy infantry",
             OriginalId = "MANDO-004",
             Properties = JsonSerializer.Serialize(new { Clan = "Vizsla", Weapon = "Heavy Blaster" }),
-            ProjectId = mandoProject.Id,
+            ProjectId = pid4,
             DataSourceId = dataSource.Id, // Using Anakin's datasource!
             ClassId = testClass.Id, // Using Anakin's class!
             Tags = new List<Tag> { clanTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            OrganizationId = organizationId
         };
         await Context.Records.AddAsync(pazVizsla);
         await Context.SaveChangesAsync();
     }
+
+    #region Search Tests
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByFullName()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Captain Rex", organizationId,[pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Captain Rex", records.First().Name);
     }
+
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByPartialName()
+    {
+        // Act
+        var result = await _queryBusiness.Search("capt", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Captain Rex", records.First().Name);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByOriginalId()
+    {
+        // Act
+        var result = await _queryBusiness.Search("CT-9901", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByPartialDescription()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Omega", organizationId,[pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Hunter", records.First().Name);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByStringInProperties()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Sith", organizationId, [pid3]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Darth Vader", records.First().Name);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsWithSpecialCharacters()
+    {
+        // Act
+        var result = await _queryBusiness.Search("CT-", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(5, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_ReturnsEmptyForNonExistentTerm()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Wookiee", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Empty(records);
+    }
+
+    [Fact]
+    public async Task Search_Success_RestrictsResultsToSpecifiedProject()
+    {
+        // Act
+        var result = await _queryBusiness.Search("the", organizationId, [pid2]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.All(records, r => Assert.Equal(pid2, r.ProjectId));
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByPartialTagName()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Padme", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByPartialTagNameCaseInsensitive()
+    {
+        // Act
+        var result = await _queryBusiness.Search("padme", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByTagAcrossMultipleProjects()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Bounty", organizationId, pids);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(2, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsMultipleRecordsByJsonProperties()
+    {
+        // Act
+        var result = await _queryBusiness.Search("99", organizationId,[pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByPartialOriginalId()
+    {
+        // Act
+        var result = await _queryBusiness.Search("CT-99", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByNumericPartialId()
+    {
+        // Act
+        var result = await _queryBusiness.Search("99", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByPartialDataSourceName()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Yav", organizationId, pids);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByPartialProjectName()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Rebel", organizationId, [pid2]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByShortPartialMatch()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Bo", organizationId, [pid4]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(3, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByCaseInsensitivePartialMatch()
+    {
+        // Act
+        var result = await _queryBusiness.Search("CAPT", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Captain Rex", records.First().Name);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByMultipleWordPartialMatch()
+    {
+        // Act
+        var result = await _queryBusiness.Search("grand adm", organizationId, [pid3]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Grand Admiral Thrawn", records.First().Name);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByMiddleOfWordPartialMatch()
+    {
+        // Act
+        var result = await _queryBusiness.Search("eck", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Wrecker", records.First().Name);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsByUriPartialMatch()
+    {
+        // Act
+        var result = await _queryBusiness.Search("8090", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(5, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordByBeginningOfWordPartialMatch()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Wre", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Wrecker", records.First().Name);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordsAcrossAllAccessibleProjects()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Captain", organizationId, pids);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(2, records.Count);
+    }
+
+    [Fact]
+    public async Task Search_Success_FindsRecordUsingCrossProjectResources()
+    {
+        // Act
+        var result = await _queryBusiness.Search("Death Star", organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Tech", records.First().Name);
+        Assert.Equal(pid, records.First().ProjectId);
+    }
+
+    [Fact]
+    public async Task Search_Failure_IfEmptyString()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _queryBusiness.Search("", organizationId, [pid]));
+
+        Assert.Contains("Search query is required", exception.Message);
+    }
+
+    [Fact]
+    public async Task Search_Failure_IfNull()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _queryBusiness.Search(null, organizationId, [pid]));
+
+        Assert.Contains("Search query is required", exception.Message);
+    }
+
+    [Fact]
+    public async Task Search_Failure_IfWhitespaceOnly()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _queryBusiness.Search("     ", organizationId, [pid]));
+
+        Assert.Contains("Search query is required", exception.Message);
+    }
+
+    #endregion
+
+    #region QueryBuilder Tests
+
+    [Fact]
+    public async Task QueryBuilderWithNullFiltersThrowsException()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            _queryBusiness.QueryBuilder(null, organizationId, new[] { pid }));
+
+        Assert.Contains("Custom query request dto cannot be null", exception.Message);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByEqualityOperator()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "name", Operator = "=", Value = "Tech"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Tech", records.First().Name);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByLikeOperatorCaseInsensitive()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "name", Operator = "LIKE", Value = "tech"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Tech", records.First().Name);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByGreaterThanDateOperator()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null,
+            Filter = "last_updated_at",
+            Operator = ">",
+            Value = DateTime.Now.AddMinutes(-30).ToString("yyyy-MM-dd HH:mm:ss")
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(5, records.Count);
+        Assert.All(records, r => Assert.True(r.LastUpdatedAt > DateTime.Now.AddMinutes(-30)));
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByDateRangeRetry()
+    {
+        // Arrange
+        var ahsoka = new Record
+        {
+            Name = "Ahsoka Tano",
+            Description = "Favorite",
+            OriginalId = "Snips",
+            Properties = JsonSerializer.Serialize(new { Jedi = "Apprentice" }),
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            Uri = "localhost:8090", 
+            OrganizationId = organizationId
+        };
+        await Context.Records.AddAsync(ahsoka);
+        await Context.SaveChangesAsync();
+
+        var baselineAhsoka = ahsoka.LastUpdatedAt.AddMinutes(10);
+        var baselineRex = (await Context.Records.FindAsync(rid)).LastUpdatedAt;
+
+        var dto1 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null,
+            Filter = "last_updated_at",
+            Operator = ">",
+            Value = baselineRex.ToString("yyyy-MM-dd HH:mm:ss")
+        };
+        var dto2 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND",
+            Filter = "last_updated_at",
+            Operator = "<",
+            Value = baselineAhsoka.ToString("yyyy-MM-dd HH:mm:ss")
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(6, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByMultipleAndConditions()
+    {
+        // Arrange
+        var dto1 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
+        };
+        var dto2 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-7567"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByOrCondition()
+    {
+        // Arrange
+        var dto1 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "", Filter = "name", Operator = "=", Value = "Tech"
+        };
+        var dto2 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "OR", Filter = "name", Operator = "=", Value = "Wrecker"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(2, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByMixedNullAndOrConditions()
+    {
+        // Arrange
+        var dto1 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "name", Operator = "LIKE", Value = "rex"
+        };
+        var dto2 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "OR", Filter = "name", Operator = "=", Value = "Tech"
+        };
+        var dto3 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "OR", Filter = "name", Operator = "=", Value = "Hunter"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2, dto3], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(3, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByMixedAndOrConditions()
+    {
+        // Arrange
+        var dto1 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Anakin"
+        };
+        var dto2 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "name", Operator = "=", Value = "Tech"
+        };
+        var dto3 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "OR", Filter = "name", Operator = "=", Value = "Hunter"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2, dto3], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(2, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByCombinedQueryAndSearchTerm()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid], "Captain");
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByContainsOperatorInDescription()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "description", Operator = "LIKE", Value = "stop"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId,  [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Hunter", records.First().Name);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByOriginalIdPrefix()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-99"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByMultipleProjectIds()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid, pid2]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(6, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByProjectNameFirst()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Rebellion"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid2]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByProjectNameSecond()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "project_name", Operator = "=", Value = "The Galactic Empire"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid3]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(3, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByProjectNameThird()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Mandalorians"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid4]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByUserAccessToSpecificProjectsOnly()
+    {
+        // Act
+        var result = await _queryBusiness.QueryBuilder([], organizationId, [pid, pid3]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(8, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsInProjectWithCrossProjectResources()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "project_name", Operator = "=", Value = "Anakin"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(5, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByDataSourceAcrossAllowedProjects()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "data_source_name", Operator = "LIKE", Value = "Yavin"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, pids);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_ReturnsEmptyWhenNoProjectAccess()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId,[]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Empty(records);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByOriginalIdPrefixWithProjectAccess()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "original_id", Operator = "LIKE", Value = "REB-"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid2]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByComplexQueryWithLimitedProjectAccess()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "original_id", Operator = "LIKE", Value = "CT-"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid, pid4]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(5, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByMultipleProjectsWithOrCondition()
+    {
+        // Arrange
+        var dto1 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null, Filter = "project_name", Operator = "=", Value = "Anakin"
+        };
+        var dto2 = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "OR", Filter = "project_name", Operator = "=", Value = "The Galactic Empire"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto1, dto2], organizationId, pids);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(8, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByKeyValueSearch()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null,
+            Filter = "properties",
+            Operator = "KEY_VALUE",
+            Json = JsonSerializer.Serialize(new { Legion = "501st" })
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Captain Rex", records.First().Name);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByKeyValueSearchMultipleResults()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null,
+            Filter = "properties",
+            Operator = "KEY_VALUE",
+            Json = JsonSerializer.Serialize(new { CloneForce = "99" })
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByLikeOperatorOnPropertiesJsonb()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null,
+            Filter = "properties",
+            Operator = "LIKE",
+            Value = "501"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Captain Rex", records.First().Name);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByPartialMatchWithLikeOperator()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null,
+            Filter = "name",
+            Operator = "LIKE",
+            Value = "Prin" // Partial match for "Princess Leia"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid2]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+        Assert.Equal("Princess Leia", records.First().Name);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FiltersRecordsByPartialMatchOnOriginalId()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = null,
+            Filter = "original_id",
+            Operator = "LIKE",
+            Value = "MANDO-00" // Should find all Mandalorian records
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid4]);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(4, records.Count);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Success_FindsSpecificRecordWithDataSourceAndSearchTerm()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
+        };
+
+        // Act
+        var result = await _queryBusiness.QueryBuilder([dto], organizationId, [pid], "CT-7567");
+        var records = result.ToList();
+
+        // Assert
+        Assert.Single(records);
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Failure_ThrowsExceptionForInvalidFilterField()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "InvalidField", Operator = "=", Value = "test"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Failure_ThrowsExceptionForInvalidOperator()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "name", Operator = "INVALID", Value = "test"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Failure_ThrowsExceptionForInvalidDateFormat()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "invalid-date"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Failure_ThrowsExceptionForNullValue()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "name", Operator = "=", Value = null
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
+    }
+
+    [Fact]
+    public async Task QueryBuilder_Failure_ThrowsExceptionForEmptyValue()
+    {
+        // Arrange
+        var dto = new CustomQueryDtos.CustomQueryRequestDto
+        {
+            Connector = "AND", Filter = "name", Operator = "=", Value = ""
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _queryBusiness.QueryBuilder([dto], organizationId, [pid]));
+    }
+
+    #endregion
+
+    #region GetRecentlyAddedRecords Tests
+
+    [Fact]
+    public async Task GetRecentlyAddedRecords_ReturnsRecords_ForUserProjects()
+    {
+        // Arrange
+        var projectIds = new[] { pid, pid2 };
+
+        // Act
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Equal(9, records.Count); // 5 from pid + 4 from pid2
+        // Check for records from Project 1 (Anakin)
+        Assert.Contains(records, r => r.Name == "Captain Rex");
+        Assert.Contains(records, r => r.Name == "Hunter");
+        Assert.Contains(records, r => r.Name == "Tech");
+        Assert.Contains(records, r => r.Name == "Wrecker");
+        Assert.Contains(records, r => r.Name == "Crosshair");
+        // Check for records from Project 2 (Rebellion)
+        Assert.Contains(records, r => r.Name == "Princess Leia");
+        Assert.Contains(records, r => r.Name == "Luke Skywalker");
+        Assert.Contains(records, r => r.Name == "Han Solo");
+        Assert.Contains(records, r => r.Name == "Wedge Antilles");
+    }
+
+    [Fact]
+    public async Task GetRecentlyAddedRecords_ExcludesArchivedRecords()
+    {
+        // Arrange
+        var projectIds = new[] { pid };
+
+        // Act
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
+        var records = result.ToList();
+
+        // Assert - Archived records should not appear
+        Assert.All(records, r => Assert.False(r.IsArchived));
+    }
+
+    [Fact]
+    public async Task GetRecentlyAddedRecords_ReturnsEmpty_WhenEmptyProjectArray()
+    {
+        // Arrange
+        var projectIds = new long[] { };
+
+        // Act
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
+        var records = result.ToList();
+
+        // Assert
+        Assert.Empty(records);
+    }
+
+    [Fact]
+    public async Task GetRecentlyAddedRecords_ReturnsLatestVersion_WhenMultipleVersionsExist()
+    {
+        // Arrange
+        var projectIds = new[] { pid };
+
+        // Act
+        var result = await _queryBusiness.GetRecentlyAddedRecords(organizationId, projectIds);
+        var records = result.ToList();
+
+        // Assert - Historical records should return the most recent version
+        // Since the seed data creates multiple historical versions, verify we only get one per record
+        var recordsByOriginalId = records.GroupBy(r => r.OriginalId);
+        Assert.All(recordsByOriginalId, g => Assert.Single(g));
+    }
+
+    #endregion
 }

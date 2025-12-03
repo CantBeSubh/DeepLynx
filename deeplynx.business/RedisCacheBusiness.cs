@@ -27,6 +27,11 @@ namespace deeplynx.business
                 ReferenceHandler = ReferenceHandler.IgnoreCycles
             };
         }
+        
+        /// <summary>
+        /// Static property that will return the cache type in use.
+        /// </summary>
+        public string CacheType => "redis";
 
         /// <summary>
         /// Retrieves cached data matching the provided key
@@ -40,6 +45,8 @@ namespace deeplynx.business
             {
                 return default;
             }
+
+            await SetAsync("type", "redis", (TimeSpan?)null);
 
             return JsonSerializer.Deserialize<T>(value.ToString(), _jsonOptions);
         }

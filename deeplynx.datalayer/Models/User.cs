@@ -1,15 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("users", Schema = "deeplynx")]
-[Index("Email", Name = "idx_users_email", IsUnique = true)]
-[Index("Id", Name = "idx_users_id")]
-[Index("SsoId", Name = "idx_users_sso_id")]
 public partial class User
 {
     [Key]
@@ -49,10 +43,70 @@ public partial class User
     [InverseProperty("User")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
-    [ForeignKey("2")]
+    [ForeignKey("UserId")]
     [InverseProperty("Users")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
     
     [InverseProperty("User")]
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Class> LastUpdatedClasses { get; set; } = new List<Class>();
+     
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<DataSource> LastUpdatedDataSources { get; set; } = new List<DataSource>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Edge> LastUpdatedEdges { get; set; } = new List<Edge>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<HistoricalEdge> LastUpdatedHistoricalEdges { get; set; } = new List<HistoricalEdge>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Event> LastUpdatedEvents { get; set; } = new List<Event>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Group> LastUpdatedGroups { get; set; } = new List<Group>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<SavedSearch> SavedSearches { get; set; } = new List<SavedSearch>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<ObjectStorage> LastUpdatedObjectStorages { get; set; } = new List<ObjectStorage>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Organization> LastUpdatedOrganizations { get; set; } = new List<Organization>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Project> LastUpdatedProjects { get; set; } = new List<Project>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Record> LastUpdatedRecords { get; set; } = new List<Record>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Permission> LastUpdatedPermissions { get; set; } = new List<Permission>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Relationship> LastUpdatedRelationships { get; set; } = new List<Relationship>();
+
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Role> LastUpdatedRoles { get; set; } = new List<Role>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<SensitivityLabel> LastUpdatedSensitivityLabels { get; set; } = new List<SensitivityLabel>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Tag> LastUpdatedTags { get; set; } = new List<Tag>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Subscription> LastUpdatedSubscriptions { get; set; } = new List<Subscription>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Action> LastUpdatedActions { get; set; } = new List<Action>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<OauthToken> OauthTokens { get; set; } = new List<OauthToken>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<OauthApplication> UpdatedOauthApplications { get; set; } = new List<OauthApplication>();
 }

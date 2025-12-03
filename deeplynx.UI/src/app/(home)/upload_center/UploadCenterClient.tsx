@@ -1,32 +1,32 @@
 // src/app/(home)/upload_center/UploadCenterClient.tsx
-
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
-import NewFileUploadCard, {
-  FileMetadata,
-} from "../components/NewFileUploadCard";
-import RecentUploadsCard from "../components/RecentUploadsCard";
+import NewFileUploadCard from "../components/NewFileUploadCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
-import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
-import { getAllProjects } from "@/app/lib/projects_services.client";
-import type { ProjectDTO } from "@/app/lib/projects_services.server";
 import {
-  DataSourceDTO,
-  getAllDataSources,
-} from "@/app/lib/data_source_services.client";
-import {
-  getAllObjectStorages,
-  ObjectStorageDTO,
-} from "@/app/lib/object_storage_services.client";
+  ExistingFile,
+  FileMetadata,
+  RecentUpload,
+  UploadType,
+} from "../types/types";
+import { getAllDataSourcesOrg } from "@/app/lib/client_service/data_source_services.client";
 import {
   uploadFile,
   uploadFilesBatch,
-} from "@/app/lib/file_upload_services.client";
+} from "@/app/lib/client_service/file_upload_services.client";
+import { getAllObjectStorages } from "@/app/lib/client_service/object_storage_services.client";
+import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
 import toast from "react-hot-toast";
+import {
+  DataSourceResponseDto,
+  ObjectStorageResponseDto,
+  ProjectResponseDto,
+} from "../types/responseDTOs";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -34,28 +34,30 @@ type Props = {
   uploadText: string;
 };
 
-export default function UploadCenterClient({
-  initialAvailableFiles,
-  initialRecentUploads,
-  uploadText,
-}: Props) {
+export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const { t } = useLanguage();
+  const { organization } = useOrganizationSession();
   const [multi, setMulti] = useState(false);
   const [showMultiFileWarning, setShowMultiFileWarning] = useState(false);
-  const [uploadType, setUploadType] = useState<UploadType>("");
+  const [uploadType, setUploadType] = useState<UploadType>("new");
   const [targetFileId, setTargetFileId] = useState("");
   const [destination, setDestination] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const showRightPanel = selectedFiles.length > 0;
-  const [projects, setProjects] = useState<ProjectDTO[]>([]);
-  const [objectStorage, setObjectstorage] = useState<ObjectStorageDTO[]>([]);
-  const [dataSources, setDataSources] = useState<DataSourceDTO[]>([]);
+  const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
+  const [objectStorage, setObjectstorage] = useState<
+    ObjectStorageResponseDto[]
+  >([]);
+  const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [projectId, setProjectId] = useState<string>("");
   const [dataSourceId, setDataSourceId] = useState<string>("");
   const [objectStorageId, setObjectstorageId] = useState<string>("");
   const [filesMetadata, setFilesMetadata] = useState<
     Record<number, FileMetadata>
   >({});
+  const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
+  const [isLoadingObjectStorage, setIsLoadingObjectStorage] = useState(false);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -69,10 +71,6 @@ export default function UploadCenterClient({
     () => initialAvailableFiles,
     [initialAvailableFiles]
   );
-  const recentUploads = useMemo(
-    () => initialRecentUploads,
-    [initialRecentUploads]
-  );
   const selectedTarget = useMemo(
     () => availableFiles.find((f) => f.id === targetFileId) ?? null,
     [availableFiles, targetFileId]
@@ -84,7 +82,7 @@ export default function UploadCenterClient({
     const keepProject = opts?.keepProject ?? true;
 
     setSelectedFiles([]);
-    setUploadType("");
+    setUploadType("new");
     setDestination("");
     setTargetFileId("");
     setMulti(false);
@@ -117,60 +115,48 @@ export default function UploadCenterClient({
   const clearAll = () => setSelectedFiles([]);
 
   const handleUpload = async () => {
-    if (
-      !projectId ||
-      !dataSourceId ||
-      !objectStorageId ||
-      selectedFiles.length === 0
-    ) {
-      toast.error(
-        "Select project, data source, object storage, and at least one file."
-      );
+    if (!projectId || selectedFiles.length === 0) {
+      toast.error("Select a project and at least one file.");
       return;
     }
-
     try {
       if (selectedFiles.length === 1) {
-        // Single file upload
         const file = selectedFiles[0];
-        const metadata = filesMetadata[0];
-
+        const metadata = filesMetadata[0] ?? {};
         await uploadFile({
+          organizationId: organization?.organizationId as number,
           projectId,
-          dataSourceId,
-          objectStorageId,
+          dataSourceId, // may be undefined
+          objectStorageId, // may be undefined
           file,
-          name: metadata?.name || file.name,
-          description: metadata?.description || "",
+          name: metadata.name || file.name,
+          description: metadata.description || "",
+          // properties: metadata.properties, // if you collect extra JSON
+          // tags: metadata.tags, // if you collect tags
         });
         toast.success("File uploaded!");
       } else {
-        const uploadPromises = selectedFiles.map(async (file, index) => {
-          const metadata = filesMetadata[index];
-
-          return uploadFile({
-            projectId,
-            dataSourceId,
-            objectStorageId,
-            file,
-            name: metadata?.name || file.name,
-            description: metadata?.description || "",
-          });
+        // Use your batch helper (returns Promise.allSettled)
+        const results = await uploadFilesBatch({
+          organizationId: organization?.organizationId as number,
+          projectId,
+          dataSourceId,
+          objectStorageId,
+          files: selectedFiles,
+          // optional shared metadata defaults
         });
 
-        const results = await Promise.allSettled(uploadPromises);
         const ok = results.filter((r) => r.status === "fulfilled").length;
         const fail = results.length - ok;
         toast.success(
           `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
         );
+        if (fail) console.warn("Batch upload failures:", results);
       }
-
-      // Reset everything (but keep project by default)
       resetForm({ keepProject: true });
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       toast.error("Upload failed. See console for details.");
-      console.error(error);
     }
   };
 
@@ -186,92 +172,125 @@ export default function UploadCenterClient({
       setObjectstorage([]);
       setDataSourceId("");
       setObjectstorageId("");
+      setIsLoadingDataSources(false);
+      setIsLoadingObjectStorage(false);
       return;
     }
 
+    setIsLoadingDataSources(true);
+    setIsLoadingObjectStorage(true);
+
+    setDataSourceId("");
+    setObjectstorageId("");
+
     (async () => {
       try {
-        const ds = await getAllDataSources(Number(projectId));
-        const os = await getAllObjectStorages(projectId);
-        setDataSources(ds);
-        setObjectstorage(os?.data ?? os);
-        setDataSourceId("");
-        setObjectstorageId("");
+        const dataSource = await getAllDataSourcesOrg(
+          organization?.organizationId as number,
+          [Number(projectId)]
+        );
+        setDataSources(dataSource);
+        if (dataSource.length === 1) {
+          setDataSourceId(String(dataSource[0].id));
+        }
+        setIsLoadingDataSources(false);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching data sources:", error);
         setDataSources([]);
+        setIsLoadingDataSources(false);
+      }
+
+      try {
+        const objectStorage = await getAllObjectStorages(
+          organization?.organizationId as number,
+          Number(projectId)
+        );
+        setObjectstorage(objectStorage);
+        if (objectStorage.length === 1) {
+          setObjectstorageId(String(objectStorage[0].id));
+        }
+        setIsLoadingObjectStorage(false);
+      } catch (error) {
+        console.error("Error fetching object storage:", error);
         setObjectstorage([]);
-        setDataSourceId("");
-        setObjectstorageId("");
+        setIsLoadingObjectStorage(false);
       }
     })();
   }, [projectId]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAllProjects();
-        setProjects(data);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (!projectId) {
-      setDataSources([]);
+  // Memoize the fetch projects function
+  const fetchProjects = useCallback(async () => {
+    if (!organization) {
+      setProjects([]);
+      setProjectId("");
+      setIsLoadingProjects(false);
       return;
     }
 
-    (async () => {
-      try {
-        const dataSources = await getAllDataSources(Number(projectId));
-        const objectStorageResponse = await getAllObjectStorages(projectId);
-        setDataSources(dataSources);
-        setObjectstorage(objectStorageResponse.data);
-      } catch (error) {
-        console.error(error);
-        setDataSources([]);
-      }
-    })();
-  }, [projectId]);
+    setIsLoadingProjects(true);
 
-  const effectiveMultiple = isMultiAllowed ? multi : false;
+    try {
+      const data = await getAllProjects(
+        organization.organizationId as number,
+        true
+      );
+      setProjects(data);
+      if (data.length === 1) {
+        setProjectId(String(data[0].id));
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      setProjects([]);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [organization]);
+
+  // Fetch projects filtered by organization
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   return (
     <div>
-      <div className="flex items-center bg-base-200/40 py-2 pl-12">
+      <div className="bg-base-200/40 pl-12 p-6">
         <h1 className="text-2xl font-bold text-base-content">
           {t.translations.UPLOAD_CENTER}
         </h1>
       </div>
 
-      {/* <div className="flex lg:flex-grow justify-between gap-8 p-10 lg:p-20"> */}
       <div
-        className={`flex gap-8 p-10 lg:p-20 ${
-          showRightPanel ? "justify-between" : "justify-center"
-        }`}
+        className={`flex gap-8 p-10 lg:p-20 ${showRightPanel ? "justify-between" : "justify-center"
+          }`}
       >
         {/* LEFT */}
         <div
-          className={`w-full lg:w-3/5 ${
-            showRightPanel ? "" : "max-w-5xl mx-auto"
-          }`}
+          className={`w-full lg:w-3/5 ${showRightPanel ? "" : "max-w-5xl mx-auto"
+            }`}
         >
           <h2>{t.translations.START_UPLOAD_BY_CHOOSING_TYPE}</h2>
           <div className="p-4 space-y-4">
             <fieldset className="space-x-4">
               <label className="label flex-col items-start text-base-content font-bold">
-                <span className="label-text mb-1">Select a project</span>
+                <span className="label-text mb-1">
+                  Select a project
+                  {isLoadingProjects && (
+                    <span className="loading loading-spinner loading-xs ml-2"></span>
+                  )}
+                </span>
                 <select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
                   className="select select-info select-sm mt-2"
                   required
+                  disabled={!organization || isLoadingProjects}
                 >
                   <option value="" disabled>
-                    Project
+                    {!organization
+                      ? "Select an organization first"
+                      : isLoadingProjects
+                        ? "Loading projects..."
+                        : t.translations.PROJECT}
                   </option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -282,35 +301,54 @@ export default function UploadCenterClient({
               </label>
 
               <label className="label flex-col items-start text-base-content font-bold">
-                <span className="label-text mb-1">Data Source</span>
+                <span className="label-text mb-1">
+                  {t.translations.DATA_SOURCE}
+                  {isLoadingDataSources && (
+                    <span className="loading loading-spinner loading-xs ml-2"></span>
+                  )}
+                </span>
                 <select
                   value={dataSourceId}
                   onChange={(e) => setDataSourceId(e.target.value)}
                   className="select select-info select-sm mt-2"
                   required
-                  disabled={!projectId}
+                  disabled={!projectId || isLoadingDataSources}
                 >
                   <option value="" disabled>
-                    {projectId ? "Data Sources" : "Select a project first"}
+                    {!projectId
+                      ? "Select a project first"
+                      : isLoadingDataSources
+                        ? "Loading data sources..."
+                        : "Data Sources"}
                   </option>
                   {dataSources.map((d) => (
-                    <option key={d.id} value={d.id}>
+                    <option key={d.id} value={String(d.id)}>
                       {d.name}
                     </option>
                   ))}
                 </select>
               </label>
+
               <label className="label flex-col items-start text-base-content font-bold">
-                <span className="label-text mb-1">Storage Destination</span>
+                <span className="label-text mb-1">
+                  {t.translations.STORAGE_DESTINATION}
+                  {isLoadingObjectStorage && (
+                    <span className="loading loading-spinner loading-xs ml-2"></span>
+                  )}
+                </span>
                 <select
                   value={objectStorageId}
                   onChange={(e) => setObjectstorageId(e.target.value)}
                   className="select select-info select-sm mt-2"
                   required
-                  disabled={!projectId}
+                  disabled={!projectId || isLoadingObjectStorage}
                 >
                   <option value="" disabled>
-                    {projectId ? "Object storages" : "Select a project first"}
+                    {!projectId
+                      ? "Select a project first"
+                      : isLoadingObjectStorage
+                        ? "Loading object storages..."
+                        : "Object storages"}
                   </option>
                   {objectStorage.map((object) => (
                     <option key={object.id} value={String(object.id)}>
@@ -329,16 +367,8 @@ export default function UploadCenterClient({
                   className="select select-info select-sm mt-2"
                   required
                 >
-                  <option value="" disabled>
-                    {t.translations.CHOOSE_A_TYPE}
-                  </option>
                   <option value="new">{t.translations.NEW_FILE}</option>
-                  {/* <option value="version" disabled={multi}>
-                    {t.translations.NEW_VERSION_OF}
-                  </option>
-                  <option value="properties" disabled={multi}>
-                    {t.translations.PROPERTIES_FOR}
-                  </option> */}
+                  {/* Future options can be added here */}
                 </select>
                 {needsTarget && (
                   <select
@@ -360,7 +390,7 @@ export default function UploadCenterClient({
               </label>
             </fieldset>
 
-                        <fieldset>
+            <fieldset>
               <label className="label cursor-pointer justify-start gap-3">
                 <span className="label-text text-xs">
                   {t.translations.UPLOAD_MULTIPLE_FILES}
@@ -382,13 +412,7 @@ export default function UploadCenterClient({
                   aria-describedby="multi-files-hint"
                 />
               </label>
-              {/* {!isMultiAllowed && (
-                <p id="multi-files-hint" className="text-xs opacity-60 mt-1">
-                  {t.translations.MULTI_FILES_ONLY_AVAILABLE}.
-                </p>
-              )} */}
             </fieldset>
-
 
             {(multi || selectedFiles.length === 0) && (
               <DropUpload
@@ -396,9 +420,7 @@ export default function UploadCenterClient({
                 multiple={multi}
                 files={selectedFiles}
                 onFilesChange={setSelectedFiles}
-                disabled={
-                  !uploadType || (needsTarget && !targetFileId)
-                }
+                disabled={!uploadType || (needsTarget && !targetFileId)}
               />
             )}
 
@@ -418,7 +440,6 @@ export default function UploadCenterClient({
         {/* RIGHT — render only when needed */}
         {showRightPanel && (
           <div className="lg:w-2/5">
-            {/* Keep these so the functionality “when something is uploaded” appears */}
             <FileDetailsCard
               needsTarget={needsTarget}
               selectedTarget={selectedTarget}
@@ -432,27 +453,6 @@ export default function UploadCenterClient({
             />
           </div>
         )}
-        {/* <div className="lg:w-2/5">
-          {selectedFiles.length === 0 &&
-            (uploadType === "" || uploadType === "new") && (
-              <RecentUploadsCard
-                uploads={recentUploads}
-                uploadText={uploadText}
-              />
-            )}
-
-          <FileDetailsCard
-            needsTarget={needsTarget}
-            selectedTarget={selectedTarget}
-          />
-
-          <SelectedFilesCard
-            files={selectedFiles}
-            onRemoveAt={removeAt}
-            onClear={clearAll}
-            onUpload={handleUpload}
-          />
-        </div> */}
       </div>
 
       {showMultiFileWarning && (

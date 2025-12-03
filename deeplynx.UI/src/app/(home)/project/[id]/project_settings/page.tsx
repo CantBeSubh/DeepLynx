@@ -1,16 +1,19 @@
 import React from "react";
-import { FileViewerTableRow, ProjectsList } from "../../../types/types";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import ProjectSettingsClient from "./ProjectSettingsClient";
-import { getAllProjectsServer, ProjectDTO } from "@/app/lib/projects_services.server";
-import ProjectSettings from "../../../components/ProjectSettingsTable/ProjectSettings";
-import { notFound } from "next/navigation";
-
-function toProjectsList(p: ProjectDTO): ProjectsList {
+import { notFound, redirect } from "next/navigation";
+import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
+import { cookies } from "next/headers";
+function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
-    id: String(p.id), // <- normalize to string
+    id: String(p.id),
     name: p.name ?? "",
-    description: p.description ?? "",
+    description: p.description ?? "", // fallback to empty string
+    abbreviation: p.abbreviation ?? "",
     lastUpdatedAt: p.lastUpdatedAt,
+    lastUpdatedBy: p.lastUpdatedBy ?? "",
+    isArchived: p.isArchived,
+    organizationId: p.organizationId,
   };
 }
 
@@ -21,15 +24,35 @@ type Props = {
 export default async function Page({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
+  // Get organization from cookies
+  const cookieStore = await cookies();
+  const orgSessionCookie = cookieStore.get("organizationSession");
 
-  const projectDTOs = (await getAllProjectsServer()) as ProjectDTO[];
-  const initialProjects = projectDTOs.map((p) => toProjectsList(p));
+  if (!orgSessionCookie) {
+    redirect("/select-org");
+  }
+
+  let organizationId: string | number | undefined;
+  try {
+    const orgSession = JSON.parse(orgSessionCookie.value);
+    organizationId = orgSession.organizationId;
+  } catch (e) {
+    console.error("Failed to parse organization session:", e);
+    redirect("/select-org");
+  }
+
+  const ProjectResponseDtos = (await getAllProjectsServer(
+    organizationId as number
+  )) as ProjectResponseDto[];
+  const initialProjects = ProjectResponseDtos.map((p) =>
+    toProjectResponseDtos(p)
+  );
   const initialProject = initialProjects.find((p) => p.id == id);
 
   if (initialProject == undefined) return notFound();
 
   return (
-    <ProjectSettings
+    <ProjectSettingsClient
       projects={initialProjects}
       initialProject={initialProject}
     />

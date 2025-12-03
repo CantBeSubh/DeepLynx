@@ -17,7 +17,7 @@ export default function Login() {
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
       <div className="flex flex-col items-center sm:items-start mb-0">
         <Image
-          src="/assets/lynx-white.svg"
+          src="/assets/nexusWhite.png"
           alt="DeepLynx logo"
           width={265.8}
           height={113.9}
@@ -46,7 +46,7 @@ export default function Login() {
         </button>
       </Link>
       <footer className="flex flex-wrap items-center justify-center gap-8 mt-16 mb-8">
-        {links
+        {/* {links
           .filter(
             (link: LinkT) =>
               link.text.toLowerCase().includes("about") ||
@@ -54,7 +54,7 @@ export default function Login() {
           )
           .map((link: LinkT, i: number) => (
             <ArrowButton key={i} text={link.text} href={link.href} />
-          ))}
+          ))} */}
       </footer>
     </div>
   );

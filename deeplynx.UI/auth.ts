@@ -3,13 +3,10 @@ import NextAuth from "next-auth";
 import { JWT, JWTEncodeParams, JWTDecodeParams } from "next-auth/jwt";
 import Okta from "next-auth/providers/okta";
 import jsonWebToken from "jsonwebtoken";
+import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 
-// ======================================================================
-// TODO: This is trying to extract the isues from the access token.      |
-// But we need to know the exact issuer URL to hold it in a ENV variable |
-// ======================================================================
 async function refreshAccessToken(token: JWT): Promise<JWT> {
     try {
         if (!token.refresh_token) {
@@ -106,6 +103,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async jwt({ token, account, profile }): Promise<JWT> {
             // Initial sign in
             if (account && profile) {
+
+            // Read organization from cookie during sign in
+            const cookieStore = await cookies();
+            const orgSessionCookie = cookieStore.get("organizationSession");
+            let organizationId: number | undefined;
+            
+            if (orgSessionCookie) {
+                try {
+                    const orgSession = JSON.parse(orgSessionCookie.value);
+                    organizationId = orgSession.organizationId;
+                } catch (e) {
+                    console.error("Failed to parse org cookie:", e);
+                }
+            }
+            
+
                 return {
                     ...token,
                     access_token: account.access_token,
@@ -118,6 +131,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     name: profile.name || undefined,
                     email: profile.email || undefined,
                     sub: profile.sub || undefined,
+                    organizationId: organizationId,
                 };
             }
 
@@ -167,6 +181,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 session.user.oktaId = (token.oktaId || undefined) as string | undefined;
                 session.user.username = (token.username || undefined) as string | undefined;
                 session.user.groups = token.groups as string[] | undefined;
+                session.user.organizationId = token.organizationId as number | undefined;
             }
 
             // Add tokens to session
@@ -178,6 +193,58 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             return session;
         },
+
+        // auth.ts
+        async redirect({ url, baseUrl }) {
+            // Check if authentication is disabled
+            const isAuthDisabled = process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+            
+            // If auth is disabled, always redirect to home or the requested URL
+            if (isAuthDisabled) {
+                // If redirecting to a specific URL within the app, allow it
+                if (url.startsWith(baseUrl)) {
+                    return url;
+                }
+                // Otherwise go to home
+                return `${baseUrl}`;
+            }
+            
+            console.log(`NextAuth redirect callback - url: ${url}, baseUrl: ${baseUrl}`);
+            
+            // CRITICAL: Check if this is an OAuth flow redirect
+            // OAuth flows will have /api/oauth/authorize in the URL
+            if (url.includes('/api/oauth/authorize')) {
+                console.log(`OAuth flow detected, allowing redirect to: ${url}`);
+                return url;
+            }
+            
+            // If url starts with baseUrl, it's a relative URL on our site
+            if (url.startsWith(baseUrl)) {
+                return url;
+            }
+            
+            // If url starts with /, it's a relative path
+            if (url.startsWith("/")) {
+                const fullUrl = `${baseUrl}${url}`;
+                return fullUrl;
+            }
+            
+            // For default redirect after login, check if user has an organization selected
+            try {
+                const cookieStore = await cookies();
+                const orgSessionCookie = cookieStore.get("organizationSession");
+                
+                if (orgSessionCookie) {
+                    // User has an org selected, redirect to dashboard
+                    return `${baseUrl}`;
+                }
+            } catch (e) {
+                console.error("Failed to check organization cookie:", e);
+            }
+            
+            // No org selected, redirect to selection page
+            return `${baseUrl}/select-org`;
+        }
     },
     pages: {
         signIn: '/login/signin',

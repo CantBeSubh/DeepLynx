@@ -1,49 +1,17 @@
+// src/app/(home)/types/types.ts
+
 import React, { ReactNode } from 'react';
+import { CustomQueryRequestDto } from './requestDTOs';
+import { HistoricalRecordResponseDto, RecordResponseDto } from './responseDTOs';
 
-export type DataSourceTableRow = {
-  name: string;
-  country: string;
-  adapterType: string;
-  active: boolean;
-  id: string | number;
-  select?: boolean;
-};
-
-export type Tag = {
-  id?: number;
-  name: string
-}
-
-// TODO: change Tag[] to string[] and figure out how to display
-export type FileViewerTableRow = {
-  id: number;
-  uri?: string | null;
-  name?: string;
-  properties?: string;
-  originalId?: string;
-  classId?: number;
-  className?: string;
-  dataSourceId?: number;
-  dataSourceName?: string;
-  projectId?: number;
-  projectName?: string;
-  tags: string;
-  archivedAt?: string | null;
-  lastUpdatedAt?: string;
-  description?: string;
+export type RecordTableRow = HistoricalRecordResponseDto & {
   fileType: string;
   timeseries?: boolean;
   fileSize?: number;
   select?: boolean;
   associatedRecords?: string[];
+  archivedAt?: string | null;
 };
-
-export type Tags = {
-  id: string;
-  name: string;
-}
-
-export type TableRow = DataSourceTableRow | FileViewerTableRow;
 
 export type Column<T extends object> = {
   accessor?: string;
@@ -51,13 +19,6 @@ export type Column<T extends object> = {
   data?: keyof T;
   sortable?: boolean;
   cell?: (row: T, index: number) => React.ReactNode
-};
-
-export type ProjectsList = {
-  id?: string;
-  name: string;
-  description: string;
-  lastUpdatedAt?: Date;
 };
 
 export type PopularTable = {
@@ -76,59 +37,6 @@ export type MySearchsTable = {
   sortable?: boolean;
 }
 
-export type ProjectMembersTable = {
-  projectId: number;
-  name: string;
-  email: string;
-  role: string;
-  memberId?: number | null;
-  groupId?: number | null;
-  roleId?: number | null;
-}
-
-export type SystemUsersTable = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
-
-export type SystemGroupsTable = {
-  id: number | null;
-  name: string;
-  description?: string | null;
-}
-
-export interface Group {
-  id: number;
-  name: string;
-  description?: string;
-}
-
-export type SystemOrgsTable = {
-  id: number;
-  name: string;
-  description: string;
-}
-
-export type MyRolesTable = {
-  id: number;
-  role: string;
-  description: string;
-}
-
-export type ProjectPermissionsTable = {
-  id: number;
-  role: string;
-  description: string;
-}
-
-export type UserPermissionsTable = {
-  id: number;
-  role: string;
-  description: string;
-}
-
 export type TeamMember = {
   id: number;
   name: string;
@@ -139,103 +47,134 @@ export type TeamMember = {
   lastLogin: string;
 };
 
-export type ClassResponseDto = {
+//DatePicker
+export type DatePickerQuery = {
+  id: string;
+  connector?: string;
+  filter?: string;
+  operator?: string;
+  value?: string; // you can store the combined timestamp here if you want
+};
+
+//NewFileUploadCard
+export type FileMetadata = {
+  name: string;
+  description: string;
+  isTimeSeries: boolean;
+  updateAction?: "merge" | "overwrite";
+};
+
+//Widgets
+export type WidgetType =
+  | "DataOverview"
+  | "Links"
+  | "Graph"
+  | "RecentActivity"
+  | "ProjectOverview"
+  | "TeamMembers";
+
+export type QueryBuilderQuery = {
+  id: string;
+  query: CustomQueryRequestDto;
+};
+
+//Uploads
+export type UploadType = "new" | "version" | "properties" | "";
+
+export type ExistingFile = {
+  id: string;
+  name: string;
+  alias?: string;
+  description?: string;
+  lastUpdate?: string;
+  updatedBy?: string;
+  tags?: string[];
+  dataSource?: string;
+  propertiesSources?: string;
+  timeSeries?: boolean;
+  image?: string;
+};
+
+export type RecentUploadIcon = "arrows" | "link" | "stack";
+
+export type RecentUpload = {
+  id: string;
+  name: string;
+  avatar: string;
+  file: string;
+  icon: RecentUploadIcon;
+};
+
+//file_upload_services
+export type UploadFileArgs = {
+  organizationId: number | string;
+  projectId: number | string;
+  dataSourceId: number | string;
+  objectStorageId: number | string;
+  file: File;
+
+  // optional metadata
+  name?: string;
+  description?: string;
+  properties?: unknown;
+  tags?: string[];
+  originalId?: string;
+  classId?: number | string;
+};
+
+//notification_services
+/** ---- Types ---- */
+export type SendEmailResponse = {
+  message: string;
+};
+
+//record_services
+export type CreateRecordPayload = {
+  name: string;
+  original_id: string;
+  description: string;
+
+  properties: Record<string, unknown>;
+
+  class_id?: number | null;
+  object_storage_id?: number | null;
+  uri?: string | null;
+  class_name?: string | null;
+  tags?: string[] | null;
+  sensitivity_labels?: string[] | null;
+};
+
+export type GraphNode = {
+  id: number;
+  label: string;
+  type: string;
+};
+
+export type GraphLink = {
+  source: number;
+  target: number;
+  relationshipId?: number;
+  relationshipName?: string;
+  edgeId: number;
+};
+
+export type GraphResponse = {
+  nodes?: GraphNode[];
+  links?: GraphLink[];
+};
+
+// Users table row
+export type UsersTableRow = {
   id: number;
   name: string;
-  description: string | null;
-  uuid: string | null;
-  projectid: number;
-  createdby: string | null;
-  createdat: string;
-  modifiedby: string | null;
-  modifiedat: string | null;
-  archivedat: string | null;
+  email: string;
+  username: string | null;
+  isActive: boolean;
+  isArchived: boolean;
+  isSysAdmin: boolean;
+  isPending?: boolean;
+  invitedAt?: string;
+  projectName?: string;
+  roleName?: string;
+  projects?: Array<{ id: number; name: string; role: string }>;
 };
-
-export type DataSourceResponseDto = {
-  id: number;
-  name: string;
-  description: string | null;
-  abbreviation: string | null;
-  type: string | null;
-  baseuri: string | null;
-  config: Record<string, unknown> | null; // object | null
-  projectid: number;
-  createdby: string | null;
-  createdat: string;          // RFC 3339 date-time
-  modifiedby: string | null;
-  modifiedat: string | null;  // RFC 3339 or null
-  archivedat: string | null;  // RFC 3339 or null
-};
-
-export type TagResponseDto = {
-  id: number;
-  name: string;
-  projectId: number;
-  createdBy?: string | null;
-  createdAt: string; // ISO date string from backend
-  modifiedBy?: string | null;
-  modifiedAt?: string | null;
-  archivedAt?: string | null;
-};
-
-export type CustomQueryRequestDto = {
-  connector?: string | null;
-  filter: string;
-  operator: string;
-  value: string;
-  json?: string;
-  jsonKey?: string;
-  jsonValue?: string;
-};
-
-export type CustomQueryRequestDtoJson = {
-  connector: string | null;
-  filter: string;
-  operator: string;
-  value: string;
-  json?: JSON;
-};
-
-export type HistoricalRecordResponseDto = {
-  Id?: number;
-  Uri?: string;
-  Properties: string;
-  OriginalId?: string;
-  Name?: string;
-  Description?: string;
-  ClassId?: number;
-  ClassName?: string;
-  DataSourceId?: number;
-  DataSourceName?: string;
-  ObjectStorageId?: number;
-  ObjectStorageName?: string;
-  ProjectId: number;
-  ProjectName: string;
-  Tags?: string;
-  CreatedBy?: string;
-  CreatedAt?: Date;
-  ModifiedBy?: string;
-  ModifiedAt?: Date;
-  ArchivedAt?: Date;
-  LastUpdatedAt?: Date;
-}
-
-export type UserResponseDto =
-  {
-    Id: number;
-    Name: string;
-    Email: string;
-    Username: string;
-    SsoId: string;
-    IsSysAdmin: boolean;
-    IsArchined: boolean;
-    isActive: boolean;
-  }
-
-  export type RoleDTO =
-  {
-    roleId: number;
-    name: string;
-    description?: string;
-  }

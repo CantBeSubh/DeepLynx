@@ -4,7 +4,6 @@
 *.zip
 dist
 
-
 ## Mac OS ##
 .DS_Store
 .idea
@@ -16,19 +15,18 @@ dist
 /deeplynx.api/.DS_Store
 /deeplynx.api/.idea
 
-
 ## Web ##
 /**/obj/
 /**/bin/
 
+deeplynx.sln.DotSettings.user
 
 package-lock.json
 
-deeplynx.sln.DotSettings.user
-
 duckdb
-deeplynx.graph/kuzu_db
 
 - global.json
 
 /storage
+
+.continue

@@ -2,14 +2,15 @@
 
 import React from "react";
 import PropertyTable from "./PropertyTable";
-import { Column, FileViewerTableRow, TagResponseDto } from "../types/types";
+import { Column, RecordTableRow } from "../types/types";
 import GenericTable from "./GenericTable";
-import { RelatedRecordsResponseDto } from "../types/RelatedRecordsResponseDto";
+import { RelatedRecordsResponseDto } from "../types/responseDTOs";
+import { TagResponseDto } from '../types/responseDTOs';
 
 interface RecordViewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  record: FileViewerTableRow | null;
+  record: RecordTableRow | null;
   relatedRecords: RelatedRecordsResponseDto[];
   tags: TagResponseDto[];
 }
@@ -50,13 +51,13 @@ const RecordViewModal: React.FC<RecordViewModalProps> = ({
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value:
-            typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
+      const value = parsedProperties[key as keyof object];
+      return {
+        label: key,
+        value:
+          typeof value === "object" ? JSON.stringify(value) : String(value),
+      };
+    })
     : [];
 
   return (

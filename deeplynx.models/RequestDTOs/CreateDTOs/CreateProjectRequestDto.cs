@@ -8,8 +8,6 @@ public class CreateProjectRequestDto
     public string Name { get; set; }
     
     public string? Description { get; set; }
-   
+
     public string? Abbreviation { get; set; }
-    
-    public long? OrganizationId { get; set; }
 }

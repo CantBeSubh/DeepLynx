@@ -108,6 +108,8 @@ spec:
               value: ${SUPPORT_EMAIL}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
+            - name: SUPERUSER_EMAIL
+              value: ${SUPERUSER_EMAIL}
             - name: TENANT_MODE
               value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
@@ -116,6 +118,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret-key      
             - name: AUTH_TRUST_HOST          
               value: "true"
             - name: AUTH_SECRET
@@ -134,7 +141,7 @@ spec:
                   name: app-secrets
                   key: service-token
             # Runtime environment variables from configmap (non-sensitive)
-            - name: DISABLE_FRONTEND_AUTHENTICATION
+            - name: NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -219,6 +226,8 @@ spec:
               value: ${POSTGRES_PASSWORD}
             - name: JWT_ISSUER
               value: ${JWT_ISSUER}
+            - name: JWT_SECRET_KEY
+              value: ${JWT_SECRET_KEY}
             - name: JWT_AUDIENCE
               value: ${JWT_AUDIENCE}
             # DuckDB Configuration (same as frontend)
@@ -242,6 +251,8 @@ spec:
               value: ${TENANT_MODE}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
+            - name: SUPERUSER_EMAIL
+              value: ${SUPERUSER_EMAIL}
             # Backend may also need these environment variables
             - name: OKTA_CLIENT_SECRET
               valueFrom:
@@ -258,7 +269,7 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: service-token
-            - name: DISABLE_FRONTEND_AUTHENTICATION
+            - name: NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -288,6 +299,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: backend-base-url
+            - name: HOSTED_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: hosted-link
           resources:
             limits:
               memory: "4Gi"
@@ -398,7 +414,6 @@ metadata:
       more_clear_headers "x-content-type-options";
       more_clear_headers "x-frame-options";
       more_clear_headers "content-security-policy";
-      more_set_headers "cache-Control: no-cache, no-store";
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
@@ -406,6 +421,13 @@ spec:
     - host: deeplynx.dev.inl.gov
       http:
         paths:
+          - path: /_next/static
+            pathType: Prefix
+            backend:
+              service:
+                name: deeplynxv3-service
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:
@@ -413,7 +435,7 @@ spec:
                 name: deeplynxv3-service
                 port:
                   number: 80
-          - path: /api
+          - path: /api/v1
             pathType: Prefix
             backend:
               service:

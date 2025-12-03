@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("edges", Schema = "deeplynx")]
-[Index("DataSourceId", Name = "idx_edges_data_source_id")]
-[Index("DestinationId", Name = "idx_edges_destination_id")]
-[Index("Id", Name = "idx_edges_id")]
-[Index("OriginId", Name = "idx_edges_origin_id")]
-[Index("ProjectId", Name = "idx_edges_project_id")]
-[Index("RelationshipId", Name = "idx_edges_relationship_id")]
-[Index("ProjectId", "OriginId", "DestinationId", Name = "unique_edge_record_ids", IsUnique = true)]
 public partial class Edge
 {
     [Column("origin_id")]
@@ -30,12 +20,15 @@ public partial class Edge
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Key]
     [Column("id")]
@@ -62,8 +55,15 @@ public partial class Edge
     [ForeignKey("ProjectId")]
     [InverseProperty("Edges")]
     public virtual Project Project { get; set; } = null!;
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Edges")]
+    public virtual Organization Organization { get; set; } = null!;
 
     [ForeignKey("RelationshipId")]
     [InverseProperty("Edges")]
     public virtual Relationship? Relationship { get; set; }
+    
+    [InverseProperty("LastUpdatedEdges")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

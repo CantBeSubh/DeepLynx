@@ -1,29 +1,30 @@
+// src/app/(home)/components/ExpandableProjectCard.tsx
 "use client";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
-import { getProjectStats } from "@/app/lib/projects_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getProjectStats } from "@/app/lib/client_service/projects_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
   RectangleGroupIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import Image from "next/image";
+import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { peopleData } from "../dummy_data/data";
-import { getAllUsers } from "@/app/lib/user_services.client";
+import { ProjectResponseDto } from "../types/responseDTOs";
 import AvatarCell from "./Avatar";
-import { format } from "date-fns";
 
 interface Props {
-  project: ProjectsList;
+  project: ProjectResponseDto;
   onClose: () => void;
 }
 
 const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
   const router = useRouter();
   const { t } = useLanguage();
+  const { organization, hasLoaded } = useOrganizationSession();
 
   const [stats, setStats] = useState<{
     classes: number;
@@ -37,7 +38,10 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
 
     const fetchStats = async () => {
       try {
-        const data = await getProjectStats(project.id!);
+        const data = await getProjectStats(
+          organization?.organizationId as number,
+          project.id as number
+        );
         setStats({
           classes: data.classes,
           records: data.records,
@@ -63,7 +67,6 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     fetchAllUsers();
   }, [project]);
 
-
   return (
     <div>
       {/* Header Section */}
@@ -76,13 +79,15 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             {project.description}
           </p>
           <p className="text-xs text-base-content/50 mt-2">
-            {t.translations.LAST_EDIT} {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
+            {t.translations.LAST_EDIT}{" "}
+            {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
           </p>
         </div>
         <button
           onClick={onClose}
           aria-label="Close details"
           className="p-1 rounded-lg hover:bg-base-300/30 transition-colors"
+          data-tour={`project-row-${project.id ?? 0}-close`}
         >
           <XMarkIcon className="size-6 text-base-content/60 hover:text-base-content" />
         </button>

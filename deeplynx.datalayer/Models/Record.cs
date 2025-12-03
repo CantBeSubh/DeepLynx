@@ -1,20 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("records", Schema = "deeplynx")]
-[Index("ObjectStorageId", Name = "IX_records_object_storage_id")]
-[Index("ClassId", Name = "idx_records_class_id")]
-[Index("DataSourceId", Name = "idx_records_data_source_id")]
-[Index("Id", Name = "idx_records_id")]
-[Index("Name", Name = "idx_records_name")]
-[Index("OriginalId", Name = "idx_records_original_id")]
-[Index("ProjectId", Name = "idx_records_project_id")]
-[Index("ProjectId", "DataSourceId", "OriginalId", Name = "unique_record_original_id", IsUnique = true)]
 public partial class Record
 {
     [Key]
@@ -41,12 +30,15 @@ public partial class Record
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("description")]
     public string Description { get; set; } = null!;
@@ -84,6 +76,10 @@ public partial class Record
     [ForeignKey("ProjectId")]
     [InverseProperty("Records")]
     public virtual Project Project { get; set; } = null!;
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Records")]
+    public virtual Organization Organization { get; set; } = null!;
 
     [ForeignKey("RecordId")]
     [InverseProperty("Records")]
@@ -92,4 +88,7 @@ public partial class Record
     [ForeignKey("RecordId")]
     [InverseProperty("Records")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
+    
+    [InverseProperty("LastUpdatedRecords")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

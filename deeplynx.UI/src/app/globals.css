@@ -16,11 +16,13 @@
   --color-base-300: oklch(55% 0.046 257.417);
   --color-base-content: oklch(13.454% 0.033 35.791);
   --color-primary: oklch(33.78% 0.1 254.3);
+  --color-dynamic-blue: oklch(33.78% 0.1 254.3);
   --color-primary-content: oklch(88.34% 0.019 251.473);
   --color-secondary: oklch(44.08% 0.141 255.19);
   --color-secondary-content: oklch(98% 0.003 247.858);
   --color-accent: oklch(75% 0.2 70.934);
   --color-accent-content: oklch(13.454% 0.033 35.791);
+  --color-dynamic-shadow: oklch(80% 0 0);
   --color-neutral: oklch(47.441% 0.013 253.041);
   --color-neutral-content: oklch(85.488% 0.002 253.041);
   --color-info: oklch(86.19% 0.047 224.14);
@@ -39,6 +41,11 @@
   --border: 1.5px;
   --depth: 1;
   --noise: 0;
+  --skeleton-base: oklch(86% 0.022 252.894);
+  --skeleton-highlight: oklch(0.9213 0.022 252.894);
+  --base-400: oklch(28% 0.02 256);
+  --base-500: oklch(23% 0.018 258);
+  --base-600: oklch(18% 0.015 260);
 }
 
 @plugin "daisyui/theme" {
@@ -51,11 +58,13 @@
   --color-base-300: oklch(28% 0.02 256);
   --color-base-content: oklch(92% 0.004 260);
   --color-primary: oklch(30% 0.17 254.3);
+  --color-dynamic-blue: oklch(45% 0.14 255.19);
   --color-primary-content: oklch(95% 0.004 251);
   --color-secondary: oklch(45% 0.14 255.19);
   --color-secondary-content: oklch(94% 0.004 255);
-  --color-accent: oklch(68% 0.18 70);
+  --color-accent: oklch(1 0.02 70);
   --color-accent-content: oklch(18% 0.02 70);
+  --color-dynamic-shadow: oklch(50% 0 0);
   --color-neutral: oklch(35% 0.015 253);
   --color-neutral-content: oklch(90% 0.004 253);
   --color-info: oklch(60% 0.12 224);
@@ -74,6 +83,11 @@
   --border: 1.5px;
   --depth: 1;
   --noise: 0;
+  --skeleton-base: oklch(28% 0.02 256);
+  --skeleton-highlight: oklch(23% 0.018 258);
+  --base-400: oklch(28% 0.02 256);
+  --base-500: oklch(23% 0.018 258);
+  --base-600: oklch(18% 0.015 260);
 }
 
 /* :root {
@@ -86,6 +100,8 @@
   --color-foreground: var(--foreground);
   --font-sans: "Roboto", sans-serif;
   --font-mono: var(--font-geist-mono);
+  --color-dynamic-blue: var(--color-dynamic-blue);
+  --color-dynamic-shadow: var(--color-dynamic-shadow);
 }
 
 /* @media (prefers-color-scheme: dark) {
@@ -103,11 +119,11 @@ body {
 } */
 
 .login {
-  background: #39526c;
+  background: #152230;
   background: linear-gradient(
     180deg,
-    rgba(57, 82, 108, 1) 0%,
-    rgba(21, 34, 48, 1) 100%
+    rgba(34, 41, 51, 1) 0%,
+    rgba(57, 82, 108, 1) 100%
   );
 }
 
@@ -121,7 +137,12 @@ body {
 }
 
 .top-shadow {
-  box-shadow: 0 0px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0px 10px rgba(var(--color-dynamic-shadow) / 0.3);
+}
+
+.shadow-dynamic {
+  box-shadow: 0 4px 6px -1px var(--color-dynamic-shadow),
+    0 2px 4px -2px var(--color-dynamic-shadow);
 }
 
 /* Custom styles for the table */
@@ -141,11 +162,11 @@ body {
   background-color: #f2f2f2; /* Background color for header */
   font-weight: bold; /* Bold for header */
 }
-.btn btn-primary[disabled]{
-  opacity:0.6;
-  cursor:not-allowed;
+.btn btn-primary[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
-.spinner{
+.spinner {
   display: inline-block;
   width: 1rem;
   height: 1rem;
@@ -153,10 +174,12 @@ body {
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
-  animation: spin .6s linear infinite;
+  animation: spin 0.6s linear infinite;
   vertical-align: -0.2rem;
 }
 
-@keyframes spin{
-  to{transform:rotate(360deg);}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

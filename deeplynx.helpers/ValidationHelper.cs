@@ -20,7 +20,9 @@ public class ValidationHelper
         "metadata",
         "user",
         "tag",
-        "permission"
+        "permission",
+        "oauth_application",
+        "oauth_token"
     };
 
     public static readonly List<string> AllowedOperations = new List<string>

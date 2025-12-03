@@ -2,26 +2,35 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useLanguage } from "@/app/contexts/Language";
-import {
-  createRecord,
-  type CreateRecordPayload,
-} from "@/app/lib/record_services.client";
-import type { ProjectsList } from "@/app/(home)/types/types";
-import {
-  getAllDataSources,
-  type DataSourceDTO,
-} from "@/app/lib/data_source_services.client";
 import toast from "react-hot-toast";
-import { isAxiosError } from "axios";
+
+import { useLanguage } from "@/app/contexts/Language";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+
+import { CreateRecordRequestDto } from "../types/requestDTOs";
+import {
+  DataSourceResponseDto,
+  ProjectResponseDto,
+} from "../types/responseDTOs";
+
+import { getAllDataSourcesOrg } from "@/app/lib/client_service/data_source_services.client";
+import { createRecord } from "@/app/lib/client_service/record_services.client";
+
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
 
 type JsonValue = Record<string, unknown>;
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  initialProjects: ProjectsList[] | { id: string; name: string }[];
+  initialProjects: ProjectResponseDto[] | { id: string; name: string }[];
 };
+
+/* -------------------------------------------------------------------------- */
+/*                             AddRecordModal                                 */
+/* -------------------------------------------------------------------------- */
 
 const AddRecordModal: React.FC<Props> = ({
   isOpen,
@@ -29,38 +38,63 @@ const AddRecordModal: React.FC<Props> = ({
   initialProjects,
 }) => {
   const { t } = useLanguage();
+  const { organization } = useOrganizationSession();
 
-  // Project/Data Source
+  /* ------------------------------------------------------------------------ */
+  /*                     Derived Values / Initial Selection                   */
+  /* ------------------------------------------------------------------------ */
+
   const initialProjectId = useMemo(
     () => (initialProjects.length ? Number(initialProjects[0].id) : undefined),
     [initialProjects]
   );
+
+  /* ------------------------------------------------------------------------ */
+  /*                        Project / Data Source State                       */
+  /* ------------------------------------------------------------------------ */
+
   const [selectedProjectId, setSelectedProjectId] = useState<
     number | undefined
   >(initialProjectId);
 
-  const [dataSources, setDataSources] = useState<DataSourceDTO[]>([]);
+  const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [selectedDataSourceId, setSelectedDataSourceId] = useState<
     number | undefined
   >();
+
   const [dsLoading, setDsLoading] = useState(false);
   const [dsError, setDsError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Required fields
+  /* ------------------------------------------------------------------------ */
+  /*                              Required Fields                             */
+  /* ------------------------------------------------------------------------ */
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [propertiesText, setPropertiesText] = useState("");
   const [propertiesError, setPropertiesError] = useState<string | null>(null);
 
-  // Optional fields
+  /* ------------------------------------------------------------------------ */
+  /*                              Optional Fields                             */
+  /* ------------------------------------------------------------------------ */
+
   const [objectStorageId, setObjectStorageId] = useState<string>("");
   const [classId, setClassId] = useState<number | undefined>();
   const [uri, setUri] = useState<string>("");
   const [classNameOpt, setClassNameOpt] = useState<string>("");
   const [tagsText, setTagsText] = useState<string>("");
   const [labelsText, setLabelsText] = useState<string>("");
+
+  // Tabs for optional fields: IDs / Metadata / Tags & Labels
+  const [optionalTab, setOptionalTab] = useState<"ids" | "meta" | "tags">(
+    "ids"
+  );
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Helper Utils                               */
+  /* ------------------------------------------------------------------------ */
 
   const parseCommaList = (text: string) =>
     text
@@ -72,6 +106,7 @@ const AddRecordModal: React.FC<Props> = ({
     setPropertiesText(val);
     try {
       const parsed = JSON.parse(val);
+
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         setPropertiesError(t.translations.MUST_BE_SINGLE_JSON_OBJECT);
       } else {
@@ -104,6 +139,8 @@ const AddRecordModal: React.FC<Props> = ({
     setTagsText("");
     setLabelsText("");
 
+    // UI
+    setOptionalTab("ids");
     setIsSubmitting(false);
   };
 
@@ -111,6 +148,10 @@ const AddRecordModal: React.FC<Props> = ({
     resetForm();
     onClose();
   };
+
+  /* ------------------------------------------------------------------------ */
+  /*                            Submit / Create Logic                         */
+  /* ------------------------------------------------------------------------ */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +163,7 @@ const AddRecordModal: React.FC<Props> = ({
       setIsSubmitting(false);
       return;
     }
+
     if (selectedDataSourceId === undefined) {
       toast.error(t.translations.PLEASE_SELECT_A_DATA_SOURCE);
       setIsSubmitting(false);
@@ -129,6 +171,8 @@ const AddRecordModal: React.FC<Props> = ({
     }
 
     let props: JsonValue;
+
+    // Validate / normalize properties JSON
     try {
       const parsed = JSON.parse(propertiesText);
 
@@ -148,6 +192,7 @@ const AddRecordModal: React.FC<Props> = ({
       } else {
         throw new Error(t.translations.MUST_BE_SINGLE_JSON_OBJECT);
       }
+
       setPropertiesError(null);
     } catch (err) {
       setPropertiesError(err instanceof Error ? err.message : "Invalid JSON.");
@@ -155,8 +200,10 @@ const AddRecordModal: React.FC<Props> = ({
       return;
     }
 
+    // Optional numeric: object_storage_id
     const objectStorageIdNum =
       objectStorageId.trim() === "" ? undefined : Number(objectStorageId);
+
     if (
       objectStorageIdNum !== undefined &&
       (!Number.isInteger(objectStorageIdNum) ||
@@ -172,26 +219,28 @@ const AddRecordModal: React.FC<Props> = ({
       ? parseCommaList(labelsText)
       : undefined;
 
-    const payload: CreateRecordPayload = {
+    const dto: CreateRecordRequestDto = {
       name,
       description,
       original_id: abbreviation,
-      properties: props, // now guaranteed to be a single object
+      properties: props,
       class_id: classId,
     };
 
-    if (objectStorageIdNum !== undefined)
-      payload.object_storage_id = objectStorageIdNum;
-    if (uri.trim()) payload.uri = uri.trim();
-    if (classNameOpt.trim()) payload.class_name = classNameOpt.trim();
-    if (tags?.length) payload.tags = tags;
-    if (sensitivity_labels?.length)
-      payload.sensitivity_labels = sensitivity_labels;
+    // (If later you need to send the richer payload somewhere else, you can
+    // rebuild CreateRecordPayload here; currently not used.)
 
     try {
-      await createRecord(selectedProjectId, payload, {
-        dataSourceId: selectedDataSourceId,
-      });
+      await createRecord(
+        organization!.organizationId as number,
+        selectedProjectId,
+        selectedDataSourceId,
+        dto
+      );
+
+      // Future: tags / sensitivity_labels could be sent via a separate
+      // endpoint if backend supports it.
+
       toast.success(t.translations.RECORD_CREATED_SECCESSFULLY);
       resetForm();
       onClose();
@@ -203,6 +252,10 @@ const AddRecordModal: React.FC<Props> = ({
     }
   };
 
+  /* ------------------------------------------------------------------------ */
+  /*                     Load Data Sources When Project Changes               */
+  /* ------------------------------------------------------------------------ */
+
   useEffect(() => {
     if (!selectedProjectId) {
       setDataSources([]);
@@ -212,30 +265,27 @@ const AddRecordModal: React.FC<Props> = ({
     }
 
     let cancelled = false;
+
     (async () => {
       try {
         setDsLoading(true);
         setDsError(null);
         setSelectedDataSourceId(undefined);
-        const list = await getAllDataSources(selectedProjectId);
+
+        const list = await getAllDataSourcesOrg(
+          organization?.organizationId as number,
+          [selectedProjectId]
+        );
+
         if (!cancelled) setDataSources(list ?? []);
       } catch (err: unknown) {
         const fallback = t.translations.FAILED_TO_LOAD_DATA_SOURCE;
         let message = fallback;
 
-        if (isAxiosError(err)) {
-          const data = err.response?.data as unknown;
-
-          if (typeof data === "string") {
-            message = data;
-          } else if (
-            data &&
-            typeof data === "object" &&
-            "message" in data &&
-            typeof (data as { message?: string }).message === "string"
-          ) {
-            message = (data as { message?: string }).message!;
-          }
+        if (err instanceof Error && err.message) {
+          message = err.message;
+        } else if (typeof err === "string") {
+          message = err;
         }
 
         if (!cancelled) setDsError(message);
@@ -247,18 +297,25 @@ const AddRecordModal: React.FC<Props> = ({
     return () => {
       cancelled = true;
     };
-  }, [selectedProjectId, t.translations]);
+  }, [selectedProjectId, t.translations, organization?.organizationId]);
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Main Render                                */
+  /* ------------------------------------------------------------------------ */
 
   return (
-    <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
+    <dialog className={`modal mt-6 ${isOpen ? "modal-open" : ""}`}>
       <div className="modal-box">
         <h3 className="text-base-content font-bold text-lg mb-4">
           {t.translations.ADD_A_RECORD}
         </h3>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          {/* Project + Data Source */}
+          {/* ------------------------------------------------------------------ */}
+          {/*                     Project + Data Source Section                  */}
+          {/* ------------------------------------------------------------------ */}
           <div className="flex gap-3">
+            {/* Project select */}
             <div className="w-1/2">
               <label className="label">
                 <span className="label-text">
@@ -286,6 +343,7 @@ const AddRecordModal: React.FC<Props> = ({
               </select>
             </div>
 
+            {/* Data source select */}
             <div className="w-1/2">
               <label className="label">
                 <span className="label-text">
@@ -320,7 +378,9 @@ const AddRecordModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Required */}
+          {/* ------------------------------------------------------------------ */}
+          {/*                            Required Fields                         */}
+          {/* ------------------------------------------------------------------ */}
           <input
             type="text"
             className="input input-primary w-full"
@@ -358,69 +418,122 @@ const AddRecordModal: React.FC<Props> = ({
             <p className="text-error text-sm">{propertiesError}</p>
           )}
 
-          {/* Optional */}
-          <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-lg">
-            <input type="checkbox" />
-            <div className="collapse-title text-md font-medium">
-              {t.translations.OPTIONAL_FIELDS}
+          {/* ------------------------------------------------------------------ */}
+          {/*                          Optional Fields Tabs                      */}
+          {/* ------------------------------------------------------------------ */}
+          <div className="mt-2 border border-base-300 rounded-lg">
+            {/* Tab headers */}
+            <div className="flex border-b border-base-300 bg-base-200/60 rounded-t-lg">
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "ids"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("ids")}
+              >
+                IDs
+              </button>
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "meta"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("meta")}
+              >
+                Metadata
+              </button>
+              <button
+                type="button"
+                className={`flex-1 px-3 py-2 text-xs md:text-sm ${
+                  optionalTab === "tags"
+                    ? "bg-base-100 font-semibold border-b-2 border-primary"
+                    : "text-base-content/70"
+                }`}
+                onClick={() => setOptionalTab("tags")}
+              >
+                Tags &amp; Labels
+              </button>
             </div>
-            <div className="collapse-content flex flex-col gap-4">
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input input-bordered w-full"
-                placeholder="object_storage_id"
-                value={objectStorageId}
-                onChange={(e) => setObjectStorageId(e.target.value)}
-              />
 
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input input-bordered w-full"
-                placeholder="class_id"
-                value={classId ?? ""}
-                onChange={(e) =>
-                  setClassId(
-                    e.target.value === "" ? undefined : Number(e.target.value)
-                  )
-                }
-              />
+            {/* Tab content */}
+            <div className="p-4 flex flex-col gap-3 bg-base-100 rounded-b-lg">
+              {optionalTab === "ids" && (
+                <>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="input input-bordered w-full"
+                    placeholder="object_storage_id"
+                    value={objectStorageId}
+                    onChange={(e) => setObjectStorageId(e.target.value)}
+                  />
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="uri"
-                value={uri}
-                onChange={(e) => setUri(e.target.value)}
-              />
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    className="input input-bordered w-full"
+                    placeholder="class_id"
+                    value={classId ?? ""}
+                    onChange={(e) =>
+                      setClassId(
+                        e.target.value === ""
+                          ? undefined
+                          : Number(e.target.value)
+                      )
+                    }
+                  />
+                </>
+              )}
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="class_name"
-                value={classNameOpt}
-                onChange={(e) => setClassNameOpt(e.target.value)}
-              />
+              {optionalTab === "meta" && (
+                <>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="uri"
+                    value={uri}
+                    onChange={(e) => setUri(e.target.value)}
+                  />
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="tags (comma-separated)"
-                value={tagsText}
-                onChange={(e) => setTagsText(e.target.value)}
-              />
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="class_name"
+                    value={classNameOpt}
+                    onChange={(e) => setClassNameOpt(e.target.value)}
+                  />
+                </>
+              )}
 
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="sensitivity_labels (comma-separated)"
-                value={labelsText}
-                onChange={(e) => setLabelsText(e.target.value)}
-              />
+              {optionalTab === "tags" && (
+                <>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="tags (comma-separated)"
+                    value={tagsText}
+                    onChange={(e) => setTagsText(e.target.value)}
+                  />
+
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    placeholder="sensitivity_labels (comma-separated)"
+                    value={labelsText}
+                    onChange={(e) => setLabelsText(e.target.value)}
+                  />
+                </>
+              )}
             </div>
           </div>
 
+          {/* ------------------------------------------------------------------ */}
+          {/*                                Actions                             */}
+          {/* ------------------------------------------------------------------ */}
           <div className="modal-action">
             <button type="button" className="btn" onClick={handleClose}>
               {t.translations.CANCEL}

@@ -1,0 +1,146 @@
+---
+title: Nexus MCP Server
+---
+import Image from 'next/image'
+
+# Overview
+The Nexus MCP Server allows users/developers to interact with Nexus using natural language. This server is still in the development
+stage, so it can only be run locally and only has a few tools developed. If you want to know how to run and test the server,
+this page will help!
+
+## Step 1: .env Set Up
+In the deeplynx.mcp directory, create a .env file. If you are running Nexus locally, you can copy the contents
+of the .env_sample file and paste them into your .env file. The environment variables and their values are:
+
+```js copy
+MCP_SERVER_URL=http://localhost:3002
+NEXUS_API_URL=http://localhost:5095/api/v1/
+```
+
+'MCP_SERVER_URL' is the url that the mcp server will be hosted on. You may change this value to best fit your needs. If
+there is not a value assigned, the server will run on the default url decided at runtime.
+
+'NEXUS_API_URL' is the url that the Nexus server is hosted on. If it is running locally, the value should always be the same,
+but you may need to change it depending on which instance you want your server to hit. **The value must have a trailing slash.**
+
+## Step 2: Run the Server
+
+This is easy!If you are running the server for the first time, cd into the deeplynx.mcp folder and execute this command:
+
+```js copy
+dotnet build && dotnet run 
+```
+
+From then on, every time you want to start the server, you will only need to execute ```dotnet run```
+
+## Adding tools
+All the tools for the MCP server are located in the 'tools' folder. Each file is separated by the entity you are wanting to
+query. For example, if you create a GetProject tool, you would put it in the ProjectTools.cs file. If you are
+wanting to create a GetAllDataSources tool, you would need to create a new file and put the tool inside a class named
+'DataSourceTools'. Use the existing tools as a reference of how to make new ones.
+
+## Example Agent (Optional)
+
+You can use whichever agent that can connect to a remote MCP server, but here is an example using the Continue agent and 
+Ollama model. Keep in mind, these are free, lightweight services so they are not perfect.
+
+1. Install the Continue extension on VSCode
+
+<Image
+    src="/docs/images/continue-extension.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+2. Click on the extension icon on the left and ensure Continue is in Agent mode (indicated in bottom left of the chat window) 
+
+<Image
+    src="/docs/images/continue-icon.png"
+    alt="Create Project UI"
+    width={500}
+    height={350}
+/>
+
+3. Click on the model dropdown, and click "Add Chat model"
+
+<Image
+    src="/docs/images/add-chat-model.png"
+    alt="Create Project UI"
+    width={500}
+    height={350}
+/>
+
+4. Set the Provider to Ollama and download Ollama at the provided URL.
+
+<Image
+    src="/docs/images/ollama-download.png"
+    alt="Create Project UI"
+    width={500}
+    height={350}
+/>
+
+5. After Ollama is downloaded and installed, run the command:
+
+```shell copy
+ollama pull llama3.1:8b   
+```
+
+6. Make sure the Model is set to Autodetect and click "Connect"
+
+<Image
+    src="/docs/images/ollama-complete.png"
+    alt="Create Project UI"
+    width={500}
+    height={250}
+/>
+
+7. In the model dropdown on the bottom left of the chat window, click the auto-detected llama model
+
+<Image
+    src="/docs/images/ollama-select.png"
+    alt="Create Project UI"
+    width={500}
+    height={250}
+/>
+
+8. Click on the tool icon above the chat window
+
+<Image
+    src="/docs/images/tool-icon.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+9. Click the + icon to the right of MCP Servers
+
+<Image
+    src="/docs/images/add-mcp-server.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+10. Add this into the yaml file that is created. Insert the URL that your mcp server is hosted on.
+
+```yaml copy
+name: Nexus
+version: 0.0.1
+schema: v1
+mcpServers:
+- name: Nexus MCP Server
+  type: streamable-http
+  url: <Insert MCP URL Here>
+```
+
+Now you should be able to ask the agent questions like: 
+
+"get all of my projects in organization 1 and read the names and LastUpdatedAt values back to me"
+
+"Get all of my records in project 2"
+
+Keep in mind, we do not have direct control over how the model/agent serializes the request to send to your mcp server based on your response. 
+So, it may hallucinate and add random values or may send the string "true" instead of a boolean true or visa-versa. This is not
+the best agent-model pair that is available, but it is free. Feel free to use other services if you come across another that
+works better for you. That is the beauty of MCP servers, they can be used with any! 

@@ -11,7 +11,8 @@ ARG NEXTAUTH_SECRET
 ARG SERVICE_TOKEN
 ARG BACKEND_BASE_URL
 ARG NEXTAUTH_URL
-ARG DISABLE_FRONTEND_AUTHENTICATION
+ARG NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION
+ARG HOSTED_LINK
 
 # Set environment variables
 ENV OKTA_CLIENT_ID=${OKTA_CLIENT_ID}
@@ -23,8 +24,8 @@ ENV NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
 ENV SERVICE_TOKEN=${SERVICE_TOKEN}
 ENV BACKEND_BASE_URL=${BACKEND_BASE_URL}
 ENV NEXTAUTH_URL=${NEXTAUTH_URL}
-ENV DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}
-
+ENV NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION}
+ENV HOSTED_LINK=${HOSTED_LINK}
 
 # # Print out the value of the environment variables
 # RUN echo "OKTA_CLIENT_ID=${OKTA_CLIENT_ID}" \
@@ -34,8 +35,9 @@ ENV DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}
 #     && echo "AUTH_SECRET=${AUTH_SECRET}" \
 #     && echo "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}" \
 #     && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}" \
-#     && echo "DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}" \
-#     && echo "NEXTAUTH_URL=${NEXTAUTH_URL}"
+#     && echo "NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION}" \
+#     && echo "NEXTAUTH_URL=${NEXTAUTH_URL}" \
+#     && echo "HOSTED_LINK=${HOSTED_LINK}"
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -45,7 +47,6 @@ COPY deeplynx.sln .
 COPY deeplynx.api ./deeplynx.api
 COPY deeplynx.business ./deeplynx.business
 COPY deeplynx.datalayer ./deeplynx.datalayer
-COPY deeplynx.graph ./deeplynx.graph
 COPY deeplynx.helpers ./deeplynx.helpers
 COPY deeplynx.interfaces ./deeplynx.interfaces
 COPY deeplynx.models ./deeplynx.models
@@ -76,14 +77,6 @@ COPY --from=publish /app/publish .
 # Copy additional files if needed
 COPY deeplynx.api/moon.css ./moon.css
 
-# Kuzu ops
-COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-x64/native/
-COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-x64/native/
-# Ensure the shared libraries are in the expected path
-RUN mkdir -p /app/backend/runtimes/linux-x64/native
-# Set the LD_LIBRARY_PATH to include the directory of your libraries
-ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-x64/native/:$LD_LIBRARY_PATH"
-
 # Update package list and upgrade specified packages during build time
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -98,6 +91,9 @@ RUN apt-get update \
         dpkg=1.22.6ubuntu6.5 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+    
+# Run time vars
+ENV HOSTED_LINK=${HOSTED_LINK}
 
 # This will run the .NET application directly
 CMD ["dotnet", "deeplynx.api.dll", "--urls", "http://*:5000"]

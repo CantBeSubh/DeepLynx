@@ -13,7 +13,7 @@ public class RoleResponseDto
     [Column("last_updated_at")]
     public DateTime LastUpdatedAt { get; set; }
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
     [Column("is_archived")]
     public bool IsArchived { get; set; }
     [Column("project_id")]

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("groups", Schema = "deeplynx")]
-[Index("Id", Name = "idx_groups_id")]
-[Index("OrganizationId", Name = "idx_groups_organization_id")]
 public partial class Group
 {
     [Key]
@@ -22,7 +17,7 @@ public partial class Group
     public string? Description { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
@@ -43,4 +38,7 @@ public partial class Group
     [ForeignKey("GroupId")]
     [InverseProperty("Groups")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
+    
+    [InverseProperty("LastUpdatedGroups")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

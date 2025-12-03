@@ -9,7 +9,8 @@ import {
 } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { downloadFile } from "@/app/lib/file_services.client";
+import { downloadFile } from "@/app/lib/client_service/file_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 interface PropertyRow {
   label: string;
@@ -41,6 +42,7 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
   const projectId = projectIdParam ? Number(projectIdParam) : NaN;
   const recordId = recordIdParam ? Number(recordIdParam) : NaN;
   const canDownload = Number.isFinite(projectId) && Number.isFinite(recordId);
+  const { organization, hasLoaded } = useOrganizationSession();
 
   const handleEdit = (index: number, currentValue: string) => {
     setEditingIndex(index);
@@ -67,7 +69,13 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
             {download && (
               <button
                 onClick={() =>
-                  canDownload && downloadFile(projectId, recordId, recordName)
+                  canDownload &&
+                  downloadFile(
+                    organization?.organizationId as number,
+                    projectId,
+                    recordId,
+                    recordName
+                  )
                 }
                 disabled={!canDownload}
                 title={

@@ -1,22 +1,18 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json.Serialization;
 using deeplynx.business;
 using deeplynx.datalayer.MigrationRunner;
 using deeplynx.datalayer.Models;
-using deeplynx.graph;
 using deeplynx.helpers;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models.Interfaces;
+using Microsoft.OpenApi.Models.References;
 using Scalar.AspNetCore;
 using Serilog;
 using StackExchange.Redis;
@@ -68,12 +64,14 @@ try
                     "http://localhost:3000",
                     "http://localhost:3001",
                     "http://ui:3000",
+                    "http://localhost:5173",
                     "https://*.cluster.local",
                     "http://*.cluster.local",
                     "https://*.svc.cluster.local",
                     "http://*.svc.cluster.local",
-                    "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
-                    "https://deeplynx.inl.gov")
+                    "https://deeplynx.*.inl.gov", // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
+                    "https://deeplynx.inl.gov",
+                    "https://deeplynx-*.*.inl.gov") // Matches "deeplynx-thing.domain" namespaces like deeplynx-test.dev
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -85,11 +83,14 @@ try
     // Authentication
     // ----------------------------------
     var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
     var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
     var localDevelopment = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
 
     if (string.IsNullOrWhiteSpace(issuer))
         throw new InvalidOperationException("JWT_ISSUER not configured");
+    if (string.IsNullOrWhiteSpace(secret))
+        throw new InvalidOperationException("JWT_SECRET_KEY not configured");
     if (string.IsNullOrWhiteSpace(audience))
         throw new InvalidOperationException("JWT_AUDIENCE not configured");
 
@@ -100,10 +101,7 @@ try
             options =>
             {
                 options.Authority = issuer;
-                if (localDevelopment == "true")
-                {
-                    options.RequireHttpsMetadata = false;
-                }
+                if (localDevelopment == "true") options.RequireHttpsMetadata = false;
 
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
@@ -140,6 +138,7 @@ try
         ServiceLifetime.Transient
     );
 
+    builder.Services.AddSignalR(); // Used for event system pub/sub and notifications
 
     // Register Cache Service as a singleton
     var cacheProviderType = Environment.GetEnvironmentVariable("CACHE_PROVIDER_TYPE");
@@ -179,20 +178,17 @@ try
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
     builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
     builder.Services.AddTransient<ITokenBusiness, TokenBusiness>();
+    builder.Services.AddTransient<IOauthApplicationBusiness, OauthApplicationBusiness>();
+
 
     Console.WriteLine("Program cs: " + connectionString);
 
-    builder.Services.AddTransient<IKuzuDatabaseManager>(provider =>
-    {
-        var configuration = provider.GetRequiredService<IConfiguration>();
-        return new KuzuDatabaseManager(configuration, connectionString, "d332f23f");
-    });
     builder.Services.AddTransient<IQueryBusiness, QueryBusiness>();
     builder.Services.AddTransient<IMetadataBusiness, MetadataBusiness>();
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
-    builder.Services.AddTransient<ISubscriptionBusiness, SubscriptionBusiness>();
+    // builder.Services.AddTransient<ISubscriptionBusiness, SubscriptionBusiness>();
     builder.Services.AddTransient<FileBusiness>();
     builder.Services.AddTransient<FileFilesystemBusiness>();
     builder.Services.AddTransient<FileAzureBusiness>();
@@ -203,7 +199,14 @@ try
     builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
-    
+    builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
+    builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
+    builder.Services.AddTransient<ISysAdminService, SysAdminService>();
+    builder.Services.AddTransient<IOauthHandshakeBusiness, OauthHandshakeBusiness>();
+    builder.Services.AddTransient<IOrganizationService, OrganizationService>();
+    builder.Services.AddTransient<ISavedSearchBusiness, SavedSearchBusiness>();
+    builder.Services.AddTransient<IGraphBusiness, GraphBusiness>();
+
     builder.Services.AddOpenApi(options =>
     {
         options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
@@ -212,9 +215,54 @@ try
             document.Info.Version = "v1";
             document.Info.Title = "DeepLynx Nexus";
             document.Info.Description = "DeepLynx Nexus Api Documentation";
+            // Add security scheme
+            document.Components ??= new OpenApiComponents();
+            document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        
+            var bearerScheme = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Enter your JWT token"
+            };
+        
+            document.Components.SecuritySchemes["Bearer"] = bearerScheme;
+            // Create a security scheme reference using the constructor
+            var securitySchemeReference = new OpenApiSecuritySchemeReference("Bearer", document);
+            var securityRequirement = new OpenApiSecurityRequirement
+            {
+                [securitySchemeReference] = new List<string>()
+            };
+            // Apply to all operations
+            foreach (var path in document.Paths.Values)
+            {
+                foreach (var operation in path.Operations.Values)
+                {
+                    operation.Security ??= new List<OpenApiSecurityRequirement>();
+                    operation.Security.Add(securityRequirement);
+                }
+            }
 
             document.Tags = new HashSet<OpenApiTag>
             {
+                // parent tags
+                
+                // Todo: Add this back after new scaler version
+                
+                // new()
+                // {
+                //     Name = "Project Management",
+                //     Description =
+                //         "Handles project-level operations including classes, records, edges, and relationships"
+                // },
+                // new()
+                // {
+                //     Name = "Organization Management",
+                //     Description = "Handles organization-level operations including classes, users, groups, and projects"
+                // },
+                
+                // child tags
                 new()
                 {
                     Name = "Token",
@@ -240,8 +288,18 @@ try
                 },
                 new()
                 {
-                    Name = "Query",
-                    Description = "Facilitates data filtering operations for efficient data retrieval and management."
+                    Name = "Event",
+                    Description = "Handles Event fetching by project and user subscriptions."
+                },
+                new()
+                {
+                    Name = "File",
+                    Description = "Handles operations related to file management"
+                },
+                new()
+                {
+                    Name = "Group",
+                    Description = "Handles operations related to Group management"
                 },
                 new()
                 {
@@ -257,14 +315,24 @@ try
                 },
                 new()
                 {
-                    Name = "KuzuDatabaseManager",
-                    Description =
-                        "Oversees operations related to Kuzu database management, including data export and querying."
+                    Name = "Metadata",
+                    Description = "Handles the management and processing of metadata associated with various entities."
                 },
                 new()
                 {
-                    Name = "Metadata",
-                    Description = "Handles the management and processing of metadata associated with various entities."
+                    Name = "Notification",
+                    Description = "Handles notification operations."
+                },
+                new()
+                {
+                    Name = "OauthApplication",
+                    Description = "Handles operations related to registered Oauth2 Application management."
+                },
+                new()
+                {
+                    Name = "OauthHandshake",
+                    Description =
+                        "Facilitates the Oauth2 Handshake between Nexus and external apps, with Nexus acting as an Oauth2 provider."
                 },
                 new()
                 {
@@ -273,9 +341,24 @@ try
                 },
                 new()
                 {
+                    Name = "Organization",
+                    Description = "Handles operations related to Organization management"
+                },
+                new()
+                {
+                    Name = "Permission",
+                    Description = "Handles operations related to Permission management"
+                },
+                new()
+                {
                     Name = "Project",
                     Description =
                         "Facilitates project lifecycle management, including creating, updating, retrieving, and archiving projects."
+                },
+                new()
+                {
+                    Name = "Query",
+                    Description = "Facilitates data filtering operations for efficient data retrieval and management."
                 },
                 new()
                 {
@@ -288,6 +371,26 @@ try
                     Name = "Relationship",
                     Description =
                         "Handles complex relationships between various entities, allowing for creation, updates, retrieval, and deletion."
+                },
+                new()
+                {
+                    Name = "Role",
+                    Description = "Handles operations related to Role management"
+                },
+                new()
+                {
+                    Name = "SavedSearch",
+                    Description = "Handles operations related to saving queries for future re-use"
+                },
+                new()
+                {
+                    Name = "Sensitivity Label",
+                    Description = "Handles operations related to Sensitivity Label management"
+                },
+                new()
+                {
+                    Name = "Subscription",
+                    Description = "Handles operations related to subscription creation, retrieval, and deletion."
                 },
                 new()
                 {
@@ -306,99 +409,88 @@ try
                     Name = "User",
                     Description =
                         "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
-                },
-                new()
-                {
-                    Name = "Event",
-                    Description = "Handles Event fetching by project and user subscriptions."
-                },
-                new()
-                {
-                    Name = "Subscription",
-                    Description = "Handles operations related to subscription creation, retrieval, and deletion."
-                },
-                new()
-                {
-                    Name = "File",
-                    Description = "Handles operations related to file management"
-                },
-                new()
-                {
-                    Name = "Notification",
-                    Description = "Handles notification operations."
-                },
-                new()
-                {
-                    Name = "SensitivityLabel",
-                    Description = "Handles operations related to Sensitivity Label management"
-                },
-                new()
-                {
-                    Name = "Group",
-                    Description = "Handles operations related to Group management"
-                },
-                new()
-                {
-                    Name = "Organization",
-                    Description = "Handles operations related to Organization management"
-                },
-                new()
-                {
-                    Name = "Role",
-                    Description = "Handles operations related to Role management"
-                },
-                new()
-                {
-                    Name = "Permission",
-                    Description = "Handles operations related to Permission management"
                 }
             };
         });
     });
 
-    /* ╔════════════════════════════╗
-       ║      Apply Migrations      ║
-       ╚════════════════════════════╝ */
+/* ╔════════════════════════════╗
+   ║      Apply Migrations      ║
+   ╚════════════════════════════╝ */
     await MigrationRunner.ApplyMigrations(connectionString);
 
+/* ╔════════════════════════════╗
+   ║      App Configurations    ║
+   ╚════════════════════════════╝ */
     var app = builder.Build();
 
-    app.UseOpenApi();
-
-    var customcss = File.ReadAllText("moon.css");
+/* ╔════════════════════════════╗
+   ║      App Base Path         ║
+   ╚════════════════════════════╝ */
+    PathString basePath = "/api/v1";
+    app.UsePathBase(basePath);
 
     app.UseStaticFiles();
-
-    // We're always using scalar for now.
-    //if (app.Environment.IsDevelopment()) { ...
-    app.MapOpenApi();
-    app.MapScalarApiReference(o => o
-        .WithDarkMode()
-        .WithTheme(ScalarTheme.Kepler)
-        .WithTitle("DeepLynx Nexus API")
-        .WithCustomCss(customcss)
-        .AddHeaderContent(@"
-        <div class='references-header'>
-            <header class='header t-doc__header'>
-                <div class='header-container'>
-                    <div class='header-item header-item-meta'>
-                        <a class='header-item-logo'>
-                            <img
-                                alt='lynx'
-                                class='header-item-logo-image'
-                                src='/images/lynx-white.png'
-                                style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;'/>
-                        </a>
-                    </div>
-                </div>
-            </header>
-        </div>"));
-
+    app.UseRouting();
     app.UseCors("AllowAll");
-    app.UseAuthentication();
-    app.UseAuthorization();
-    app.UseMiddleware<UserContextMiddleware>();
-    app.MapControllers();
+    app.UseAuthentication(); // Must be first
+    app.UseMiddleware<UserContextMiddleware>(); // Second - sets UserId/Email
+    app.UseMiddleware<AuthMiddleware>(); // Third - sets OrganizationId
+    app.UseAuthorization(); // Fourth
+    app.MapControllers(); // Last
+
+    // Check if the notification service is enabled (defaults to false if not set)
+    if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+        app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
+
+    /* ╔════════════════════════════╗
+    ║   Scalar Configuration     ║
+    ╚════════════════════════════╝ */
+    // Always using scalar:
+    //if (app.Environment.IsDevelopment()) { ...
+    app.UseOpenApi();
+    app.MapOpenApi();
+
+    var customcss = File.ReadAllText("moon.css");
+    var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK");
+
+    // Conditional image hosting
+    var imageSrc = "/images/lynx-white.png";
+
+    // Build the HTML content with our image src string interpolation
+    var scalarHeaderContent = $@"
+    <div class='references-header'>
+      <header class='header t-doc__header'>
+        <div class='header-container'>
+          <div class='header-item header-item-meta'>
+            <a class='header-item-logo'>
+              <img
+                alt='lynx'
+                class='header-item-logo-image'
+                src='{imageSrc}'
+                style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;' />
+            </a>
+          </div>
+        </div>
+      </header>
+    </div>";
+
+    app.MapScalarApiReference(options =>
+    {
+        options.WithDarkMode()
+            .WithBaseServerUrl(basePath.ToString())
+            .WithTheme(ScalarTheme.Kepler)
+            .WithTitle("DeepLynx Nexus API")
+            .WithCustomCss(customcss)
+            .AddHeaderContent(scalarHeaderContent);
+
+        if (!string.IsNullOrEmpty(hostedLink))
+        {
+            var hostedLinkWithApi = string.Concat(hostedLink + "/api/v1");
+            options.Servers = new List<ScalarServer> { new(hostedLinkWithApi) };
+        }
+    });
+
     app.Run();
 }
 // ignore entity framework aborting in design. See https://github.com/dotnet/efcore/issues/29923

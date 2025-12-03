@@ -1,81 +1,88 @@
+// src/app/(home)/project/[id]/ProjectDetailClient.tsx
 "use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { format } from "date-fns";
 
-import LargeSearchBar from "@/app/(home)/components/SearchBar";
-import SavedSearches from "@/app/(home)/components/SavedSearches";
-import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-import { ProjectsList } from "@/app/(home)/types/types";
+import SearchBar from "@/app/(home)/components/SearchBar";
+import WidgetCard from "@/app/(home)/components/Widgets";
+import { WidgetType } from "../../types/types";
+import RecentRecordsCard from "../../components/RecentRecordsCard";
+import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { format } from "date-fns";
-import RecentRecordsCard from "../../components/RecentRecordsCard";
-import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 
 type Props = {
-  projects: ProjectsList[];
-  initialProject: ProjectsList | null;
+  initialProject: ProjectResponseDto | null;
   projectId: string;
 };
 
 export default function ProjectDetailClient({
-  projects,
-  initialProject
+  initialProject,
+  projectId,
 }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
+  const {
+    project: sessionProject,
+    setProject: setProjectSession,
+    hasLoaded,
+  } = useProjectSession();
 
-  const [project, setProject] = useState<ProjectsList | null>(initialProject);
-  const [selectedProjectId, setSelectedProjectId] = useState(
-    initialProject ? initialProject.id : null
+  // State
+  const [project, setProject] = useState<ProjectResponseDto | null>(
+    initialProject
   );
   const [canCustomize, setCanCustomize] = useState(false);
-
   const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
     "RecentActivity",
     "ProjectOverview",
     "TeamMembers",
   ]);
 
-  // Sync project session from initial server data
-  const { setProject: setProjectSession, hasLoaded } = useProjectSession();
-  useEffect(() => {
-    if (!selectedProjectId) return;
-    const selectedProject = projects.find(
-      (proj) => proj.id === selectedProjectId
-    );
-    if (selectedProject) {
-      setProject(selectedProject);
+  // Memoize the sync function to prevent it from changing on every render
+  const syncProjectSession = useCallback(() => {
+    if (initialProject) {
+      setProject(initialProject);
       setProjectSession({
-        projectId: selectedProject.id!,
-        projectName: selectedProject.name,
+        projectId: initialProject.id.toString(),
+        projectName: initialProject.name,
       });
     }
-  }, [selectedProjectId, projects, setProjectSession]);
+  }, [initialProject, setProjectSession]);
 
+  // Sync project session with initial project on mount
+  useEffect(() => {
+    syncProjectSession();
+  }, [syncProjectSession]);
+
+  // Save widget configuration to localStorage
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
     localStorage.setItem(
-      `projectWidgets-${selectedProjectId ? selectedProjectId : ""}`,
+      `projectWidgets-${projectId}`,
       JSON.stringify(newWidgets)
     );
   };
 
+  // Navigate to data catalog with search term
   const handleSearchEnter = (searchTerm: string) => {
     const query = new URLSearchParams({
-      fromProject: selectedProjectId ? selectedProjectId : "",
+      fromProject: projectId,
       search: searchTerm,
     }).toString();
+
     router.push(`/data_catalog?${query}`);
   };
 
+  // Loading states
   if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
   if (!project) return <p className="p-4">{t.translations.NO_PROJECT_FOUND}</p>;
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 mt-3">
       {/* Project Header */}
       <div className="bg-base-200/50 border-b border-base-300/30 py-4 px-6 lg:px-12">
         <h1 className="text-2xl font-bold text-base-content">{project.name}</h1>
@@ -85,24 +92,18 @@ export default function ProjectDetailClient({
           {project.lastUpdatedAt &&
             format(new Date(project.lastUpdatedAt), "MM/dd/yyyy")}
         </p>
-        <ProjectDropdownSingleSelect
-          projects={projects}
-          onSelectionChange={setSelectedProjectId}
-          defaultSelectedId={initialProject?.id || ""}
-        />
       </div>
 
       {/* Main Content */}
       <div className="flex flex-col lg:flex-row gap-6 px-4 lg:px-6 mt-6">
         {/* Left Column */}
         <div
-          className={`flex-1 lg:w-3/5 transition-opacity duration-300 ${
-            canCustomize ? "opacity-50 pointer-events-none" : ""
-          }`}
+          className={`flex-1 lg:w-3/5 transition-opacity duration-300 ${canCustomize ? "opacity-50 pointer-events-none" : ""
+            }`}
         >
           {/* Search Bar */}
           <div className="mb-6">
-            <LargeSearchBar className="w-full" onEnter={handleSearchEnter} />
+            <SearchBar className="w-full" onEnter={handleSearchEnter} />
           </div>
 
           {/* Data Catalog Card */}
@@ -117,7 +118,7 @@ export default function ProjectDetailClient({
                   href={{
                     pathname: "/data_catalog",
                     query: {
-                      fromProject: selectedProjectId ? selectedProjectId : "",
+                      fromProject: projectId,
                     },
                   }}
                 >
@@ -126,16 +127,14 @@ export default function ProjectDetailClient({
               </div>
 
               <RecentRecordsCard
-                selectedProjects={[selectedProjectId ? selectedProjectId : ""]}
+                selectedProjects={[projectId]}
+                border={false}
               />
             </div>
           </div>
-
-          {/* Saved Searches */}
-          {/* <SavedSearches /> */}
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Widgets */}
         <aside className="lg:w-2/5">
           <div className="sticky top-6">
             <WidgetCard

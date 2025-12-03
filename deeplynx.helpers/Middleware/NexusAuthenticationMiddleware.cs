@@ -36,23 +36,56 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-
-        // Check for local development bypass
-        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
-        if (disableAuth)
-        {
-            Log.Information("Local development bypass enabled");
-            return await HandleLocalDevelopmentBypass();
-        }
-
         // Extract token
         var token = ExtractToken(Request);
+        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
+
+        // If local bypass is enabled, try to use the token but fall back to superuser on any issues
+        if (disableAuth)
+        {
+            // No token provided - use superuser
+            if (string.IsNullOrEmpty(token))
+            {
+                Log.Information("Local bypass enabled with no token - using local development superuser");
+                return await HandleLocalDevelopmentBypass();
+            }
+
+            // Token provided - try to validate it
+            try
+            {
+                var result = await ValidateTokenAsync(token);
+
+                // If token validation succeeded, use the authenticated user
+                if (result.Succeeded)
+                {
+                    Log.Information("Valid token detected - using authenticated user from token");
+                    return result;
+                }
+
+                // Token validation failed - fall back to superuser
+                Log.Warning("Local bypass enabled but token validation failed - using local development superuser");
+                return await HandleLocalDevelopmentBypass();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex,
+                    "Local bypass enabled but token validation threw exception - using local development superuser");
+                return await HandleLocalDevelopmentBypass();
+            }
+        }
+
+        // Normal flow - auth bypass NOT enabled
         if (string.IsNullOrEmpty(token))
         {
             Log.Warning("No token found in request");
             return AuthenticateResult.NoResult();
         }
-        
+
+        return await ValidateTokenAsync(token);
+    }
+
+    private async Task<AuthenticateResult> ValidateTokenAsync(string token)
+    {
         var handler = new JwtSecurityTokenHandler();
         if (!handler.CanReadToken(token))
         {
@@ -74,26 +107,29 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         {
             return await HandleRS256Token(token);
         }
-        
+
         return AuthenticateResult.Fail($"Unsupported token algorithm: {algorithm}");
     }
 
     private async Task<AuthenticateResult> HandleLocalDevelopmentBypass()
     {
-        //TODO: Make mock token sys-admin
+        const string localDevEmail = "developer@localhost";
+        const string localDevUserId = "local-dev-user";
+
         var mockClaims = new[]
         {
             new Claim(ClaimTypes.Name, "LocalDeveloper"),
-            new Claim(ClaimTypes.NameIdentifier, "local-dev-user"),
-            new Claim("sub", "local-dev-user"),
-            new Claim("email", "developer@localhost"),
+            new Claim(ClaimTypes.NameIdentifier, localDevUserId),
+            new Claim("uid", localDevUserId),
+            new Claim("email", localDevEmail),
+            new Claim(ClaimTypes.Email, localDevEmail),
             new Claim(ClaimTypes.Role, "Developer")
         };
 
         var mockIdentity = new ClaimsIdentity(mockClaims, "LocalDevelopment");
         var mockPrincipal = new ClaimsPrincipal(mockIdentity);
 
-        await EnsureUserExistsAsync(mockPrincipal);
+        await EnsureLocalDevUserExistsAsync(localDevEmail, localDevUserId);
 
         var ticket = new AuthenticationTicket(mockPrincipal, Scheme.Name);
         Log.Information("Local development authentication successful");
@@ -104,27 +140,58 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         try
         {
+            // Extract username with fallback priority: name -> preferred_username -> sub -> email
             var username = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value
                            ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
                            ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
                            ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
             var apiKey = jwtToken.Claims.FirstOrDefault(c => c.Type == "apiKey")?.Value;
+            var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == "jti")?.Value;
 
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(apiKey))
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(jti))
             {
-                Log.Warning("Token missing required claims (username or apiKey)");
+                Log.Warning("Token missing required claims");
                 return AuthenticateResult.Fail("Token missing required claims");
             }
 
-            var secret = await GetSecretForUserAsync(username, apiKey);
-            if (string.IsNullOrWhiteSpace(secret))
+            // Check if token is revoked
+            using (var scope = _serviceScopeFactory.CreateScope())
             {
-                Log.Warning($"ApiKey is not valid - Username: {username}");
+                var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+    
+                // Hash the JTI for lookup
+                var tokenHash = HashToken(jti);
+                var tokenRecord = await dbContext.OauthTokens
+                    .FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
+    
+                if (tokenRecord == null || tokenRecord.Revoked)
+                {
+                        Log.Warning($"Token not found or revoked - JTI: {jti}");
+                        return AuthenticateResult.Fail("Token has been revoked");
+                }
+            }
+
+            // Verify the API key still exists and is valid
+            var apiKeySecret = await GetSecretForUserAsync(username, apiKey);
+            if (string.IsNullOrWhiteSpace(apiKeySecret))
+            {
+                Log.Warning($"API key not found or revoked - Username: {username}");
                 return AuthenticateResult.Fail("Invalid API key");
             }
 
-            var secretKey = secret.Length < 32 ? secret.PadRight(32, '0') : secret;
+            // Use JWT_SECRET_KEY for signature validation
+            var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+
+            if (string.IsNullOrEmpty(jwtSigningSecret))
+            {
+                Log.Error("JWT_SECRET_KEY not configured");
+                return AuthenticateResult.Fail("Server configuration error");
+            }
+
+            var secretKey = jwtSigningSecret.Length < 32
+                ? jwtSigningSecret.PadRight(32, '0')
+                : jwtSigningSecret;
 
             if (!ValidateJwtSignature(token, secretKey))
             {
@@ -172,7 +239,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 Log.Error("JWT_ISSUER or JWT_AUDIENCE not configured");
                 return AuthenticateResult.Fail("JWT configuration error");
             }
-            
+
             var metadataAddress = $"{issuer.TrimEnd('/')}/.well-known/openid-configuration";
             if (_configManager == null)
             {
@@ -272,7 +339,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
 
         using var scope = _serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
-        
+
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == username.ToLower());
         if (user == null)
         {
@@ -288,7 +355,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         try
         {
-            var email = principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value
+            var email = principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")
+                            ?.Value
                         ?? principal.FindFirst(ClaimTypes.Email)?.Value
                         ?? principal.FindFirst("email")?.Value
                         ?? principal.FindFirst("sub")?.Value
@@ -300,9 +368,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 return;
             }
 
-            var ssoId = principal.FindFirst("sub")?.Value
-                        ?? principal.FindFirst("cid")?.Value
-                        ?? principal.FindFirst("uid")?.Value;
+            var ssoId = principal.FindFirst("uid")?.Value;
             var username = principal.FindFirst("preferred_username")?.Value ?? email;
             var name = principal.FindFirst(ClaimTypes.Name)?.Value
                        ?? principal.FindFirst("name")?.Value
@@ -311,19 +377,46 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
+            var isDefaultSuperUser =
+                email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)
             {
-                if (string.IsNullOrEmpty(existingUser.SsoId) && !string.IsNullOrEmpty(ssoId))
+                // update if admin needs to be set or if SSO ID is improperly configured
+                if ((isDefaultSuperUser && !existingUser.IsSysAdmin)
+                    || existingUser.SsoId != principal.FindFirst("uid")?.Value)
                 {
                     existingUser.SsoId = ssoId;
                     existingUser.Username = username;
                     existingUser.Name = name;
                     existingUser.IsActive = true;
                     existingUser.IsArchived = false;
+                    existingUser.IsSysAdmin = isDefaultSuperUser || existingUser.IsSysAdmin;
                     await dbContext.SaveChangesAsync();
                     Log.Information($"Updated SSO ID for existing user {email}");
+                }
+                
+                // Add user to the default org if not already a member
+                var defaultOrg = await dbContext.Organizations
+                    .Where(o => o.DefaultOrg).FirstOrDefaultAsync();
+
+                if (defaultOrg != null)
+                {
+                    var isMember = await dbContext.OrganizationUsers
+                        .AnyAsync(ou => ou.OrganizationId == defaultOrg.Id && ou.UserId == existingUser.Id);
+    
+                    if (!isMember)
+                    {
+                        var orgUser = new OrganizationUser
+                        {
+                            OrganizationId = defaultOrg.Id,
+                            UserId = existingUser.Id,
+                        };
+        
+                        dbContext.OrganizationUsers.Add(orgUser);
+                        await dbContext.SaveChangesAsync();
+                    }
                 }
             }
             else
@@ -335,16 +428,106 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     Username = username,
                     SsoId = ssoId,
                     IsActive = true,
-                    IsArchived = false
+                    IsArchived = false,
+                    IsSysAdmin = isDefaultSuperUser,
                 };
                 dbContext.Users.Add(newUser);
                 await dbContext.SaveChangesAsync();
                 Log.Information($"User with email {email} created successfully");
+                
+                // Add user to the default org
+                var defaultOrg = await dbContext.Organizations
+                    .Where(o => o.DefaultOrg).FirstOrDefaultAsync();
+
+                if (defaultOrg != null)
+                {
+                    var orgUser = new OrganizationUser
+                    {
+                        OrganizationId = defaultOrg.Id,
+                        UserId = newUser.Id,
+                    };
+                    
+                    dbContext.OrganizationUsers.Add(orgUser);
+                    await dbContext.SaveChangesAsync();
+                }
             }
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error during user provisioning");
         }
+    }
+
+    private async Task EnsureLocalDevUserExistsAsync(string email, string ssoId)
+    {
+        try
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+
+            var existingUser = await dbContext.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+            if (existingUser == null)
+            {
+                var newUser = new User
+                {
+                    Name = "Local Developer",
+                    Email = email,
+                    Username = "local-dev",
+                    SsoId = ssoId,
+                    IsActive = true,
+                    IsArchived = false,
+                    IsSysAdmin = true
+                };
+
+                dbContext.Users.Add(newUser);
+                await dbContext.SaveChangesAsync();
+                Log.Information($"Local development sys admin created: {email}");
+                existingUser = newUser;
+            }
+            else if (!existingUser.IsSysAdmin)
+            {
+                // if user exists but is not sysadmin, make them admin
+                existingUser.IsSysAdmin = true;
+                existingUser.IsActive = true;
+                existingUser.IsArchived = false;
+                await dbContext.SaveChangesAsync();
+                Log.Information($"Existing user {email} promoted to sys admin for local development");
+            }
+            
+            // Add user to the default org if not already a member
+            var defaultOrg = await dbContext.Organizations
+                .Where(o => o.DefaultOrg).FirstOrDefaultAsync();
+
+            if (defaultOrg != null)
+            {
+                var isMember = await dbContext.OrganizationUsers
+                    .AnyAsync(ou => ou.OrganizationId == defaultOrg.Id && ou.UserId == existingUser.Id);
+    
+                if (!isMember)
+                {
+                    var orgUser = new OrganizationUser
+                    {
+                        OrganizationId = defaultOrg.Id,
+                        UserId = existingUser.Id,
+                    };
+        
+                    dbContext.OrganizationUsers.Add(orgUser);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during local dev user provisioning");
+        }
+    }
+    
+    private static string HashToken(string jti)
+    {
+        using var sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(jti));
+        return Convert.ToBase64String(hashBytes);
     }
 }

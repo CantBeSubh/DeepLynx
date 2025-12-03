@@ -6,6 +6,7 @@ public class OrganizationResponseDto
     public string Name { get; set; }
     public string? Description { get; set; }
     public DateTime LastUpdatedAt { get; set; }
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; }
+    public bool DefaultOrg { get; set; } = false;
 }

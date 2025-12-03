@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
+FROM node:lts-alpine3.22 AS frontend-build
 
 # Define build arguments
 ARG HOSTED_LINK
@@ -13,11 +13,16 @@ ENV HOSTED_LINK=${HOSTED_LINK}
 # Set working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json first
-COPY deeplynx.docs/package*.json .
+# Install versioned os packages
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache \
+        busybox=1.37.0-r20
 
-# Install Node.js and npm
-RUN apk add --no-cache nodejs npm openssl=3.3.5-r0
+# Install latest global npm version and packages
+RUN npm install -g npm@latest
+
+# Copy package.json first
+COPY deeplynx.docs/package*.json ./
 
 # Install frontend dependencies
 RUN npm install
@@ -29,13 +34,18 @@ COPY deeplynx.docs .
 RUN npm run build
 
 # Stage 2: Create the final image
-FROM node:lts-alpine3.20 AS final
-
-# Update runtime packages to specific versions
-RUN apk add --no-cache openssl=3.3.5-r0
+FROM node:lts-alpine3.22 AS final
 
 # Set working directory
 WORKDIR /usr/src/app
+
+# Install versioned os packages
+RUN apk update && apk upgrade --no-cache && \
+    apk add --no-cache \
+        busybox=1.37.0-r20
+
+# Install latest global npm version and packages
+RUN npm install -g npm@latest
 
 # Copy the built frontend code from the previous stage
 COPY --from=frontend-build /usr/src/app .

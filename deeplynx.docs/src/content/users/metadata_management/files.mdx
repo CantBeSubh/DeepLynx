@@ -18,7 +18,7 @@ Follow these steps to upload a file through the DeepLynx interface:
 5. If the file is Timeseries data be sure to select that option after uploading the file.
 
 <Image 
-  src="/images/upload-center.png" 
+  src="/docs/images/upload-center.png" 
   alt="Create Project UI" 
   width={800} 
   height={600} 
@@ -29,7 +29,7 @@ Follow these steps to upload a file through the DeepLynx interface:
 To upload files using the API:
 
 1. First obtain an API Key ([learn how to get an API key](#))
-2. Set up a POST request to `/api/projects/{projectId}/files/UploadFile`
+2. Set up a POST request to `/api/v1/projects/{projectId}/files/UploadFile`
 4. Add the `Authorization` header with the value `Bearer [YOUR_API_KEY]`
 5. Include the required information in the request body:
 
@@ -49,7 +49,7 @@ To upload files using the API:
 5. Send the request
 
 <Image 
-  src="/images/upload-files-api.png" 
+  src="/docs/images/upload-files-api.png" 
   alt="Create Project UI" 
   width={800} 
   height={600} 

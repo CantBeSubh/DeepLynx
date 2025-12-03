@@ -3,10 +3,10 @@
 import { useLanguage } from "@/app/contexts/Language";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ProjectsList } from "@/app/(home)/types/types";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 interface ProjectDropdownSingleSelectProps {
-  projects: ProjectsList[];
+  projects: ProjectResponseDto[];
   onSelectionChange?: (selected: string) => void;
   defaultSelectedId?: string;
 }
@@ -64,7 +64,7 @@ const ProjectDropdownSingleSelect: React.FC<
 
   const selectedLabel = useMemo(() => {
     if (selectedId !== "") {
-      const project = projects.find((p) => p.id === selectedId);
+      const project = projects.find((p) => p.id.toString() === selectedId);
       return project?.name || "";
     }
     return "";
@@ -90,7 +90,7 @@ const ProjectDropdownSingleSelect: React.FC<
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-full min-w-[250px] bg-base-200 border border-base-300 shadow-xl rounded-box p-4 max-h-80 overflow-auto">
+        <div className="absolute z-50 mt-2 w-full min-w-[250px] bg-base-100 shadow-xl rounded-box p-4 max-h-80 overflow-auto">
           <input
             type="text"
             placeholder={t.translations.SEARCH}
@@ -106,13 +106,13 @@ const ProjectDropdownSingleSelect: React.FC<
                   className="label cursor-pointer justify-start gap-3 hover:bg-base-300/50 rounded-lg px-2 py-1 transition-colors"
                 >
                   <input
-                    type="radio"
+                    type="checkbox"
                     name="project"
-                    className="radio radio-secondary radio-sm"
-                    checked={selectedId === project.id}
+                    className="checkbox checkbox-primary radio-sm"
+                    checked={selectedId === project.id.toString()}
                     onChange={() => {
                       if (project.id) {
-                        toggleProject(project.id);
+                        toggleProject(project.id.toString());
                       }
                     }}
                   />
