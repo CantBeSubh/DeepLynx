@@ -138,9 +138,9 @@ const MyGraph = ({
         // Fetch graph data from backend using the service
         const data = await getGraphDataForRecord(
           organization!.organizationId as number,
-          projectId, 
+          projectId,
           recordId,
-          depth,
+          depth
         );
 
         // Validate that we have data
@@ -459,7 +459,7 @@ const MyGraph = ({
         }
       }
     };
-  }, [projectId, recordId, depth, onLoadingChange, onError]);
+  }, [projectId, recordId, depth, onLoadingChange, onError, organization]);
 
   // Render the container div that Sigma will attach to
   return (
