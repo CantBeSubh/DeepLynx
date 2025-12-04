@@ -191,7 +191,7 @@ public class TimeseriesBusiness(
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
         var uploadId = Guid.NewGuid().ToString();
-        var folderPath = Path.Combine(_duckDbBasePath, "org_" + organizationId, "project_" + projectId, "datasource_" + dataSourceId);
+        var folderPath = Path.Combine(_duckDbBasePath, "org_" + organizationId, "project_" + projectId, "datasource_" + dataSourceId, uploadId);
         Directory.CreateDirectory(folderPath);
 
         return uploadId;
