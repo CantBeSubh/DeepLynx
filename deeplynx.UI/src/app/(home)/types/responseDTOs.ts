@@ -256,23 +256,23 @@ export type PaginatedEventsResponseDto =
     totalCount: number;
   };
 
-export type EventResponseDto =
-  {
+export type EventResponseDto = {
     id: number;
     operation: string;
     entityType: string;
     entityId?: number | null;
-    entityName: string;
-    projectId?: number;
-    projectName?: string;
+    projectId: number;
     organizationId?: number | null;
+    organizationName: string;
     dataSourceId?: number | null;
-    dataSourceName?: string | null;
     properties?: JSON | string | null;
+    projectName?: string | null;
+    entityName?: string | null;
+    dataSourceName?: string | null;
     lastUpdatedAt?: string | null;
-    lastUpdatedBy?: string | null;
+    lastUpdatedBy?: number | null;
     lastUpdatedByUserName?: string | null;
-  };
+};
 
 export type EdgeResponseDto = {
   id: number;
