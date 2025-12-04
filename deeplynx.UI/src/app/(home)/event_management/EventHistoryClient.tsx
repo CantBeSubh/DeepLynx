@@ -14,6 +14,7 @@ import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import {
   EventFilterParams,
   getAllEventsPaginated,
+  queryAuthorizedEvents,
 } from "@/app/lib/client_service/event_services.client";
 
 const EventsHistoryClient = () => {
@@ -35,8 +36,8 @@ const EventsHistoryClient = () => {
   const [filters, setFilters] = useState<EventFilterParams>({
     startDate: getThirtyDaysAgo(),
   });
-  const { organization, hasLoaded } = useOrganizationSession();
-  const { project, setProject } = useProjectSession();
+  const { organization, hasLoaded: orgLoaded } = useOrganizationSession();
+  const { project, hasLoaded: projectLoaded } = useProjectSession();
 
   type FilterConfig = {
     key: string;
@@ -90,17 +91,29 @@ const EventsHistoryClient = () => {
   // Fetch events from backend - memoized with useCallback
   const fetchEvents = useCallback(
     async (pageNumber: number, pageSize: number) => {
+      console.log("Org Client: ", organization?.organizationId);
+      console.log("Project Client: ", project?.projectId);
+
+      // HARD GUARD: do not call the API if org or project is missing
+      if (!organization?.organizationId || !project?.projectId) {
+        console.log("Skipping fetch: missing org/project ", {
+          orgId: organization?.organizationId,
+          projectId: project?.projectId,
+        });
+        return; // <-- this is critical
+      }
+
       setLoading(true);
       try {
-        const result: PaginatedEventsResponseDto = await getAllEventsPaginated(
-          organization?.organizationId as number,
-          project?.projectId as number,
-          {
-            pageNumber,
-            pageSize,
-            ...filters,
-          }
-        );
+        const result: PaginatedEventsResponseDto = await queryAuthorizedEvents({
+          organizationId: organization.organizationId as number,
+          projectId: project.projectId as number,
+          pageNumber,
+          pageSize,
+          ...filters,
+        });
+
+        console.log("Events result: ", result);
 
         setData(result.items);
         setPagination({
@@ -120,13 +133,34 @@ const EventsHistoryClient = () => {
         setLoading(false);
       }
     },
-    [filters]
+    [filters, rowsPerPage, organization?.organizationId, project?.projectId]
   );
 
   // Initial fetch
   useEffect(() => {
+    // Wait until BOTH org and project sessions are hydrated
+    if (!orgLoaded || !projectLoaded) {
+      return;
+    }
+
+    // Also ensure we actually *have* ids before calling the API
+    if (!organization?.organizationId || !project?.projectId) {
+      console.log("Skipping fetch: missing org/project", {
+        orgId: organization?.organizationId,
+        projectId: project?.projectId,
+      });
+      return;
+    }
+
     fetchEvents(1, rowsPerPage);
-  }, [fetchEvents]);
+  }, [
+    fetchEvents,
+    orgLoaded,
+    projectLoaded,
+    organization?.organizationId,
+    project?.projectId,
+    rowsPerPage,
+  ]);
 
   // Handle page changes
   const handlePageChange = (pageNumber: number) => {

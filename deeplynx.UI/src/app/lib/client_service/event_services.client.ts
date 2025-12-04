@@ -9,7 +9,7 @@ export type EventFilterParams = {
     projectId?: number;
     organizationId?: number;
     projectName?: string;
-    lastUpdatedBy?: string;
+    lastUpdatedBy?: number;
     operation?: string;
     entityType?: string;
     entityName?: string;
@@ -57,6 +57,38 @@ export const getAllEventsByUserPaginated = async (
         throw error;
     }
 };
+
+// In event_services.client.ts
+export const queryAuthorizedEvents = async (
+  params?: EventFilterParams
+): Promise<PaginatedEventsResponseDto> => {
+  try {
+    console.log("queryAuthorizedEvents called with params:", params);
+
+    const res = await api.get("/events/QueryAuthorizedEvents", {
+      params: {
+        PageNumber: params?.pageNumber,
+        PageSize: params?.pageSize,
+        organizationId: params?.organizationId,
+        projectId: params?.projectId,
+        lastUpdatedBy: params?.lastUpdatedBy,
+        projectName: params?.projectName,
+        operation: params?.operation,
+        entityType: params?.entityType,
+        entityName: params?.entityName,
+        dataSourceName: params?.dataSourceName,
+        startDate: params?.startDate,
+        endDate: params?.endDate,
+      },
+    });
+    console.log("Service call: ", res);
+    return res.data;
+  } catch (error) {
+    console.error("Error getting authorized events:", error);
+    throw error;
+  }
+};
+
 
 export const getAllEvents = async (
     organizationId: number,

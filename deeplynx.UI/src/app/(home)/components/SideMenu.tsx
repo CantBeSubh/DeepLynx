@@ -70,7 +70,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   // Clear project context and active project when organization changes
   useEffect(() => {
     if (organization) {
-      setProject(null);
       setActiveProject(undefined);
     }
   }, [organization?.organizationId, setProject]);
@@ -85,7 +84,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         setActiveProject(foundProject);
       } else {
         setActiveProject(undefined);
-        setProject(null);
       }
     } else if (!project?.projectId) {
       setActiveProject(undefined);

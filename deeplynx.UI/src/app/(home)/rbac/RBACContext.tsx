@@ -111,7 +111,6 @@ export function RBACProvider({
     try {
       // 🔥 Here we now use orgId/projectId from props
       const response = await getCurrentUser(orgId, projectId);
-      console.log("Current User (RBAC):", response);
 
       const userData: RBACUser = {
         ...response,
