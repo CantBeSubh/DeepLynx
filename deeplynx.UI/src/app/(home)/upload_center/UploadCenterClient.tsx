@@ -3,30 +3,30 @@
 
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import DropUpload from "../components/DropUpload";
-import FileDetailsCard from "../components/FileDetailCard";
-import NewFileUploadCard from "../components/NewFileUploadCard";
-import SelectedFilesCard from "../components/SelectedFilesCard";
-import {
-  ExistingFile,
-  FileMetadata,
-  RecentUpload,
-  UploadType,
-} from "../types/types";
-import { getAllDataSourcesOrg } from "@/app/lib/client_service/data_source_services.client";
+import { getAllDataSources } from "@/app/lib/client_service/data_source_services.client";
 import {
   uploadFile,
   uploadFilesBatch,
 } from "@/app/lib/client_service/file_upload_services.client";
 import { getAllObjectStorages } from "@/app/lib/client_service/object_storage_services.client";
 import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import DropUpload from "../components/DropUpload";
+import FileDetailsCard from "../components/FileDetailCard";
+import NewFileUploadCard from "../components/NewFileUploadCard";
+import SelectedFilesCard from "../components/SelectedFilesCard";
 import {
   DataSourceResponseDto,
   ObjectStorageResponseDto,
   ProjectResponseDto,
 } from "../types/responseDTOs";
+import {
+  ExistingFile,
+  FileMetadata,
+  RecentUpload,
+  UploadType,
+} from "../types/types";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -185,10 +185,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
 
     (async () => {
       try {
-        const dataSource = await getAllDataSourcesOrg(
-          organization?.organizationId as number,
-          [Number(projectId)]
-        );
+        const dataSource = await getAllDataSources(Number(projectId));
         setDataSources(dataSource);
         if (dataSource.length === 1) {
           setDataSourceId(String(dataSource[0].id));
