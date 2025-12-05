@@ -49,8 +49,8 @@ public class RecordBusinessTests : IntegrationTestBase
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
-        _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness);
+        _recordBusiness = new RecordBusiness(Context, _eventBusiness);
     }
 
     #region RecordResponseDto Tests

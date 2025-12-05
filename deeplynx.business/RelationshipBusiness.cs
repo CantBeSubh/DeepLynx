@@ -10,7 +10,6 @@ namespace deeplynx.business;
 
 public class RelationshipBusiness : IRelationshipBusiness
 {
-    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEdgeBusiness _edgeBusiness;
     private readonly IEventBusiness _eventBusiness;
@@ -19,13 +18,11 @@ public class RelationshipBusiness : IRelationshipBusiness
     ///     Initializes a new instance of the <see cref="RelationshipBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context used for the relationship operations.</param>
-    /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="edgeBusiness">Passed in context of edge objects.</param>
     /// <param name="eventBusiness">Used to access event operations</param>
-    public RelationshipBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEdgeBusiness edgeBusiness,
+    public RelationshipBusiness(DeeplynxContext context, IEdgeBusiness edgeBusiness,
         IEventBusiness eventBusiness)
     {
-        _cacheBusiness = cacheBusiness;
         _edgeBusiness = edgeBusiness;
         _context = context;
         _eventBusiness = eventBusiness;

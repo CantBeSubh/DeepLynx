@@ -38,7 +38,7 @@ public class GroupBusinessTests : IntegrationTestBase
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness);
         _groupBusiness = new GroupBusiness(Context, _eventBusiness);
     }
 

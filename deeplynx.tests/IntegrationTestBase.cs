@@ -83,7 +83,6 @@ public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
 public class IntegrationTestBase : IAsyncLifetime
 {
     private readonly TestSuiteFixture _fixture;
-    protected ICacheBusiness _cacheBusiness;
 
     protected IntegrationTestBase(TestSuiteFixture fixture)
     {
@@ -91,9 +90,6 @@ public class IntegrationTestBase : IAsyncLifetime
         Context = new DeeplynxContext(new DbContextOptionsBuilder<DeeplynxContext>()
             .UseNpgsql(_fixture.PostgresConnectionString)
             .Options);
-
-        // Create initial cache business
-        _cacheBusiness = CacheFactory.CreateCache();
     }
 
     protected DeeplynxContext Context { get; }
@@ -110,9 +106,9 @@ public class IntegrationTestBase : IAsyncLifetime
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
         Config.ResetConfig();
         await Context.DisposeAsync();
-        await _cacheBusiness.FlushAsync();
+        await CacheService.Instance.FlushAsync();
     }
-
+    
     /// <summary>
     /// Switch cache type for testing - just create a new instance
     /// </summary>
@@ -120,7 +116,7 @@ public class IntegrationTestBase : IAsyncLifetime
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", cacheType);
         Config.ResetConfig();
-        _cacheBusiness = CacheFactory.CreateCache(); // Create new instance
+        CacheService.ResetCacheService();
     }
 
     /// <summary>
@@ -209,7 +205,7 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Organizations.RemoveRange(organizations);
         await Context.SaveChangesAsync();
 
-        await _cacheBusiness.FlushAsync();
+        await CacheService.Instance.FlushAsync();
     }
 
     protected virtual async Task SeedTestDataAsync()

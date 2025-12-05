@@ -140,9 +140,6 @@ try
 
     builder.Services.AddSignalR(); // Used for event system pub/sub and notifications
 
-    // Register Cache Service as a singleton
-    builder.Services.AddSingleton<ICacheBusiness>(CacheFactory.CreateCache());
-
     builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
     builder.Services.AddTransient<IObjectStorageBusiness, ObjectStorageBusiness>();
     builder.Services.AddTransient<IClassBusiness, ClassBusiness>();

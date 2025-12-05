@@ -39,7 +39,7 @@ public class OauthApplicationBusinessTests : IntegrationTestBase
         _mockOauthLogger = new Mock<ILogger<OauthApplicationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness);
         _oauthApplicationBusiness = new OauthApplicationBusiness(Context, _mockOauthLogger.Object, _eventBusiness);
     }
 

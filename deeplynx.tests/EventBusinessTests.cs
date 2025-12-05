@@ -43,7 +43,7 @@ namespace deeplynx.tests
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _notificationBusiness =
                 new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+            _eventBusiness = new EventBusiness(Context, _notificationBusiness);
         }
 
         #region GetAllEvents (Simplified - No Pagination)

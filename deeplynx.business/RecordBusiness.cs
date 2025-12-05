@@ -12,7 +12,6 @@ namespace deeplynx.business;
 
 public class RecordBusiness : IRecordBusiness
 {
-    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
 
@@ -20,12 +19,10 @@ public class RecordBusiness : IRecordBusiness
     ///     Initializes a new instance of the <see cref="RecordBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
-    /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
-    public RecordBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
+    public RecordBusiness(DeeplynxContext context, IEventBusiness eventBusiness)
     {
         _context = context;
-        _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
     }
 
@@ -466,7 +463,7 @@ public class RecordBusiness : IRecordBusiness
         List<CreateRecordRequestDto> records)
     {
         // Leaving existence check in here for project as this method can be invoked without middleware
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
         if (records.Count == 0) throw new Exception("Unable to bulk create records: no records selected for creation");

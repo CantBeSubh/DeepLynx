@@ -45,8 +45,6 @@ namespace deeplynx.business
                 return default;
             }
 
-            await SetAsync("type", "redis", (TimeSpan?)null);
-
             return JsonSerializer.Deserialize<T>(value.ToString(), _jsonOptions);
         }
 
@@ -63,7 +61,7 @@ namespace deeplynx.business
             bool result;
             if (ttl.HasValue)
             {
-                result = await _db.StringSetAsync(key, json, ttl);
+                result = await _db.StringSetAsync(key, json, ttl.Value);
             }
             else
             {

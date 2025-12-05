@@ -38,8 +38,8 @@ public class SensitivityLabelBusinessTests : IntegrationTestBase
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
-        _labelBusiness = new SensitivityLabelBusiness(Context, _cacheBusiness, _eventBusiness);
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness);
+        _labelBusiness = new SensitivityLabelBusiness(Context, _eventBusiness);
     }
 
     protected override async Task SeedTestDataAsync()

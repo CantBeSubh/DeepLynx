@@ -1,11 +1,29 @@
+using deeplynx.business;
 using StackExchange.Redis;
 using deeplynx.interfaces;
 using deeplynx.helpers;
 
-namespace deeplynx.business
+namespace deeplynx.helpers
 {
-    public class CacheFactory
+    public class CacheService
     {
+        private static ICacheBusiness _instance;
+        
+        static CacheService() 
+        {
+            _instance = CreateCache();
+        }
+        
+        public static ICacheBusiness Instance => _instance;
+
+        /// <summary>
+        /// Resets the cache service instance. Used primarily for testing to switch between cache providers.
+        /// </summary>
+        public static void ResetCacheService()
+        {
+            _instance = CreateCache();
+        }
+        
         /// <summary>
         /// Used to determine what cache service to use by the Config.CACHE_PROVIDER_TYPE variable
         /// </summary>
