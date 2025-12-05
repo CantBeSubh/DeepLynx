@@ -38,7 +38,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         // Extract token
         var token = ExtractToken(Request);
-        var disableAuth = Config.Instance.DISABLE_BACKEND_AUTHENTICATION.ToLower();
+        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
 
         // If local bypass is enabled, try to use the token but fall back to superuser on any issues
         if (disableAuth == "true")
@@ -181,7 +181,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             }
 
             // Use JWT_SECRET_KEY for signature validation
-            var jwtSigningSecret = Config.Instance.JWT_SECRET_KEY;
+            var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 
             if (string.IsNullOrEmpty(jwtSigningSecret))
             {
@@ -231,8 +231,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         try
         {
-            var issuer = Config.Instance.JWT_ISSUER;
-            var audience = Config.Instance.JWT_AUDIENCE;
+            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
             if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
             {
@@ -378,7 +378,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
             var isDefaultSuperUser =
-                email.ToLower() == Config.Instance.SUPERUSER_EMAIL.ToLower();
+                email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL");
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)

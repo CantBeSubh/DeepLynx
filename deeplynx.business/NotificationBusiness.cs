@@ -280,29 +280,25 @@ public class NotificationBusiness : INotificationBusiness
     {
        try
        {
-        var smtpServer = Config.Instance.SMTP_SERVER
-            ?? throw new InvalidOperationException("SMTP_SERVER environment variable is not set");
+        var smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER") ?? throw new InvalidOperationException("SMTP_SERVER environment variable is not set");
 
-        var smtpPortStr = Config.Instance.SMTP_PORT;
+        var smtpPortStr = Environment.GetEnvironmentVariable("SMTP_PORT");
         if (!int.TryParse(smtpPortStr, out int smtpPort))
         {
             smtpPort = 587; //default
         }
 
-        var fromEmail = Config.Instance.FROM_EMAIL
-            ?? throw new InvalidOperationException("FROM_EMAIL environment variable is not set");
+        var fromEmail = Environment.GetEnvironmentVariable("FROM_EMAIL") ?? throw new InvalidOperationException("FROM_EMAIL environment variable is not set");
 
-        var support = Config.Instance.SUPPORT_EMAIL
-                        ?? throw new InvalidOperationException("SUPPORT_EMAIL environment variable is not set");
+        var support = Environment.GetEnvironmentVariable("SUPPORT_EMAIL") ?? throw new InvalidOperationException("SUPPORT_EMAIL environment variable is not set");
 
         var emailPassword = "";
 
-        var fromName = Config.Instance.FROM_NAME;
+        var fromName = Environment.GetEnvironmentVariable("FROM_NAME");
 
-        var url = Config.Instance.INVITE_URL
-            ?? throw new InvalidOperationException("Invite URL environment variable is not set");;
+        var url = Environment.GetEnvironmentVariable("INVITE_URL") ?? throw new InvalidOperationException("Invite URL environment variable is not set");;
 
-        var enableSslStr = Config.Instance.SMTP_ENABLE_SSL;
+        var enableSslStr = Environment.GetEnvironmentVariable("SMTP_ENABLE_SSL");
         bool.TryParse(enableSslStr, out bool enableSsl);
 
         string templateContent = @"<!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">

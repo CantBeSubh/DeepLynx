@@ -104,7 +104,6 @@ public class IntegrationTestBase : IAsyncLifetime
     public async Task DisposeAsync()
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
-        Config.ResetConfig();
         await Context.DisposeAsync();
         await CacheService.Instance.FlushAsync();
     }
@@ -115,7 +114,6 @@ public class IntegrationTestBase : IAsyncLifetime
     protected void SwitchCacheType(string cacheType)
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", cacheType);
-        Config.ResetConfig();
         CacheService.ResetCacheService();
     }
 

@@ -31,14 +31,16 @@ namespace deeplynx.helpers
         /// <exception cref="Exception">Returned if CACHE_PROVIDER_TYPE = redis but no REDIS_CONNECTION_STRING is provided</exception>
         public static ICacheBusiness CreateCache()
         {
-            switch (Config.Instance.CACHE_PROVIDER_TYPE)
+            var cacheType = Environment.GetEnvironmentVariable("CACHE_PROVIDER_TYPE");
+            var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
+            switch (cacheType)
             {
                 case "memory":
                     return new MemoryCacheBusiness();
                 case "redis":
-                    if (!string.IsNullOrEmpty(Config.Instance.REDIS_CONNECTION_STRING))
+                    if (!string.IsNullOrEmpty(redisConnectionString))
                     {
-                        var options = ConfigurationOptions.Parse(Config.Instance.REDIS_CONNECTION_STRING);
+                        var options = ConfigurationOptions.Parse(redisConnectionString);
                         options.AllowAdmin = true;
                         var connectionMultiplexer = ConnectionMultiplexer.Connect(options);
                         return new RedisCacheBusiness(connectionMultiplexer);
