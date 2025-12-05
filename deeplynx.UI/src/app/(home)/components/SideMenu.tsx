@@ -1,14 +1,9 @@
 // src/app/(home)/components/SideMenu.tsx
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { getAllProjects } from "@/app/lib/projects_services.client";
-import { ProjectResponseDto } from "../types/responseDTOs";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import {
   AdjustmentsHorizontalIcon,
   ArrowUpTrayIcon,
@@ -18,11 +13,14 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   FolderIcon,
-  HomeIcon,
-  QuestionMarkCircleIcon,
   RectangleGroupIcon,
-  TagIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
+import { ProjectResponseDto } from "../types/responseDTOs";
+import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
+import { ProjectAdminRoute } from "../rbac/RBACComponents";
 
 interface SideMenuProps {
   onToggle: (isCollapsed: boolean) => void;
@@ -41,7 +39,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(false);
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
-  const [activeProject, setActivepProject] = useState<ProjectResponseDto>()
+  const [activeProject, setActiveProject] = useState<ProjectResponseDto>();
+
+  // Determine if we should hide the projects section
+  const shouldHideProjects = pathname === "/organization_management";
 
   // Memoize fetchProjects to prevent it from changing on every render
   const fetchProjects = useCallback(async () => {
@@ -49,7 +50,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
     try {
       setLoadingProjects(true);
-      const data = await getAllProjects(organization.organizationId, true);
+      const data = await getAllProjects(
+        organization.organizationId as number,
+        true
+      );
       setProjects(data);
     } catch (error) {
       console.error("Failed to fetch projects:", error);
@@ -62,6 +66,29 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  // Clear project context and active project when organization changes
+  useEffect(() => {
+    if (organization) {
+      setActiveProject(undefined);
+    }
+  }, [organization?.organizationId, setProject]);
+
+  // Sync activeProject with the project context
+  useEffect(() => {
+    if (project?.projectId && projects.length > 0) {
+      const foundProject = projects.find(
+        (p) => p.id.toString() === project.projectId
+      );
+      if (foundProject) {
+        setActiveProject(foundProject);
+      } else {
+        setActiveProject(undefined);
+      }
+    } else if (!project?.projectId) {
+      setActiveProject(undefined);
+    }
+  }, [project, projects, setProject]);
 
   // Effect to set the selected item based on the current pathname
   useEffect(() => {
@@ -96,7 +123,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       projectId: selectedProject.id.toString(),
       projectName: selectedProject.name,
     });
-    setActivepProject(selectedProject)
+    setActiveProject(selectedProject);
     router.push(`/project/${selectedProject.id}`);
   };
 
@@ -156,69 +183,78 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 left-18 flex z-30">
       <aside
-        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
-          } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
+        className={`h-full shadow-xl ${
+          isCollapsed ? "w-22" : "w-64"
+        } bg-[var(--base-400)] brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
       >
         {/* Projects Section */}
-        <div className="mt-5">
-          <div
-            className="flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-info/20 rounded transition"
-            onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
-          >
-            <div className="flex items-center min-w-0 flex-1">
-              <FolderIcon className="size-6 flex-shrink-0" />
-              {!isCollapsed && <div className="flex flex-col p-4 min-w-0">
-                <span className="text-xs opacity-70">{t.translations.PROJECTS}</span>
-                <h1 className="text-lg font-bold truncate">
-                  {activeProject?.name || "No Project"}
-                </h1>
-              </div>}
-            </div>
-            {!isCollapsed && (
-              <button className="btn btn-ghost btn-xs btn-circle flex-shrink-0">
-                {isProjectsExpanded ? (
-                  <ChevronUpIcon className="size-4" />
-                ) : (
-                  <ChevronDownIcon className="size-4" />
+        {!shouldHideProjects && (
+          <div className="mt-5">
+            <div
+              className="flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-info/20 rounded transition"
+              onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
+            >
+              <div className="flex items-center min-w-0 flex-1">
+                <FolderIcon className="size-6 flex-shrink-0" />
+                {!isCollapsed && (
+                  <div className="flex flex-col p-4 min-w-0">
+                    <span className="text-xs opacity-70">
+                      {t.translations.PROJECTS}
+                    </span>
+                    <h1 className="text-lg font-bold truncate">
+                      {activeProject?.name || "No Project"}
+                    </h1>
+                  </div>
                 )}
-              </button>
+              </div>
+              {!isCollapsed && (
+                <button className="btn btn-ghost btn-xs btn-circle flex-shrink-0">
+                  {isProjectsExpanded ? (
+                    <ChevronUpIcon className="size-4" />
+                  ) : (
+                    <ChevronDownIcon className="size-4" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Projects List */}
+            {!isCollapsed && isProjectsExpanded && (
+              <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto bg-[var(--base-400)] border border-white/10 rounded-lg ">
+                {loadingProjects ? (
+                  <li className="py-2 px-4 text-sm text-primary-content/70">
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span className="ml-2">Loading...</span>
+                  </li>
+                ) : projects.length === 0 ? (
+                  <li className="py-2 px-4 text-sm text-base-content/70">
+                    No projects found
+                  </li>
+                ) : (
+                  projects.map((proj) => (
+                    <li key={proj.id}>
+                      <button
+                        onClick={() => handleProjectClick(proj)}
+                        className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${
+                          isProjectActive(proj.id)
+                            ? "bg-info/30 text-primary-content font-semibold"
+                            : "hover:bg-info/20 text-primary-content"
+                        }`}
+                      >
+                        <span className="truncate">{proj.name}</span>
+                        {isProjectActive(proj.id) && (
+                          <span className="ml-auto badge badge-xs flex-shrink-0">
+                            Active
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
             )}
           </div>
-
-          {/* Projects List shadow-[0_0_20px_rgba(0,0,0,0.3)]*/}
-          {!isCollapsed && isProjectsExpanded && (
-            <ul className="mt-2 space-y-1 max-h-64 overflow-y-auto bg-[var(--base-400)] border border-white/10 rounded-lg ">
-              {loadingProjects ? (
-                <li className="py-2 px-4 text-sm text-primary-content/70">
-                  <span className="loading loading-spinner loading-sm"></span>
-                  <span className="ml-2">Loading...</span>
-                </li>
-              ) : projects.length === 0 ? (
-                <li className="py-2 px-4 text-sm text-base-content/70">
-                  No projects found
-                </li>
-              ) : (
-                projects.map((proj) => (
-                  <li key={proj.id}>
-                    <button
-                      onClick={() => handleProjectClick(proj)}
-                      className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${isProjectActive(proj.id)
-                        ? "bg-info/30 text-primary-content font-semibold"
-                        : "hover:bg-info/20 text-primary-content"
-                        }`}
-                    >
-                      <span className="truncate">{proj.name}</span>
-                      {isProjectActive(proj.id) && (
-                        <span className="ml-auto badge badge-xs flex-shrink-0">Active</span>
-                      )}
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </div>
-
+        )}
 
         {/* Home */}
         <ul className="mt-8">
@@ -246,16 +282,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
-          {/* <li className="mt-2">
-            <Link
-              href="/tag_management"
-              prefetch={false}
-              className={getItemClass("/tag_management")}
-            >
-              <TagIcon className="size-6" />
-              {!isCollapsed && <p className="ml-2">Tag Management</p>}
-            </Link>
-          </li> */}
 
           <li className="mt-2">
             <Link
@@ -267,30 +293,28 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               {!isCollapsed && <p className="ml-2">Event Management</p>}
             </Link>
           </li>
-
-          <li className="mt-2">
-            <Link
-              href={`/project/${project?.projectId || ""}/project_settings`}
-              onClick={(e) =>
-                handleItemClick(
-                  `/project/${project?.projectId || ""}/project_settings`,
-                  e
-                )
-              }
-              className={getItemClass(
-                `/project/${project?.projectId || ""}/project_settings`
-              )}
-            >
-              <AdjustmentsHorizontalIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
-              )}
-            </Link>
-          </li>
+          <ProjectAdminRoute>
+            <li className="mt-2">
+              <Link
+                href={`/project_management/${project?.projectId || ""}`}
+                onClick={(e) =>
+                  handleItemClick(
+                    `/project_management/${project?.projectId || ""}`,
+                    e
+                  )
+                }
+                className={getItemClass(
+                  `/project_management/${project?.projectId || ""}`
+                )}
+              >
+                <AdjustmentsHorizontalIcon className="size-6" />
+                {!isCollapsed && (
+                  <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
+                )}
+              </Link>
+            </li>
+          </ProjectAdminRoute>
         </ul>
-
-
-
       </aside>
 
       {/* Toggle tab */}

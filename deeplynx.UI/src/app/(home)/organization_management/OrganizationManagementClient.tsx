@@ -2,44 +2,93 @@
 
 import React, { useState } from "react";
 import Tabs from "../components/Tabs";
-import { OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
-import UsersTable from "../components/SiteManagementPortal/UsersTable";
-import TagManagementPage from "../tag_management/page";
-import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
+import {
+  GroupResponseDto,
+  ProjectResponseDto,
+  UserResponseDto,
+  RoleResponseDto,
+  PermissionResponseDto,
+} from "../types/responseDTOs";
+import UsersTable from "../components/users/UsersTable";
 import { useLanguage } from "@/app/contexts/Language";
-import ObjectStorageTable from "../components/OrganizationManagementPortal/ObjectStorageTable";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import InlineGroupsTable from "./groups/InlineGroupsTable";
+import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
+import OrganizationSettings from "./settings/OrganizationSettings";
+import TagManagementClient from "./tag_management/TagManagementClient";
+import OptionThree from "./tag_management/OptionThree";
+import SettingsOne from "./settings/SettingsOne";
+import SettingsTwo from "./settings/SettingsTwo";
+import SettingsThree from "./settings/SettingsThree";
+import { getAllGroups } from "@/app/lib/client_service/group_services.client"; // Add this import
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
+  initialProjects: ProjectResponseDto[];
+  initialGroups: GroupResponseDto[];
+  initialRoles: RoleResponseDto[];
+  initialSelectedProject?: ProjectResponseDto;
+  initialPermissions: PermissionResponseDto[];
 }
 
-const OrganizationManagementClient = ({ members }: OrganizationManagementProps) => {
+const OrganizationManagementClient = ({
+  members,
+  initialGroups,
+  initialRoles,
+  initialPermissions,
+  initialProjects,
+}: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
+  const [groups, setGroups] = useState<GroupResponseDto[]>(initialGroups);
   const { t } = useLanguage();
-  const { organization, setOrganization } = useOrganizationSession();
+  const { organization } = useOrganizationSession();
+
+  const refreshGroups = async () => {
+    if (!organization?.organizationId) return;
+
+    try {
+      const updatedGroups = await getAllGroups(
+        organization.organizationId as number
+      );
+      setGroups(updatedGroups);
+    } catch (err) {
+      console.error("Failed to refresh groups:", err);
+    }
+  };
 
   const tabData = [
     {
       label: "Users",
-      content: <UsersTable members={members} />,
+      content: <UsersTable
+        initialMembers={members}
+        header={"Organization Users"}
+        description={"Manage users in your organization. Invite new users via email or add them directly."}
+      />,
     },
     {
       label: "Roles & Permissions",
-      content: "content here",
+      content: (
+        <RolesAndPermissions
+          initialRoles={initialRoles}
+          initialPermissions={initialPermissions}
+        />
+      ),
     },
     {
       label: "Groups",
-      content: "content here",
+      content: (
+        <InlineGroupsTable
+          initialGroups={groups}
+          availableUsers={members}
+          organizationId={organization?.organizationId}
+          onGroupsChange={refreshGroups}
+        />
+      ),
     },
     {
       label: "Tags and Security Labels",
-      content: "content here",
+      content: <OptionThree projects={initialProjects} />,
     },
-    // {
-    //   label: "Object Storage",
-    //   content: <ObjectStorageTable organization={organization} />
-    // }, //TODO: Object storage org level management backend not finished yet
     {
       label: "Settings",
       content: organization ? (
@@ -47,7 +96,7 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
       ) : (
         <div>No organization selected</div>
       ),
-    }
+    },
   ];
 
   const handleTabChange = (label: string) => {
@@ -57,7 +106,9 @@ const OrganizationManagementClient = ({ members }: OrganizationManagementProps) 
   return (
     <div>
       <div className="bg-base-200/40 pl-12 p-6">
-        <h1 className="text-2xl font-bold text-base-content">{t.translations.ORGANIZATION_MANAGEMENT}</h1>
+        <h1 className="text-2xl font-bold text-base-content">
+          {t.translations.ORGANIZATION_MANAGEMENT}
+        </h1>
       </div>
       <div className="p-2">
         <Tabs

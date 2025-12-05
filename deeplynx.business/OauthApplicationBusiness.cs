@@ -105,6 +105,7 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
     /// <summary>
     /// Create a new oauth application to represent an ecosystem app that uses Nexus as a provider
     /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
     /// <param name="dto">The data transfer object with details on the application to be created</param>
     /// <param name="userId">The ID of the requesting user</param>
     /// <returns>The client ID and secret of the newly created application</returns>
@@ -133,16 +134,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
 
         _context.OauthApplications.Add(application);
         await _context.SaveChangesAsync();
-
-        // log create OAuth application event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            Operation = "create",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
 
         return new OauthApplicationSecureResponseDto
         {
@@ -181,16 +172,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
 
-        // log update Oauth application event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            Operation = "update",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
-
         return new OauthApplicationResponseDto
         {
             Id = application.Id,
@@ -226,16 +207,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
 
-        // log archive Oauth application event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            Operation = "archive",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
-
         return true;
     }
 
@@ -259,16 +230,6 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
 
-        // log unarchive Oauth application event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            Operation = "unarchive",
-            EntityType = "oauth_application",
-            EntityId = application.Id,
-            EntityName = application.Name,
-            Properties = JsonSerializer.Serialize(new { application.Name, application.ClientId })
-        });
-
         return true;
     }
     
@@ -285,24 +246,9 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         
         if (application == null || application.IsArchived)
             throw new KeyNotFoundException($"Oauth application with id {applicationId} not found");
-        
-        // grab event-relevant details before deletion
-        var appId = application.Id;
-        var appName = application.Name;
-        var appClientId = application.ClientId;
 
         _context.OauthApplications.Remove(application);
         await _context.SaveChangesAsync();
-        
-        // log delete Oauth application event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            Operation = "delete",
-            EntityType = "oauth_application",
-            EntityId = appId,
-            EntityName = appName,
-            Properties = JsonSerializer.Serialize(new { appName, appClientId })
-        });
 
         return true;
     }
@@ -338,28 +284,12 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
     }
 
     /// <summary>
-    /// Used to hash the client secret. This hashed version will be stored in the database.
+    /// Used to hash the client secret using BCrypt. This hashed version will be stored in the database.
     /// </summary>
     /// <param name="secret"></param>
     /// <returns></returns>
     private string HashSecret(string secret)
     {
-        using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-        {
-            var salt = new byte[32];
-            rng.GetBytes(salt);
-
-            using (var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
-               secret,
-               salt,
-               100000,
-               System.Security.Cryptography.HashAlgorithmName.SHA256))
-            {
-                var hash = pbkdf2.GetBytes(32);
-                var saltBase64 = Convert.ToBase64String(salt);
-                var hashBase64 = Convert.ToBase64String(hash);
-                return $"{saltBase64}:{hashBase64}";
-            }
-        }
+        return BCrypt.Net.BCrypt.HashPassword(secret);
     }
 }

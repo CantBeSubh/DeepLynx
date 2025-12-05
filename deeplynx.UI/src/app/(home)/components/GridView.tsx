@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
+import { Column, RecordTableRow } from "@/app/(home)/types/types";
 import GenericTable from "./GenericTable";
 
 type GridViewProps = {
-  columns: Column<FileViewerTableRow>[];
-  data: FileViewerTableRow[];
+  columns: Column<RecordTableRow>[];
+  data: RecordTableRow[];
   activeSearchTerms?: string[];
   selectedProjects?: string[];
 };

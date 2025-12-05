@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("organizations", Schema = "deeplynx")]
-[Index("Id", Name = "idx_organizations_id")]
-[Index("Name", Name = "unique_organization_name", IsUnique = true)]
 public partial class Organization
 {
     [Key]
@@ -44,6 +39,21 @@ public partial class Organization
 
     [InverseProperty("Organization")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Action> Actions { get; set; } = new List<Action>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<DataSource> DataSources { get; set; } = new List<DataSource>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<ObjectStorage> ObjectStorages { get; set; } = new List<ObjectStorage>();
 
     [InverseProperty("Organization")]
     public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
@@ -53,4 +63,25 @@ public partial class Organization
 
     [InverseProperty("LastUpdatedOrganizations")]
     public virtual User? LastUpdatedByUser { get; set; }
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<HistoricalEdge> HistoricalEdges { get; set; } = new List<HistoricalEdge>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<HistoricalRecord> HistoricalRecords { get; set; } = new List<HistoricalRecord>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Record> Records { get; set; } = new List<Record>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Relationship> Relationships { get; set; } = new List<Relationship>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    [InverseProperty("Organization")]
+    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
 }

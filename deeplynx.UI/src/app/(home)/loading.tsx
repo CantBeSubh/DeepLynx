@@ -37,22 +37,8 @@ export default function Loadingtranslations() {
           {/* Main Content */}
           <div className="p-6">
             <div
-              //This is commented out till we get digets
-              // className={`w-full md:w-3/5 px-4 ${
-              //   canCustomize ? "grayed-out" : ""
-              // }`}
               className="w-4/5 mx-auto"
             >
-              {/* <div className="flex justify-between items-center justify-end mb-4">
-              <button className="btn btn-outline btn-secondary flex items-center mr-2">
-                <Cog6ToothIcon className="size-6" />
-                {t.translations.CUSTOMIZE}
-              </button>
-              <button className="btn btn-secondary text-secondary-content flex items-center">
-                <PlusIcon className="size-6" />
-                {t.translations.WIDGET}
-              </button>
-            </div> */}
               <div className="card card-border p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-info-content text-lg font-semibold">

@@ -1,20 +1,22 @@
+using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers;
 
-[Route("projects/{projectId}/datasources/{dataSourceId}/metadata")]
+[Route("organizations/{organizationId:long}/projects/{projectId:long}/datasources/{dataSourceId:long}/metadata")]
 [ApiController]
 [Authorize]
 public class MetadataController : ControllerBase
 {
-    private readonly IMetadataBusiness _metadataBusiness;
     private readonly ILogger<MetadataController> _logger;
+    private readonly IMetadataBusiness _metadataBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MetadataController"/> class.
+    ///     Initializes a new instance of the <see cref="MetadataController" /> class.
     /// </summary>
     /// <param name="metadataBusiness">The business logic interface for handling metadata operations.</param>
     /// <param name="logger">Error/Info logging interface for database log table.</param>
@@ -23,22 +25,32 @@ public class MetadataController : ControllerBase
         _metadataBusiness = metadataBusiness;
         _logger = logger;
     }
-    
+
     /// <summary>
-    /// Parses metadata from raw JSON
+    ///     Parse Metadata from Raw JSON
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="metadataRequestDto">The metadata data transfer object containing metadata details.</param>
-    [HttpPost("CreateMetadata", Name = "api_create_metadata")]
+    [HttpPost(Name = "api_create_metadata")]
+    [Auth("write", "class")]
+    [Auth("write", "relationship")]
+    [Auth("write", "tag")]
+    [Auth("write", "record")]
+    [Auth("write", "edge")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(
-        long projectId, 
+        long organizationId,
+        long projectId,
         long dataSourceId,
         [FromBody] CreateMetadataRequestDto metadataRequestDto)
     {
         try
         {
-            var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, dataSourceId, metadataRequestDto);
+            var currentUserId = UserContextStorage.UserId;
+            var createdMetadata =
+                await _metadataBusiness.CreateMetadata(currentUserId, projectId, organizationId, dataSourceId,
+                    metadataRequestDto);
             return Ok(createdMetadata);
         }
         catch (Exception exception)
@@ -49,22 +61,32 @@ public class MetadataController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
-    
+
     /// <summary>
-    /// Parses metadata from a JSON file
+    ///     Parse Metadata from a JSON File
     /// </summary>
+    /// <param name="organizationId">The ID of the organization to which the metadata belongs.</param>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="file">The .json file that contains the metadata.</param>
-    [HttpPost("CreateMetadataFromFile", Name = "api_create_metadata_from_file")]
+    [HttpPost("file", Name = "api_create_metadata_from_file")]
+    [Auth("write", "class")]
+    [Auth("write", "relationship")]
+    [Auth("write", "tag")]
+    [Auth("write", "record")]
+    [Auth("write", "edge")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadataFromFile(
-        long projectId, 
+        long organizationId,
+        long projectId,
         long dataSourceId,
         IFormFile file)
     {
         try
         {
-            var createdMetadata = await _metadataBusiness.CreateMetadataFromFile(projectId, dataSourceId, file);
+            var currentUserId = UserContextStorage.UserId;
+            var createdMetadata =
+                await _metadataBusiness.CreateMetadataFromFile(currentUserId, projectId, organizationId, dataSourceId,
+                    file);
             return Ok(createdMetadata);
         }
         catch (Exception exception)

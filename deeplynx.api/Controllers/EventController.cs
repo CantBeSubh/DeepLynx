@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -51,18 +52,22 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get All Events (Paginated)
+        /// QueryEvents (Paginated)
         /// </summary>
+        /// <param name="organizationId">The id of the organization</param>.
+        /// <param name="projectId">The id of the project</param>.
         /// <param name="queryDto">Filter criteria and pagination parameters</param>.
         /// <returns></returns>
         [HttpGet("QueryEvents", Name = "api_query_events_paginated")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
+            long organizationId,
+            long projectId,
             [FromQuery] EventsQueryRequestDTO? queryDto
         )
         {
             try
             {
-                var events = await _eventBusiness.QueryEvents(queryDto);
+                var events = await _eventBusiness.QueryAllEvents(organizationId, projectId, queryDto);
                 return Ok(events);
             }
             catch (Exception e)
@@ -74,15 +79,18 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get all events by user project membership (Paginated).
+        /// Query All Events The requesting user is Authorized to See (Paginated).
         /// </summary>
-        [HttpGet("QueryEventsByUser", Name = "api_query_events_by_user")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsByUser(
+        [HttpGet("QueryAuthorizedEvents", Name = "api_query_authorized_events")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryAuthorizedEvents(
+            long organizationId,
+            long projectId,
             [FromQuery] EventsQueryRequestDTO? queryDto)
         {
             try
             {
-                var events = await _eventBusiness.QueryEventsByUser(queryDto);
+                var currentUserId = UserContextStorage.UserId;
+                var events = await _eventBusiness.QueryAuthorizedEvents(currentUserId, organizationId, projectId, queryDto);
                 return Ok(events);
             }
             catch (Exception e)
@@ -94,19 +102,22 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get project Events by user subscriptions 
+        /// Query Events by Subscriptions 
         /// </summary>
-        /// <param name="userId">The ID of the user</param>
+        /// <param name="organizationId">The ID of the organization</param>
         /// <param name="projectId">The ID of the project to which the events belong</param>
+        /// <param name="queryDto">The DTO containing the optional filters</param>
         /// <returns></returns>
-        [HttpGet("{projectId}/GetAllEventsByUserProjectSubscriptions", Name = "api_get_all_events_by_user_project_subscriptions")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserProjectSubscriptions(
+        [HttpGet("QueryEventsBySubscriptions", Name = "api_query_events_by_subscriptions")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsBySubscriptions(
+            long organizationId,
             long projectId,
-            [FromQuery] long userId)
+            [FromQuery] EventsQueryRequestDTO? queryDto)
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsByUserProjectSubscriptions(projectId, userId);
+                var currentUserId = UserContextStorage.UserId;
+                var events = await _eventBusiness.QueryEventsBySubscriptions(currentUserId, organizationId, projectId, queryDto);
                 return Ok(events);
             }
             catch (Exception e)

@@ -3,23 +3,30 @@
 
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getAllDataSources } from "@/app/lib/client_service/data_source_services.client";
+import {
+  uploadFile,
+  uploadFilesBatch,
+} from "@/app/lib/client_service/file_upload_services.client";
+import { getAllObjectStorages } from "@/app/lib/client_service/object_storage_services.client";
+import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
 import NewFileUploadCard from "../components/NewFileUploadCard";
-import { ExistingFile, FileMetadata } from "../types/types";
-import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
-import { RecentUpload } from "../types/types";
-import { UploadType } from "../types/types";
-import { getAllProjects } from "@/app/lib/projects_services.client";
-import { getAllDataSources } from "@/app/lib/data_source_services.client";
-import { DataSourceResponseDto } from "../types/responseDTOs";
-import { getAllObjectStorages } from "@/app/lib/object_storage_services.client";
-import { ObjectStorageResponseDto } from "../types/responseDTOs";
-import { uploadFile } from "@/app/lib/file_upload_services.client";
-import toast from "react-hot-toast";
-import { ProjectResponseDto } from "../types/responseDTOs";
+import {
+  DataSourceResponseDto,
+  ObjectStorageResponseDto,
+  ProjectResponseDto,
+} from "../types/responseDTOs";
+import {
+  ExistingFile,
+  FileMetadata,
+  RecentUpload,
+  UploadType,
+} from "../types/types";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -108,57 +115,48 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const clearAll = () => setSelectedFiles([]);
 
   const handleUpload = async () => {
-    if (
-      !projectId ||
-      !dataSourceId ||
-      !objectStorageId ||
-      selectedFiles.length === 0
-    ) {
-      toast.error(
-        "Select project, data source, object storage, and at least one file."
-      );
+    if (!projectId || selectedFiles.length === 0) {
+      toast.error("Select a project and at least one file.");
       return;
     }
-
     try {
       if (selectedFiles.length === 1) {
         const file = selectedFiles[0];
-        const metadata = filesMetadata[0];
-
+        const metadata = filesMetadata[0] ?? {};
         await uploadFile({
+          organizationId: organization?.organizationId as number,
           projectId,
-          dataSourceId,
-          objectStorageId,
+          dataSourceId, // may be undefined
+          objectStorageId, // may be undefined
           file,
-          name: metadata?.name || file.name,
-          description: metadata?.description || "",
+          name: metadata.name || file.name,
+          description: metadata.description || "",
+          // properties: metadata.properties, // if you collect extra JSON
+          // tags: metadata.tags, // if you collect tags
         });
         toast.success("File uploaded!");
       } else {
-        const uploadPromises = selectedFiles.map(async (file, index) => {
-          const metadata = filesMetadata[index];
-
-          return uploadFile({
-            projectId,
-            dataSourceId,
-            objectStorageId,
-            file,
-            name: metadata?.name || file.name,
-            description: metadata?.description || "",
-          });
+        // Use your batch helper (returns Promise.allSettled)
+        const results = await uploadFilesBatch({
+          organizationId: organization?.organizationId as number,
+          projectId,
+          dataSourceId,
+          objectStorageId,
+          files: selectedFiles,
+          // optional shared metadata defaults
         });
 
-        const results = await Promise.allSettled(uploadPromises);
         const ok = results.filter((r) => r.status === "fulfilled").length;
         const fail = results.length - ok;
         toast.success(
           `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
         );
+        if (fail) console.warn("Batch upload failures:", results);
       }
       resetForm({ keepProject: true });
-    } catch (error) {
+    } catch (err) {
+      console.error(err);
       toast.error("Upload failed. See console for details.");
-      console.error(error);
     }
   };
 
@@ -200,11 +198,13 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       }
 
       try {
-        const objectStorage = await getAllObjectStorages(projectId);
-        const storageData = objectStorage?.data ?? objectStorage;
-        setObjectstorage(storageData);
-        if (storageData.length === 1) {
-          setObjectstorageId(String(storageData[0].id));
+        const objectStorage = await getAllObjectStorages(
+          organization?.organizationId as number,
+          Number(projectId)
+        );
+        setObjectstorage(objectStorage);
+        if (objectStorage.length === 1) {
+          setObjectstorageId(String(objectStorage[0].id));
         }
         setIsLoadingObjectStorage(false);
       } catch (error) {
@@ -213,7 +213,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
         setIsLoadingObjectStorage(false);
       }
     })();
-  }, [projectId]);
+  }, [organization?.organizationId, projectId]);
 
   // Memoize the fetch projects function
   const fetchProjects = useCallback(async () => {
@@ -227,7 +227,10 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     setIsLoadingProjects(true);
 
     try {
-      const data = await getAllProjects(organization.organizationId, true);
+      const data = await getAllProjects(
+        organization.organizationId as number,
+        true
+      );
       setProjects(data);
       if (data.length === 1) {
         setProjectId(String(data[0].id));
@@ -254,13 +257,15 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       </div>
 
       <div
-        className={`flex gap-8 p-10 lg:p-20 ${showRightPanel ? "justify-between" : "justify-center"
-          }`}
+        className={`flex gap-8 p-10 lg:p-20 ${
+          showRightPanel ? "justify-between" : "justify-center"
+        }`}
       >
         {/* LEFT */}
         <div
-          className={`w-full lg:w-3/5 ${showRightPanel ? "" : "max-w-5xl mx-auto"
-            }`}
+          className={`w-full lg:w-3/5 ${
+            showRightPanel ? "" : "max-w-5xl mx-auto"
+          }`}
         >
           <h2>{t.translations.START_UPLOAD_BY_CHOOSING_TYPE}</h2>
           <div className="p-4 space-y-4">
@@ -283,8 +288,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!organization
                       ? "Select an organization first"
                       : isLoadingProjects
-                        ? "Loading projects..."
-                        : t.translations.PROJECT}
+                      ? "Loading projects..."
+                      : t.translations.PROJECT}
                   </option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -312,8 +317,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!projectId
                       ? "Select a project first"
                       : isLoadingDataSources
-                        ? "Loading data sources..."
-                        : "Data Sources"}
+                      ? "Loading data sources..."
+                      : "Data Sources"}
                   </option>
                   {dataSources.map((d) => (
                     <option key={d.id} value={String(d.id)}>
@@ -341,8 +346,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     {!projectId
                       ? "Select a project first"
                       : isLoadingObjectStorage
-                        ? "Loading object storages..."
-                        : "Object storages"}
+                      ? "Loading object storages..."
+                      : "Object storages"}
                   </option>
                   {objectStorage.map((object) => (
                     <option key={object.id} value={String(object.id)}>

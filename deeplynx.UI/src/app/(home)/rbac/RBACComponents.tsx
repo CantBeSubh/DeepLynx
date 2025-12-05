@@ -3,10 +3,13 @@
 
 import React, { ReactNode } from "react";
 import { useRBAC } from "./useRBAC";
+import { PERMISSIONS } from "./rbacConfig";
+import type { AnyRBACRole } from "./rbacConfig";
 
-// ============================================
-// CanAccess Component
-// ============================================
+/* -------------------------------------------------------------------------- */
+/*                               CanAccess                                    */
+/* -------------------------------------------------------------------------- */
+
 interface CanAccessProps {
   permission?: string;
   permissions?: string[];
@@ -18,46 +21,13 @@ interface CanAccessProps {
 /**
  * For UI Elements & Features
  * Use this for small pieces of UI like buttons, menu items, sections, or features within a page.
- * USE CASE:
  *
+ * Examples:
  * - Show/hide buttons (Create, Edit, Delete)
  * - Show/hide menu items in navigation
  * - Show/hide specific sections or cards on a page
  * - Enable/disable form fields
  * - Show/hide table columns or actions
- *
- *
- * Conditionally render children based on user permissions
- *
- * @example
- * // Single permission
- * <CanAccess permission={PERMISSIONS.CREATE_USER}>
- *   <button>Create User</button>
- * </CanAccess>
- *
- * @example
- * // Multiple permissions (any of them)
- * <CanAccess permissions={[PERMISSIONS.EDIT_USER, PERMISSIONS.DELETE_USER]}>
- *   <button>Manage User</button>
- * </CanAccess>
- *
- * @example
- * // Require all permissions
- * <CanAccess
- *   permissions={[PERMISSIONS.VIEW_ANALYTICS, PERMISSIONS.EXPORT_REPORTS]}
- *   requireAll={true}
- * >
- *   <button>Export Analytics</button>
- * </CanAccess>
- *
- * @example
- * // With fallback
- * <CanAccess
- *   permission={PERMISSIONS.VIEW_SETTINGS}
- *   fallback={<div>You don't have access</div>}
- * >
- *   <SettingsPanel />
- * </CanAccess>
  */
 export function CanAccess({
   permission,
@@ -81,9 +51,10 @@ export function CanAccess({
   return canAccess ? <>{children}</> : <>{fallback}</>;
 }
 
-// ============================================
-// RestrictedRoute Component
-// ============================================
+/* -------------------------------------------------------------------------- */
+/*                              RestrictedRoute                               */
+/* -------------------------------------------------------------------------- */
+
 interface RestrictedRouteProps {
   permission: string;
   fallback?: ReactNode;
@@ -92,27 +63,14 @@ interface RestrictedRouteProps {
 
 /**
  * For Entire Pages
- * Use this to protect whole pages or routes. If user doesn't have permission, they see "Access Denied" instead of the page content.
- * Use cases:
+ * Use this to protect whole pages or routes. If user doesn't have permission,
+ * they see "Access Denied" (or your custom fallback) instead of the page content.
  *
+ * Use cases:
  * - Admin-only pages
  * - Settings pages
  * - Reports pages
  * - Any full page that requires specific permissions
- *
- * @example
- * <RestrictedRoute permission={PERMISSIONS.VIEW_USERS}>
- *   <UserManagementPage />
- * </RestrictedRoute>
- *
- * @example
- * // With custom fallback
- * <RestrictedRoute
- *   permission={PERMISSIONS.VIEW_SETTINGS}
- *   fallback={<CustomAccessDenied />}
- * >
- *   <SettingsPage />
- * </RestrictedRoute>
  */
 export function RestrictedRoute({
   permission,
@@ -126,63 +84,87 @@ export function RestrictedRoute({
       return <>{fallback}</>;
     }
 
-    return (
-      <div className="flex items-center justify-center min-h-screen p-8">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-4">🔒</div>
-          <h2 className="text-2xl font-bold text-error mb-4">Access Denied</h2>
-          <p className="text-base-content/70">
-            You don't have permission to access this page.
-          </p>
-        </div>
-      </div>
-    );
+    return <></>;
   }
 
   return <>{children}</>;
 }
 
-// ============================================
-// RoleGate Component (Bonus)
-// ============================================
+/* -------------------------------------------------------------------------- */
+/*                                  RoleGate                                  */
+/* -------------------------------------------------------------------------- */
+
 interface RoleGateProps {
-  role: string;
+  role: AnyRBACRole;
   fallback?: ReactNode;
   children: ReactNode;
 }
 
 /**
- *  For Role-Based Rendering
- * Use this when you need to check the user's role rather than individual permissions. This is less flexible but simpler when you have clear role distinctions.
- * Use cases:
+ * For Role-Based Rendering
+ * Use this when you need to check the user's role rather than individual permissions.
  *
- * - Admin-only dashboards
+ * Use cases:
+ * - Admin-only dashboards or sections
  * - Different UI layouts for different roles
  * - Role-specific welcome messages
- * - When you need simple "is this user an admin?" checks
- *
- * @example
- * <RoleGate role="sysAdmin">
- *   <AdminPanel />
- * </RoleGate>
- *
- * @example
- * <div>
- *    <RoleGate role="sysAdmin">
- *      <AdminDashboard />
- *    </RoleGate>
- *
- *    <RoleGate role="manager">
- *       <ManagerDashboard />
- *    </RoleGate>
- *
- *    <RoleGate role="viewer">
- *     <ViewerDashboard />
- *    </RoleGate>
- * </div>
  */
 export function RoleGate({ role, fallback = null, children }: RoleGateProps) {
   const { hasRole } = useRBAC();
 
   return hasRole(role) ? <>{children}</> : <>{fallback}</>;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                        Convenience Portal Components                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Wrap a full page or layout that should only be visible to SysAdmins.
+ *
+ * Example:
+ * <SysAdminRoute>
+ *   <SiteManagementPortal />
+ * </SysAdminRoute>
+ */
+export function SysAdminRoute({ children }: { children: ReactNode }) {
+  return (
+    <RestrictedRoute permission={PERMISSIONS.SYSADMIN_PAGE}>
+      {children}
+    </RestrictedRoute>
+  );
+}
+
+/**
+ * Wrap a full page or layout that should only be visible to Org Admins and above.
+ * (SysAdmins also get access because they have all permissions.)
+ *
+ * Example:
+ * <OrgAdminRoute>
+ *   <OrganizationPortal />
+ * </OrgAdminRoute>
+ */
+export function OrgAdminRoute({ children }: { children: ReactNode }) {
+  return (
+    <RestrictedRoute permission={PERMISSIONS.ORGANIZATION_PORTAL}>
+      {children}
+    </RestrictedRoute>
+  );
+}
+
+/**
+ * Wrap a full page or layout that should only be visible to Project Admins and above.
+ * (OrgAdmins and SysAdmins also get access.)
+ *
+ * Example:
+ * <ProjectAdminRoute>
+ *   <ProjectPortal />
+ * </ProjectAdminRoute>
+ */
+export function ProjectAdminRoute({ children }: { children: ReactNode }) {
+  return (
+    <RestrictedRoute permission={PERMISSIONS.PROJECT_PORTAL}>
+      {children}
+    </RestrictedRoute>
+  );
 }

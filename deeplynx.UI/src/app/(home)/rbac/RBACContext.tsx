@@ -8,57 +8,97 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-import { useSession } from "next-auth/react";
 import { Session } from "next-auth";
-import api from "@/app/lib/api"; // Your existing api instance with interceptor
-import axios from "axios";
 import Image from "next/image";
 
-// Define the User type based on your API response
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  username: string | null;
-  isSysAdmin: boolean;
-  isArchived: boolean;
-  isActive: boolean;
-  role: string;
-}
+import {
+  getCurrentUser,
+  getLocalDevUser,
+} from "@/app/lib/client_service/user_services.client";
+import { UserAdminInfoDto } from "../types/responseDTOs";
+import { useSafeSession } from "@/app/hooks/useSafeSession";
+import type { CoreRBACRole } from "./rbacConfig";
 
-// Define the context type
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
+
+export type RBACRole = CoreRBACRole;
+
+export type RBACUser = UserAdminInfoDto & {
+  roles: RBACRole[];
+};
+
 interface RBACContextType {
-  user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  user: RBACUser | null;
+  setUser: React.Dispatch<React.SetStateAction<RBACUser | null>>;
   refreshUser: () => void;
   session: Session | null;
 }
 
-// Create the context with proper typing
+/* Props for provider: org/project context is passed in from outside */
+interface RBACProviderProps {
+  children: ReactNode;
+  orgId?: number;
+  projectId?: number;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                RBAC Context                                */
+/* -------------------------------------------------------------------------- */
+
 export const RBACContext = createContext<RBACContextType | undefined>(
   undefined
 );
 
-export function RBACProvider({ children }: { children: ReactNode }) {
-  const { data: session, status } = useSession();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+/* -------------------------------------------------------------------------- */
+/*                               RBAC Provider                                */
+/* -------------------------------------------------------------------------- */
 
+export function RBACProvider({
+  children,
+  orgId,
+  projectId,
+}: RBACProviderProps) {
   const disableAuth =
     process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
 
+  const { data: session, status } = useSafeSession();
+  const [user, setUser] = useState<RBACUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  /* ------------------------------------------------------------------------ */
+  /*                            Role Derivation                               */
+  /* ------------------------------------------------------------------------ */
+
+  const deriveRoles = (user: UserAdminInfoDto): RBACRole[] => {
+    const roles: RBACRole[] = [];
+
+    if (user.isSysAdmin) roles.push("sysAdmin");
+    if (user.isOrgAdmin) roles.push("orgAdmin");
+    if (user.isProjectAdmin) roles.push("projectAdmin");
+
+    return roles;
+  };
+
+  /* ------------------------------------------------------------------------ */
+  /*                            User Fetch Helpers                            */
+  /* ------------------------------------------------------------------------ */
+
   const fetchDevUser = useCallback(async () => {
+    setLoading(true);
     try {
-      const response = await api.get("/users/GetLocalDevUser");
-      const userData: User = {
-        ...response.data,
-        role: response.data.isSysAdmin ? "sysAdmin" : "viewer",
+      const response = await getLocalDevUser();
+      const baseUser = response as UserAdminInfoDto;
+      const userData: RBACUser = {
+        ...baseUser,
+        roles: deriveRoles(baseUser),
       };
       setUser(userData);
     } catch (error) {
-      console.error("Failed to fetch dev user: ", error);
-      if (axios.isAxiosError(error)) {
-        console.error("Error details:", error.response?.data);
+      console.error("Failed to fetch dev user:", error);
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
       }
       setUser(null);
     } finally {
@@ -67,25 +107,31 @@ export function RBACProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchUserData = useCallback(async () => {
+    setLoading(true);
     try {
-      const response = await api.get("/users/GetCurrentUser");
-      const userData: User = {
-        ...response.data,
-        role: response.data.isSysAdmin ? "sysAdmin" : "viewer",
+      // 🔥 Here we now use orgId/projectId from props
+      const response = await getCurrentUser(orgId, projectId);
+
+      const userData: RBACUser = {
+        ...response,
+        roles: deriveRoles(response),
       };
       setUser(userData);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
-      if (axios.isAxiosError(error)) {
-        console.error("Error details:", error.response?.data);
+      if (error instanceof Error) {
+        console.error("Error details:", error.message);
       }
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [orgId, projectId]);
 
-  // Fetch user data when session is available
+  /* ------------------------------------------------------------------------ */
+  /*                           Initial User Loading                           */
+  /* ------------------------------------------------------------------------ */
+
   useEffect(() => {
     if (disableAuth) {
       fetchDevUser();
@@ -95,21 +141,25 @@ export function RBACProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setLoading(false);
     }
-  }, [status, fetchUserData, fetchDevUser, disableAuth]);
+  }, [status, disableAuth, fetchDevUser, fetchUserData]);
 
-  // Refresh user data if needed
+  /* ------------------------------------------------------------------------ */
+  /*                              Refresh Handler                             */
+  /* ------------------------------------------------------------------------ */
+
   const refreshUser = useCallback(() => {
     if (disableAuth) {
-      setLoading(true);
       fetchDevUser();
     } else if (status === "authenticated") {
-      setLoading(true);
       fetchUserData();
     }
-  }, [status, fetchUserData, fetchDevUser, disableAuth]);
+  }, [disableAuth, status, fetchDevUser, fetchUserData]);
 
-  // Show loading state while checking auth
-  if (status === "loading" || loading) {
+  /* ------------------------------------------------------------------------ */
+  /*                               Load States                                */
+  /* ------------------------------------------------------------------------ */
+
+  if (loading) {
     return (
       <div
         className="login"
@@ -131,12 +181,10 @@ export function RBACProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // Not authenticated - let NextAuth handle redirect
   if (status === "unauthenticated" && !disableAuth) {
     return <>{children}</>;
   }
 
-  // Failed to load user
   if (!user && (status === "authenticated" || disableAuth)) {
     return (
       <div
@@ -149,11 +197,19 @@ export function RBACProvider({ children }: { children: ReactNode }) {
           gap: "16px",
         }}
       >
-        <div>Failed to load user data</div>
-        <button onClick={refreshUser}>Retry</button>
+        <div className="text-error font-semibold text-lg">
+          Failed to load user data
+        </div>
+        <button onClick={refreshUser} className="btn btn-primary">
+          Retry
+        </button>
       </div>
     );
   }
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Main Render                                */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <RBACContext.Provider value={{ user, setUser, refreshUser, session }}>

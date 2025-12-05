@@ -1,3 +1,4 @@
+// src/app/contexts/ProjectSessionProvider.tsx
 "use client";
 
 import React, {
@@ -5,30 +6,26 @@ import React, {
   useContext,
   useEffect,
   useState,
-  ReactNode,
   useCallback,
 } from "react";
+import type { ReactNode, Context } from "react";
 
-// Define shape of a project session
 export interface ProjectSession {
-  projectId: string;
+  projectId: string | number;
   projectName: string;
 }
 
-// Define context value shape
 interface ProjectSessionContextType {
   project: ProjectSession | null;
   setProject: (project: ProjectSession) => void;
+  clearProject: () => void;
   hasLoaded: boolean;
 }
 
-// Create context
-const ProjectSessionContext = createContext<
-  ProjectSessionContextType | undefined
->(undefined);
+const ProjectSessionContext: Context<ProjectSessionContextType | undefined> =
+  createContext<ProjectSessionContextType | undefined>(undefined);
 
-// Custom hook for accessing the session
-export const useProjectSession = () => {
+export const useProjectSession = (): ProjectSessionContextType => {
   const context = useContext(ProjectSessionContext);
   if (!context) {
     throw new Error(
@@ -38,37 +35,65 @@ export const useProjectSession = () => {
   return context;
 };
 
-// Provider component
 export const ProjectSessionProvider = ({
   children,
 }: {
   children: ReactNode;
-}) => {
+}): React.JSX.Element => {
   const [project, setProjectState] = useState<ProjectSession | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  // On mount, restore from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem("projectSession");
+    const storedLocal = localStorage.getItem("projectSession");
+    const storedCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("projectSession="))
+      ?.split("=")[1];
+
+    const stored =
+      storedLocal || (storedCookie ? decodeURIComponent(storedCookie) : null);
+
+    console.log("ProjectSessionProvider hydrate - raw stored:", stored);
+
     if (stored) {
       try {
-        const parsed: ProjectSession = JSON.parse(stored);
-        setProjectState(parsed);
+        const parsed: ProjectSession | null = JSON.parse(stored);
+        console.log("ProjectSessionProvider hydrate - parsed:", parsed);
+        if (parsed && parsed.projectId) {
+          setProjectState(parsed);
+        }
       } catch {
         console.warn("Failed to parse stored project session.");
       }
     }
+
     setHasLoaded(true);
   }, []);
 
-  // On project update, persist to localStorage
-  const setProject = useCallback((project: ProjectSession) => {
-    setProjectState(project);
-    localStorage.setItem("projectSession", JSON.stringify(project));
+  const setProject = useCallback((proj: ProjectSession) => {
+    console.log("ProjectSessionProvider setProject called with:", proj);
+    setProjectState(proj);
+    const serialized = JSON.stringify(proj);
+
+    localStorage.setItem("projectSession", serialized);
+
+    const maxAge = 30 * 24 * 60 * 60;
+    document.cookie = `projectSession=${encodeURIComponent(
+      serialized
+    )}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }, []);
+
+  const clearProject = useCallback(() => {
+    console.log("ProjectSessionProvider clearProject called");
+    setProjectState(null);
+    localStorage.removeItem("projectSession");
+    document.cookie = "projectSession=; path=/; max-age=0";
   }, []);
 
   return (
-    <ProjectSessionContext.Provider value={{ project, setProject, hasLoaded }}>
+    <ProjectSessionContext.Provider
+      value={{ project, setProject, clearProject, hasLoaded }}
+    >
       {children}
     </ProjectSessionContext.Provider>
   );

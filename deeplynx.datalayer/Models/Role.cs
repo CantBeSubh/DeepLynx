@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("roles", Schema = "deeplynx")]
-[Index("Id", Name = "idx_roles_id")]
-[Index("OrganizationId", Name = "idx_roles_organization_id")]
-[Index("ProjectId", Name = "idx_roles_project_id")]
-[Index("ProjectId", "Name", Name = "unique_project_role_name", IsUnique = true)]
-[Index("OrganizationId", "Name", Name = "unique_organization_role_name", IsUnique = true)]
 public partial class Role
 {
     [Key]
@@ -34,14 +26,14 @@ public partial class Role
     public long? ProjectId { get; set; }
 
     [Column("organization_id")]
-    public long? OrganizationId { get; set; }
+    public long OrganizationId { get; set; }
 
     [Column("is_archived")]
     public bool IsArchived { get; set; }
 
     [ForeignKey("OrganizationId")]
     [InverseProperty("Roles")]
-    public virtual Organization? Organization { get; set; }
+    public virtual Organization Organization { get; set; } = null!;
 
     [ForeignKey("ProjectId")]
     [InverseProperty("Roles")]
