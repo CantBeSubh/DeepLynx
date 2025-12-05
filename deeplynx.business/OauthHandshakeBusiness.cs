@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -75,7 +76,7 @@ public class OauthHandshakeBusiness : IOauthHandshakeBusiness
         };
         
         var cacheKey = $"auth_code:{authCode}";
-        await CacheBusiness.Instance.SetAsync(
+        await CacheService.Instance.SetAsync(
             cacheKey,
             authCodeData,
             TimeSpan.FromMinutes(10));
@@ -136,7 +137,7 @@ public class OauthHandshakeBusiness : IOauthHandshakeBusiness
     {
         // Retrieve auth code data from cache
         var cacheKey = $"auth_code:{code}";
-        var authCodeData = await CacheBusiness.Instance.GetAsync<OauthCodeData>(cacheKey);
+        var authCodeData = await CacheService.Instance.GetAsync<OauthCodeData>(cacheKey);
         
         // Check if auth code exists, has been used, or is expired
         var nowWithoutTz = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -167,7 +168,7 @@ public class OauthHandshakeBusiness : IOauthHandshakeBusiness
         // Mark code as consumed to prevent replay attacks
         authCodeData.IsUsed = true;
         authCodeData.ExpiresAt = nowWithoutTz;
-        await CacheBusiness.Instance.SetAsync(cacheKey, authCodeData, TimeSpan.FromMinutes(1));
+        await CacheService.Instance.SetAsync(cacheKey, authCodeData, TimeSpan.FromMinutes(1));
         
         return authCodeData;
     }

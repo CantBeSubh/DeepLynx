@@ -140,32 +140,6 @@ try
 
     builder.Services.AddSignalR(); // Used for event system pub/sub and notifications
 
-    // Register Cache Service as a singleton
-    var cacheProviderType = Environment.GetEnvironmentVariable("CACHE_PROVIDER_TYPE");
-    if (cacheProviderType == "redis")
-    {
-        var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
-        if (!string.IsNullOrEmpty(redisConnectionString))
-        {
-            builder.Services.AddSingleton(provider =>
-            {
-                var options = ConfigurationOptions.Parse(redisConnectionString);
-                options.AllowAdmin = true;
-                return ConnectionMultiplexer.Connect(options);
-            });
-            builder.Services.AddSingleton<ICacheBusiness, RedisCacheBusiness>();
-        }
-        else
-        {
-            throw new Exception("Redis connection string not found in environment variables.");
-        }
-    }
-    else
-    {
-        // Default to memory cache if CACHE_PROVIDER_TYPE is not set or is not "redis"
-        builder.Services.AddSingleton<ICacheBusiness, MemoryCacheBusiness>();
-    }
-
     builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
     builder.Services.AddTransient<IObjectStorageBusiness, ObjectStorageBusiness>();
     builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
