@@ -40,6 +40,7 @@ public class OauthHandshakeController : ControllerBase
     ///     This endpoint requires authentication. The Next.js proxy ensures the user
     ///     is authenticated before forwarding the request here.
     /// </remarks>
+    [AllowAnonymous]
     [HttpGet("authorize", Name = "api_oauth_authorize")]
     public async Task<IActionResult> Authorize(
         [FromQuery(Name = "client_id")] string clientId,
@@ -108,8 +109,8 @@ public class OauthHandshakeController : ControllerBase
     ///     This endpoint does not require user authentication. It uses client credentials
     ///     (client_id and client_secret) to authenticate the OAuth application.
     /// </remarks>
+    [AllowAnonymous]
     [HttpPost("exchange", Name = "api_oauth_exchange")]
-    [AllowAnonymous] // token exchange uses client credentials vs user authentication to verify identity
     public async Task<IActionResult> Exchange(
         [FromQuery] string code,
         [FromQuery(Name = "client_id")] string clientId,
