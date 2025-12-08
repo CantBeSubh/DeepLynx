@@ -265,6 +265,14 @@ export const translations = {
             GROUP_NO_LONGER_APPEAR: "The group will no longer appear in group lists. Users will not lose access to the organization itself, only this group association.",
             ARCHIVE: "Archive",
 
+            NO_PROJECT: "No Project",
+            ACTIVE: "Active",
+            PROJECT_DASHBOARD: "Project Dashboard",
+            EVENT_MANAGEMENT: "Event Management",
+
+
+
+
         }
     },
     es: {
@@ -540,6 +548,10 @@ export const translations = {
             WHAT_HAPPENS_NEXT: "¿Qué sigue?",
             GROUP_NO_LONGER_APPEAR: "El grupo ya no aparecerá en las listas de grupos. Los usuarios no perderán acceso a la organización, solo a la asociación con este grupo.",
             ARCHIVE: "Archivar",
+            NO_PROJECT: "Sin proyecto",
+            ACTIVE: "Activo",
+            PROJECT_DASHBOARD: "Tablero del proyecto",
+            EVENT_MANAGEMENT: "Gestión de eventos",
 
 
         }

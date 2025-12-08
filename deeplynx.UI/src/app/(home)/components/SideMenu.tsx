@@ -232,7 +232,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                       {t.translations.PROJECTS}
                     </span>
                     <h1 className="text-lg font-bold truncate">
-                      {activeProject?.name || "No Project"}
+                      {activeProject?.name || t.translations.NO_PROJECT}
                     </h1>
                   </div>
                 )}
@@ -254,11 +254,11 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 {loadingProjects ? (
                   <li className="py-2 px-4 text-sm text-primary-content/70">
                     <span className="loading loading-spinner loading-sm"></span>
-                    <span className="ml-2">Loading...</span>
+                    <span className="ml-2">{t.translations.LOADING}</span>
                   </li>
                 ) : projects.length === 0 ? (
                   <li className="py-2 px-4 text-sm text-base-content/70">
-                    No projects found
+                    {t.translations.NO_PROJECT_FOUND}
                   </li>
                 ) : (
                   projects.map((proj) => (
@@ -274,7 +274,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                         <span className="truncate">{proj.name}</span>
                         {isProjectActive(proj.id) && (
                           <span className="ml-auto badge badge-xs flex-shrink-0">
-                            Active
+                            {t.translations.ACTIVE}
                           </span>
                         )}
                       </button>
@@ -299,7 +299,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               className={getItemClass(`/project/${project?.projectId}`)}
             >
               <RectangleGroupIcon className="size-6" />
-              {!isCollapsed && <p className="ml-2">Project Dashboard</p>}
+              {!isCollapsed && (
+                <p className="ml-2">{t.translations.PROJECT_DASHBOARD}</p>
+              )}
             </Link>
           </li>
 
@@ -324,7 +326,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               className={getItemClass("/event_management")}
             >
               <BellIcon className="size-6" />
-              {!isCollapsed && <p className="ml-2">Event Management</p>}
+              {!isCollapsed && (
+                <p className="ml-2">{t.translations.EVENT_MANAGEMENT}</p>
+              )}
             </Link>
           </li>
 
