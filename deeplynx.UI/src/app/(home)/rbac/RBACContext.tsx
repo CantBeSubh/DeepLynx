@@ -63,7 +63,7 @@ export function RBACProvider({
   const disableAuth =
     process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
 
-  const { data: session, status } = useSafeSession();
+  const { data: session, status, update } = useSafeSession();
   const [user, setUser] = useState<RBACUser | null>(null);
   const [loading, setLoading] = useState(true);
 

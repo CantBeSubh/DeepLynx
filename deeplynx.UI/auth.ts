@@ -144,15 +144,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             const BUFFER_TIME_SECONDS = 5 * 60;
             
             // Check if token is still valid but will expire soon
-            if (now < expiresAt && timeUntilExpiry < BUFFER_TIME_SECONDS) {
-                if (!token.refresh_token) {
-                    return {
-                        ...token,
-                        error: "NoRefreshToken",
-                    };
-                }
-                return await refreshAccessToken(token);
-            }
+            // if (now < expiresAt && timeUntilExpiry < BUFFER_TIME_SECONDS) {
+            //     if (!token.refresh_token) {
+            //         return {
+            //             ...token,
+            //             error: "NoRefreshToken",
+            //         };
+            //     }
+            //     return await refreshAccessToken(token);
+            // }
 
             // Return current token if still valid
             if (now < expiresAt) {
@@ -160,12 +160,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
 
             // Token has expired, attempt refresh
-            if (!token.refresh_token) {
-                return {
-                    ...token,
-                    error: "NoRefreshToken",
-                };
-            }
+            // if (!token.refresh_token) {
+            //     return {
+            //         ...token,
+            //         error: "NoRefreshToken",
+            //     };
+            // }
 
             return await refreshAccessToken(token);
         },
@@ -252,7 +252,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     session: {
         strategy: "jwt",
-        maxAge: 8 * 60 * 60, // 8 hours - requires login once per work day
+        // maxAge: 8 * 60 * 60, // 8 hours - requires login once per work day
+        maxAge: 5, // 8 hours - requires login once per work day
     },
     jwt: {
         encode: async (params: JWTEncodeParams) => {
