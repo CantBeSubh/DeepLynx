@@ -27,7 +27,6 @@ public class TestSuiteFixture : IAsyncLifetime
 
     public string PostgresConnectionString { get; private set; }
     public string RedisConnectionString { get; private set; }
-    
     public DeeplynxContext Context { get; private set; }
 
     // Runs at the beginning of every test suite
