@@ -546,20 +546,14 @@ public class RecordBusiness : IRecordBusiness
         var result = await _context.Database
             .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
-
-        // Log Event for all records created
-        var events = new List<CreateEventRequestDto>();
-        foreach (var record in result)
-            events.Add(new CreateEventRequestDto
-            {
-                Operation = "create",
-                EntityType = "record",
-                EntityId = record.Id,
-                EntityName = record.Name,
-                Properties = "{}",
-                DataSourceId = record.DataSourceId
-            });
-        await _eventBusiness.BulkCreateEvents(currentUserId, events, organizationId, projectId);
+        
+        var createEvent = new CreateEventRequestDto
+        {
+            Operation = "create",
+            EntityType = "record",
+            DataSourceId = dataSourceId
+        };
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, createEvent, result.Count);
 
         return result;
     }
