@@ -27,6 +27,7 @@ public class TestSuiteFixture : IAsyncLifetime
 
     public string PostgresConnectionString { get; private set; }
     public string RedisConnectionString { get; private set; }
+    
     public DeeplynxContext Context { get; private set; }
 
     // Runs at the beginning of every test suite
@@ -114,6 +115,7 @@ public class IntegrationTestBase : IAsyncLifetime
     protected void SwitchCacheType(string cacheType)
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", cacheType);
+        Environment.SetEnvironmentVariable("REDIS_CONNECTION_STRING", _fixture.RedisConnectionString);
         CacheService.ResetCacheService();
     }
 
