@@ -546,7 +546,7 @@ public class RecordBusiness : IRecordBusiness
         var result = await _context.Database
             .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
-        
+
         var createEvent = new CreateEventRequestDto
         {
             Operation = "create",
@@ -870,7 +870,10 @@ public class RecordBusiness : IRecordBusiness
         if (tags == null || !tags.Any())
             return new List<RecordTagDto>();
 
-        var tagsToInsert = tags.Select(t => new CreateTagRequestDto { Name = t }).ToList();
+        // Deduplicate tags before processing
+        var distinctTags = tags.Distinct().ToList();
+
+        var tagsToInsert = distinctTags.Select(t => new CreateTagRequestDto { Name = t }).ToList();
         var tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert);
 
         var recordTags = tags
