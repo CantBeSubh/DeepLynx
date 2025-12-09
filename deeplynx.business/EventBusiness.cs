@@ -9,7 +9,6 @@ using System.Text.Json;
 
 public class EventBusiness : IEventBusiness
 {
-    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly INotificationBusiness _notificationBusiness;
 
@@ -17,16 +16,13 @@ public class EventBusiness : IEventBusiness
     /// Initializes a new instance of the <see cref="EventBusiness" /> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
-    /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="notificationBusiness">Used for initiating notifications for subscribed users</param>
     public EventBusiness(
         DeeplynxContext context,
-        ICacheBusiness cacheBusiness,
         INotificationBusiness notificationBusiness
     )
     {
         _context = context;
-        _cacheBusiness = cacheBusiness;
         _notificationBusiness = notificationBusiness;
     }
 

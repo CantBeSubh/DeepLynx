@@ -6,6 +6,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using deeplynx.helpers;
 using Moq;
 
 namespace deeplynx.tests
@@ -67,7 +68,7 @@ namespace deeplynx.tests
 
             // Assert
             var cacheKey = $"auth_code:{authCode}";
-            var cachedData = await CacheBusiness.Instance.GetAsync<OauthCodeData>(cacheKey);
+            var cachedData = await CacheService.Instance.GetAsync<OauthCodeData>(cacheKey);
             
             Assert.NotNull(cachedData);
             Assert.Equal(authCode, cachedData.Code);
@@ -181,7 +182,7 @@ namespace deeplynx.tests
         
             // Assert
             var cacheKey = $"auth_code:{authCode}";
-            var cachedData = await CacheBusiness.Instance.GetAsync<OauthCodeData>(cacheKey);
+            var cachedData = await CacheService.Instance.GetAsync<OauthCodeData>(cacheKey);
             Assert.True(cachedData.IsUsed);
         }
         
@@ -233,9 +234,9 @@ namespace deeplynx.tests
 
             // Manually expire the code in cache
             var cacheKey = $"auth_code:{authCode}";
-            var cachedData = await CacheBusiness.Instance.GetAsync<OauthCodeData>(cacheKey);
+            var cachedData = await CacheService.Instance.GetAsync<OauthCodeData>(cacheKey);
             cachedData.ExpiresAt = DateTime.SpecifyKind(DateTime.UtcNow.AddMinutes(-1), DateTimeKind.Unspecified);
-            await CacheBusiness.Instance.SetAsync(cacheKey, cachedData, TimeSpan.FromMinutes(1));
+            await CacheService.Instance.SetAsync(cacheKey, cachedData, TimeSpan.FromMinutes(1));
 
             // Act & Assert
             var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
