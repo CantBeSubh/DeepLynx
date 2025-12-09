@@ -494,6 +494,8 @@ public class EventBusiness : IEventBusiness
     /// Creates a new Event based on the event data provided.
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">ID of the organization the event belongs to.</param>
+    /// <param name="projectId">ID of the project the event belongs to.</param>
     /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
     public async Task<EventResponseDto> CreateEvent(long currentUserId, long organizationId, long? projectId, CreateEventRequestDto dto)
