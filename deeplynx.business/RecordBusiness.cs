@@ -876,7 +876,7 @@ public class RecordBusiness : IRecordBusiness
         var tagsToInsert = distinctTags.Select(t => new CreateTagRequestDto { Name = t }).ToList();
         var tagMap = await BulkUpsertTags(organizationId, currentUserId, projectId, tagsToInsert);
 
-        var recordTags = tags
+        var recordTags = distinctTags
             .Where(tag => tagMap.ContainsKey(tag))
             .Select(tag => new RecordTagLinkDto
             {
@@ -888,7 +888,7 @@ public class RecordBusiness : IRecordBusiness
         if (recordTags.Any()) await BulkAttachTags(recordTags);
 
         // Convert tagMap to RecordTagDto collection
-        return tags
+        return distinctTags
             .Where(tag => tagMap.ContainsKey(tag))
             .Select(tag => new RecordTagDto
             {
