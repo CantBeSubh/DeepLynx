@@ -10,9 +10,7 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("projects/{projectId:long}/labels")]
 [Authorize]
-[Tags(
-    // "Project Management",
-    "Sensitivity Label")]
+[Tags("Project - Sensitivity Label")]
 public class SensitivityLabelProjectController : ControllerBase
 {
     private readonly ILogger<SensitivityLabelProjectController> _logger;

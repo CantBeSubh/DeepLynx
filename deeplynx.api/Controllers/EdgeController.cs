@@ -17,6 +17,7 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId:long}/projects/{projectId:long}/edges")]
 [Authorize]
+[Tags("Project - Edge")]
 public class EdgeController : ControllerBase
 {
     private readonly IEdgeBusiness _edgeBusiness;

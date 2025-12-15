@@ -190,7 +190,7 @@ try
             {
                 Version = "v1",
                 Title = "DeepLynx Nexus API",
-                Description = "DeepLynx Nexus API Documentation"
+                Description = "DeepLynx Nexus API for managing organizational data and relationships. Endpoints are organized by Organization-level (/api/organizations/{organizationId}) and Project-level (/api/projects/{projectId}) scopes."
             };
 
             // Define all tags with hierarchical names
@@ -209,7 +209,6 @@ try
                 new() { Name = "Project - DataSource", Description = "Project-level data sources" },
                 
                 // Edge tags
-                new() { Name = "Organization - Edge", Description = "Organization-level edges" },
                 new() { Name = "Project - Edge", Description = "Project-level edges" },
                 
                 // Relationship tags
@@ -229,12 +228,12 @@ try
                 new() { Name = "Project - Tag", Description = "Project-level tags" },
                 
                 // ObjectStorage tags
-                new() { Name = "Organization - ObjectStorage", Description = "Organization-level storage" },
-                new() { Name = "Project - ObjectStorage", Description = "Project-level storage" },
+                new() { Name = "Organization - Object Storage", Description = "Organization-level storage" },
+                new() { Name = "Project - Object Storage", Description = "Project-level storage" },
                 
                 // SensitivityLabel tags
-                new() { Name = "Organization - SensitivityLabel", Description = "Organization-level labels" },
-                new() { Name = "Project - SensitivityLabel", Description = "Project-level labels" },
+                new() { Name = "Organization - Sensitivity Label", Description = "Organization-level labels" },
+                new() { Name = "Project - Sensitivity Label", Description = "Project-level labels" },
                 
                 // Management
                 new() { Name = "Organization", Description = "Organization management" },
@@ -283,7 +282,7 @@ try
                 new JsonObject
                 {
                     ["name"] = "Edge",
-                    ["tags"] = new JsonArray { "Organization - Edge", "Project - Edge" }
+                    ["tags"] = new JsonArray { "Project - Edge" }
                 },
                 new JsonObject
                 {
@@ -307,13 +306,13 @@ try
                 },
                 new JsonObject
                 {
-                    ["name"] = "ObjectStorage",
-                    ["tags"] = new JsonArray { "Organization - ObjectStorage", "Project - ObjectStorage" }
+                    ["name"] = "Object Storage",
+                    ["tags"] = new JsonArray { "Organization - Object Storage", "Project - Object Storage" }
                 },
                 new JsonObject
                 {
-                    ["name"] = "SensitivityLabel",
-                    ["tags"] = new JsonArray { "Organization - SensitivityLabel", "Project - SensitivityLabel" }
+                    ["name"] = "Sensitivity Label",
+                    ["tags"] = new JsonArray { "Organization - Sensitivity Label", "Project - Sensitivity Label" }
                 },
                 new JsonObject
                 {

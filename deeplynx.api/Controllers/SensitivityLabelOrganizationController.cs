@@ -10,9 +10,7 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId:long}/labels")]
 [Authorize]
-[Tags(
-    // "Organization Management",
-    "Sensitivity Label")]
+[Tags("Organization - Sensitivity Label")]
 public class SensitivityLabelOrganizationController : ControllerBase
 {
     private readonly ILogger<SensitivityLabelOrganizationController> _logger;
