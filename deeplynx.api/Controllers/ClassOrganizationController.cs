@@ -16,9 +16,7 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("organizations/{organizationId:long}/classes")]
 [Authorize]
-[Tags(
-    // "Organization Management",
-    "Class")]
+[Tags("Organization - Class")]
 public class ClassOrganizationController : ControllerBase
 {
     private readonly IClassBusiness _classBusiness;

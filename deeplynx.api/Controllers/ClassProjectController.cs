@@ -16,9 +16,7 @@ namespace deeplynx.api.Controllers;
 [ApiController]
 [Route("projects/{projectId:long}/classes")]
 [Authorize]
-[Tags(
-    // "Project Management",
-    "Class")]
+[Tags("Project - Class")]
 public class ClassProjectController : ControllerBase
 {
     private readonly IClassBusiness _classBusiness;
