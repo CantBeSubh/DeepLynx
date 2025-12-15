@@ -181,395 +181,189 @@ try
     builder.Services.AddTransient<ISavedSearchBusiness, SavedSearchBusiness>();
     builder.Services.AddTransient<IGraphBusiness, GraphBusiness>();
     
-    // builder.Services.AddOpenApi(options =>
-    // {
-    //     options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
-    //     options.AddDocumentTransformer(async (document, context, cancellationToken) =>
-    //     {
-    //         document.Info.Version = "v1";
-    //         document.Info.Title = "DeepLynx Nexus";
-    //         document.Info.Description = "DeepLynx Nexus Api Documentation";
-    //         // Add security scheme
-    //         document.Components ??= new OpenApiComponents();
-    //         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-    //     
-    //         var bearerScheme = new OpenApiSecurityScheme
-    //         {
-    //             Type = SecuritySchemeType.Http,
-    //             Scheme = "bearer",
-    //             BearerFormat = "JWT",
-    //             Description = "Enter your JWT token"
-    //         };
-    //     
-    //         document.Components.SecuritySchemes["Bearer"] = bearerScheme;
-    //         // Create a security scheme reference using the constructor
-    //         var securitySchemeReference = new OpenApiSecuritySchemeReference("Bearer", document);
-    //         var securityRequirement = new OpenApiSecurityRequirement
-    //         {
-    //             [securitySchemeReference] = new List<string>()
-    //         };
-    //         // Apply to all operations
-    //         foreach (var path in document.Paths.Values)
-    //         {
-    //             foreach (var operation in path.Operations.Values)
-    //             {
-    //                 operation.Security ??= new List<OpenApiSecurityRequirement>();
-    //                 operation.Security.Add(securityRequirement);
-    //             }
-    //         }
-    //
-    //         document.Tags = new HashSet<OpenApiTag>
-    //         {
-    //             // parent tags
-    //             
-    //             // Todo: Add this back after new scaler version
-    //             
-    //             // new()
-    //             // {
-    //             //     Name = "Project Management",
-    //             //     Description =
-    //             //         "Handles project-level operations including classes, records, edges, and relationships"
-    //             // },
-    //             // new()
-    //             // {
-    //             //     Name = "Organization Management",
-    //             //     Description = "Handles organization-level operations including classes, users, groups, and projects"
-    //             // },
-    //             
-    //             // child tags
-    //             new()
-    //             {
-    //                 Name = "Token",
-    //                 Description =
-    //                     "Provides endpoints to create tokens and api keys"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Class",
-    //                 Description =
-    //                     "Handles class management including creation, updates, retrieval, and deletion of class entities."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "DataSource",
-    //                 Description = "Manages data sources, including their creation, retrieval, updating, and deletion."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Edge",
-    //                 Description =
-    //                     "Oversees relationships between entities, allowing for the creation, retrieval, updating, and deletion of edges."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Event",
-    //                 Description = "Handles Event fetching by project and user subscriptions."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "File",
-    //                 Description = "Handles operations related to file management"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Group",
-    //                 Description = "Handles operations related to Group management"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "HistoricalEdge",
-    //                 Description =
-    //                     "Handles operations related to historical edges, including retrieval and analysis of past relationships."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "HistoricalRecord",
-    //                 Description =
-    //                     "Manages operations related to historical records, including retrieval and analysis of past records."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Metadata",
-    //                 Description = "Handles the management and processing of metadata associated with various entities."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Notification",
-    //                 Description = "Handles notification operations."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "OauthApplication",
-    //                 Description = "Handles operations related to registered Oauth2 Application management."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "OauthHandshake",
-    //                 Description =
-    //                     "Facilitates the Oauth2 Handshake between Nexus and external apps, with Nexus acting as an Oauth2 provider."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "ObjectStorage",
-    //                 Description = "Handles the management and processing of metadata associated with object storages."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Organization",
-    //                 Description = "Handles operations related to Organization management"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Permission",
-    //                 Description = "Handles operations related to Permission management"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Project",
-    //                 Description =
-    //                     "Facilitates project lifecycle management, including creating, updating, retrieving, and archiving projects."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Query",
-    //                 Description = "Facilitates data filtering operations for efficient data retrieval and management."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Record",
-    //                 Description =
-    //                     "Manages all operations related to record creation, retrieval, updating, deletion, and tagging."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Relationship",
-    //                 Description =
-    //                     "Handles complex relationships between various entities, allowing for creation, updates, retrieval, and deletion."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Role",
-    //                 Description = "Handles operations related to Role management"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "SavedSearch",
-    //                 Description = "Handles operations related to saving queries for future re-use"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Sensitivity Label",
-    //                 Description = "Handles operations related to Sensitivity Label management"
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Subscription",
-    //                 Description = "Handles operations related to subscription creation, retrieval, and deletion."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Tag",
-    //                 Description =
-    //                     "Manages tagging operations for entities, including creating, updating, retrieving, and deleting tags."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "Timeseries",
-    //                 Description =
-    //                     "Handles operations related to time-series data, including querying and uploading time-series data."
-    //             },
-    //             new()
-    //             {
-    //                 Name = "User",
-    //                 Description =
-    //                     "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
-    //             }
-    //         };
-    //     });
-    // });
-    
-   builder.Services.AddOpenApi(options =>
-{
-    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    //OpenApi Documentation
+    builder.Services.AddOpenApi(options =>
     {
-        document.Info = new OpenApiInfo
+        options.AddDocumentTransformer((document, context, cancellationToken) =>
         {
-            Version = "v1",
-            Title = "DeepLynx Nexus API",
-            Description = "DeepLynx Nexus API Documentation"
-        };
+            document.Info = new OpenApiInfo
+            {
+                Version = "v1",
+                Title = "DeepLynx Nexus API",
+                Description = "DeepLynx Nexus API Documentation"
+            };
 
-        // Define all your tags with hierarchical names
-document.Tags = new HashSet<OpenApiTag>
-{
-    // Authentication
-    new() { Name = "OauthHandshake", Description = "OAuth2 authorization flow" },
-    new() { Name = "Token", Description = "API key and JWT token management" },
-    
-    // Class tags - using / separator for hierarchy
-    new() { Name = "Class / Organization", Description = "Organization-level class operations" },
-    new() { Name = "Class / Project", Description = "Project-level class operations" },
-    
-    // DataSource tags
-    new() { Name = "DataSource / Organization", Description = "Organization-level data sources" },
-    new() { Name = "DataSource / Project", Description = "Project-level data sources" },
-    
-    // Edge tags
-    new() { Name = "Edge / Organization", Description = "Organization-level edges" },
-    new() { Name = "Edge / Project", Description = "Project-level edges" },
-    
-    // Relationship tags
-    new() { Name = "Relationship / Organization", Description = "Organization-level relationships" },
-    new() { Name = "Relationship / Project", Description = "Project-level relationships" },
-    
-    // Permission tags
-    new() { Name = "Permission / Organization", Description = "Organization-level permissions" },
-    new() { Name = "Permission / Project", Description = "Project-level permissions" },
-    
-    // Role tags
-    new() { Name = "Role / Organization", Description = "Organization-level roles" },
-    new() { Name = "Role / Project", Description = "Project-level roles" },
-    
-    // Tag tags
-    new() { Name = "Tag / Organization", Description = "Organization-level tags" },
-    new() { Name = "Tag / Project", Description = "Project-level tags" },
-    
-    // ObjectStorage tags
-    new() { Name = "ObjectStorage / Organization", Description = "Organization-level storage" },
-    new() { Name = "ObjectStorage / Project", Description = "Project-level storage" },
-    
-    // SensitivityLabel tags
-    new() { Name = "SensitivityLabel / Organization", Description = "Organization-level labels" },
-    new() { Name = "SensitivityLabel / Project", Description = "Project-level labels" },
-    
-    // Management
-    new() { Name = "Management / Organization", Description = "Organization management" },
-    new() { Name = "Management / Project", Description = "Project management" },
-    new() { Name = "Management / User", Description = "User management" },
-    new() { Name = "Management / Group", Description = "Group management" },
-    
-    // Data
-    new() { Name = "Data / Record", Description = "Record management" },
-    new() { Name = "Data / File", Description = "File operations" },
-    new() { Name = "Data / Metadata", Description = "Metadata operations" },
-    
-    // Query
-    new() { Name = "Query / Search", Description = "Search and filtering" },
-    new() { Name = "Query / SavedSearch", Description = "Saved searches" },
-    
-    // History
-    new() { Name = "History / Record", Description = "Record history" },
-    new() { Name = "History / Edge", Description = "Edge history" },
-    new() { Name = "History / Event", Description = "Event logs" },
-    
-    // Other
-    new() { Name = "Other / Timeseries", Description = "Time-series data" },
-    new() { Name = "Other / Notification", Description = "Notifications" },
-    new() { Name = "Other / OauthApplication", Description = "OAuth apps" }
-};
+            // Define all tags with hierarchical names
+            document.Tags = new HashSet<OpenApiTag>
+            {
+                // Authentication
+                new() { Name = "OauthHandshake", Description = "OAuth2 authorization flow" },
+                new() { Name = "Token", Description = "API key and JWT token management" },
+                
+                // Class tags
+                new() { Name = "Organization - Class", Description = "Organization-level class operations" },
+                new() { Name = "Project - Class", Description = "Project-level class operations" },
+                
+                // DataSource tags
+                new() { Name = "Organization - DataSource", Description = "Organization-level data sources" },
+                new() { Name = "Project - DataSource", Description = "Project-level data sources" },
+                
+                // Edge tags
+                new() { Name = "Organization - Edge", Description = "Organization-level edges" },
+                new() { Name = "Project - Edge", Description = "Project-level edges" },
+                
+                // Relationship tags
+                new() { Name = "Organization - Relationship", Description = "Organization-level relationships" },
+                new() { Name = "Project - Relationship", Description = "Project-level relationships" },
+                
+                // Permission tags
+                new() { Name = "Organization - Permission", Description = "Organization-level permissions" },
+                new() { Name = "Project - Permission", Description = "Project-level permissions" },
+                
+                // Role tags
+                new() { Name = "Organization - Role", Description = "Organization-level roles" },
+                new() { Name = "Project - Role", Description = "Project-level roles" },
+                
+                // Tag tags
+                new() { Name = "Organization - Tag", Description = "Organization-level tags" },
+                new() { Name = "Project - Tag", Description = "Project-level tags" },
+                
+                // ObjectStorage tags
+                new() { Name = "Organization - ObjectStorage", Description = "Organization-level storage" },
+                new() { Name = "Project - ObjectStorage", Description = "Project-level storage" },
+                
+                // SensitivityLabel tags
+                new() { Name = "Organization - SensitivityLabel", Description = "Organization-level labels" },
+                new() { Name = "Project - SensitivityLabel", Description = "Project-level labels" },
+                
+                // Management
+                new() { Name = "Organization", Description = "Organization management" },
+                new() { Name = "Project", Description = "Project management" },
+                new() { Name = "User", Description = "User management" },
+                new() { Name = "Group", Description = "Group management" },
+                
+                // Data
+                new() { Name = "Record", Description = "Record management" },
+                new() { Name = "File", Description = "File operations" },
+                new() { Name = "Metadata", Description = "Metadata operations" },
+                
+                // Query
+                new() { Name = "Query", Description = "Search and filtering" },
+                new() { Name = "SavedSearch", Description = "Saved searches" },
+                
+                // History
+                new() { Name = "HistoricalRecord", Description = "Record history" },
+                new() { Name = "HistoricalEdge", Description = "Edge history" },
+                new() { Name = "Event", Description = "Event logs" },
+                
+                // Other
+                new() { Name = "Timeseries", Description = "Time-series data" },
+                new() { Name = "Notification", Description = "Notifications" },
+                new() { Name = "OauthApplication", Description = "OAuth apps" }
+            };
 
-// Simplified tag groups - let the naming convention handle hierarchy
-var tagGroups = new JsonArray
-{
-    new JsonObject
-    {
-        ["name"] = "🔐 Authentication",
-        ["tags"] = new JsonArray { "OauthHandshake", "Token" }
-    },
-    new JsonObject
-    {
-        ["name"] = "📦 Class",
-        ["tags"] = new JsonArray { "Organization - Class", "Project - Class" }
-    },
-    new JsonObject
-    {
-        ["name"] = "🔌 DataSource",
-        ["tags"] = new JsonArray { "DataSource / Organization", "DataSource / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "🔗 Edge",
-        ["tags"] = new JsonArray { "Edge / Organization", "Edge / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "↔️ Relationship",
-        ["tags"] = new JsonArray { "Relationship / Organization", "Relationship / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "🔒 Permission",
-        ["tags"] = new JsonArray { "Permission / Organization", "Permission / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "👤 Role",
-        ["tags"] = new JsonArray { "Role / Organization", "Role / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "🏷️ Tag",
-        ["tags"] = new JsonArray { "Tag / Organization", "Tag / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "💾 ObjectStorage",
-        ["tags"] = new JsonArray { "ObjectStorage / Organization", "ObjectStorage / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "🔐 SensitivityLabel",
-        ["tags"] = new JsonArray { "SensitivityLabel / Organization", "SensitivityLabel / Project" }
-    },
-    new JsonObject
-    {
-        ["name"] = "🏢 Management",
-        ["tags"] = new JsonArray { "Management / Organization", "Management / Project", "Management / User", "Management / Group" }
-    },
-    new JsonObject
-    {
-        ["name"] = "📄 Data",
-        ["tags"] = new JsonArray { "Data / Record", "Data / File", "Data / Metadata" }
-    },
-    new JsonObject
-    {
-        ["name"] = "🔍 Query",
-        ["tags"] = new JsonArray { "Query / Search", "Query / SavedSearch" }
-    },
-    new JsonObject
-    {
-        ["name"] = "📊 History",
-        ["tags"] = new JsonArray { "History / Record", "History / Edge", "History / Event" }
-    },
-    new JsonObject
-    {
-        ["name"] = "⚙️ Other",
-        ["tags"] = new JsonArray { "Other / Timeseries", "Other / Notification", "Other / OauthApplication" }
-    }
-};
+            // Create x-tagGroups for nested folder structure
+            var tagGroups = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "Authentication",
+                    ["tags"] = new JsonArray { "OauthHandshake", "Token" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Class",
+                    ["tags"] = new JsonArray { "Organization - Class", "Project - Class" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "DataSource",
+                    ["tags"] = new JsonArray { "Organization - DataSource", "Project - DataSource" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Edge",
+                    ["tags"] = new JsonArray { "Organization - Edge", "Project - Edge" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Relationship",
+                    ["tags"] = new JsonArray { "Organization - Relationship", "Project - Relationship" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Permission",
+                    ["tags"] = new JsonArray { "Organization - Permission", "Project - Permission" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Role",
+                    ["tags"] = new JsonArray { "Organization - Role", "Project - Role" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Tag",
+                    ["tags"] = new JsonArray { "Organization - Tag", "Project - Tag" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "ObjectStorage",
+                    ["tags"] = new JsonArray { "Organization - ObjectStorage", "Project - ObjectStorage" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "SensitivityLabel",
+                    ["tags"] = new JsonArray { "Organization - SensitivityLabel", "Project - SensitivityLabel" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Management",
+                    ["tags"] = new JsonArray { "Organization", "Project", "User", "Group" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Data",
+                    ["tags"] = new JsonArray { "Record", "File", "Metadata" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Query",
+                    ["tags"] = new JsonArray { "Query", "SavedSearch" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "History & Events",
+                    ["tags"] = new JsonArray { "HistoricalRecord", "HistoricalEdge", "Event" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Other",
+                    ["tags"] = new JsonArray { "Timeseries", "Notification", "OauthApplication" }
+                }
+            };
 
-        // Initialize Extensions if null, then wrap in JsonNodeExtension for v2
-        document.Extensions ??= new Dictionary<string, IOpenApiExtension>();
-        document.Extensions["x-tagGroups"] = new JsonNodeExtension(tagGroups);
-        
-        // Wrap in JsonNodeExtension for v2
-        document.Extensions["x-tagGroups"] = new JsonNodeExtension(tagGroups);
+            // Initialize Extensions if null, then wrap in JsonNodeExtension for v2
+            document.Extensions ??= new Dictionary<string, IOpenApiExtension>();
+            document.Extensions["x-tagGroups"] = new JsonNodeExtension(tagGroups);
+            
+            // Wrap in JsonNodeExtension for v2
+            document.Extensions["x-tagGroups"] = new JsonNodeExtension(tagGroups);
 
-        // Security scheme
-        document.Components ??= new OpenApiComponents();
-        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+            // Security scheme
+            document.Components ??= new OpenApiComponents();
+            document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
 
-        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
-        {
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            Description = "Enter your JWT token"
-        };
+            document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Enter your JWT token"
+            };
 
-        return Task.CompletedTask;
+            return Task.CompletedTask;
+        });
     });
-});
  
     
 
@@ -636,7 +430,8 @@ var tagGroups = new JsonArray
 
     app.MapScalarApiReference(options =>
     {
-        options.WithDarkMode()
+        options
+            .WithDarkMode()
             .WithBaseServerUrl(basePath.ToString())
             .WithTheme(ScalarTheme.Kepler)
             .WithTitle("DeepLynx Nexus API")
