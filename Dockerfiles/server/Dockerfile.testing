@@ -1,5 +1,5 @@
 # Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-test-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-test-build
 
 # Set working directory
 WORKDIR /usr/src/app

@@ -1,5 +1,5 @@
 # Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 # Define build arguments
 ARG OKTA_CLIENT_ID
