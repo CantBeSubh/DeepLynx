@@ -190,7 +190,41 @@ try
             {
                 Version = "v1",
                 Title = "DeepLynx Nexus API",
-                Description = "DeepLynx Nexus API for managing organizational data and relationships. Endpoints are organized by Organization-level (/api/organizations/{organizationId}) and Project-level (/api/projects/{projectId}) scopes."
+                Description = "DeepLynx Nexus API for managing organizational data and relationships. Endpoints are organized by Organization-level (/api/organizations/{organizationId}) and Project-level (/api/projects/{projectId}) scopes.",
+                Contact = new OpenApiContact
+                {
+                    Name = "Nexus Support",
+                    Email = "Jaren.Brownlee@inl.gov"
+                }
+            };
+            
+            document.Servers = new List<OpenApiServer>
+            {
+                new OpenApiServer
+                {
+                    Url = "https://deeplynx.inl.gov/",
+                    Description = "Production"
+                },
+                new OpenApiServer
+                {
+                    Url = "https://deeplynx.dev.inl.gov/",
+                    Description = "Develop"
+                },
+                new OpenApiServer
+                {
+                    Url = "https://deeplynx-test.dev.inl.gov/",
+                    Description = "Test"
+                },
+                new OpenApiServer
+                {
+                    Url = "http://localhost:5000",
+                    Description = "Local Development"
+                }
+            };
+            document.ExternalDocs = new OpenApiExternalDocs
+            {
+                Description = "Nexus Documentation",
+                Url = new Uri("https://deeplynx.inl.gov/docs")
             };
 
             // Define all tags with hierarchical names
@@ -199,6 +233,7 @@ try
                 // Authentication
                 new() { Name = "OauthHandshake", Description = "OAuth2 authorization flow" },
                 new() { Name = "Token", Description = "API key and JWT token management" },
+                new() { Name = "OauthApplication", Description = "OAuth apps" },
                 
                 // Class tags
                 new() { Name = "Organization - Class", Description = "Organization-level class operations" },
@@ -235,7 +270,7 @@ try
                 new() { Name = "Organization - Sensitivity Label", Description = "Organization-level labels" },
                 new() { Name = "Project - Sensitivity Label", Description = "Project-level labels" },
                 
-                // Management
+                // Administration
                 new() { Name = "Organization", Description = "Organization management" },
                 new() { Name = "Project", Description = "Project management" },
                 new() { Name = "User", Description = "User management" },
@@ -245,20 +280,24 @@ try
                 new() { Name = "Record", Description = "Record management" },
                 new() { Name = "File", Description = "File operations" },
                 new() { Name = "Metadata", Description = "Metadata operations" },
+                new() { Name = "Historical Record", Description = "Record history" },
+                new() { Name = "Historical Edge", Description = "Edge history" },
                 
                 // Query
                 new() { Name = "Query", Description = "Search and filtering" },
-                new() { Name = "SavedSearch", Description = "Saved searches" },
+                new() { Name = "Saved Search", Description = "Saved searches" },
                 
-                // History
-                new() { Name = "HistoricalRecord", Description = "Record history" },
-                new() { Name = "HistoricalEdge", Description = "Edge history" },
+                
+                
+                //Events
                 new() { Name = "Event", Description = "Event logs" },
                 
-                // Other
+                // Timeseries
                 new() { Name = "Timeseries", Description = "Time-series data" },
+                
+                //Other
                 new() { Name = "Notification", Description = "Notifications" },
-                new() { Name = "OauthApplication", Description = "OAuth apps" }
+                
             };
 
             // Create x-tagGroups for nested folder structure
@@ -267,7 +306,7 @@ try
                 new JsonObject
                 {
                     ["name"] = "Authentication",
-                    ["tags"] = new JsonArray { "OauthHandshake", "Token" }
+                    ["tags"] = new JsonArray { "OauthHandshake", "Token", "OauthApplication" }
                 },
                 new JsonObject
                 {
@@ -316,28 +355,33 @@ try
                 },
                 new JsonObject
                 {
-                    ["name"] = "Management",
+                    ["name"] = "Administration",
                     ["tags"] = new JsonArray { "Organization", "Project", "User", "Group" }
                 },
                 new JsonObject
                 {
                     ["name"] = "Data",
-                    ["tags"] = new JsonArray { "Record", "File", "Metadata" }
+                    ["tags"] = new JsonArray { "Record", "File", "Metadata", "Historical Record", "Historical Edge"}
                 },
                 new JsonObject
                 {
                     ["name"] = "Query",
-                    ["tags"] = new JsonArray { "Query", "SavedSearch" }
+                    ["tags"] = new JsonArray { "Query", "Saved Search" }
                 },
                 new JsonObject
                 {
-                    ["name"] = "History & Events",
-                    ["tags"] = new JsonArray { "HistoricalRecord", "HistoricalEdge", "Event" }
+                    ["name"] = "Events",
+                    ["tags"] = new JsonArray { "Event" }
+                },
+                new JsonObject
+                {
+                    ["name"] = "Timeseries",
+                    ["tags"] = new JsonArray { "Timeseries"}
                 },
                 new JsonObject
                 {
                     ["name"] = "Other",
-                    ["tags"] = new JsonArray { "Timeseries", "Notification", "OauthApplication" }
+                    ["tags"] = new JsonArray { "Notification"}
                 }
             };
 
@@ -362,6 +406,25 @@ try
 
             return Task.CompletedTask;
         });
+        // Add operation transformer for common responses
+        options.AddOperationTransformer((operation, context, cancellationToken) =>
+        {
+            // Add common error responses to all operations
+            operation.Responses.TryAdd("401", new OpenApiResponse 
+            { 
+                Description = "Unauthorized - Invalid or missing authentication token" 
+            });
+            operation.Responses.TryAdd("403", new OpenApiResponse 
+            { 
+                Description = "Forbidden - Insufficient permissions" 
+            });
+            operation.Responses.TryAdd("500", new OpenApiResponse 
+            { 
+                Description = "Internal Server Error" 
+            });
+        
+            return Task.CompletedTask;
+        });
     });
  
     
@@ -381,7 +444,7 @@ try
    ╚════════════════════════════╝ */
     PathString basePath = "/api/v1";
     app.UsePathBase(basePath);
-
+    
     app.UseStaticFiles();
     app.UseRouting();
     app.UseCors("AllowAll");
@@ -390,6 +453,10 @@ try
     app.UseMiddleware<AuthMiddleware>(); // Third - sets OrganizationId
     app.UseAuthorization(); // Fourth
     app.MapControllers(); // Last
+    
+    //Health check endpoint
+    app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }))
+        .ExcludeFromDescription(); // hide from docs
 
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
@@ -436,6 +503,9 @@ try
             .WithTitle("DeepLynx Nexus API")
             .WithCustomCss(customcss)
             .AddHeaderContent(scalarHeaderContent);
+            
+            
+        
 
         if (!string.IsNullOrEmpty(hostedLink))
         {
