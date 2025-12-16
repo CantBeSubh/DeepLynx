@@ -2,6 +2,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+# Configure INL certs and environment variables
+RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN /usr/sbin/update-ca-certificates
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_DIR=/etc/ssl/certs/
+
 # Copy the solution file and restore dependencies
 COPY deeplynx.mcp/*.csproj ./deeplynx.mcp/
 RUN dotnet restore ./deeplynx.mcp/deeplynx.mcp.csproj
