@@ -5,15 +5,46 @@ import Image from 'next/image'
 
 # Overview
 The Nexus MCP Server allows users/developers to interact with Nexus using natural language. This server is still in the development
-stage, so it can only be run locally and only has a few tools developed. If you want to know how to run and test the server,
+stage, so it only has a few tools developed. If you want to know how to run and test the server,
 this page will help!
 
-## Step 1: .env Set Up
+[Connect to a Deployed Nexus MCP Server](#setup-for-deployed-nexus-instance)
+[Connect to a Dockerized Nexus MCP Server](#setup-for-local-docker-nexus-instance)
+[Connect to a Developer Mode Nexus MCP Server](#setup-for-local-developer-nexus-instance)
+
+## Setup For Deployed Nexus Instance
+This portion of the setup guide should be used to connect with deployed instances of Nexus, such as the sandbox instance or production. 
+
+The only things you will need for accessing a deployed MCP instance are the URLs of both the MCP server and the Nexus server. They are as follows, where `your_nexus_url` is the url of the deployed Nexus instance you are trying to reach:
+
+```js copy
+MCP_SERVER_URL={your_nexus_url}/mcp
+NEXUS_API_URL={your_nexus_url}/api/v1
+```
+
+To connect with the server, you can use an existing MCP client or see the instructions below for [running an example client locally using VSCode](#example-agent-optional).
+
+## Setup For Local Docker Nexus Instance
+This protion of the setup guide should be used for local docker instances of Nexus, which is built with the `docker-compose` commands. This version of the app is most often used by non-developer users and ecosystem developers.
+
+To run this version of the app, simply follow the instructions from the DeepLynx Nexus [README](../../../../README.md#docker-setup) on setting up docker. This will deploy the DL Nexus server, the UI, MCP server, OpenAPI Scalar documentation, and this MDX documentation all as part of a connected network of localized apps. The default URLs for the dockerized Nexus server and MCP server are as follows:
+
+```js copy
+MCP_SERVER_URL=http://localhost:43656/mcp
+NEXUS_API_URL=http://localhost:5000/api/v1
+```
+
+To connect with the server, you can use an existing MCP client or see the instructions below for [running an example client locally using VSCode](#example-agent-optional).
+
+## Setup For Local Developer Nexus Instance
+This portion of the setup guilde should be used for local developer instances of Nexus, where each app in the Nexus suite is built manually, including this MCP server. This version of the app is primarily used by Nexus developers or developers of the MCP server itself.
+
+### Step 1: .env Set Up
 In the deeplynx.mcp directory, create a .env file. If you are running Nexus locally, you can copy the contents
 of the .env_sample file and paste them into your .env file. The default environment variables and their values are:
 
 ```js copy
-MCP_SERVER_URL=http://localhost:43656
+MCP_SERVER_URL=http://localhost:43656/mcp
 NEXUS_API_URL=http://localhost:5095/api/v1
 ```
 
@@ -23,21 +54,25 @@ there is not a value assigned, the server will run on the default url decided at
 'NEXUS_API_URL' is the url that the Nexus server is hosted on. If it is running locally, the value should always be the same,
 but you may need to change it depending on which instance you want your server to hit. **The value must NOT have a trailing slash.**
 
-## Step 2: Run the Server
+### Step 2: Run the Server
 
-This is easy!If you are running the server for the first time, cd into the deeplynx.mcp folder and execute this command:
+This is easy! If you are running the server for the first time, cd into the deeplynx.mcp folder and execute this command:
 
 ```js copy
 dotnet build && dotnet run 
 ```
 
-From then on, every time you want to start the server, you will only need to execute ```dotnet run```
+From then on, every time you want to start the server, you will only need to execute ```dotnet run```.
 
-## Adding tools
+To connect with the server, you can use an existing MCP client or see the instructions below for [running an example client locally using VSCode](#example-agent-optional).
+
+### Step 3. Adding tools
 All the tools for the MCP server are located in the 'tools' folder. Each file is separated by the entity you are wanting to
 query. For example, if you create a GetProject tool, you would put it in the ProjectTools.cs file. If you are
 wanting to create a GetAllDataSources tool, you would need to create a new file and put the tool inside a class named
-'DataSourceTools'. Use the existing tools as a reference of how to make new ones.
+'DataSourceTools'. Use the existing tools as a reference of how to make new ones. Note that tools which call the API 
+should use the base URL which has no trailing slash, so the endpoints for said APIs should use a leading slash. For
+example, `/projects` should be the URL to get projects instead of `projects` (with no leading slash).
 
 ## Example Agent (Optional)
 

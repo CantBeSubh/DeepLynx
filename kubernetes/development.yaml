@@ -519,6 +519,13 @@ spec:
                 name: deeplynxv3-docs-service
                 port:  
                   number: 80 
+          - path: /mcp
+            pathType: Prefix
+            backend:
+              service:
+                name: deeplynxv3-mcp-service
+                port:
+                  number: 80
 
 ---
 

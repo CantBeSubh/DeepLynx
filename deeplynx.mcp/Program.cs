@@ -16,7 +16,7 @@ builder.Services.AddMcpServer()
     .WithToolsFromAssembly();
 var app = builder.Build();
 
-app.MapMcp();
+app.MapMcp("/mcp");
 
 Env.Load();
 app.Run(Environment.GetEnvironmentVariable("MCP_SERVER_URL"));
