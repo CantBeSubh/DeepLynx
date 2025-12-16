@@ -65,7 +65,7 @@ public static class ProjectTools
                 query["organizationId"] = organizationId.ToString();
             
             var queryString = query.ToString();
-            var url = $"projects/GetAllProjects?{queryString}";
+            var url = $"/projects/GetAllProjects?{queryString}";
 
             // Create request
             var request = new HttpRequestMessage(HttpMethod.Get, url);

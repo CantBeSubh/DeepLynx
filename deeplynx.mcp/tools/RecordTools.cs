@@ -39,7 +39,7 @@ public static class RecordTools
             query["pageSize"] = pageSize.ToString();
             
             var queryString = query.ToString();
-            var url = $"projects/{0}/edges/GetAllEdgesByRecord?{queryString}";
+            var url = $"/projects/{0}/edges/GetAllEdgesByRecord?{queryString}";
 
             // Create request
             var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -112,7 +112,7 @@ public static class RecordTools
             }
             
             var queryString = query.ToString();
-            var url = $"projects/{projectId}/records/GetAllRecords?{queryString}";
+            var url = $"/projects/{projectId}/records/GetAllRecords?{queryString}";
 
             // Create request
             var request = new HttpRequestMessage(HttpMethod.Get, url);

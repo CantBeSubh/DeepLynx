@@ -10,18 +10,18 @@ this page will help!
 
 ## Step 1: .env Set Up
 In the deeplynx.mcp directory, create a .env file. If you are running Nexus locally, you can copy the contents
-of the .env_sample file and paste them into your .env file. The environment variables and their values are:
+of the .env_sample file and paste them into your .env file. The default environment variables and their values are:
 
 ```js copy
-MCP_SERVER_URL=http://localhost:3002
-NEXUS_API_URL=http://localhost:5095/api/v1/
+MCP_SERVER_URL=http://localhost:43656
+NEXUS_API_URL=http://localhost:5095/api/v1
 ```
 
 'MCP_SERVER_URL' is the url that the mcp server will be hosted on. You may change this value to best fit your needs. If
 there is not a value assigned, the server will run on the default url decided at runtime.
 
 'NEXUS_API_URL' is the url that the Nexus server is hosted on. If it is running locally, the value should always be the same,
-but you may need to change it depending on which instance you want your server to hit. **The value must have a trailing slash.**
+but you may need to change it depending on which instance you want your server to hit. **The value must NOT have a trailing slash.**
 
 ## Step 2: Run the Server
 
@@ -136,7 +136,7 @@ mcpServers:
 
 Now you should be able to ask the agent questions like: 
 
-"get all of my projects in organization 1 and read the names and LastUpdatedAt values back to me"
+"Get all of my projects in organization 1 and read the names and LastUpdatedAt values back to me"
 
 "Get all of my records in project 2"
 
