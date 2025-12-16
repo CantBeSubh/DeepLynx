@@ -15,14 +15,20 @@ using Microsoft.OpenApi.Models.Interfaces;
 using Microsoft.OpenApi.Models.References;
 using Scalar.AspNetCore;
 using Serilog;
-using StackExchange.Redis;
 using Log = Serilog.Log;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.ConfigureKestrel(options => { options.Limits.MaxRequestBodySize = 2L * 1024 * 1024 * 1024; });
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 500L * 1024 * 1024;
+}); // 500MB to match CloudFlare config
 
-builder.Services.Configure<FormOptions>(options => { options.MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024; });
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024;
+    options.BufferBodyLengthLimit = 1024 * 1024; // Helps with large file uploads
+});
 
 var connectionString = ConnectionStringsProvider.GetPostgresConnectionString(builder.Configuration);
 
@@ -192,7 +198,7 @@ try
             // Add security scheme
             document.Components ??= new OpenApiComponents();
             document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-        
+
             var bearerScheme = new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.Http,
@@ -200,7 +206,7 @@ try
                 BearerFormat = "JWT",
                 Description = "Enter your JWT token"
             };
-        
+
             document.Components.SecuritySchemes["Bearer"] = bearerScheme;
             // Create a security scheme reference using the constructor
             var securitySchemeReference = new OpenApiSecuritySchemeReference("Bearer", document);
@@ -210,20 +216,18 @@ try
             };
             // Apply to all operations
             foreach (var path in document.Paths.Values)
+            foreach (var operation in path.Operations.Values)
             {
-                foreach (var operation in path.Operations.Values)
-                {
-                    operation.Security ??= new List<OpenApiSecurityRequirement>();
-                    operation.Security.Add(securityRequirement);
-                }
+                operation.Security ??= new List<OpenApiSecurityRequirement>();
+                operation.Security.Add(securityRequirement);
             }
 
             document.Tags = new HashSet<OpenApiTag>
             {
                 // parent tags
-                
+
                 // Todo: Add this back after new scaler version
-                
+
                 // new()
                 // {
                 //     Name = "Project Management",
@@ -235,7 +239,7 @@ try
                 //     Name = "Organization Management",
                 //     Description = "Handles organization-level operations including classes, users, groups, and projects"
                 // },
-                
+
                 // child tags
                 new()
                 {
