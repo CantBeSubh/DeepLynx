@@ -16,7 +16,7 @@ RUN dotnet test --configuration Release --no-build --verbosity diagnostic
 
 # The final image has been omitted to ensure this container is just used to run dotnet test
 # Stage 2: Create the final image
-# FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
+# FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0 AS final
 
 # Set working directory
 # WORKDIR /usr/src/app
