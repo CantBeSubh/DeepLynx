@@ -42,19 +42,20 @@ const ProjectManagementClient = ({
   const [activeTab, setActiveTab] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { t } = useLanguage();
-  const { project: sessionProject } = useProjectSession();
-  const {organization, hasLoaded } = useOrganizationSession()
+  const { project: sessionProject, clearProject } = useProjectSession();
+  const { organization, hasLoaded } = useOrganizationSession();
 
   const handleTabChange = (label: string) => {
     setActiveTab(label);
   };
 
   const handleArchive = () => {
-    if (organization && project){
-      archiveProject(organization.organizationId as number, project.id as number, true)
+    if (organization && project) {
+      archiveProject(organization.organizationId as number, project.id as number, true);
     }
-    setArchiveConfirm(false)
-    redirect("/")
+    clearProject();
+    setArchiveConfirm(false);
+    redirect("/");
   }
 
   const [archiveConfirm, setArchiveConfirm] = useState(false)
