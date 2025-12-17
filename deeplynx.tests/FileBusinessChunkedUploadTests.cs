@@ -68,6 +68,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         var realFileFilesystemBusiness =
             new FileFilesystemBusiness(Context, _objectStorageBusiness, _classBusiness, _recordBusiness);
 
+        // Object storage should also determine this implicitly - but we can also add this failsafe for now
         _fileBusinessFactory
             .Setup(x => x.CreateFileBusiness("filesystem"))
             .Returns(realFileFilesystemBusiness);
@@ -81,6 +82,8 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
             _recordBusiness
         );
     }
+
+    #region StartUpload Tests
 
     [Fact]
     public async Task StartUpload_CreatesUploadDirectory_AndReturnsSessionInfo()
@@ -118,6 +121,10 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
 
         Assert.True(Directory.Exists(uploadPath));
     }
+
+    #endregion
+
+    #region UploadChunk Tests
 
     [Fact]
     public async Task UploadChunk_WritesChunkFile_WhenSessionExists()
@@ -162,6 +169,89 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         var saved = await File.ReadAllTextAsync(expectedChunkPath);
         Assert.Equal(content, saved);
     }
+
+    #endregion
+
+    private IFormFile CreateFormFile(string content)
+    {
+        var ms = new MemoryStream(Encoding.UTF8.GetBytes(content));
+        return new FormFile(ms, 0, ms.Length, "chunk", "chunk.part")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/octet-stream"
+        };
+    }
+
+    protected override async Task SeedTestDataAsync()
+    {
+        await base.SeedTestDataAsync();
+
+        var user = new User
+        {
+            Name = "Test User",
+            Email = "test_chunked@example.com",
+            Password = "test_password",
+            IsArchived = false
+        };
+        Context.Users.Add(user);
+        await Context.SaveChangesAsync();
+        uid = user.Id;
+
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        oid = organization.Id;
+
+        var project = new Project { Name = "Test Project", OrganizationId = oid };
+        Context.Projects.Add(project);
+        await Context.SaveChangesAsync();
+        pid = project.Id;
+
+        var dataSource = new DataSource
+        {
+            Name = "Test Data Source",
+            Description = "Test data source for chunked upload tests",
+            ProjectId = pid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
+            OrganizationId = oid,
+            Default = true
+        };
+        Context.DataSources.Add(dataSource);
+        await Context.SaveChangesAsync();
+        did = dataSource.Id;
+
+        var osConfig = new JsonObject
+        {
+            ["mountPath"] = _testDirectory
+        };
+
+        var objectStorage = new ObjectStorage
+        {
+            Name = "Test Object Storage",
+            ProjectId = pid,
+            OrganizationId = oid,
+            Type = "filesystem",
+            Config = osConfig.ToString(),
+            Default = true
+        };
+
+        Context.ObjectStorages.Add(objectStorage);
+        await Context.SaveChangesAsync();
+        osid = objectStorage.Id;
+
+        var testClass = new Class
+        {
+            Name = "File",
+            ProjectId = pid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = oid
+        };
+        Context.Classes.Add(testClass);
+        await Context.SaveChangesAsync();
+    }
+
+    #region CompleteUpload Tests
 
     [Fact]
     public async Task CompleteUpload_MergesChunks_AndCreatesRecord()
@@ -259,84 +349,8 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         Assert.False(Directory.Exists(uploadPath));
     }
 
-    private IFormFile CreateFormFile(string content)
-    {
-        var ms = new MemoryStream(Encoding.UTF8.GetBytes(content));
-        return new FormFile(ms, 0, ms.Length, "chunk", "chunk.part")
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "application/octet-stream"
-        };
-    }
+    #endregion
 
-    protected override async Task SeedTestDataAsync()
-    {
-        await base.SeedTestDataAsync();
-
-        var user = new User
-        {
-            Name = "Test User",
-            Email = "test_chunked@example.com",
-            Password = "test_password",
-            IsArchived = false
-        };
-        Context.Users.Add(user);
-        await Context.SaveChangesAsync();
-        uid = user.Id;
-
-        var organization = new Organization { Name = "Test Organization" };
-        Context.Organizations.Add(organization);
-        await Context.SaveChangesAsync();
-        oid = organization.Id;
-
-        var project = new Project { Name = "Test Project", OrganizationId = oid };
-        Context.Projects.Add(project);
-        await Context.SaveChangesAsync();
-        pid = project.Id;
-
-        var dataSource = new DataSource
-        {
-            Name = "Test Data Source",
-            Description = "Test data source for chunked upload tests",
-            ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid,
-            OrganizationId = oid,
-            Default = true
-        };
-        Context.DataSources.Add(dataSource);
-        await Context.SaveChangesAsync();
-        did = dataSource.Id;
-
-        var osConfig = new JsonObject
-        {
-            ["mountPath"] = _testDirectory
-        };
-
-        var objectStorage = new ObjectStorage
-        {
-            Name = "Test Object Storage",
-            ProjectId = pid,
-            OrganizationId = oid,
-            Type = "filesystem",
-            Config = osConfig.ToString(),
-            Default = true
-        };
-
-        Context.ObjectStorages.Add(objectStorage);
-        await Context.SaveChangesAsync();
-        osid = objectStorage.Id;
-
-        var testClass = new Class
-        {
-            Name = "File",
-            ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            OrganizationId = oid
-        };
-        Context.Classes.Add(testClass);
-        await Context.SaveChangesAsync();
-    }
 
     // public override Task DisposeAsync()
     // {
