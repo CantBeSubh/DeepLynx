@@ -96,7 +96,7 @@ public class FileBusiness
 
         var guid = Guid.NewGuid();
 
-        var uri = await fileBusiness.UploadFile(projectId, realDataSourceId, configData, file, guid);
+        var uri = await fileBusiness.UploadFile(organizationId, projectId, realDataSourceId, configData, file, guid);
 
         var fileClass = await _classBusiness.GetOrCreateClass(currentUserId, organizationId, projectId, "File");
         var recordRequest = new CreateRecordRequestDto
