@@ -17,7 +17,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
 {
     private readonly Mock<IFileBusiness> _innerFileBusiness = null!;
     private readonly string _testDirectory = Path.Combine(Path.GetTempPath(), "FileBusinessChunkedTests");
-    private Mock<IClassBusiness> _classBusiness = null!;
+    private ClassBusiness _classBusiness = null!;
     private DataSourceBusiness _dataSourceBusiness = null!;
     private Mock<IEdgeBusiness> _edgeBusiness = null!;
     private EventBusiness _eventBusiness = null!;
@@ -28,6 +28,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
     private INotificationBusiness _notificationBusiness = null!;
     private ObjectStorageBusiness _objectStorageBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
+    private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
     private TagBusiness _tagBusiness = null!;
 
     public long did; // datasource ID
@@ -47,13 +48,13 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
 
         _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
         _edgeBusiness = new Mock<IEdgeBusiness>();
+        _relationshipBusiness = new Mock<IRelationshipBusiness>();
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
         _eventBusiness = new EventBusiness(Context, _notificationBusiness);
 
 
-        _classBusiness = new Mock<IClassBusiness>();
         _fileBusinessFactory = new Mock<IFileBusinessFactory>();
 
         _dataSourceBusiness =
@@ -62,24 +63,21 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
 
         _tagBusiness = new TagBusiness(Context, _eventBusiness);
         _recordBusiness = new RecordBusiness(Context, _eventBusiness, _tagBusiness);
+        _classBusiness = new ClassBusiness(Context, _recordBusiness, _relationshipBusiness.Object, _eventBusiness);
+
         var realFileFilesystemBusiness =
-            new FileFilesystemBusiness(Context, _objectStorageBusiness, _classBusiness.Object, _recordBusiness);
+            new FileFilesystemBusiness(Context, _objectStorageBusiness, _classBusiness, _recordBusiness);
 
         _fileBusinessFactory
             .Setup(x => x.CreateFileBusiness("filesystem"))
             .Returns(realFileFilesystemBusiness);
-
-        // Setup class business
-        _classBusiness
-            .Setup(x => x.GetOrCreateClass(uid, oid, pid, "File"))
-            .ReturnsAsync(new ClassResponseDto { Id = 1, Name = "File" });
 
         _fileBusiness = new FileBusiness(
             Context,
             _fileBusinessFactory.Object,
             _objectStorageBusiness,
             _dataSourceBusiness,
-            _classBusiness.Object,
+            _classBusiness,
             _recordBusiness
         );
     }

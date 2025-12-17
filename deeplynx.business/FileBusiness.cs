@@ -465,7 +465,8 @@ public class FileBusiness
                 ContentType = "application/octet-stream"
             };
 
-            var uri = await fileBusiness.UploadFile(projectId, realDataSourceId, configData, formFile, guid);
+            var uri = await fileBusiness.UploadFile(organizationId, projectId, realDataSourceId, configData, formFile,
+                guid);
 
             // Clean up merged file and upload directory
             fileStream.Close();
