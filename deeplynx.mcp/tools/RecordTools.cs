@@ -19,27 +19,25 @@ public static class RecordTools
     [McpServerTool, Description("Gets all of the records that are related to the record with the ID that is provided. " +
                                 "Returns related records in a stringified JSON array. ")]
     public static async Task<string> GetRelatedRecords(
-        [Description("The ID of the record we want to get related records for.")]long recordId,
-        [Description("Indicates wehter to find relationships where the recordId is the origin of the relationship or not")]string isOrigin,
+        [Description("The ID of the organization to which the project belongs")] long organizationId,
+        [Description("The ID of the project to which the record belongs")] long projectId,
+        [Description("The ID of the record we want to get related records for.")] long recordId,
+        [Description("Indicates whether to find relationships where the recordId is the origin of the relationship or not")] string isOrigin,
         [Description("The results are paginated. This is the page number that the user wants")] int page,
         [Description("The page size. Default is 20.")] int pageSize = 20,
-        [Description("Indicates if user wants to hide archived records. Default is true")] string hideArchived = "true",
         [Description("The optional Auth Bearer token")] string? authToken = null)
     {
         try
         {
             bool isOriginBool = bool.Parse(isOrigin);
-            bool hideArchivedBool = bool.Parse(hideArchived);
             var query = HttpUtility.ParseQueryString(string.Empty);
-            // Build query string
+            
             query["isOrigin"] = isOriginBool.ToString().ToLower();
-            query["hideArchived"] = hideArchivedBool.ToString().ToLower();
-            query["recordId"] = recordId.ToString();
             query["page"] = page.ToString();
             query["pageSize"] = pageSize.ToString();
             
             var queryString = query.ToString();
-            var url = $"/projects/{0}/edges/GetAllEdgesByRecord?{queryString}";
+            var url = $"organizations/{organizationId}/projects/{projectId}/records/{recordId}/edges?{queryString}";
 
             // Create request
             var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -87,6 +85,7 @@ public static class RecordTools
     [McpServerTool, Description("Gets all records for a specific project, optionally filtered by datasource and file type. " +
                             "Returns records in a stringified JSON array.")]
     public static async Task<string> GetAllRecords(
+        [Description("The ID of the organization to which the project belongs")] long organizationId,
         [Description("The ID of the project whose records are to be retrieved")] long projectId,
         [Description("The optional ID of the datasource to filter records by")] long? dataSourceId = null,
         [Description("Indicates if user wants to hide archived records. Default is true")] string hideArchived = "true",
@@ -112,7 +111,7 @@ public static class RecordTools
             }
             
             var queryString = query.ToString();
-            var url = $"/projects/{projectId}/records/GetAllRecords?{queryString}";
+            var url = $"organizations/{organizationId}/projects/{projectId}/records?{queryString}";
 
             // Create request
             var request = new HttpRequestMessage(HttpMethod.Get, url);
