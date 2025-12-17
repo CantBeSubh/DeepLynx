@@ -254,7 +254,6 @@ public class FileBusiness
         // Create directory for chunks based on storage type
         var uploadPath = Path.Combine(
             configData.MountPath,
-            $"org_{organizationId}",
             $"project_{projectId}",
             $"datasource_{realDataSourceId}",
             "uploads",
@@ -334,7 +333,6 @@ public class FileBusiness
         // Use mount path from object storage config
         var uploadPath = Path.Combine(
             configData.MountPath,
-            $"org_{organizationId}",
             $"project_{projectId}",
             $"datasource_{realDataSourceId}",
             "uploads",
@@ -423,7 +421,6 @@ public class FileBusiness
         // Use mount path from object storage config
         var uploadPath = Path.Combine(
             configData.MountPath,
-            $"org_{organizationId}",
             $"project_{projectId}",
             $"datasource_{realDataSourceId}",
             "uploads",
@@ -545,7 +542,6 @@ public class FileBusiness
     //     var fileStorageBasePath = _configuration["FileStorage:BasePath"] ?? "/mnt/storage/files";
     //     var uploadPath = Path.Combine(
     //         fileStorageBasePath,
-    //         $"org_{organizationId}",
     //         $"project_{projectId}",
     //         $"datasource_{realDataSourceId}",
     //         "uploads",
