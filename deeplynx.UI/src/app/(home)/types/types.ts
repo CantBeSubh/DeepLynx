@@ -64,6 +64,31 @@ export type FileMetadata = {
   updateAction?: "merge" | "overwrite";
 };
 
+export type ChunkedUploadSession = {
+    uploadId: string;
+    chunkSize: number;
+    totalChunks: number;
+};
+
+export type ChunkedUploadOptions = {
+    organizationId: number | string;
+    projectId: number | string;
+    dataSourceId?: number | string;
+    objectStorageId?: number | string;
+    fileName: string;
+    fileSize: number;
+};
+
+export type ChunkUploadOptions = {
+    organizationId: number | string;
+    projectId: number | string;
+    dataSourceId?: number | string;
+    objectStorageId?: number | string;
+    uploadId: string;
+    chunk: Blob;
+    chunkNumber: number;
+};
+
 //Widgets
 export type WidgetType =
   | "DataOverview"
