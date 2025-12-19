@@ -83,105 +83,6 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         );
     }
 
-    #region StartUpload Tests
-
-    [Fact]
-    public async Task StartUpload_CreatesUploadDirectory_AndReturnsSessionInfo()
-    {
-        // Arrange
-        var request = new FileUploadInitRequestDto
-        {
-            FileName = "bigfile.bin",
-            FileSize = 2L * 1024 * 1024 * 1024 // 2GB
-        };
-
-        // Act
-        var session = await _fileBusiness.StartUpload(
-            uid,
-            oid,
-            pid,
-            did,
-            osid,
-            request
-        );
-
-        // Assert
-        Assert.NotNull(session);
-        Assert.False(string.IsNullOrWhiteSpace(session.UploadId));
-        Assert.Equal(400_000_000, session.ChunkSize);
-        Assert.Equal(6, session.TotalChunks); // 2GB / 400MB = 6 chunks
-
-        var uploadPath = Path.Combine(
-            _testDirectory,
-            $"project_{pid}",
-            $"datasource_{did}",
-            "uploads",
-            session.UploadId
-        );
-
-        Assert.True(Directory.Exists(uploadPath));
-    }
-
-    #endregion
-
-    #region UploadChunk Tests
-
-    [Fact]
-    public async Task UploadChunk_WritesChunkFile_WhenSessionExists()
-    {
-        // Arrange: create an upload session first
-        var initRequest = new FileUploadInitRequestDto
-        {
-            FileName = "file.txt",
-            FileSize = 1024
-        };
-
-        var session = await _fileBusiness.StartUpload(uid, oid, pid, did, osid, initRequest);
-
-        var content = "CHUNK-0-CONTENT";
-        var formFile = CreateFormFile(content);
-
-        var expectedChunkPath = Path.Combine(
-            _testDirectory,
-            $"project_{pid}",
-            $"datasource_{did}",
-            "uploads",
-            session.UploadId,
-            "0.part"
-        );
-
-        // Act
-        var result = await _fileBusiness.UploadChunk(
-            uid,
-            oid,
-            pid,
-            did,
-            osid,
-            formFile,
-            session.UploadId,
-            0
-        );
-
-        // Assert
-        Assert.Equal("success", result);
-        Assert.True(File.Exists(expectedChunkPath));
-
-        var saved = await File.ReadAllTextAsync(expectedChunkPath);
-        Assert.Equal(content, saved);
-    }
-
-    #endregion
-
-    private IFormFile CreateFormFile(string content)
-    {
-        var ms = new MemoryStream(Encoding.UTF8.GetBytes(content));
-        return new FormFile(ms, 0, ms.Length, "chunk", "chunk.part")
-        {
-            Headers = new HeaderDictionary(),
-            ContentType = "application/octet-stream"
-        };
-    }
-
     protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
@@ -250,6 +151,274 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();
     }
+
+    #region Helpers
+
+    private IFormFile CreateFormFile(string content)
+    {
+        var ms = new MemoryStream(Encoding.UTF8.GetBytes(content));
+        return new FormFile(ms, 0, ms.Length, "chunk", "chunk.part")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/octet-stream"
+        };
+    }
+
+    private IFormFile CreateFormFileFromBytes(byte[] data)
+    {
+        var ms = new MemoryStream(data);
+        return new FormFile(ms, 0, data.Length, "chunk", "chunk.part")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/octet-stream"
+        };
+    }
+
+    #endregion
+
+    #region StartUpload Tests
+
+    [Fact]
+    public async Task StartUpload_CreatesUploadDirectory_AndReturnsSessionInfo()
+    {
+        // Arrange
+        var request = new FileUploadInitRequestDto
+        {
+            FileName = "bigfile.bin",
+            FileSize = 2L * 1024 * 1024 * 1024 // 2GB
+        };
+
+        // Act
+        var session = await _fileBusiness.StartUpload(
+            uid,
+            oid,
+            pid,
+            did,
+            osid,
+            request
+        );
+
+        // Assert
+        Assert.NotNull(session);
+        Assert.False(string.IsNullOrWhiteSpace(session.UploadId));
+        Assert.Equal(400_000_000, session.ChunkSize);
+        Assert.Equal(6, session.TotalChunks); // 2GB / 400MB = 6 chunks
+
+        var uploadPath = Path.Combine(
+            _testDirectory,
+            $"project_{pid}",
+            $"datasource_{did}",
+            "uploads",
+            session.UploadId
+        );
+
+        Assert.True(Directory.Exists(uploadPath));
+    }
+
+    [Fact]
+    public async Task FileExactly501MB_UsesChunking()
+    {
+        // Arrange: File just over threshold
+        var initRequest = new FileUploadInitRequestDto
+        {
+            FileName = "501mb.bin",
+            FileSize = 501L * 1024 * 1024 // 501MB
+        };
+
+        // Act: Start upload (should create chunked upload session)
+        var session = await _fileBusiness.StartUpload(uid, oid, pid, did, osid, initRequest);
+
+        // Assert: Should use chunking
+        Assert.NotNull(session);
+        Assert.NotNull(session.UploadId);
+        Assert.True(session.TotalChunks > 1); // More than 1 chunk
+
+        // Verify upload directory was created (sign of chunking)
+        var uploadPath = Path.Combine(
+            _testDirectory,
+            $"project_{pid}",
+            $"datasource_{did}",
+            "uploads",
+            session.UploadId
+        );
+        Assert.True(Directory.Exists(uploadPath));
+    }
+
+    #endregion
+
+    #region UploadChunk Tests
+
+    [Fact]
+    public async Task UploadChunk_WritesChunkFile_WhenSessionExists()
+    {
+        // Arrange: create an upload session first
+        var initRequest = new FileUploadInitRequestDto
+        {
+            FileName = "file.txt",
+            FileSize = 1024
+        };
+
+        var session = await _fileBusiness.StartUpload(uid, oid, pid, did, osid, initRequest);
+
+        var content = "CHUNK-0-CONTENT";
+        var formFile = CreateFormFile(content);
+
+        var expectedChunkPath = Path.Combine(
+            _testDirectory,
+            $"project_{pid}",
+            $"datasource_{did}",
+            "uploads",
+            session.UploadId,
+            "0.part"
+        );
+
+        // Act
+        var result = await _fileBusiness.UploadChunk(
+            uid,
+            oid,
+            pid,
+            did,
+            osid,
+            formFile,
+            session.UploadId,
+            0
+        );
+
+        // Assert
+        Assert.Equal("success", result);
+        Assert.True(File.Exists(expectedChunkPath));
+
+        var saved = await File.ReadAllTextAsync(expectedChunkPath);
+        Assert.Equal(content, saved);
+    }
+
+    [Fact]
+    public async Task UploadChunk_OutOfOrder_StillMergesCorrectly()
+    {
+        // Arrange: create an upload session
+        var fileName = "out-of-order.txt";
+        var initRequest = new FileUploadInitRequestDto
+        {
+            FileName = fileName,
+            FileSize = 3072 // 3 chunks worth
+        };
+
+        var session = await _fileBusiness.StartUpload(uid, oid, pid, did, osid, initRequest);
+
+        // Act: Upload chunks OUT OF ORDER (2, 0, 1)
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("CHUNK-2"), session.UploadId, 2);
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("CHUNK-0"), session.UploadId, 0);
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("CHUNK-1"), session.UploadId, 1);
+
+        var completeRequest = new FileUploadCompleteRequestDto
+        {
+            UploadId = session.UploadId,
+            FileName = fileName,
+            TotalChunks = 3
+        };
+
+        var result = await _fileBusiness.CompleteUpload(uid, oid, pid, did, osid, completeRequest);
+
+        // Assert: Chunks should be merged in CORRECT ORDER (0, 1, 2)
+        Assert.NotNull(result);
+        Assert.Equal(fileName, result.Name);
+
+        // Verify file content is in correct order
+        var finalFilePath = result.Uri;
+        Assert.True(File.Exists(finalFilePath));
+
+        var mergedContent = await File.ReadAllTextAsync(finalFilePath);
+        Assert.Equal("CHUNK-0CHUNK-1CHUNK-2", mergedContent);
+    }
+
+    [Fact]
+    public async Task UploadChunk_DuplicateChunk_LastWriteWins()
+    {
+        // Arrange
+        var session = await _fileBusiness.StartUpload(
+            uid, oid, pid, did, osid,
+            new FileUploadInitRequestDto { FileName = "duplicate.txt", FileSize = 2048 }
+        );
+
+        // Act: Upload chunk 0 twice with different content
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("FIRST"), session.UploadId, 0);
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("SECOND"), session.UploadId,
+            0); // Overwrites
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("CHUNK-1"), session.UploadId, 1);
+
+        var completeRequest = new FileUploadCompleteRequestDto
+        {
+            UploadId = session.UploadId,
+            FileName = "duplicate.txt",
+            TotalChunks = 2
+        };
+
+        var result = await _fileBusiness.CompleteUpload(uid, oid, pid, did, osid, completeRequest);
+
+        // Assert: Should use SECOND upload (last write wins)
+        var finalFilePath = result.Uri;
+        var mergedContent = await File.ReadAllTextAsync(finalFilePath);
+        Assert.Equal("SECONDCHUNK-1", mergedContent);
+    }
+
+
+    [Fact]
+    public async Task UploadChunk_EmptyChunk_ThrowsException()
+    {
+        // Arrange
+        var session = await _fileBusiness.StartUpload(
+            uid, oid, pid, did, osid,
+            new FileUploadInitRequestDto { FileName = "empty-chunk.txt", FileSize = 2048 }
+        );
+
+        // Act & Assert: Empty chunk should throw ArgumentException
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _fileBusiness.UploadChunk(
+                uid, oid, pid, did, osid,
+                CreateFormFile(""), // Empty chunk
+                session.UploadId,
+                0
+            )
+        );
+    }
+
+    [Fact]
+    public async Task UploadChunk_NullChunk_ThrowsException()
+    {
+        // Arrange
+        var session = await _fileBusiness.StartUpload(
+            uid, oid, pid, did, osid,
+            new FileUploadInitRequestDto { FileName = "null-chunk.txt", FileSize = 2048 }
+        );
+
+        // Act & Assert: Null chunk should throw ArgumentException
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _fileBusiness.UploadChunk(
+                uid, oid, pid, did, osid,
+                null!, // Null chunk
+                session.UploadId,
+                0
+            )
+        );
+    }
+
+    [Fact]
+    public async Task UploadChunk_InvalidUploadId_ThrowsException()
+    {
+        // Arrange: Don't start an upload session
+
+        // Act & Assert: Upload chunk with non-existent uploadId
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _fileBusiness.UploadChunk(
+                uid, oid, pid, did, osid,
+                CreateFormFile("chunk"),
+                "non-existent-upload-id",
+                0
+            )
+        );
+    }
+
+    #endregion
 
     #region CompleteUpload Tests
 
@@ -346,6 +515,151 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
             "uploads",
             session.UploadId
         );
+        Assert.False(Directory.Exists(uploadPath));
+    }
+
+    [Fact]
+    public async Task CompleteUpload_VerifyMergedFileIntegrity()
+    {
+        // Arrange: Create known content chunks
+        var session = await _fileBusiness.StartUpload(
+            uid, oid, pid, did, osid,
+            new FileUploadInitRequestDto { FileName = "integrity-test.txt", FileSize = 3072 }
+        );
+
+        var chunk0Content = "AAAA";
+        var chunk1Content = "BBBB";
+        var chunk2Content = "CCCC";
+
+        // Act: Upload chunks with known content
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile(chunk0Content), session.UploadId, 0);
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile(chunk1Content), session.UploadId, 1);
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile(chunk2Content), session.UploadId, 2);
+
+        var completeRequest = new FileUploadCompleteRequestDto
+        {
+            UploadId = session.UploadId,
+            FileName = "integrity-test.txt",
+            TotalChunks = 3
+        };
+
+        var result = await _fileBusiness.CompleteUpload(uid, oid, pid, did, osid, completeRequest);
+
+        // Assert: Verify merged file has exact expected content
+        var finalFilePath = result.Uri;
+        Assert.True(File.Exists(finalFilePath));
+
+        var mergedContent = await File.ReadAllTextAsync(finalFilePath);
+        var expectedContent = chunk0Content + chunk1Content + chunk2Content;
+
+        Assert.Equal(expectedContent, mergedContent);
+        Assert.Equal(expectedContent.Length, mergedContent.Length);
+    }
+
+    [Fact]
+    public async Task CompleteUpload_LargerChunks_MergesCorrectly()
+    {
+        // Arrange: Simulate larger chunks with binary data
+        var session = await _fileBusiness.StartUpload(
+            uid, oid, pid, did, osid,
+            new FileUploadInitRequestDto { FileName = "binary-test.bin", FileSize = 1024 * 1024 }
+        );
+
+        // Create chunks with binary data (different patterns)
+        var chunk0Data = new byte[256];
+        var chunk1Data = new byte[256];
+        for (var i = 0; i < 256; i++)
+        {
+            chunk0Data[i] = (byte)i; // 0-255
+            chunk1Data[i] = (byte)(255 - i); // 255-0
+        }
+
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFileFromBytes(chunk0Data), session.UploadId,
+            0);
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFileFromBytes(chunk1Data), session.UploadId,
+            1);
+
+        var completeRequest = new FileUploadCompleteRequestDto
+        {
+            UploadId = session.UploadId,
+            FileName = "binary-test.bin",
+            TotalChunks = 2
+        };
+
+        var result = await _fileBusiness.CompleteUpload(uid, oid, pid, did, osid, completeRequest);
+
+        // Assert: Verify binary data integrity
+        var finalFilePath = result.Uri;
+        var mergedBytes = await File.ReadAllBytesAsync(finalFilePath);
+
+        Assert.Equal(512, mergedBytes.Length); // 256 + 256
+
+        // Verify first chunk
+        for (var i = 0; i < 256; i++) Assert.Equal((byte)i, mergedBytes[i]);
+
+        // Verify second chunk
+        for (var i = 0; i < 256; i++) Assert.Equal((byte)(255 - i), mergedBytes[256 + i]);
+    }
+
+    [Fact]
+    public async Task CompleteUpload_NoChunksUploaded_ThrowsException()
+    {
+        // Arrange: Start upload but don't upload any chunks
+        var session = await _fileBusiness.StartUpload(
+            uid, oid, pid, did, osid,
+            new FileUploadInitRequestDto { FileName = "no-chunks.txt", FileSize = 2048 }
+        );
+
+        var completeRequest = new FileUploadCompleteRequestDto
+        {
+            UploadId = session.UploadId,
+            FileName = "no-chunks.txt",
+            TotalChunks = 2
+        };
+
+        // Act & Assert: Should throw because chunks are missing
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _fileBusiness.CompleteUpload(uid, oid, pid, did, osid, completeRequest)
+        );
+    }
+
+
+    [Fact]
+    public async Task CompleteUpload_CleansUpUploadDirectory()
+    {
+        // Arrange
+        var session = await _fileBusiness.StartUpload(
+            uid, oid, pid, did, osid,
+            new FileUploadInitRequestDto { FileName = "cleanup-test.txt", FileSize = 2048 }
+        );
+
+        var uploadPath = Path.Combine(
+            _testDirectory,
+            $"project_{pid}",
+            $"datasource_{did}",
+            "uploads",
+            session.UploadId
+        );
+
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("chunk0"), session.UploadId, 0);
+        await _fileBusiness.UploadChunk(uid, oid, pid, did, osid, CreateFormFile("chunk1"), session.UploadId, 1);
+
+        // Verify upload directory exists before complete
+        Assert.True(Directory.Exists(uploadPath));
+        Assert.True(File.Exists(Path.Combine(uploadPath, "0.part")));
+        Assert.True(File.Exists(Path.Combine(uploadPath, "1.part")));
+
+        var completeRequest = new FileUploadCompleteRequestDto
+        {
+            UploadId = session.UploadId,
+            FileName = "cleanup-test.txt",
+            TotalChunks = 2
+        };
+
+        // Act
+        await _fileBusiness.CompleteUpload(uid, oid, pid, did, osid, completeRequest);
+
+        // Assert: Upload directory should be deleted
         Assert.False(Directory.Exists(uploadPath));
     }
 
