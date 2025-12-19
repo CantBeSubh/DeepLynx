@@ -9,7 +9,7 @@ import api from "./api";
 // ============================================================================
 
 const CHUNK_THRESHOLD = 500 * 1024 * 1024; // 500MB
-const CHUNK_SIZE = 100 * 1024 * 1024;      // 400MB per chunk
+const CHUNK_SIZE = 100 * 1024 * 1024;      // 100MB per chunk
 const MAX_CONCURRENT_CHUNKS = 4;            // Upload 4 chunks simultaneously
 const MAX_RETRIES = 3;                      // Retry failed chunks up to 3 times
 
