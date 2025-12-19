@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Web;
@@ -9,7 +8,7 @@ using ModelContextProtocol.Server;
 namespace deeplynx.mcp.tools;
 
 [McpServerToolType]
-public static class ProjectTools
+public class ProjectTools
 {
     public class Organization
     {
@@ -57,34 +56,26 @@ public static class ProjectTools
         
     }
     
-    private static readonly HttpClient _httpClient = new HttpClient
+    private readonly IAuthenticatedHttpClientFactory _httpClientFactory;
+
+    public ProjectTools(IAuthenticatedHttpClientFactory httpClientFactory)
     {
-        BaseAddress = new Uri(EnvironmentHelper.GetRequiredEnvironmentVariable("NEXUS_API_URL")),
-    };
+        _httpClientFactory = httpClientFactory;
+    }
 
     [McpServerTool, Description("Get all organizations the user has access to. Returns stringified JSON array of organizations. " +
                                 "Use this to find the organizationId needed for other API calls.")]
-    public static async Task<string> GetAllOrganizations(
-        [Description("Indicates whether to hide archived organizations. Default is true.")] string hideArchived = "true",
-        [Description("An optional bearer token for authentication")] string? authToken = null)
+    public async Task<string> GetAllOrganizations(
+        [Description("Indicates whether to hide archived organizations. Default is true.")] string hideArchived = "true")
     {
         try
         {
-            bool hideArchivedBool = bool.Parse(hideArchived);
+            var hideArchivedBool = string.IsNullOrEmpty(hideArchived) || bool.Parse(hideArchived);
             var query = HttpUtility.ParseQueryString(string.Empty);
             query["hideArchived"] = hideArchivedBool.ToString().ToLower();
 
-            var queryString = query.ToString();
-            var url = $"organizations/user?{queryString}";
-
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-
-            if (!string.IsNullOrEmpty(authToken))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
-            }
-
-            var response = await _httpClient.SendAsync(request);
+            using var httpClient = await _httpClientFactory.CreateClientAsync();
+            var response = await httpClient.GetAsync($"organizations/user?{query}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -121,35 +112,24 @@ public static class ProjectTools
     }
 
     [McpServerTool(UseStructuredContent = true), Description("Get all projects for a specific organization. Returns stringified JSON array of projects. Optional parameters: hideArchived (default true).")]
-    public static async Task<string> GetAllProjects(
+    public async Task<string> GetAllProjects(
         [Description("The ID of the organization to list projects from")] long organizationId,
-        [Description("Indicates whether to hide archived projects. Default is true.")] string hideArchived = "true",
-        [Description("An optional bearer token for authentication")] string? authToken = null)
+        [Description("Indicates whether to hide archived projects. Default is true.")] string hideArchived = "true")
     {
         try
         {
-            bool hideArchivedBool = bool.Parse(hideArchived);
+            var hideArchivedBool = string.IsNullOrEmpty(hideArchived) || bool.Parse(hideArchived);
             var query = HttpUtility.ParseQueryString(string.Empty);
             query["hideArchived"] = hideArchivedBool.ToString().ToLower();
 
-            var queryString = query.ToString();
-            var url = $"organizations/{organizationId}/projects?{queryString}";
+            using var httpClient = await _httpClientFactory.CreateClientAsync();
+            var response = await httpClient.GetAsync($"organizations/{organizationId}/projects?{query}");
 
-            // Create request
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            
-            // Add authorization header if token provided
-            if (!string.IsNullOrEmpty(authToken))
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
-            }
-
-            // Make the API call
-            var response = await _httpClient.SendAsync(request);
-            
             if (!response.IsSuccessStatusCode)
             {
-                throw new HttpRequestException(response.ReasonPhrase);
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(
+                    $"API request failed with status {response.StatusCode}: {response.ReasonPhrase}. Details: {errorContent}");
             }
             
             var content = await response.Content.ReadFromJsonAsync<List<Project>>(new JsonSerializerOptions() 

@@ -1,24 +1,31 @@
 ﻿// Program.cs
-using ModelContextProtocol.Server;
-using System.ComponentModel;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Web;
+using deeplynx.mcp.helpers;
 using DotNetEnv;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// load environment variables
+Env.Load();
+
+// used to access request headers in tools
+builder.Services.AddHttpContextAccessor();
+
+// Register token service as singleton (manages token cache across requests)
+builder.Services.AddSingleton<ITokenHelper, TokenHelper>();
+
+// register the authed HTTP client factory as scoped (per-request)
+builder.Services.AddScoped<IAuthenticatedHttpClientFactory, AuthenticatedHttpClientFactory>();
+
 builder.Services.AddMcpServer()
     .WithHttpTransport()
     .WithToolsFromAssembly();
+
 var app = builder.Build();
 
 app.MapMcp("/mcp");
 
-Env.Load();
 var mcp_server_url = 
     Environment.GetEnvironmentVariable("MCP_SERVER_URL") 
     ?? "http://localhost:43656";
