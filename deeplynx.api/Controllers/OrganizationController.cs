@@ -297,7 +297,6 @@ public class OrganizationController : ControllerBase
     /// <param name="userName"></param>
     /// <returns></returns>
     [HttpPost("{organizationId:long}/invite", Name = "api_invite_user_to_organization")]
-    [Auth("write", "organization")]
     [Auth("write", "user")]
     public async Task<ActionResult> InviteUserToOrganization(
         long organizationId,

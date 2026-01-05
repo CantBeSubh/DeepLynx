@@ -368,7 +368,6 @@ public class ProjectController : ControllerBase
     /// <param name="roleId"></param>
     /// <returns></returns>
     [HttpPost("{projectId:long}/invite", Name = "api_invite_user_to_project")]
-    [Auth("write", "project")]
     [Auth("write", "user")]
     public async Task<ActionResult> InviteUserToProject(
         long organizationId,
