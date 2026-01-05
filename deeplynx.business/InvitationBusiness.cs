@@ -69,8 +69,7 @@ public class InvitationBusiness: IInvitationBusiness
         
             return true;
         }
-    
-        // User doesn't exist - create new user
+        
         var emailResult = await _notificationBusiness.SendEmail(userEmail, userName);
         if (!emailResult)
         {

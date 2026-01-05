@@ -396,14 +396,6 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     await dbContext.SaveChangesAsync();
                     Log.Information($"Updated SSO ID for existing user {email}");
                 }
-
-                if (!existingUser.IsActive)
-                {
-                    existingUser.IsActive = true;
-                    existingUser.Name = name;
-                    existingUser.Username = username;
-                    await dbContext.SaveChangesAsync();
-                }
                 
                 // Add user to the default org if not already a member
                 var defaultOrg = await dbContext.Organizations
