@@ -125,7 +125,7 @@ const SettingsTwo = () => {
 
   const TabButton = ({ label, tab }: { label: string; tab: TabName }) => (
     <button
-      className={`tab tab-sm ${
+      className={`tab mr-5 ${
         activeTab === tab ? "tab-active font-semibold" : ""
       }`}
       onClick={() => setActiveTab(tab)}
