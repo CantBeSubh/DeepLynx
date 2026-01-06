@@ -1,32 +1,20 @@
 // src/app/(home)/upload_center/UploadCenterClient.tsx
 "use client";
 
-import { useLanguage } from "@/app/contexts/Language";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { getAllDataSources } from "@/app/lib/client_service/data_source_services.client";
-import {
-  uploadFile,
-  uploadFilesBatch,
-} from "@/app/lib/client_service/file_upload_services.client";
-import { getAllObjectStorages } from "@/app/lib/client_service/object_storage_services.client";
-import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {useLanguage} from "@/app/contexts/Language";
+import {useOrganizationSession} from "@/app/contexts/OrganizationSessionProvider";
+import {getAllDataSources} from "@/app/lib/client_service/data_source_services.client";
+import {uploadFile, uploadFilesBatch,} from "@/app/lib/client_service/file_upload_services.client";
+import {getAllObjectStorages} from "@/app/lib/client_service/object_storage_services.client";
+import {getAllProjects} from "@/app/lib/client_service/projects_services.client";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import toast from "react-hot-toast";
 import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
 import NewFileUploadCard from "../components/NewFileUploadCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
-import {
-  DataSourceResponseDto,
-  ObjectStorageResponseDto,
-  ProjectResponseDto,
-} from "../types/responseDTOs";
-import {
-  ExistingFile,
-  FileMetadata,
-  RecentUpload,
-  UploadType,
-} from "../types/types";
+import {DataSourceResponseDto, ObjectStorageResponseDto, ProjectResponseDto,} from "../types/responseDTOs";
+import {ExistingFile, FileMetadata, RecentUpload, UploadProgressEvent, UploadType,} from "../types/types";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -34,9 +22,9 @@ type Props = {
   uploadText: string;
 };
 
-export default function UploadCenterClient({ initialAvailableFiles }: Props) {
-  const { t } = useLanguage();
-  const { organization } = useOrganizationSession();
+export default function UploadCenterClient({initialAvailableFiles}: Props) {
+  const {t} = useLanguage();
+  const {organization} = useOrganizationSession();
   const [multi, setMulti] = useState(false);
   const [showMultiFileWarning, setShowMultiFileWarning] = useState(false);
   const [uploadType, setUploadType] = useState<UploadType>("new");
@@ -59,9 +47,12 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [isLoadingObjectStorage, setIsLoadingObjectStorage] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgressEvent | null>(null);
+
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
-      setFilesMetadata((prev) => ({ ...prev, [fileIndex]: metadata }));
+      setFilesMetadata((prev) => ({...prev, [fileIndex]: metadata}));
     },
     []
   );
@@ -87,6 +78,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     setTargetFileId("");
     setMulti(false);
     setFilesMetadata({});
+    setUploadProgress(null);
 
     if (!keepProject) {
       setProjectId("");
@@ -119,6 +111,10 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       toast.error("Select a project and at least one file.");
       return;
     }
+
+    setIsUploading(true);
+    setUploadProgress(null);
+
     try {
       if (selectedFiles.length === 1) {
         const file = selectedFiles[0];
@@ -126,37 +122,40 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
         await uploadFile({
           organizationId: organization?.organizationId as number,
           projectId,
-          dataSourceId, // may be undefined
-          objectStorageId, // may be undefined
+          dataSourceId,
+          objectStorageId,
           file,
           name: metadata.name || file.name,
           description: metadata.description || "",
-          // properties: metadata.properties, // if you collect extra JSON
-          // tags: metadata.tags, // if you collect tags
+          // Progress callback for single file
+          onProgress: (progress) => {
+            setUploadProgress(progress);
+          },
         });
         toast.success("File uploaded!");
       } else {
-        // Use your batch helper (returns Promise.allSettled)
         const results = await uploadFilesBatch({
           organizationId: organization?.organizationId as number,
           projectId,
           dataSourceId,
           objectStorageId,
           files: selectedFiles,
-          // optional shared metadata defaults
         });
 
         const ok = results.filter((r) => r.status === "fulfilled").length;
         const fail = results.length - ok;
         toast.success(
-          `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
+            `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
         );
         if (fail) console.warn("Batch upload failures:", results);
       }
-      resetForm({ keepProject: true });
+      resetForm({keepProject: true});
     } catch (err) {
       console.error(err);
       toast.error("Upload failed. See console for details.");
+      setUploadProgress(null);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -419,7 +418,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                 multiple={multi}
                 files={selectedFiles}
                 onFilesChange={setSelectedFiles}
-                disabled={!uploadType || (needsTarget && !targetFileId)}
+                disabled={!uploadType || (needsTarget && !targetFileId) || isUploading}
               />
             )}
 
@@ -443,12 +442,33 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
               needsTarget={needsTarget}
               selectedTarget={selectedTarget}
             />
+
+            {/* Progress Bar */}
+            {isUploading && uploadProgress && (
+              <div className="mb-4 p-4 bg-base-200 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">
+                    {uploadProgress.chunksCompleted} / {uploadProgress.totalChunks} chunks
+                  </span>
+                  <span className="text-sm font-bold text-info">
+                    {Math.round(uploadProgress.percentComplete)}%
+                    </span>
+                </div>
+                <progress
+                  className="progress progress-info w-full"
+                  value={uploadProgress.percentComplete}
+                  max="100"
+                ></progress>
+              </div>
+            )}
+
             <SelectedFilesCard
               files={selectedFiles}
               onRemoveAt={removeAt}
               onClear={clearAll}
               onUpload={handleUpload}
               canUpload={canUpload}
+              isUploading={isUploading}
             />
           </div>
         )}

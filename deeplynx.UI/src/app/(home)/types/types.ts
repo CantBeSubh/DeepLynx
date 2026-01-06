@@ -65,29 +65,36 @@ export type FileMetadata = {
 };
 
 export type ChunkedUploadSession = {
-    uploadId: string;
-    chunkSize: number;
-    totalChunks: number;
+  uploadId: string;
+  chunkSize: number;
+  totalChunks: number;
 };
 
 export type ChunkedUploadOptions = {
-    organizationId: number | string;
-    projectId: number | string;
-    dataSourceId?: number | string;
-    objectStorageId?: number | string;
-    fileName: string;
-    fileSize: number;
+  organizationId: number | string;
+  projectId: number | string;
+  dataSourceId?: number | string;
+  objectStorageId?: number | string;
+  fileName: string;
+  fileSize: number;
 };
 
 export type ChunkUploadOptions = {
-    organizationId: number | string;
-    projectId: number | string;
-    dataSourceId?: number | string;
-    objectStorageId?: number | string;
-    uploadId: string;
-    chunk: Blob;
-    chunkNumber: number;
+  organizationId: number | string;
+  projectId: number | string;
+  dataSourceId?: number | string;
+  objectStorageId?: number | string;
+  uploadId: string;
+  chunk: Blob;
+  chunkNumber: number;
 };
+
+export type UploadProgressEvent = {
+  percentComplete: number;
+  chunksCompleted: number;
+  totalChunks: number;
+  currentBatch: number;
+}
 
 //Widgets
 export type WidgetType =
@@ -132,20 +139,19 @@ export type RecentUpload = {
 
 //file_upload_services
 export type UploadFileArgs = {
-  organizationId: number | string;
-  projectId: number | string;
-  dataSourceId: number | string;
-  objectStorageId: number | string;
+  organizationId: string | number;
+  projectId: string | number;
   file: File;
-
-  // optional metadata
+  dataSourceId?: string | number;
+  objectStorageId?: string | number;
   name?: string;
   description?: string;
-  properties?: unknown;
+  properties?: Record<string, any> | string;
   tags?: string[];
   originalId?: string;
-  classId?: number | string;
-};
+  classId?: number;
+  onProgress?: (progress: UploadProgressEvent) => void;
+}
 
 //notification_services
 /** ---- Types ---- */

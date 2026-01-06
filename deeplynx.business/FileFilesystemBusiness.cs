@@ -59,7 +59,6 @@ public class FileFilesystemBusiness : IFileBusiness
         // create a file path in the format <mountdir>/project_<id>/datasource_<id>/filename
         var filePath = Path.Combine(
             objectStorageConfig.MountPath,
-            "org_" + organizationId.ToString(),
             "project_" + projectId.ToString(),
             "datasource_" + dataSourceId.ToString(),
             fileName);

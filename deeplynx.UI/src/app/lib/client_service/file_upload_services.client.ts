@@ -1,7 +1,7 @@
 // src/app/lib/file_upload_services.client.ts
 
 import { RecordResponseDto } from "@/app/(home)/types/responseDTOs";
-import { UploadFileArgs, ChunkedUploadSession, ChunkUploadOptions, ChunkedUploadOptions } from "@/app/(home)/types/types";
+import { UploadFileArgs, ChunkedUploadSession, ChunkUploadOptions, ChunkedUploadOptions, UploadProgressEvent } from "@/app/(home)/types/types";
 import api from "./api";
 
 // ============================================================================
@@ -95,184 +95,211 @@ async function uploadFileRegular({
 // ============================================================================
 
 async function uploadFileChunked({
-     file,
-     organizationId,
-     projectId,
-     dataSourceId,
-     objectStorageId,
+   file,
+   organizationId,
+   projectId,
+   dataSourceId,
+   objectStorageId,
+   onProgress,
  }: UploadFileArgs) {
     let uploadId: string | null = null;
 
     try {
-        const session = await startChunkedUpload({
-            organizationId,
-            projectId,
-            dataSourceId,
-            objectStorageId,
-            fileName: file.name,
-            fileSize: file.size,
-        });
+      const session = await startChunkedUpload({
+        organizationId,
+        projectId,
+        dataSourceId,
+        objectStorageId,
+        fileName: file.name,
+        fileSize: file.size,
+      });
 
-        uploadId = session.uploadId;
+      uploadId = session.uploadId;
 
-        const chunks = splitFileIntoChunks(file, CHUNK_SIZE);
+      const chunks = splitFileIntoChunks(file, CHUNK_SIZE);
 
-        await uploadChunksInBatches(chunks, uploadId, {
-            organizationId,
-            projectId,
-            dataSourceId,
-            objectStorageId,
-        });
+      await uploadChunksInBatches(chunks, uploadId, {
+        organizationId,
+        projectId,
+        dataSourceId,
+        objectStorageId,
+      }, onProgress);
 
-        const result = await completeChunkedUpload({
-            organizationId,
-            projectId,
-            dataSourceId,
-            objectStorageId,
-            uploadId,
-            fileName: file.name,
-            totalChunks: chunks.length,
-        });
+      const result = await completeChunkedUpload({
+        organizationId,
+        projectId,
+        dataSourceId,
+        objectStorageId,
+        uploadId,
+        fileName: file.name,
+        totalChunks: chunks.length,
+      });
 
-        return result;
-    } catch (error) {
-        // Cleanup on failure
-        if (uploadId) {
-            await cancelChunkedUpload({
-                organizationId,
-                projectId,
-                dataSourceId,
-                objectStorageId,
-                uploadId,
-            }).catch((err) => {
-                console.error("Failed to cancel upload:", err);
-            });
-        }
-        throw error;
+      onProgress?.({
+        percentComplete: 100,
+        chunksCompleted: chunks.length,
+        totalChunks: chunks.length,
+        currentBatch: Math.ceil(chunks.length / MAX_CONCURRENT_CHUNKS),
+      });
+
+      return result;
+  } catch (error) {
+    // Cleanup on failure
+    if (uploadId) {
+      await cancelChunkedUpload({
+        organizationId,
+        projectId,
+        dataSourceId,
+        objectStorageId,
+        uploadId,
+      }).catch((err) => {
+        console.error("Failed to cancel upload:", err);
+      });
     }
+    throw error;
+  }
 }
 
 async function startChunkedUpload(
-    options: ChunkedUploadOptions
+  options: ChunkedUploadOptions
 ): Promise<ChunkedUploadSession> {
-    const { organizationId, projectId, fileName, fileSize, dataSourceId, objectStorageId } = options;
+  const { organizationId, projectId, fileName, fileSize, dataSourceId, objectStorageId } = options;
 
-    const params: Record<string, number | string> = {};
-    if (dataSourceId != null) params.dataSourceId = dataSourceId;
-    if (objectStorageId != null) params.objectStorageId = objectStorageId;
+  const params: Record<string, number | string> = {};
+  if (dataSourceId != null) params.dataSourceId = dataSourceId;
+  if (objectStorageId != null) params.objectStorageId = objectStorageId;
 
-    const { data } = await api.post<ChunkedUploadSession>(
-        `/organizations/${organizationId}/projects/${projectId}/files/upload/start`,
-        { fileName, fileSize },
-        { params }
-    );
+  const { data } = await api.post<ChunkedUploadSession>(
+    `/organizations/${organizationId}/projects/${projectId}/files/upload/start`,
+    { fileName, fileSize },
+    { params }
+  );
 
-    console.log(`Started chunked upload: ${data.uploadId} (${data.totalChunks} chunks)`);
+  console.log(`Started chunked upload: ${data.uploadId} (${data.totalChunks} chunks)`);
 
-    return data;
+  return data;
 }
 
 function splitFileIntoChunks(file: File, chunkSize: number): Blob[] {
-    const chunks: Blob[] = [];
-    let offset = 0;
+  const chunks: Blob[] = [];
+  let offset = 0;
 
-    while (offset < file.size) {
-        const end = Math.min(offset + chunkSize, file.size);
-        chunks.push(file.slice(offset, end));
-        offset = end;
-    }
+  while (offset < file.size) {
+    const end = Math.min(offset + chunkSize, file.size);
+    chunks.push(file.slice(offset, end));
+    offset = end;
+  }
 
-    return chunks;
+  return chunks;
 }
 
 async function uploadChunksInBatches(
     chunks: Blob[],
     uploadId: string,
     options: {
-        organizationId: number | string;
-        projectId: number | string;
-        dataSourceId?: number | string;
-        objectStorageId?: number | string;
-    }
+      organizationId: number | string;
+      projectId: number | string;
+      dataSourceId?: number | string;
+      objectStorageId?: number | string;
+    },
+    onProgress?: (progress: UploadProgressEvent) => void // NEW
 ) {
+    let chunksCompleted = 0;
+    const totalChunks = chunks.length;
+
     for (let i = 0; i < chunks.length; i += MAX_CONCURRENT_CHUNKS) {
-        const batch = chunks.slice(i, i + MAX_CONCURRENT_CHUNKS);
-
-        // Upload batch in parallel
-        const batchPromises = batch.map((chunk, batchIndex) => {
-            const chunkNumber = i + batchIndex;
-            return uploadSingleChunk({
-                ...options,
-                uploadId,
-                chunk,
-                chunkNumber,
-            });
+      const batch = chunks.slice(i, i + MAX_CONCURRENT_CHUNKS);
+      const currentBatch = Math.floor(i / MAX_CONCURRENT_CHUNKS) + 1;
+  
+      // Upload batch in parallel
+      const batchPromises = batch.map((chunk, batchIndex) => {
+        const chunkNumber = i + batchIndex;
+        return uploadSingleChunk({
+          ...options,
+          uploadId,
+          chunk,
+          chunkNumber,
         });
-
-        await Promise.all(batchPromises);
-
-        console.log(`Uploaded ${Math.min(i + MAX_CONCURRENT_CHUNKS, chunks.length)} / ${chunks.length} chunks`);
+      });
+  
+      // Wait for batch to complete
+      await Promise.all(batchPromises);
+  
+      // Update after batch completes
+      chunksCompleted += batch.length;
+      const percentComplete = (chunksCompleted / totalChunks) * 100;
+  
+      onProgress?.({
+        percentComplete: Math.round(percentComplete * 10) / 10,
+        chunksCompleted,
+        totalChunks,
+        currentBatch,
+      });
+  
+      console.log(
+        `Uploaded batch ${currentBatch}: ${chunksCompleted} / ${totalChunks} chunks (${percentComplete.toFixed(1)}%)`
+      );
     }
 }
 
 async function uploadSingleChunk(options: ChunkUploadOptions): Promise<void> {
-    const { organizationId, projectId, dataSourceId, objectStorageId, uploadId, chunk, chunkNumber } = options;
+  const { organizationId, projectId, dataSourceId, objectStorageId, uploadId, chunk, chunkNumber } = options;
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            const form = new FormData();
-            form.append("chunk", chunk);
-            form.append("uploadId", uploadId);
-            form.append("chunkNumber", String(chunkNumber));
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const form = new FormData();
+      form.append("chunk", chunk);
+      form.append("uploadId", uploadId);
+      form.append("chunkNumber", String(chunkNumber));
 
-            const params: Record<string, number | string> = {};
-            if (dataSourceId != null) params.dataSourceId = dataSourceId;
-            if (objectStorageId != null) params.objectStorageId = objectStorageId;
+      const params: Record<string, number | string> = {};
+      if (dataSourceId != null) params.dataSourceId = dataSourceId;
+      if (objectStorageId != null) params.objectStorageId = objectStorageId;
 
-            await api.post(
-                `/organizations/${organizationId}/projects/${projectId}/files/upload/chunk`,
-                form,
-                { params }
-            );
+      await api.post(
+        `/organizations/${organizationId}/projects/${projectId}/files/upload/chunk`,
+        form,
+        { params }
+      );
 
-            return; // Success
-        } catch (error) {
-            console.warn(`Chunk ${chunkNumber} failed (attempt ${attempt}/${MAX_RETRIES})`);
+      return; // Success
+    } catch (error) {
+      console.warn(`Chunk ${chunkNumber} failed (attempt ${attempt}/${MAX_RETRIES})`);
 
-            if (attempt === MAX_RETRIES) {
-                throw new Error(`Chunk ${chunkNumber} failed after ${MAX_RETRIES} attempts`);
-            }
+      if (attempt === MAX_RETRIES) {
+        throw new Error(`Chunk ${chunkNumber} failed after ${MAX_RETRIES} attempts`);
+      }
 
-            // Exponential backoff
-            await sleep(1000 * attempt);
-        }
+      // Exponential backoff
+      await sleep(1000 * attempt);
     }
+  }
 }
 
 async function completeChunkedUpload(options: {
-    organizationId: number | string;
-    projectId: number | string;
-    dataSourceId?: number | string;
-    objectStorageId?: number | string;
-    uploadId: string;
-    fileName: string;
-    totalChunks: number;
+  organizationId: number | string;
+  projectId: number | string;
+  dataSourceId?: number | string;
+  objectStorageId?: number | string;
+  uploadId: string;
+  fileName: string;
+  totalChunks: number;
 }): Promise<RecordResponseDto> {
-    const { organizationId, projectId, dataSourceId, objectStorageId, uploadId, fileName, totalChunks } = options;
+  const { organizationId, projectId, dataSourceId, objectStorageId, uploadId, fileName, totalChunks } = options;
 
-    const params: Record<string, number | string> = {};
-    if (dataSourceId != null) params.dataSourceId = dataSourceId;
-    if (objectStorageId != null) params.objectStorageId = objectStorageId;
+  const params: Record<string, number | string> = {};
+  if (dataSourceId != null) params.dataSourceId = dataSourceId;
+  if (objectStorageId != null) params.objectStorageId = objectStorageId;
 
-    const { data } = await api.post<RecordResponseDto>(
-        `/organizations/${organizationId}/projects/${projectId}/files/upload/complete`,
-        { uploadId, fileName, totalChunks },
-        { params }
-    );
+  const { data } = await api.post<RecordResponseDto>(
+    `/organizations/${organizationId}/projects/${projectId}/files/upload/complete`,
+    { uploadId, fileName, totalChunks },
+    { params }
+  );
 
-    console.log(`Completed chunked upload: ${uploadId}`);
+  console.log(`Completed chunked upload: ${uploadId}`);
 
-    return data;
+  return data;
 }
 
 async function cancelChunkedUpload(options: {
