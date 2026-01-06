@@ -40,7 +40,7 @@ public class ProjectTools
         public DateTime LastUpdatedAt { get; set; }
     
         [Description("The user that last updated the project in the database")]
-        public string? LastUpdatedBy { get; set; }
+        public long? LastUpdatedBy { get; set; }
     
         [Description("The project description that contains useful information about the purpose of the project")]
         public string? Description { get; set; }

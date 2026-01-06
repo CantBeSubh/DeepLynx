@@ -20,56 +20,36 @@ public interface IAuthenticatedHttpClientFactory
 public class AuthenticatedHttpClientFactory : IAuthenticatedHttpClientFactory
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ITokenHelper _tokenHelper;
     private readonly string _baseUrl;
 
-    public AuthenticatedHttpClientFactory(
-        IHttpContextAccessor httpContextAccessor,
-        ITokenHelper tokenHelper)
+    public AuthenticatedHttpClientFactory(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
-        _tokenHelper = tokenHelper;
         _baseUrl = EnvironmentHelper.GetRequiredEnvironmentVariable("NEXUS_API_URL").TrimEnd('/') + "/";
     }
 
-    public async Task<HttpClient> CreateClientAsync()
+    public Task<HttpClient> CreateClientAsync()
     {
-        var context = _httpContextAccessor.HttpContext;
-        if (context == null)
-        {
-            throw new InvalidOperationException("No HTTP context available");
-        }
+        var context = _httpContextAccessor.HttpContext 
+            ?? throw new InvalidOperationException("No HTTP context available");
 
-        // Debug: Log all headers
-        Console.WriteLine("=== Request Headers ===");
-        foreach (var header in context.Request.Headers)
-        {
-            Console.WriteLine($"{header.Key}: {header.Value}");
-        }
-        Console.WriteLine("======================");
-
-        var apiKey = context.Request.Headers["X-Nexus-Api-Key"].FirstOrDefault();
-        var apiSecret = context.Request.Headers["X-Nexus-Api-Secret"].FirstOrDefault();
+        // Get Bearer token from Authorization header
+        var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
         
-        Console.WriteLine($"ApiKey found: {!string.IsNullOrEmpty(apiKey)}");
-        Console.WriteLine($"ApiSecret found: {!string.IsNullOrEmpty(apiSecret)}");
-
-        var client = new HttpClient
-        {
-            BaseAddress = new Uri(_baseUrl)
-        };
-
-        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(apiSecret))
-        {
-            throw new UnauthorizedAccessException(
-                "Missing required headers: X-Nexus-Api-Key and X-Nexus-Api-Secret");
-        }
-
-        // Get a valid token (cached or fresh)
-        var token = await _tokenHelper.GetValidTokenAsync(apiKey, apiSecret);
+        if (string.IsNullOrEmpty(authHeader))
+            throw new UnauthorizedAccessException("Missing Authorization header. Send: Authorization: Bearer <your-token>");
         
+        if (!authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            throw new UnauthorizedAccessException("Invalid auth format. Expected: Bearer <your-token>");
+
+        var token = authHeader.Substring(7).Trim(); // 7 = "Bearer ".Length
+        
+        if (string.IsNullOrEmpty(token))
+            throw new UnauthorizedAccessException("Empty Bearer token");
+
+        var client = new HttpClient { BaseAddress = new Uri(_baseUrl) };
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        return client;
+        return Task.FromResult(client);
     }
 }

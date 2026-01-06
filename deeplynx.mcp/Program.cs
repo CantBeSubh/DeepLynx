@@ -12,9 +12,6 @@ Env.Load();
 // used to access request headers in tools
 builder.Services.AddHttpContextAccessor();
 
-// Register token service as singleton (manages token cache across requests)
-builder.Services.AddSingleton<ITokenHelper, TokenHelper>();
-
 // register the authed HTTP client factory as scoped (per-request)
 builder.Services.AddScoped<IAuthenticatedHttpClientFactory, AuthenticatedHttpClientFactory>();
 
