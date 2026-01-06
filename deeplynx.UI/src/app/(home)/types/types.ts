@@ -146,7 +146,7 @@ export type UploadFileArgs = {
   objectStorageId?: string | number;
   name?: string;
   description?: string;
-  properties?: Record<string, any> | string;
+  properties?: Record<string, unknown> | string;
   tags?: string[];
   originalId?: string;
   classId?: number;
