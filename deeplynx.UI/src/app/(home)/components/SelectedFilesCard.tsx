@@ -18,7 +18,7 @@ export default function SelectedFilesCard({
   onClear,
   onUpload,
   canUpload,
-  isUploading = false, // ← ADD THIS to destructure
+  isUploading = false,
   }: Props) {
   const {t} = useLanguage();
 

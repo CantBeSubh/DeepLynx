@@ -145,7 +145,7 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
         const ok = results.filter((r) => r.status === "fulfilled").length;
         const fail = results.length - ok;
         toast.success(
-            `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
+          `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
         );
         if (fail) console.warn("Batch upload failures:", results);
       }
