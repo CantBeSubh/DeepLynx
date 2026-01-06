@@ -4,7 +4,7 @@
 import {useLanguage} from "@/app/contexts/Language";
 import {useOrganizationSession} from "@/app/contexts/OrganizationSessionProvider";
 import {getAllDataSources} from "@/app/lib/client_service/data_source_services.client";
-import {uploadFile, uploadFilesBatch,} from "@/app/lib/client_service/file_upload_services.client";
+import {uploadFile, uploadFilesBatch, cancelChunkedUpload, cancelCurrentUpload} from "@/app/lib/client_service/file_upload_services.client";
 import {getAllObjectStorages} from "@/app/lib/client_service/object_storage_services.client";
 import {getAllProjects} from "@/app/lib/client_service/projects_services.client";
 import {useCallback, useEffect, useMemo, useState} from "react";
@@ -49,6 +49,8 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<UploadProgressEvent | null>(null);
+  const [currentUploadId, setCurrentUploadId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -79,6 +81,7 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
     setMulti(false);
     setFilesMetadata({});
     setUploadProgress(null);
+    setIsCancelling(false);
 
     if (!keepProject) {
       setProjectId("");
@@ -106,6 +109,27 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
   const clearAll = () => setSelectedFiles([]);
 
+  const handleCancel = async () => {
+    if (!uploadProgress?.uploadId) return;
+
+    setIsCancelling(true);
+    cancelCurrentUpload();
+
+    try {
+      await cancelChunkedUpload({
+        organizationId: organization?.organizationId as number,
+        projectId,
+        dataSourceId,
+        objectStorageId,
+        uploadId: uploadProgress.uploadId,
+      });
+    } catch (err) {
+      console.error("Failed to cleanup cancelled upload:", err);
+    }
+
+    // DON'T reset isCancelling here - let handleUpload do it
+  };
+
   const handleUpload = async () => {
     if (!projectId || selectedFiles.length === 0) {
       toast.error("Select a project and at least one file.");
@@ -127,7 +151,6 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
           file,
           name: metadata.name || file.name,
           description: metadata.description || "",
-          // Progress callback for single file
           onProgress: (progress) => {
             setUploadProgress(progress);
           },
@@ -145,20 +168,28 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
         const ok = results.filter((r) => r.status === "fulfilled").length;
         const fail = results.length - ok;
         toast.success(
-          `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
+            `Uploaded ${ok} file(s)${fail ? ` • ${fail} failed` : ""}`
         );
         if (fail) console.warn("Batch upload failures:", results);
       }
       resetForm({keepProject: true});
     } catch (err) {
-      console.error(err);
-      toast.error("Upload failed. See console for details.");
+      // isCancelling will still be true at this point
+      if (isCancelling) {
+        toast.success("Upload cancelled");
+      } else if (err instanceof Error && err.message.includes('cancelled')) {
+        toast.success("Upload cancelled");
+      } else {
+        console.error(err);
+        toast.error("Upload failed. See console for details.");
+      }
       setUploadProgress(null);
+      setIsCancelling(false);  // NOW reset it
     } finally {
       setIsUploading(false);
     }
   };
-
+  
   const isMultiAllowed = uploadType === "new";
 
   useEffect(() => {
@@ -442,26 +473,6 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
               needsTarget={needsTarget}
               selectedTarget={selectedTarget}
             />
-
-            {/* Progress Bar */}
-            {isUploading && uploadProgress && (
-              <div className="mb-4 p-4 bg-base-200 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">
-                    {uploadProgress.chunksCompleted} / {uploadProgress.totalChunks} chunks
-                  </span>
-                  <span className="text-sm font-bold text-info">
-                    {Math.round(uploadProgress.percentComplete)}%
-                    </span>
-                </div>
-                <progress
-                  className="progress progress-info w-full"
-                  value={uploadProgress.percentComplete}
-                  max="100"
-                ></progress>
-              </div>
-            )}
-
             <SelectedFilesCard
               files={selectedFiles}
               onRemoveAt={removeAt}
@@ -470,6 +481,38 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
               canUpload={canUpload}
               isUploading={isUploading}
             />
+            {/* Progress Bar with Cancel Button */}
+            {isUploading && uploadProgress && (
+                <div className="mt-4 p-4 bg-base-200 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium">
+                      {uploadProgress.chunksCompleted} / {uploadProgress.totalChunks} chunks
+                    </span>
+                    <span className="text-sm font-bold text-base-content">
+                      {Math.round(uploadProgress.percentComplete)}%
+                    </span>
+                  </div>
+                  <progress
+                      className="progress progress-success w-full"
+                      value={uploadProgress.percentComplete}
+                      max="100"
+                  ></progress>
+                  <button
+                      className="btn btn-sm btn-outline btn-error w-full mt-3"
+                      onClick={handleCancel}
+                      disabled={isCancelling}
+                  >
+                    {isCancelling ? (
+                        <>
+                          <span className="loading loading-spinner loading-xs"></span>
+                          Cancelling and cleaning up...
+                        </>
+                    ) : (
+                        'Cancel Upload'
+                    )}
+                  </button>
+                </div>
+            )}
           </div>
         )}
       </div>

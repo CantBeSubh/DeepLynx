@@ -40,6 +40,20 @@ export async function uploadFilesBatch(
     return Promise.allSettled(files.map((file) => uploadFile({ ...rest, file })));
 }
 
+// Store AbortController for cancellation
+let currentUploadAbortController: AbortController | null = null;
+
+/**
+ * Cancel ongoing upload
+ */
+export function cancelCurrentUpload(): void {
+  if (currentUploadAbortController) {
+    currentUploadAbortController.abort();
+    currentUploadAbortController = null;
+    console.log("Upload cancelled by user");
+  }
+}
+
 // ============================================================================
 // REGULAR UPLOAD (< 500MB)
 // ============================================================================
@@ -95,56 +109,57 @@ async function uploadFileRegular({
 // ============================================================================
 
 async function uploadFileChunked({
-   file,
-   organizationId,
-   projectId,
-   dataSourceId,
-   objectStorageId,
-   onProgress,
- }: UploadFileArgs) {
-    let uploadId: string | null = null;
+  file,
+  organizationId,
+  projectId,
+  dataSourceId,
+  objectStorageId,
+  onProgress,
+  }: UploadFileArgs) {
+  let uploadId: string | null = null;
+  currentUploadAbortController = new AbortController();
 
-    try {
-      const session = await startChunkedUpload({
-        organizationId,
-        projectId,
-        dataSourceId,
-        objectStorageId,
-        fileName: file.name,
-        fileSize: file.size,
-      });
+  try {
+    const session = await startChunkedUpload({
+      organizationId,
+      projectId,
+      dataSourceId,
+      objectStorageId,
+      fileName: file.name,
+      fileSize: file.size,
+    });
 
-      uploadId = session.uploadId;
+    uploadId = session.uploadId;
 
-      const chunks = splitFileIntoChunks(file, CHUNK_SIZE);
+    const chunks = splitFileIntoChunks(file, CHUNK_SIZE);
 
-      await uploadChunksInBatches(chunks, uploadId, {
-        organizationId,
-        projectId,
-        dataSourceId,
-        objectStorageId,
-      }, onProgress);
+    await uploadChunksInBatches(chunks, uploadId, {
+      organizationId,
+      projectId,
+      dataSourceId,
+      objectStorageId,
+    }, onProgress);
 
-      const result = await completeChunkedUpload({
-        organizationId,
-        projectId,
-        dataSourceId,
-        objectStorageId,
-        uploadId,
-        fileName: file.name,
-        totalChunks: chunks.length,
-      });
+    const result = await completeChunkedUpload({
+      organizationId,
+      projectId,
+      dataSourceId,
+      objectStorageId,
+      uploadId,
+      fileName: file.name,
+      totalChunks: chunks.length,
+    });
 
-      onProgress?.({
-        percentComplete: 100,
-        chunksCompleted: chunks.length,
-        totalChunks: chunks.length,
-        currentBatch: Math.ceil(chunks.length / MAX_CONCURRENT_CHUNKS),
-      });
+    onProgress?.({
+      percentComplete: 100,
+      chunksCompleted: chunks.length,
+      totalChunks: chunks.length,
+      currentBatch: Math.ceil(chunks.length / MAX_CONCURRENT_CHUNKS),
+      uploadId,
+    });
 
-      return result;
+    return result;
   } catch (error) {
-    // Cleanup on failure
     if (uploadId) {
       await cancelChunkedUpload({
         organizationId,
@@ -157,6 +172,8 @@ async function uploadFileChunked({
       });
     }
     throw error;
+  } finally {
+    currentUploadAbortController = null; // ADD THIS
   }
 }
 
@@ -202,12 +219,17 @@ async function uploadChunksInBatches(
       dataSourceId?: number | string;
       objectStorageId?: number | string;
     },
-    onProgress?: (progress: UploadProgressEvent) => void // NEW
+    onProgress?: (progress: UploadProgressEvent) => void
 ) {
     let chunksCompleted = 0;
     const totalChunks = chunks.length;
 
     for (let i = 0; i < chunks.length; i += MAX_CONCURRENT_CHUNKS) {
+
+      // CHECK IF ABORTED
+      if (currentUploadAbortController?.signal.aborted) {
+        throw new DOMException('Upload cancelled', 'AbortError');
+      }
       const batch = chunks.slice(i, i + MAX_CONCURRENT_CHUNKS);
       const currentBatch = Math.floor(i / MAX_CONCURRENT_CHUNKS) + 1;
   
@@ -234,6 +256,7 @@ async function uploadChunksInBatches(
         chunksCompleted,
         totalChunks,
         currentBatch,
+        uploadId,
       });
   
       console.log(
@@ -246,6 +269,9 @@ async function uploadSingleChunk(options: ChunkUploadOptions): Promise<void> {
   const { organizationId, projectId, dataSourceId, objectStorageId, uploadId, chunk, chunkNumber } = options;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    if (currentUploadAbortController?.signal.aborted) {
+      throw new DOMException('Upload cancelled', 'AbortError');
+    }
     try {
       const form = new FormData();
       form.append("chunk", chunk);
@@ -257,20 +283,27 @@ async function uploadSingleChunk(options: ChunkUploadOptions): Promise<void> {
       if (objectStorageId != null) params.objectStorageId = objectStorageId;
 
       await api.post(
-        `/organizations/${organizationId}/projects/${projectId}/files/upload/chunk`,
-        form,
-        { params }
+          `/organizations/${organizationId}/projects/${projectId}/files/upload/chunk`,
+          form,
+          {
+            params,
+            signal: currentUploadAbortController?.signal,
+          }
       );
 
       return; // Success
     } catch (error) {
+      // Don't retry if cancelled
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error;
+      }
+
       console.warn(`Chunk ${chunkNumber} failed (attempt ${attempt}/${MAX_RETRIES})`);
 
       if (attempt === MAX_RETRIES) {
         throw new Error(`Chunk ${chunkNumber} failed after ${MAX_RETRIES} attempts`);
       }
 
-      // Exponential backoff
       await sleep(1000 * attempt);
     }
   }
@@ -302,7 +335,7 @@ async function completeChunkedUpload(options: {
   return data;
 }
 
-async function cancelChunkedUpload(options: {
+export async function cancelChunkedUpload(options: {
     organizationId: number | string;
     projectId: number | string;
     dataSourceId?: number | string;

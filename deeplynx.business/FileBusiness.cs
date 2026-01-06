@@ -509,51 +509,70 @@ public class FileBusiness
         }
     }
 
-    // /// <summary>
-    // ///     Cancels an in-progress upload and cleans up temporary files
-    // /// </summary>
-    // /// <param name="currentUserId">ID of the User executing this method.</param>
-    // /// <param name="organizationId">ID of the Organization to which the project belongs</param>
-    // /// <param name="projectId">ID of the project to which the file belongs</param>
-    // /// <param name="dataSourceId">ID of the data source to which the file belongs</param>
-    // /// <param name="objectStorageId">ID of the object storage method to use</param>
-    // /// <param name="uploadId">ID of upload session to cancel</param>
-    // public async Task CancelUpload(
-    //     long currentUserId,
-    //     long organizationId,
-    //     long projectId,
-    //     long? dataSourceId,
-    //     long? objectStorageId,
-    //     string uploadId)
-    // {
-    //     // Resolve data source
-    //     long realDataSourceId;
-    //     if (dataSourceId.HasValue)
-    //     {
-    //         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId.Value, projectId);
-    //         realDataSourceId = dataSourceId.Value;
-    //     }
-    //     else
-    //     {
-    //         var defaultDataSource = await _dataSourceBusiness.GetDefaultDataSource(organizationId, projectId) ??
-    //                                 throw new KeyNotFoundException("Default data source not found");
-    //         realDataSourceId = defaultDataSource.Id;
-    //     }
-    //
-    //     var fileStorageBasePath = _configuration["FileStorage:BasePath"] ?? "/mnt/storage/files";
-    //     var uploadPath = Path.Combine(
-    //         fileStorageBasePath,
-    //         $"project_{projectId}",
-    //         $"datasource_{realDataSourceId}",
-    //         "uploads",
-    //         uploadId
-    //     );
-    //
-    //     if (Directory.Exists(uploadPath)) Directory.Delete(uploadPath, true);
-    //
-    //     // TODO: Optionally update database to mark upload as cancelled
-    //     // Set status to 'cancelled' in upload_sessions table
-    //
-    //     await Task.CompletedTask;
-    // }
+    /// <summary>
+    ///     Cancels an in-progress upload and cleans up temporary files
+    /// </summary>
+    /// <param name="currentUserId">ID of the User executing this method.</param>
+    /// <param name="organizationId">ID of the Organization to which the project belongs</param>
+    /// <param name="projectId">ID of the project to which the file belongs</param>
+    /// <param name="dataSourceId">ID of the data source to which the file belongs</param>
+    /// <param name="objectStorageId">ID of the object storage method to use</param>
+    /// <param name="uploadId">ID of upload session to cancel</param>
+    public async Task CancelUpload(
+        long currentUserId,
+        long organizationId,
+        long projectId,
+        long? dataSourceId,
+        long? objectStorageId,
+        string uploadId)
+    {
+        // Resolve data source
+        long realDataSourceId;
+        if (dataSourceId.HasValue)
+        {
+            await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId.Value, projectId);
+            realDataSourceId = dataSourceId.Value;
+        }
+        else
+        {
+            var defaultDataSource = await _dataSourceBusiness.GetDefaultDataSource(organizationId, projectId) ??
+                                    throw new KeyNotFoundException("Default data source not found");
+            realDataSourceId = defaultDataSource.Id;
+        }
+
+        ObjectStorage? objectStorage;
+        if (objectStorageId is not null)
+        {
+            objectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(os => os.Id == objectStorageId
+                && os.ProjectId == projectId
+                && !os.IsArchived
+            );
+        }
+        else
+        {
+            var defaultObjectStorageResponseDto = await _objectStorageBusiness.GetDefaultObjectStorage(
+                organizationId, projectId);
+            objectStorage = await _context.ObjectStorages.FindAsync(defaultObjectStorageResponseDto.Id);
+        }
+
+        if (objectStorage is null) throw new KeyNotFoundException("No object storage found for project");
+
+        var configData = JsonConvert.DeserializeObject<ObjectStorageConfigDto>(objectStorage.Config);
+        if (configData == null) throw new InvalidOperationException("Config data for object storage is null");
+        if (configData.MountPath == null)
+            throw new InvalidOperationException("File system mount path not set in object storage");
+
+        var uploadPath = Path.Combine(
+            configData.MountPath,
+            $"project_{projectId}",
+            $"datasource_{realDataSourceId}",
+            "uploads",
+            uploadId
+        );
+
+        if (Directory.Exists(uploadPath))
+            Directory.Delete(uploadPath, true);
+
+        await Task.CompletedTask;
+    }
 }

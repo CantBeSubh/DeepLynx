@@ -265,27 +265,27 @@ public class FileController : ControllerBase
     /// <param name="objectStorageId">The ID of the object storage method</param>
     /// <param name="uploadId">ID of upload session to cancel</param>
     /// <returns>A message stating the upload was successfully cancelled</returns>
-    // [HttpDelete("upload/{uploadId}", Name = "api_cancel_file_upload")]
-    // [Auth("write", "file")]
-    // public async Task<IActionResult> CancelUpload(
-    //     long organizationId,
-    //     long projectId,
-    //     [FromQuery] long? dataSourceId,
-    //     [FromQuery] long? objectStorageId,
-    //     string uploadId)
-    // {
-    //     try
-    //     {
-    //         var currentUserId = UserContextStorage.UserId;
-    //         await _fileBusiness.CancelUpload(currentUserId, organizationId, projectId, dataSourceId, objectStorageId,
-    //             uploadId);
-    //         return Ok(new { message = $"Upload {uploadId} cancelled successfully" });
-    //     }
-    //     catch (Exception exc)
-    //     {
-    //         var message = $"An error occurred while cancelling upload {uploadId}: {exc}";
-    //         _logger.LogError(message);
-    //         return StatusCode(StatusCodes.Status500InternalServerError, message);
-    //     }
-    // }
+    [HttpDelete("upload/{uploadId}", Name = "api_cancel_file_upload")]
+    [Auth("write", "file")]
+    public async Task<IActionResult> CancelUpload(
+        long organizationId,
+        long projectId,
+        [FromQuery] long? dataSourceId,
+        [FromQuery] long? objectStorageId,
+        string uploadId)
+    {
+        try
+        {
+            var currentUserId = UserContextStorage.UserId;
+            await _fileBusiness.CancelUpload(currentUserId, organizationId, projectId, dataSourceId, objectStorageId,
+                uploadId);
+            return Ok(new { message = $"Upload {uploadId} cancelled successfully" });
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while cancelling upload {uploadId}: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 }

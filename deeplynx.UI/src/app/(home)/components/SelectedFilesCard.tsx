@@ -40,8 +40,8 @@ export default function SelectedFilesCard({
                   <div className="truncate">
                     <b className="mr-2">{f.name}</b>
                     <span className="opacity-60 text-xs">
-                {Math.round(f.size / 1024)} KB
-              </span>
+                      {Math.round(f.size / 1024)} KB
+                    </span>
                   </div>
                   <button
                     className="btn btn-xs"
