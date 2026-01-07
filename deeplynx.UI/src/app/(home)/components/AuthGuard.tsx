@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { useSafeSession } from "@/app/hooks/useSafeSession";
 
@@ -22,6 +22,11 @@ export default function AuthGuard({
 
   const { data: session, status } = useSafeSession();
 
+  const hasBeenAuthenticated = useRef(false);
+  if (status === "authenticated" && session) {
+    hasBeenAuthenticated.current = true;
+  }
+
   useEffect(() => {
     // Skip auth check if disabled
     if (disableAuth) {
@@ -29,7 +34,7 @@ export default function AuthGuard({
     }
 
     // If loading, don't do anything yet
-    if (status === "loading") return;
+    if (status === "loading" && !hasBeenAuthenticated.current) return;
 
     // If not authenticated, redirect to login
     if (status === "unauthenticated" || !session) {
@@ -39,7 +44,7 @@ export default function AuthGuard({
   }, [status, session, router, redirectTo, disableAuth]);
 
   // Show loading while checking authentication OR fetching local user
-  if (status === "loading") {
+  if (status === "loading" && !hasBeenAuthenticated.current) {
     return (
       <div className="min-h-screen flex items-center justify-center login">
         <div className="text-center">
@@ -76,7 +81,7 @@ export default function AuthGuard({
   }
 
   // Show nothing while redirecting unauthenticated users
-  if (!disableAuth && (status === "unauthenticated" || !session)) {
+  if (!disableAuth && !hasBeenAuthenticated.current && (status === "unauthenticated" || !session)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base-100">
         <div className="text-center">
