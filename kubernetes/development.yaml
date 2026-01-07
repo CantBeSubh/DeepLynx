@@ -304,11 +304,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: hosted-link
-            - name: MCP_SERVER_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: mcp-server-url
+            # - name: MCP_SERVER_URL
+            #   valueFrom:
+            #     configMapKeyRef:
+            #       name: app-config
+            #       key: mcp-server-url
           resources:
             limits:
               memory: "4Gi"
