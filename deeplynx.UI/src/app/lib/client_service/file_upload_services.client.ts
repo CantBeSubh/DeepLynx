@@ -291,10 +291,13 @@ async function uploadSingleChunk(options: ChunkUploadOptions): Promise<void> {
           }
       );
 
-      return; // Success
+      return;
     } catch (error) {
-      // Don't retry if cancelled
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (currentUploadAbortController?.signal.aborted) {
+        throw new DOMException('Upload cancelled', 'AbortError');
+      }
+
+      if (error instanceof DOMException && error.name === 'AbortError') {
         throw error;
       }
 

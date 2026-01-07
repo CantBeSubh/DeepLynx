@@ -12,7 +12,7 @@ namespace deeplynx.business;
 
 public class FileBusiness
 {
-    private const long RecommendedChunkSize = 400_000_000;
+    private const long RecommendedChunkSize = 100_000_000;
     private readonly IClassBusiness _classBusiness;
     private readonly DeeplynxContext _context;
     private readonly IDataSourceBusiness _dataSourceBusiness;

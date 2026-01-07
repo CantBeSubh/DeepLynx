@@ -155,7 +155,7 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
             setUploadProgress(progress);
           },
         });
-        toast.success("File uploaded!");
+        toast.success("File uploaded successfully!");
       } else {
         const results = await uploadFilesBatch({
           organizationId: organization?.organizationId as number,
@@ -172,21 +172,14 @@ export default function UploadCenterClient({initialAvailableFiles}: Props) {
         );
         if (fail) console.warn("Batch upload failures:", results);
       }
-      resetForm({keepProject: true});
+      resetForm({ keepProject: true });
     } catch (err) {
-      // isCancelling will still be true at this point
-      if (isCancelling) {
-        toast.success("Upload cancelled");
-      } else if (err instanceof Error && err.message.includes('cancelled')) {
-        toast.success("Upload cancelled");
-      } else {
-        console.error(err);
-        toast.error("Upload failed. See console for details.");
-      }
+      console.error("Upload error:", err);
+      toast.error("Upload failed. See console for details.");
       setUploadProgress(null);
-      setIsCancelling(false);  // NOW reset it
     } finally {
       setIsUploading(false);
+      setIsCancelling(false);
     }
   };
   
