@@ -201,8 +201,8 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         // Assert
         Assert.NotNull(session);
         Assert.False(string.IsNullOrWhiteSpace(session.UploadId));
-        Assert.Equal(400_000_000, session.ChunkSize);
-        Assert.Equal(6, session.TotalChunks); // 2GB / 400MB = 6 chunks
+        Assert.Equal(100_000_000, session.ChunkSize);
+        Assert.Equal(22, session.TotalChunks); // 2GB / 100MB = 22 chunks
 
         var uploadPath = Path.Combine(
             _testDirectory,
