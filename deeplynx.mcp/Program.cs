@@ -25,5 +25,5 @@ app.MapMcp("/mcp");
 
 var mcp_server_url = 
     Environment.GetEnvironmentVariable("MCP_SERVER_URL") 
-    ?? "http://localhost:43656";
+    ?? "http://0.0.0.0:43656";
 app.Run(mcp_server_url);

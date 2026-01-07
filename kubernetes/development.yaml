@@ -379,11 +379,11 @@ spec:
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-mcp-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
-            - name: MCP_SERVER_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: mcp-server-url
+            # - name: MCP_SERVER_URL
+            #   valueFrom:
+            #     configMapKeyRef:
+            #       name: app-config
+            #       key: mcp-server-url
             - name: NEXUS_API_URL
               valueFrom:
                 configMapKeyRef:
