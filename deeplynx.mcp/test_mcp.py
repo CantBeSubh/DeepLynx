@@ -7,14 +7,12 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# URL = f'{os.getenv("MCP_SERVER_URL")}/mcp'
-URL = 'http://localhost:43656/mcp'
+URL = f'{os.getenv("MCP_SERVER_URL")}/mcp'
 TOKEN = os.getenv("PYTHON_TEST_CLIENT_TOKEN")
 
-# # Optional: validate that required env vars are set
-# if not URL or not TOKEN:
-#     print("Error: MCP_SERVER_URL and PYTHON_TEST_CLIENT_TOKEN must be set in .env file", file=sys.stderr)
-#     sys.exit(1)
+if not URL or not TOKEN:
+    print("Error: MCP_SERVER_URL and PYTHON_TEST_CLIENT_TOKEN must be set in .env file", file=sys.stderr)
+    sys.exit(1)
 
 IS_ORIGIN = "false"
 PAGE = 1
