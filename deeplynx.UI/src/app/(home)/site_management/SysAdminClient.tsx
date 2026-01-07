@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Project } from "../types/types";
 import Tabs from "../components/Tabs";
 import {
   OauthApplicationResponseDto,
@@ -14,11 +15,6 @@ import { getAllOrganizations } from "@/app/lib/client_service/organization_servi
 import { getAllOauthApplications } from "@/app/lib/client_service/oauth_services.client";
 import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import EventsHistoryClient from "../event_management/EventHistoryClient";
-
-interface Project {
-  id: string;
-  name: string;
-}
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
