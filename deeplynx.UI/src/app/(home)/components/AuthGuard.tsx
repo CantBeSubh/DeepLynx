@@ -31,7 +31,7 @@ export default function AuthGuard({
     // If loading, don't do anything yet
     if (status === "loading") return;
 
-    // If not authenticated, redirect to login (only once)
+    // If not authenticated, redirect to login
     if ((status === "unauthenticated" || !session)) {
       router.push(redirectTo);
       return;
