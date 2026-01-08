@@ -274,6 +274,12 @@ export const translations = {
             BULK_CSV_UPLOAD: "Bulk CSV Upload",
             CSV_UPLOAD_INSTRUCTIONS: "Upload multiple records at once using our CSV template",
 
+            UPLOAD_MODE: "Upload Mode",
+            FILE_UPLOAD: "File Upload",
+            BULK_METADATA: "Bulk Metadata",
+            BULK_METADATA_UPLOAD: "Bulk Metadata Upload",
+            BULK_METADATA_INSTRUCTIONS: "Create multiple records at once by uploading a CSV file with metadata. No actual files are uploaded - only record metadata is created.",
+
 
         }
     },
@@ -558,6 +564,14 @@ export const translations = {
             DOWNLOAD_CSV_TEMPLATE: "Descargar plantilla CSV",
             BULK_CSV_UPLOAD: "Carga masiva de CSV",
             CSV_UPLOAD_INSTRUCTIONS: "Cargue múltiples registros a la vez usando nuestra plantilla CSV",
+
+            UPLOAD_MODE: "Modo de carga",
+            SINGLE_FILE_UPLOAD: "Carga de un solo archivo",
+
+            FILE_UPLOAD: "Carga de archivos",
+            BULK_METADATA: "Metadatos masivos",
+            BULK_METADATA_UPLOAD: "Carga masiva de metadatos",
+            BULK_METADATA_INSTRUCTIONS: "Cree múltiples registros a la vez cargando un archivo CSV con metadatos. No se cargan archivos reales; solo se crean los metadatos de los registros.",
 
 
         }

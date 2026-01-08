@@ -16,6 +16,7 @@ import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
 import NewFileUploadCard from "../components/NewFileUploadCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
+import CsvTemplateDownload from "../components/CsvTemplateDownload";
 import {
   DataSourceResponseDto,
   ObjectStorageResponseDto,
@@ -34,6 +35,8 @@ type Props = {
   uploadText: string;
 };
 
+type UploadMode = "file" | "bulk";
+
 export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const { t } = useLanguage();
   const { organization } = useOrganizationSession();
@@ -43,7 +46,6 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [targetFileId, setTargetFileId] = useState("");
   const [destination, setDestination] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const showRightPanel = selectedFiles.length > 0;
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [objectStorage, setObjectstorage] = useState<
     ObjectStorageResponseDto[]
@@ -58,6 +60,9 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
   const [isLoadingObjectStorage, setIsLoadingObjectStorage] = useState(false);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [uploadMode, setUploadMode] = useState<UploadMode>("file");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const showRightPanel = selectedFiles.length > 0 && uploadMode === "file";
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -267,7 +272,71 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
             showRightPanel ? "" : "max-w-5xl mx-auto"
           }`}
         >
-          <h2>{t.translations.START_UPLOAD_BY_CHOOSING_TYPE}</h2>
+          {/* UPLOAD MODE TOGGLE */}
+          <div className="mb-6">
+            <label className="label">
+              <span className="label-text font-bold text-base-content">
+                {t.translations.UPLOAD_MODE || "Upload Mode"}
+              </span>
+            </label>
+            <div className="btn-group">
+              <button
+                type="button"
+                className={`btn btn-sm ${
+                  uploadMode === "file" ? "btn-primary" : "btn-ghost"
+                }`}
+                onClick={() => {
+                  setUploadMode("file");
+                  setCsvFile(null);
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                  />
+                </svg>
+                {t.translations.FILE_UPLOAD || "File Upload"}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${
+                  uploadMode === "bulk" ? "btn-primary" : "btn-ghost"
+                }`}
+                onClick={() => {
+                  setUploadMode("bulk");
+                  setSelectedFiles([]);
+                  resetForm({ keepProject: true });
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0V18m0-7.5c0-.621.504-1.125 1.125-1.125h15.75c.621 0 1.125.504 1.125 1.125m1.5-1.5V18m-18.75 0h17.25"
+                  />
+                </svg>
+                {t.translations.BULK_METADATA || "Bulk Metadata"}
+              </button>
+            </div>
+          </div>
+
+          {/* PROJECT, DATA SOURCE, OBJECT STORAGE SELECTORS (Always visible) */}
           <div className="p-4 space-y-4">
             <fieldset className="space-x-4">
               <label className="label flex-col items-start text-base-content font-bold">
@@ -357,86 +426,173 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                 </select>
               </label>
             </fieldset>
-            <fieldset>
-              <label className="label text-base-content font-bold">
-                {t.translations.UPLOADING}
-                <select
-                  value={uploadType}
-                  onChange={(e) => setUploadType(e.target.value as UploadType)}
-                  className="select select-info select-sm mt-2"
-                  required
-                >
-                  <option value="new">{t.translations.NEW_FILE}</option>
-                  {/* Future options can be added here */}
-                </select>
-                {needsTarget && (
-                  <select
-                    value={targetFileId}
-                    onChange={(e) => setTargetFileId(e.target.value)}
-                    className="select select-info select-sm mt-2"
-                    required
-                  >
-                    <option value="" disabled>
-                      {t.translations.SELECT_EXISTING_FILE}
-                    </option>
-                    {availableFiles.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
+
+            {/* CONDITIONAL RENDERING BASED ON UPLOAD MODE */}
+            {uploadMode === "file" ? (
+              // SINGLE FILE UPLOAD MODE (existing UI)
+              <>
+                <fieldset>
+                  <label className="label text-base-content font-bold">
+                    {t.translations.UPLOADING}
+                    <select
+                      value={uploadType}
+                      onChange={(e) =>
+                        setUploadType(e.target.value as UploadType)
+                      }
+                      className="select select-info select-sm mt-2"
+                      required
+                    >
+                      <option value="new">{t.translations.NEW_FILE}</option>
+                      {/* Future options can be added here */}
+                    </select>
+                    {needsTarget && (
+                      <select
+                        value={targetFileId}
+                        onChange={(e) => setTargetFileId(e.target.value)}
+                        className="select select-info select-sm mt-2"
+                        required
+                      >
+                        <option value="" disabled>
+                          {t.translations.SELECT_EXISTING_FILE}
+                        </option>
+                        {availableFiles.map((f) => (
+                          <option key={f.id} value={f.id}>
+                            {f.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </label>
+                </fieldset>
+
+                <fieldset>
+                  <label className="label cursor-pointer justify-start gap-3">
+                    <span className="label-text text-xs">
+                      {t.translations.UPLOAD_MULTIPLE_FILES}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={multi}
+                      disabled={!isMultiAllowed}
+                      onChange={(e) => {
+                        if (!isMultiAllowed) return;
+                        const checked = e.target.checked;
+                        if (!checked && selectedFiles.length > 1) {
+                          setShowMultiFileWarning(true);
+                          return;
+                        }
+                        setMulti(checked);
+                      }}
+                      className="toggle toggle-secondary"
+                      aria-describedby="multi-files-hint"
+                    />
+                  </label>
+                </fieldset>
+
+                {(multi || selectedFiles.length === 0) && (
+                  <DropUpload
+                    key={dropKey}
+                    multiple={multi}
+                    files={selectedFiles}
+                    onFilesChange={setSelectedFiles}
+                    disabled={!uploadType || (needsTarget && !targetFileId)}
+                  />
                 )}
-              </label>
-            </fieldset>
 
-            <fieldset>
-              <label className="label cursor-pointer justify-start gap-3">
-                <span className="label-text text-xs">
-                  {t.translations.UPLOAD_MULTIPLE_FILES}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={multi}
-                  disabled={!isMultiAllowed}
-                  onChange={(e) => {
-                    if (!isMultiAllowed) return;
-                    const checked = e.target.checked;
-                    if (!checked && selectedFiles.length > 1) {
-                      setShowMultiFileWarning(true);
-                      return;
-                    }
-                    setMulti(checked);
-                  }}
-                  className="toggle toggle-secondary"
-                  aria-describedby="multi-files-hint"
-                />
-              </label>
-            </fieldset>
+                {selectedFiles.length >= 1 &&
+                  selectedFiles.map((file, index) => (
+                    <NewFileUploadCard
+                      key={index}
+                      defaultName={file.name}
+                      uploadType={uploadType}
+                      fileIndex={index}
+                      onMetadataChange={handleMetadataChange}
+                    />
+                  ))}
+              </>
+            ) : (
+              // BULK CSV UPLOAD MODE
+              <>
+                <div className="bg-info/10 p-6 rounded-lg space-y-4 border border-info/20">
+                  <div className="flex items-start gap-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-6 h-6 text-info flex-shrink-0 mt-0.5"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                      />
+                    </svg>
+                    <div>
+                      <h3 className="font-semibold text-base-content">
+                        {t.translations.BULK_METADATA_UPLOAD ||
+                          "Bulk Metadata Upload"}
+                      </h3>
+                      <p className="text-sm text-base-content/70 mt-1">
+                        {t.translations.BULK_METADATA_INSTRUCTIONS ||
+                          "Create multiple records at once by uploading a CSV file with metadata. No actual files are uploaded - only record metadata is created."}
+                      </p>
+                    </div>
+                  </div>
 
-            {(multi || selectedFiles.length === 0) && (
-              <DropUpload
-                key={dropKey}
-                multiple={multi}
-                files={selectedFiles}
-                onFilesChange={setSelectedFiles}
-                disabled={!uploadType || (needsTarget && !targetFileId)}
-              />
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <label className="label">
+                        <span className="label-text font-semibold">
+                          Step 1: Download Template
+                        </span>
+                      </label>
+                      <CsvTemplateDownload />
+                    </div>
+
+                    <div>
+                      <label className="label">
+                        <span className="label-text font-semibold">
+                          Step 2: Upload Your CSV
+                        </span>
+                      </label>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setCsvFile(file);
+                            // TODO: Parse and validate in Phase 3
+                          }
+                        }}
+                        className="file-input file-input-bordered file-input-primary w-full max-w-xs"
+                      />
+                      {csvFile && (
+                        <div className="mt-2 text-sm text-base-content/70">
+                          Selected:{" "}
+                          <span className="font-semibold">{csvFile.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* VALIDATION RESULTS PLACEHOLDER (will populate in Phase 5) */}
+                {csvFile && (
+                  <div className="mt-4 p-4 bg-base-200/50 rounded-lg">
+                    <p className="text-sm text-base-content/70">
+                      Validation results will appear here...
+                    </p>
+                  </div>
+                )}
+              </>
             )}
-
-            {selectedFiles.length >= 1 &&
-              selectedFiles.map((file, index) => (
-                <NewFileUploadCard
-                  key={index}
-                  defaultName={file.name}
-                  uploadType={uploadType}
-                  fileIndex={index}
-                  onMetadataChange={handleMetadataChange}
-                />
-              ))}
           </div>
         </div>
 
-        {/* RIGHT — render only when needed */}
+        {/* RIGHT PANEL - only show in single file mode */}
         {showRightPanel && (
           <div className="lg:w-2/5">
             <FileDetailsCard
@@ -454,6 +610,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
         )}
       </div>
 
+      {/* MULTI FILE WARNING MODAL (unchanged) */}
       {showMultiFileWarning && (
         <div className="modal modal-open">
           <div className="modal-box">
