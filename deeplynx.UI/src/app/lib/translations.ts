@@ -270,7 +270,9 @@ export const translations = {
             PROJECT_DASHBOARD: "Project Dashboard",
             EVENT_MANAGEMENT: "Event Management",
 
-
+            DOWNLOAD_CSV_TEMPLATE: "Download CSV Template",
+            BULK_CSV_UPLOAD: "Bulk CSV Upload",
+            CSV_UPLOAD_INSTRUCTIONS: "Upload multiple records at once using our CSV template",
 
 
         }
@@ -552,6 +554,10 @@ export const translations = {
             ACTIVE: "Activo",
             PROJECT_DASHBOARD: "Tablero del proyecto",
             EVENT_MANAGEMENT: "Gestión de eventos",
+
+            DOWNLOAD_CSV_TEMPLATE: "Descargar plantilla CSV",
+            BULK_CSV_UPLOAD: "Carga masiva de CSV",
+            CSV_UPLOAD_INSTRUCTIONS: "Cargue múltiples registros a la vez usando nuestra plantilla CSV",
 
 
         }
