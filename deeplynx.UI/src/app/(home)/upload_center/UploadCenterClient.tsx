@@ -17,6 +17,8 @@ import FileDetailsCard from "../components/FileDetailCard";
 import NewFileUploadCard from "../components/NewFileUploadCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import CsvTemplateDownload from "../components/CsvTemplateDownload";
+import { parseCsvFile } from "@/app/lib/client_service/csv_parser";
+import { ParsedCsvRow } from "../types/bulk_upload_types";
 import {
   DataSourceResponseDto,
   ObjectStorageResponseDto,
@@ -63,6 +65,9 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [uploadMode, setUploadMode] = useState<UploadMode>("file");
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const showRightPanel = selectedFiles.length > 0 && uploadMode === "file";
+  const [parsedCsvData, setParsedCsvData] = useState<ParsedCsvRow[]>([]);
+  const [csvParseErrors, setCsvParseErrors] = useState<string[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -282,7 +287,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
             <div className="btn-group">
               <button
                 type="button"
-                className={`btn btn-sm ${
+                className={`btn btn-sm mr-5 ${
                   uploadMode === "file" ? "btn-primary" : "btn-ghost"
                 }`}
                 onClick={() => {
@@ -542,14 +547,12 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                   </div>
 
                   <div className="flex flex-col gap-3">
-                    <div>
-                      <label className="label">
-                        <span className="label-text font-semibold">
-                          Step 1: Download Template
-                        </span>
-                      </label>
+                    <label className="label flex-col items-start">
+                      <span className="label-text font-semibold">
+                        Step 1: Download Template
+                      </span>
                       <CsvTemplateDownload />
-                    </div>
+                    </label>
 
                     <div>
                       <label className="label">
@@ -560,14 +563,39 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                       <input
                         type="file"
                         accept=".csv"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
                             setCsvFile(file);
-                            // TODO: Parse and validate in Phase 3
+                            setIsParsing(true);
+                            setParsedCsvData([]);
+                            setCsvParseErrors([]);
+
+                            try {
+                              const result = await parseCsvFile(file);
+
+                              if (result.success) {
+                                setParsedCsvData(result.data);
+                                toast.success(
+                                  `Successfully parsed ${result.data.length} rows from CSV`
+                                );
+                              } else {
+                                setCsvParseErrors(result.errors);
+                                toast.error("Failed to parse CSV file");
+                              }
+                            } catch (error) {
+                              console.error("Error parsing CSV:", error);
+                              setCsvParseErrors([
+                                "Unexpected error while parsing CSV file",
+                              ]);
+                              toast.error("Error parsing CSV file");
+                            } finally {
+                              setIsParsing(false);
+                            }
                           }
                         }}
                         className="file-input file-input-bordered file-input-primary w-full max-w-xs"
+                        disabled={isParsing}
                       />
                       {csvFile && (
                         <div className="mt-2 text-sm text-base-content/70">
@@ -581,10 +609,70 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
 
                 {/* VALIDATION RESULTS PLACEHOLDER (will populate in Phase 5) */}
                 {csvFile && (
-                  <div className="mt-4 p-4 bg-base-200/50 rounded-lg">
-                    <p className="text-sm text-base-content/70">
-                      Validation results will appear here...
-                    </p>
+                  <div className="mt-4 p-4 bg-base-100/50 rounded-lg">
+                    {isParsing && (
+                      <div className="flex items-center gap-2">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        <p className="text-sm text-base-content/70">
+                          Parsing CSV file...
+                        </p>
+                      </div>
+                    )}
+
+                    {!isParsing && csvParseErrors.length > 0 && (
+                      <div className="alert alert-error">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="stroke-current shrink-0 h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <div>
+                          <h3 className="font-bold">CSV Parsing Errors</h3>
+                          <ul className="list-disc list-inside text-sm">
+                            {csvParseErrors.map((error, idx) => (
+                              <li key={idx}>{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    {!isParsing &&
+                      csvParseErrors.length === 0 &&
+                      parsedCsvData.length > 0 && (
+                        <div className="alert alert-success">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="stroke-current shrink-0 h-6 w-6"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <div>
+                            <h3 className="font-bold">
+                              CSV Parsed Successfully
+                            </h3>
+                            <p className="text-sm">
+                              Found {parsedCsvData.length} record(s). Validation
+                              will appear here next...
+                            </p>
+                          </div>
+                        </div>
+                      )}
                   </div>
                 )}
               </>
