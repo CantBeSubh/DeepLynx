@@ -283,7 +283,12 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </SysAdminRoute>
               </li>
               <li className="mt-5">
-                <Link href={"/api/v1/scalar"} prefetch={false}>
+                 <Link
+                  href={
+                    process.env.NEXT_PUBLIC_API_URL
+                      ? `${process.env.NEXT_PUBLIC_API_URL}/scalar`
+                      : "/api/v1/scalar"
+                  } prefetch={false}>
                   <CommandLineIcon className="size-10" />
                 </Link>
               </li>
