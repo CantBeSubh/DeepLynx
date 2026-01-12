@@ -9,12 +9,13 @@ import {
 } from "@heroicons/react/24/outline";
 import RecordPreviewTable from "./RecordPreviewTable";
 import UploadProgressBar from "./UploadProgressBar";
+import type { ValidationError, ValidationResult } from "../../types/bulk_upload_types";
 
 interface ValidationResultsProps {
   isParsing: boolean;
   csvParseErrors: string[];
   isValidating: boolean;
-  validationResult: any;
+  validationResult: ValidationResult | null;
   isUploading: boolean;
   showPreview: boolean;
   setShowPreview: (show: boolean) => void;
@@ -217,7 +218,7 @@ export default function ValidationResults({
                 Error Details:
               </h4>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {validationResult.errors.map((error: any, idx: number) => (
+                {validationResult.errors.map((error: ValidationError, idx) => (
                   <div
                     key={idx}
                     className="bg-base-100 p-3 rounded border-l-4 border-error"
@@ -231,7 +232,7 @@ export default function ValidationResults({
                           {error.recordName}
                         </p>
                         <ul className="list-disc list-inside text-sm text-base-content/70 mt-1 space-y-1">
-                          {error.errors.map((err: string, errIdx: number) => (
+                          {error.errors.map((err, errIdx) => (
                             <li key={errIdx}>{err}</li>
                           ))}
                         </ul>

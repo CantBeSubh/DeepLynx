@@ -21,12 +21,11 @@ import { useBulkUploadState } from "./hooks/useBulkUploadState";
 import { useProjectResources } from "./hooks/useProjectResources";
 
 // Types
-import { ExistingFile } from "../types/types";
+import type { ExistingFile, RecentUpload } from "../types/types";
 import ProjectResourceSelectors from "./components/ProjectResourceSelectors";
 import BulkUploadSection from "./components/BulkUploadSection";
 import FileUploadSection from "./components/FileUploadSection";
 import {
-  ArchiveBoxArrowDownIcon,
   ArrowUpOnSquareStackIcon,
   DocumentIcon,
 } from "@heroicons/react/24/outline";
@@ -56,6 +55,9 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const projectResources = useProjectResources(
     organization?.organizationId as number
   );
+
+  const { setTargetFileId, setMulti } = fileUploadState;
+  const { multi } = fileUploadState;
 
   // ============================================================================
   // COMPUTED VALUES
@@ -93,15 +95,15 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
 
   // Clear target file when not needed
   useEffect(() => {
-    if (!needsTarget) fileUploadState.setTargetFileId("");
-  }, [needsTarget]);
+    if (!needsTarget) setTargetFileId("");
+  }, [needsTarget, setTargetFileId]);
 
   // Manage multi toggle
   useEffect(() => {
-    if (!isMultiAllowed && fileUploadState.multi) {
-      fileUploadState.setMulti(false);
+    if (!isMultiAllowed && multi) {
+      setMulti(false);
     }
-  }, [isMultiAllowed, fileUploadState.multi]);
+  }, [isMultiAllowed, multi, setMulti]);
 
   // ============================================================================
   // FILE UPLOAD HANDLERS
@@ -210,35 +212,13 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       );
 
       bulkUploadState.resetBulkUpload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Upload error:", error);
 
       bulkUploadState.setUploadProgress(0);
 
       // Extract error messages
-      let errorMessages: string[] = [];
-
-      if (error.response?.data) {
-        const data = error.response.data;
-
-        if (data.errors && Array.isArray(data.errors)) {
-          errorMessages = data.errors.map((err: any) =>
-            typeof err === "string" ? err : err.message || JSON.stringify(err)
-          );
-        } else if (data.error) {
-          errorMessages = [
-            typeof data.error === "string"
-              ? data.error
-              : data.error.message || JSON.stringify(data.error),
-          ];
-        } else if (data.message) {
-          errorMessages = [data.message];
-        } else {
-          errorMessages = [JSON.stringify(data)];
-        }
-      } else {
-        errorMessages = [error.message || "Unknown error occurred"];
-      }
+      const errorMessages = extractErrorMessages(error);
 
       const parsedErrors = parseBackendErrors(errorMessages);
       bulkUploadState.setBackendErrors(parsedErrors);
@@ -473,4 +453,65 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
         )}
     </div>
   );
+}
+
+type ErrorResponseData = {
+  errors?: unknown[];
+  error?: unknown;
+  message?: unknown;
+};
+
+function extractErrorMessages(error: unknown): string[] {
+  const fallback = ["Unknown error occurred"];
+
+  if (typeof error !== "object" || error === null) {
+    return fallback;
+  }
+
+  const maybeError = error as {
+    response?: { data?: unknown };
+    message?: unknown;
+  };
+
+  const data = maybeError.response?.data;
+  if (typeof data === "string") {
+    return [data];
+  }
+
+  if (typeof data === "object" && data !== null) {
+    const d = data as ErrorResponseData;
+
+    if (Array.isArray(d.errors)) {
+      return d.errors.map((err) => toMessage(err));
+    }
+
+    if (d.error !== undefined) {
+      return [toMessage(d.error)];
+    }
+
+    if (typeof d.message === "string") {
+      return [d.message];
+    }
+
+    return [JSON.stringify(d)];
+  }
+
+  if (typeof maybeError.message === "string") {
+    return [maybeError.message];
+  }
+
+  return fallback;
+}
+
+function toMessage(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value !== null) {
+    const maybe = value as { message?: unknown };
+    if (typeof maybe.message === "string") return maybe.message;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "Unknown error";
+  }
 }

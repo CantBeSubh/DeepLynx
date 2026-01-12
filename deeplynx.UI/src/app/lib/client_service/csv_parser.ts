@@ -164,7 +164,11 @@ export function parseCommaSeparated(
  */
 export function parseJsonString(
   jsonString: string
-): { valid: boolean; data: Record<string, any> | null; error: string | null } {
+): {
+  valid: boolean;
+  data: Record<string, unknown> | null;
+  error: string | null;
+} {
   if (!jsonString || jsonString.trim() === "") {
     return {
       valid: false,

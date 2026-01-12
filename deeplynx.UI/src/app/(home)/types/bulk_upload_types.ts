@@ -36,7 +36,7 @@ export interface ApiRecord {
   name: string; // required
   description: string; // required
   uri?: string | null;
-  properties: Record<string, any>; // required - object/JSON
+  properties: Record<string, unknown>; // required - object/JSON
   object_storage_id?: number | null;
   original_id: string; // required
   class_id?: number | null;

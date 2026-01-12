@@ -3,10 +3,24 @@
 import { useLanguage } from "@/app/contexts/Language";
 import { parseCsvFile } from "@/app/lib/client_service/csv_parser";
 import { validateCsvRecords } from "@/app/lib/validate_records";
+import type {
+  ParsedCsvRow,
+  ValidationResult,
+} from "@/app/(home)/types/bulk_upload_types";
+import type {
+  DataSourceResponseDto,
+  ProjectResponseDto,
+} from "@/app/(home)/types/responseDTOs";
 import toast from "react-hot-toast";
 import CsvTemplateDownload from "../../components/CsvTemplateDownload";
 import ValidationResults from "./ValidationResults";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
+
+type BackendError = {
+  message: string;
+  type: "validation" | "not_found" | "permission" | "general";
+  suggestion?: string;
+};
 
 interface BulkUploadSectionProps {
   // CSV State
@@ -14,21 +28,21 @@ interface BulkUploadSectionProps {
   setCsvFile: (file: File | null) => void;
   isParsing: boolean;
   setIsParsing: (parsing: boolean) => void;
-  setParsedCsvData: (data: any[]) => void;
+  setParsedCsvData: (data: ParsedCsvRow[]) => void;
   csvParseErrors: string[];
   setCsvParseErrors: (errors: string[]) => void;
 
   // Validation State
-  validationResult: any;
-  setValidationResult: (result: any) => void;
+  validationResult: ValidationResult | null;
+  setValidationResult: (result: ValidationResult | null) => void;
   isValidating: boolean;
   setIsValidating: (validating: boolean) => void;
 
   // Upload State
   isUploading: boolean;
   setShowUploadConfirm: (show: boolean) => void;
-  backendErrors: any[];
-  setBackendErrors: (errors: any[]) => void;
+  backendErrors: BackendError[];
+  setBackendErrors: (errors: BackendError[]) => void;
   showPreview: boolean;
   setShowPreview: (show: boolean) => void;
   uploadProgress: number;
@@ -39,8 +53,8 @@ interface BulkUploadSectionProps {
   organizationId?: number;
 
   // For confirmation modal
-  projects: any[];
-  dataSources: any[];
+  projects: ProjectResponseDto[];
+  dataSources: DataSourceResponseDto[];
 }
 
 export default function BulkUploadSection(props: BulkUploadSectionProps) {

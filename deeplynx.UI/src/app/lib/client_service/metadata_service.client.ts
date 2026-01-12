@@ -12,7 +12,7 @@ export async function uploadBulkMetadata(
   projectId: number,
   dataSourceId: number,
   validRecords: ApiRecord[]
-): Promise<any> {
+): Promise<unknown> {
   try {
     // Build the payload
     const payload: BulkMetadataPayload = {
@@ -24,13 +24,13 @@ export async function uploadBulkMetadata(
     };
 
     // Use the api instance which handles auth headers
-    const res = await api.post(
+    const res = await api.post<unknown>(
       `/organizations/${organizationId}/projects/${projectId}/datasources/${dataSourceId}/metadata`,
       payload
     );
 
     return res.data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error uploading bulk metadata:", error);
     
     // Re-throw the error with full response data so component can access it
