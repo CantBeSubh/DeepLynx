@@ -34,6 +34,8 @@ import {
   UploadType,
 } from "../types/types";
 import { parseBackendErrors } from "@/app/lib/error_parser";
+import RecordPreviewTable from "./RecordPreviewTable";
+import UploadProgressBar from "./UploadProgressBar";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -84,6 +86,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       suggestion?: string;
     }>
   >([]);
+  const [showPreview, setShowPreview] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -286,9 +290,21 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     }
 
     setIsUploading(true);
-    setBackendErrors([]); // Clear previous backend errors
+    setBackendErrors([]);
+    setUploadProgress(0);
 
     try {
+      const totalRecords = validationResult.validRecords.length;
+
+      // Simulate progress updates (since we're uploading all at once)
+      // In a real batch upload, you'd update this in chunks
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) return prev; // Stop at 90%, wait for actual completion
+          return prev + 10;
+        });
+      }, 200);
+
       // Upload to API
       await uploadBulkMetadata(
         organization.organizationId as number,
@@ -296,6 +312,12 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
         Number(dataSourceId),
         validationResult.validRecords
       );
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      // Small delay to show 100% completion
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       toast.success(
         `Successfully uploaded ${validationResult.validCount} records!`
@@ -307,6 +329,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       setValidationResult(null);
       setCsvParseErrors([]);
       setBackendErrors([]);
+      setShowPreview(false);
+      setUploadProgress(0);
 
       // Reset file input
       const fileInput = document.querySelector(
@@ -316,13 +340,14 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     } catch (error: any) {
       console.error("Upload error:", error);
 
+      setUploadProgress(0);
+
       // Extract detailed error information
       let errorMessages: string[] = [];
 
       if (error.response?.data) {
         const data = error.response.data;
 
-        // Check for various error formats the backend might return
         if (data.errors && Array.isArray(data.errors)) {
           errorMessages = data.errors.map((err: any) =>
             typeof err === "string" ? err : err.message || JSON.stringify(err)
@@ -344,7 +369,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
 
       // Parse and clean up the error messages
       const parsedErrors = parseBackendErrors(errorMessages);
-      setBackendErrors(parsedErrors); // Now storing parsed error objects
+      setBackendErrors(parsedErrors);
 
       toast.error("Upload failed. Please check the error details below.");
     } finally {
@@ -816,6 +841,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     )}
 
                     {/* Validation Results - Success */}
+                    {/* Validation Results - Success */}
                     {!isParsing &&
                       !isValidating &&
                       validationResult &&
@@ -846,110 +872,90 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                             </div>
                           </div>
 
-                          {/* Backend Validation Errors (from API) */}
-                          {!isParsing &&
-                            !isValidating &&
-                            backendErrors.length > 0 && (
-                              <div className="alert alert-error">
+                          {/* Preview Toggle */}
+                          {!isUploading && (
+                            <div className="flex justify-between items-center">
+                              <button
+                                onClick={() => setShowPreview(!showPreview)}
+                                className="btn btn-ghost btn-sm gap-2"
+                                type="button"
+                              >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
-                                  className="stroke-current shrink-0 h-6 w-6"
                                   fill="none"
                                   viewBox="0 0 24 24"
+                                  strokeWidth={1.5}
+                                  stroke="currentColor"
+                                  className="w-4 h-4"
                                 >
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                                   />
                                 </svg>
-                                <div className="w-full">
-                                  <h3 className="font-bold">Upload Failed</h3>
-                                  <p className="text-sm mb-3">
-                                    The server rejected the upload. Please fix
-                                    the following issues:
-                                  </p>
+                                {showPreview
+                                  ? "Hide Preview"
+                                  : "Preview Records"}
+                              </button>
+                            </div>
+                          )}
 
-                                  <div className="space-y-3">
-                                    {backendErrors.map((error, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="bg-base-100 p-3 rounded"
-                                      >
-                                        <div className="flex items-start gap-2 mb-2">
-                                          {error.type === "not_found" && (
-                                            <span className="badge badge-warning badge-sm">
-                                              Not Found
-                                            </span>
-                                          )}
-                                          {error.type === "validation" && (
-                                            <span className="badge badge-error badge-sm">
-                                              Validation
-                                            </span>
-                                          )}
-                                          {error.type === "permission" && (
-                                            <span className="badge badge-error badge-sm">
-                                              Permission
-                                            </span>
-                                          )}
-                                          {error.type === "general" && (
-                                            <span className="badge badge-neutral badge-sm">
-                                              Error
-                                            </span>
-                                          )}
-                                        </div>
+                          {/* Record Preview Table */}
+                          {showPreview && !isUploading && (
+                            <div className="bg-base-200/50 p-4 rounded-lg">
+                              <RecordPreviewTable
+                                records={validationResult.validRecords}
+                              />
+                            </div>
+                          )}
 
-                                        <p className="text-sm font-semibold text-error mb-1">
-                                          {error.message}
-                                        </p>
-
-                                        {error.suggestion && (
-                                          <p className="text-sm text-base-content/70 italic">
-                                            {error.suggestion}
-                                          </p>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                          {/* Upload Progress */}
+                          {isUploading && (
+                            <div className="bg-base-200/50 p-6 rounded-lg">
+                              <UploadProgressBar
+                                progress={uploadProgress}
+                                current={Math.round(
+                                  (uploadProgress / 100) *
+                                    validationResult.validCount
+                                )}
+                                total={validationResult.validCount}
+                              />
+                            </div>
+                          )}
 
                           {/* Upload Button */}
-                          <div className="flex justify-end">
-                            <button
-                              onClick={() => setShowUploadConfirm(true)}
-                              disabled={isUploading}
-                              className="btn btn-primary gap-2"
-                              type="button"
-                            >
-                              {isUploading ? (
-                                <>
-                                  <span className="loading loading-spinner loading-sm"></span>
-                                  Uploading...
-                                </>
-                              ) : (
-                                <>
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={1.5}
-                                    stroke="currentColor"
-                                    className="w-5 h-5"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-                                    />
-                                  </svg>
-                                  Upload {validationResult.validCount} Records
-                                </>
-                              )}
-                            </button>
-                          </div>
+                          {!isUploading && (
+                            <div className="flex justify-end">
+                              <button
+                                onClick={() => setShowUploadConfirm(true)}
+                                disabled={isUploading}
+                                className="btn btn-primary gap-2"
+                                type="button"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth={1.5}
+                                  stroke="currentColor"
+                                  className="w-5 h-5"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                                  />
+                                </svg>
+                                Upload {validationResult.validCount} Records
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
 
