@@ -1,6 +1,6 @@
 "use client";
 
-import { ApiRecord } from "../types/bulk_upload_types";
+import { ApiRecord } from "../../types/bulk_upload_types";
 import { useState } from "react";
 
 interface RecordPreviewTableProps {
