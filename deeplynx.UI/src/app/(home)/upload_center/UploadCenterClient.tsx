@@ -19,6 +19,8 @@ import SelectedFilesCard from "../components/SelectedFilesCard";
 import CsvTemplateDownload from "../components/CsvTemplateDownload";
 import { parseCsvFile } from "@/app/lib/client_service/csv_parser";
 import { ParsedCsvRow } from "../types/bulk_upload_types";
+import { validateCsvRecords } from "../../lib/validate_records";
+import { ValidationResult } from "../types/bulk_upload_types";
 import {
   DataSourceResponseDto,
   ObjectStorageResponseDto,
@@ -68,6 +70,9 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [parsedCsvData, setParsedCsvData] = useState<ParsedCsvRow[]>([]);
   const [csvParseErrors, setCsvParseErrors] = useState<string[]>([]);
   const [isParsing, setIsParsing] = useState(false);
+  const [validationResult, setValidationResult] =
+    useState<ValidationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -570,17 +575,60 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                               setIsParsing(true);
                               setParsedCsvData([]);
                               setCsvParseErrors([]);
+                              setValidationResult(null);
 
                               try {
-                                const result = await parseCsvFile(file);
+                                // Step 1: Parse CSV
+                                const parseResult = await parseCsvFile(file);
 
-                                if (result.success) {
-                                  setParsedCsvData(result.data);
+                                if (parseResult.success) {
+                                  setParsedCsvData(parseResult.data);
                                   toast.success(
-                                    `Successfully parsed ${result.data.length} rows from CSV`
+                                    `Successfully parsed ${parseResult.data.length} rows from CSV`
                                   );
+
+                                  // Step 2: Validate parsed data
+                                  if (
+                                    !projectId ||
+                                    !dataSourceId ||
+                                    !organization?.organizationId
+                                  ) {
+                                    toast.error(
+                                      "Please select project, data source, and object storage first"
+                                    );
+                                    setIsParsing(false);
+                                    return;
+                                  }
+
+                                  setIsValidating(true);
+
+                                  try {
+                                    const validationResult = validateCsvRecords(
+                                      parseResult.data,
+                                      projectId,
+                                      dataSourceId,
+                                      organization.organizationId as number
+                                    );
+
+                                    setValidationResult(validationResult);
+
+                                    if (validationResult.isValid) {
+                                      toast.success(
+                                        `All ${validationResult.validCount} records validated successfully!`
+                                      );
+                                    } else {
+                                      toast.error(
+                                        `Validation failed: ${validationResult.invalidCount} of ${validationResult.totalRows} records have errors`
+                                      );
+                                    }
+                                  } catch (error) {
+                                    console.error("Validation error:", error);
+                                    toast.error("Error validating records");
+                                  } finally {
+                                    setIsValidating(false);
+                                  }
                                 } else {
-                                  setCsvParseErrors(result.errors);
+                                  setCsvParseErrors(parseResult.errors);
                                   toast.error("Failed to parse CSV file");
                                 }
                               } catch (error) {
@@ -595,13 +643,30 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                             }
                           }}
                           className="file-input file-input-bordered file-input-primary w-full max-w-xs"
-                          disabled={isParsing}
+                          disabled={
+                            isParsing ||
+                            isValidating ||
+                            !projectId ||
+                            !dataSourceId ||
+                            !objectStorageId
+                          }
                         />
                       </label>
                       {csvFile && (
-                        <div className="mt-2 text-sm text-base-content/70">
-                          Selected:{" "}
-                          <span className="font-semibold">{csvFile.name}</span>
+                        <div className="mt-2 text-sm text-base-content/70 flex items-center gap-2">
+                          <span>
+                            Selected:{" "}
+                            <span className="font-semibold">
+                              {csvFile.name}
+                            </span>
+                          </span>
+                          {(!projectId ||
+                            !dataSourceId ||
+                            !objectStorageId) && (
+                            <div className="badge badge-warning badge-sm">
+                              Select project, data source, and storage first
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -609,17 +674,18 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                 </div>
 
                 {/* VALIDATION RESULTS PLACEHOLDER (will populate in Phase 5) */}
+                {/* VALIDATION RESULTS */}
                 {csvFile && (
-                  <div className="mt-4 p-4 bg-base-100/50 rounded-lg">
+                  <div className="mt-4 space-y-4">
+                    {/* Parsing Status */}
                     {isParsing && (
-                      <div className="flex items-center gap-2">
+                      <div className="alert alert-info">
                         <span className="loading loading-spinner loading-sm"></span>
-                        <p className="text-sm text-base-content/70">
-                          Parsing CSV file...
-                        </p>
+                        <span>Parsing CSV file...</span>
                       </div>
                     )}
 
+                    {/* Parsing Errors */}
                     {!isParsing && csvParseErrors.length > 0 && (
                       <div className="alert alert-error">
                         <svg
@@ -646,9 +712,19 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                       </div>
                     )}
 
+                    {/* Validating Status */}
+                    {isValidating && (
+                      <div className="alert alert-info">
+                        <span className="loading loading-spinner loading-sm"></span>
+                        <span>Validating records...</span>
+                      </div>
+                    )}
+
+                    {/* Validation Results - Success */}
                     {!isParsing &&
-                      csvParseErrors.length === 0 &&
-                      parsedCsvData.length > 0 && (
+                      !isValidating &&
+                      validationResult &&
+                      validationResult.isValid && (
                         <div className="alert alert-success">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -665,12 +741,85 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                           </svg>
                           <div>
                             <h3 className="font-bold">
-                              CSV Parsed Successfully
+                              Validation Successful!
                             </h3>
                             <p className="text-sm">
-                              Found {parsedCsvData.length} record(s). Validation
-                              will appear here next...
+                              All {validationResult.validCount} records are
+                              valid and ready to upload.
                             </p>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Validation Results - Errors */}
+                    {!isParsing &&
+                      !isValidating &&
+                      validationResult &&
+                      !validationResult.isValid && (
+                        <div className="space-y-3">
+                          {/* Summary Alert */}
+                          <div className="alert alert-warning">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="stroke-current shrink-0 h-6 w-6"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                              />
+                            </svg>
+                            <div className="w-full">
+                              <h3 className="font-bold">
+                                Validation Errors Found
+                              </h3>
+                              <p className="text-sm mb-2">
+                                {validationResult.invalidCount} of{" "}
+                                {validationResult.totalRows} records have
+                                errors. Please fix the errors below and
+                                re-upload.
+                              </p>
+                              <div className="text-sm">
+                                <strong>Valid:</strong>{" "}
+                                {validationResult.validCount} |{" "}
+                                <strong>Invalid:</strong>{" "}
+                                {validationResult.invalidCount}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Detailed Errors */}
+                          <div className="bg-base-200/50 rounded-lg p-4">
+                            <h4 className="font-semibold mb-3 text-base-content">
+                              Error Details:
+                            </h4>
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                              {validationResult.errors.map((error, idx) => (
+                                <div
+                                  key={idx}
+                                  className="bg-base-100 p-3 rounded border-l-4 border-error"
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <span className="badge badge-error badge-sm">
+                                      Row {error.row}
+                                    </span>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm text-base-content">
+                                        {error.recordName}
+                                      </p>
+                                      <ul className="list-disc list-inside text-sm text-base-content/70 mt-1 space-y-1">
+                                        {error.errors.map((err, errIdx) => (
+                                          <li key={errIdx}>{err}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       )}
