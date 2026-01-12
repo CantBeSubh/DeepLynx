@@ -555,48 +555,49 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     </label>
 
                     <div>
-                      <label className="label">
+                      <label className="label flex-col items-start">
                         <span className="label-text font-semibold">
                           Step 2: Upload Your CSV
                         </span>
-                      </label>
-                      <input
-                        type="file"
-                        accept=".csv"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setCsvFile(file);
-                            setIsParsing(true);
-                            setParsedCsvData([]);
-                            setCsvParseErrors([]);
 
-                            try {
-                              const result = await parseCsvFile(file);
+                        <input
+                          type="file"
+                          accept=".csv"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setCsvFile(file);
+                              setIsParsing(true);
+                              setParsedCsvData([]);
+                              setCsvParseErrors([]);
 
-                              if (result.success) {
-                                setParsedCsvData(result.data);
-                                toast.success(
-                                  `Successfully parsed ${result.data.length} rows from CSV`
-                                );
-                              } else {
-                                setCsvParseErrors(result.errors);
-                                toast.error("Failed to parse CSV file");
+                              try {
+                                const result = await parseCsvFile(file);
+
+                                if (result.success) {
+                                  setParsedCsvData(result.data);
+                                  toast.success(
+                                    `Successfully parsed ${result.data.length} rows from CSV`
+                                  );
+                                } else {
+                                  setCsvParseErrors(result.errors);
+                                  toast.error("Failed to parse CSV file");
+                                }
+                              } catch (error) {
+                                console.error("Error parsing CSV:", error);
+                                setCsvParseErrors([
+                                  "Unexpected error while parsing CSV file",
+                                ]);
+                                toast.error("Error parsing CSV file");
+                              } finally {
+                                setIsParsing(false);
                               }
-                            } catch (error) {
-                              console.error("Error parsing CSV:", error);
-                              setCsvParseErrors([
-                                "Unexpected error while parsing CSV file",
-                              ]);
-                              toast.error("Error parsing CSV file");
-                            } finally {
-                              setIsParsing(false);
                             }
-                          }
-                        }}
-                        className="file-input file-input-bordered file-input-primary w-full max-w-xs"
-                        disabled={isParsing}
-                      />
+                          }}
+                          className="file-input file-input-bordered file-input-primary w-full max-w-xs"
+                          disabled={isParsing}
+                        />
+                      </label>
                       {csvFile && (
                         <div className="mt-2 text-sm text-base-content/70">
                           Selected:{" "}
