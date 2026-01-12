@@ -15,6 +15,8 @@ import { useSafeSession } from "@/app/hooks/useSafeSession";
 function SigninContent() {
   const [isChecked, setChecked] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  const [showModal, setShowModal] = useState(true);
   const { data: session, status } = useSafeSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -106,6 +108,10 @@ function SigninContent() {
   }
 
   const handleOktaSignIn = async () => {
+    if (!hasAcknowledged) {
+      return;
+    }
+
     setIsSigningIn(true);
 
     // Construct the callback URL to include the returnUrl
@@ -119,8 +125,47 @@ function SigninContent() {
     });
   };
 
+  const handleAcknowledge = () => {
+    setHasAcknowledged(true);
+    setShowModal(false);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
+      {/* Acknowledgment Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center login">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              System Use Notification
+            </h2>
+            <div className="text-gray-700 mb-6 space-y-3 text-sm max-h-96 overflow-y-auto">
+              <p>
+                This is a DOE computer system. DOE computer systems are provided for the processing of official U.S. Government information only.
+              </p>
+              <p>
+                All data contained within DOE computer systems is owned by DOE and may be audited, intercepted, recorded, read, copied, or captured in any manner and disclosed in any manner by authorized personnel.
+              </p>
+              <p>
+                THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM. System personnel may disclose any potential evidence of crime found on DOE computer systems to appropriate authorities.
+              </p>
+              <p>
+                USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY.
+              </p>
+              <p className="font-bold text-red-600 text-center text-base mt-4">
+                **WARNING**WARNING**WARNING**WARNING**WARNING**
+              </p>
+            </div>
+            <button
+              onClick={handleAcknowledge}
+              className="w-full py-4 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl hover:bg-gray-600 transition-colors"
+            >
+              I Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col items-center sm:items-start mb-0">
         <Image
           src="/assets/nexusWhite.png"
@@ -133,37 +178,10 @@ function SigninContent() {
       <main className="flex flex-col items-center w-full max-w-lg mt-0 mb-2">
         <div className="w-full p-2 bg-white border-2 border-solid rounded-3xl">
           <div className="fieldset m-5">
-            {/* <h2 className="text-sm text-center text-slate-800">
-              {t.translations.USERNAME}
-            </h2>
             <div className="flex flex-col items-center">
-              <label className="w-5/6 h-15 mb-2 bg-white border-black input">
-                <input type="text" className="text-black" />
-              </label>
-            </div>
-            <label className="text-md text-slate-800 label">
-              <input
-                type="checkbox"
-                defaultChecked={isChecked}
-                onChange={(e) => setChecked(e.target.checked)}
-                className="checkbox w-6 h-6 appearance-none border-1 border-black rounded-md ml-9"
-              />
-              {t.translations.KEEP_SIGNED_IN}
-            </label> */}
-            <div className="flex flex-col items-center">
-              {/* <Link
-                className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl"
-                href="/"
-              >
-                <button className="">{t.translations.NEXT}</button>
-              </Link>
-              <div className="my-15 text-sm text-gray-800 divider divider-primary">
-                {t.translations.OR}
-              </div> */}
-
               <button
                 onClick={handleOktaSignIn}
-                disabled={isSigningIn}
+                disabled={isSigningIn || !hasAcknowledged}
                 className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSigningIn && (
@@ -171,6 +189,11 @@ function SigninContent() {
                 )}
                 {t.translations.PIV_CAC_CARD_SIGN_IN}
               </button>
+              {!hasAcknowledged && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Please acknowledge the notice to continue
+                </p>
+              )}
             </div>
           </div>
         </div>
