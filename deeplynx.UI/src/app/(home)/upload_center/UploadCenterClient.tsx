@@ -21,6 +21,7 @@ import { parseCsvFile } from "@/app/lib/client_service/csv_parser";
 import { ParsedCsvRow } from "../types/bulk_upload_types";
 import { validateCsvRecords } from "../../lib/validate_records";
 import { ValidationResult } from "../types/bulk_upload_types";
+import { uploadBulkMetadata } from "@/app/lib/client_service/metadata_service.client";
 import {
   DataSourceResponseDto,
   ObjectStorageResponseDto,
@@ -32,6 +33,7 @@ import {
   RecentUpload,
   UploadType,
 } from "../types/types";
+import { parseBackendErrors } from "@/app/lib/error_parser";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -73,6 +75,15 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [validationResult, setValidationResult] =
     useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [showUploadConfirm, setShowUploadConfirm] = useState(false);
+  const [backendErrors, setBackendErrors] = useState<
+    Array<{
+      message: string;
+      type: "validation" | "not_found" | "permission" | "general";
+      suggestion?: string;
+    }>
+  >([]);
 
   const handleMetadataChange = useCallback(
     (fileIndex: number, metadata: FileMetadata) => {
@@ -258,6 +269,89 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     }
   }, [organization]);
 
+  const handleBulkUpload = async () => {
+    if (!validationResult || !validationResult.isValid) {
+      toast.error("Please fix validation errors before uploading");
+      return;
+    }
+
+    if (!projectId || !dataSourceId) {
+      toast.error("Please select project and data source");
+      return;
+    }
+
+    if (!organization?.organizationId) {
+      toast.error("Organization not found");
+      return;
+    }
+
+    setIsUploading(true);
+    setBackendErrors([]); // Clear previous backend errors
+
+    try {
+      // Upload to API
+      await uploadBulkMetadata(
+        organization.organizationId as number,
+        Number(projectId),
+        Number(dataSourceId),
+        validationResult.validRecords
+      );
+
+      toast.success(
+        `Successfully uploaded ${validationResult.validCount} records!`
+      );
+
+      // Reset form
+      setCsvFile(null);
+      setParsedCsvData([]);
+      setValidationResult(null);
+      setCsvParseErrors([]);
+      setBackendErrors([]);
+
+      // Reset file input
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
+    } catch (error: any) {
+      console.error("Upload error:", error);
+
+      // Extract detailed error information
+      let errorMessages: string[] = [];
+
+      if (error.response?.data) {
+        const data = error.response.data;
+
+        // Check for various error formats the backend might return
+        if (data.errors && Array.isArray(data.errors)) {
+          errorMessages = data.errors.map((err: any) =>
+            typeof err === "string" ? err : err.message || JSON.stringify(err)
+          );
+        } else if (data.error) {
+          errorMessages = [
+            typeof data.error === "string"
+              ? data.error
+              : data.error.message || JSON.stringify(data.error),
+          ];
+        } else if (data.message) {
+          errorMessages = [data.message];
+        } else {
+          errorMessages = [JSON.stringify(data)];
+        }
+      } else {
+        errorMessages = [error.message || "Unknown error occurred"];
+      }
+
+      // Parse and clean up the error messages
+      const parsedErrors = parseBackendErrors(errorMessages);
+      setBackendErrors(parsedErrors); // Now storing parsed error objects
+
+      toast.error("Upload failed. Please check the error details below.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Fetch projects filtered by organization
   useEffect(() => {
     fetchProjects();
@@ -418,8 +512,12 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                   value={objectStorageId}
                   onChange={(e) => setObjectstorageId(e.target.value)}
                   className="select select-info select-sm mt-2"
-                  required
-                  disabled={!projectId || isLoadingObjectStorage}
+                  required={uploadMode === "file"}
+                  disabled={
+                    !projectId ||
+                    isLoadingObjectStorage ||
+                    uploadMode === "bulk"
+                  }
                 >
                   <option value="" disabled>
                     {!projectId
@@ -576,6 +674,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                               setParsedCsvData([]);
                               setCsvParseErrors([]);
                               setValidationResult(null);
+                              setBackendErrors([]);
 
                               try {
                                 // Step 1: Parse CSV
@@ -647,8 +746,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                             isParsing ||
                             isValidating ||
                             !projectId ||
-                            !dataSourceId ||
-                            !objectStorageId
+                            !dataSourceId
                           }
                         />
                       </label>
@@ -660,11 +758,9 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                               {csvFile.name}
                             </span>
                           </span>
-                          {(!projectId ||
-                            !dataSourceId ||
-                            !objectStorageId) && (
+                          {(!projectId || !dataSourceId) && (
                             <div className="badge badge-warning badge-sm">
-                              Select project, data source, and storage first
+                              Select project and data source first
                             </div>
                           )}
                         </div>
@@ -673,7 +769,6 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                   </div>
                 </div>
 
-                {/* VALIDATION RESULTS PLACEHOLDER (will populate in Phase 5) */}
                 {/* VALIDATION RESULTS */}
                 {csvFile && (
                   <div className="mt-4 space-y-4">
@@ -725,28 +820,135 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                       !isValidating &&
                       validationResult &&
                       validationResult.isValid && (
-                        <div className="alert alert-success">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="stroke-current shrink-0 h-6 w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                          <div>
-                            <h3 className="font-bold">
-                              Validation Successful!
-                            </h3>
-                            <p className="text-sm">
-                              All {validationResult.validCount} records are
-                              valid and ready to upload.
-                            </p>
+                        <div className="space-y-3">
+                          <div className="alert alert-success">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="stroke-current shrink-0 h-6 w-6"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            <div className="w-full">
+                              <h3 className="font-bold">
+                                Validation Successful!
+                              </h3>
+                              <p className="text-sm">
+                                All {validationResult.validCount} records are
+                                valid and ready to upload.
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Backend Validation Errors (from API) */}
+                          {!isParsing &&
+                            !isValidating &&
+                            backendErrors.length > 0 && (
+                              <div className="alert alert-error">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="stroke-current shrink-0 h-6 w-6"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                                <div className="w-full">
+                                  <h3 className="font-bold">Upload Failed</h3>
+                                  <p className="text-sm mb-3">
+                                    The server rejected the upload. Please fix
+                                    the following issues:
+                                  </p>
+
+                                  <div className="space-y-3">
+                                    {backendErrors.map((error, idx) => (
+                                      <div
+                                        key={idx}
+                                        className="bg-base-100 p-3 rounded"
+                                      >
+                                        <div className="flex items-start gap-2 mb-2">
+                                          {error.type === "not_found" && (
+                                            <span className="badge badge-warning badge-sm">
+                                              Not Found
+                                            </span>
+                                          )}
+                                          {error.type === "validation" && (
+                                            <span className="badge badge-error badge-sm">
+                                              Validation
+                                            </span>
+                                          )}
+                                          {error.type === "permission" && (
+                                            <span className="badge badge-error badge-sm">
+                                              Permission
+                                            </span>
+                                          )}
+                                          {error.type === "general" && (
+                                            <span className="badge badge-neutral badge-sm">
+                                              Error
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <p className="text-sm font-semibold text-error mb-1">
+                                          {error.message}
+                                        </p>
+
+                                        {error.suggestion && (
+                                          <p className="text-sm text-base-content/70 italic">
+                                            {error.suggestion}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Upload Button */}
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => setShowUploadConfirm(true)}
+                              disabled={isUploading}
+                              className="btn btn-primary gap-2"
+                              type="button"
+                            >
+                              {isUploading ? (
+                                <>
+                                  <span className="loading loading-spinner loading-sm"></span>
+                                  Uploading...
+                                </>
+                              ) : (
+                                <>
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-5 h-5"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+                                    />
+                                  </svg>
+                                  Upload {validationResult.validCount} Records
+                                </>
+                              )}
+                            </button>
                           </div>
                         </div>
                       )}
@@ -828,6 +1030,68 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
               </>
             )}
           </div>
+          {/* Upload Confirmation Modal */}
+          {showUploadConfirm && validationResult && (
+            <div className="modal modal-open">
+              <div className="modal-box">
+                <h3 className="font-bold text-lg">Confirm Bulk Upload</h3>
+                <p className="py-4">
+                  You are about to upload{" "}
+                  <span className="font-bold">
+                    {validationResult.validCount} records
+                  </span>{" "}
+                  to the system.
+                </p>
+                <div className="bg-base-200 p-3 rounded text-sm space-y-1">
+                  <p>
+                    <strong>Project:</strong>{" "}
+                    {projects.find((p) => p.id === Number(projectId))?.name}
+                  </p>
+                  <p>
+                    <strong>Data Source:</strong>{" "}
+                    {
+                      dataSources.find((d) => d.id === Number(dataSourceId))
+                        ?.name
+                    }
+                  </p>
+                </div>
+                <p className="text-sm text-base-content/70 mt-4">
+                  This action cannot be undone. Are you sure you want to
+                  proceed?
+                </p>
+                <div className="modal-action">
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => setShowUploadConfirm(false)}
+                    disabled={isUploading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setShowUploadConfirm(false);
+                      handleBulkUpload();
+                    }}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Uploading...
+                      </>
+                    ) : (
+                      "Confirm Upload"
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div
+                className="modal-backdrop"
+                onClick={() => !isUploading && setShowUploadConfirm(false)}
+              />
+            </div>
+          )}
         </div>
 
         {/* RIGHT PANEL - only show in single file mode */}
