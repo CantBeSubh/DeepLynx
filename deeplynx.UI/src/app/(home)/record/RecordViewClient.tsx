@@ -29,9 +29,13 @@ import {
   unattachTagFromRecord,
   updateRecord,
 } from "@/app/lib/client_service/record_services.client";
+import { getClass } from "@/app/lib/client_service/class_services.client";
 import { getAllTagsOrg } from "@/app/lib/client_service/tag_services.client";
 import GraphClientPage from "../graph/GraphClientPage";
-import { RelatedRecordsResponseDto } from "../types/responseDTOs";
+import {
+  ClassResponseDto,
+  RelatedRecordsResponseDto,
+} from "../types/responseDTOs";
 import RecordTagsPanel from "./components/RecordTagsPanel";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
 
@@ -119,6 +123,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   // ============= STATE MANAGEMENT =============
   // Record & Tags State
   const [record, setRecord] = useState<RecordResponseDto | null>(null);
+  const [recordClass, setRecordClass] = useState<ClassResponseDto | null>(null);
   const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagResponseDto[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -373,7 +378,6 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
           recordId
         );
         setRecord(data);
-
         if (data.tags) {
           // Check if tags is a string (JSON) or already an array
           const parsedTags =
@@ -397,6 +401,32 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     organization?.organizationId,
     t.translations.FAILED_TO_FETCH_RECORD,
   ]);
+
+  // Fetch class info for the record (if present)
+  useEffect(() => {
+    if (!record?.classId || !projectId) {
+      setRecordClass(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchClass = async () => {
+      try {
+        const data = await getClass(projectId, Number(record.classId), true);
+        if (!cancelled) setRecordClass(data);
+      } catch (error) {
+        console.error("Error fetching class:", error);
+        if (!cancelled) setRecordClass(null);
+      }
+    };
+
+    fetchClass();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [record?.classId, projectId]);
 
   // Fetch available tags
   useEffect(() => {
@@ -625,6 +655,11 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     <div className="mr-4">
       <div className="bg-base-200/40 pl-12 p-4">
         <h1 className="text-2xl font-bold text-base-content">{record.name}</h1>
+        {record.classId && (
+          <span className="badge badge-primary">
+            {recordClass?.name || <div className="loading size-3" />}
+          </span>
+        )}
       </div>
 
       <Tabs
