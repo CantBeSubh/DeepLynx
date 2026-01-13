@@ -74,11 +74,11 @@ export default function BulkUploadSection(props: BulkUploadSectionProps) {
       if (parseResult.success) {
         props.setParsedCsvData(parseResult.data);
         toast.success(
-          `Successfully parsed ${parseResult.data.length} rows from CSV`
+          `${t.translations.SUCESSFULLY_PARSED} ${parseResult.data.length} ${t.translations.ROWS_FROM_CSV}`
         );
 
         if (!props.projectId || !props.dataSourceId || !props.organizationId) {
-          toast.error("Please select project and data source first");
+          toast.error(`${t.translations.PLEASE_SELECT_PROJECT_AND_DATASOURCE}`);
           props.setIsParsing(false);
           return;
         }
@@ -97,27 +97,27 @@ export default function BulkUploadSection(props: BulkUploadSectionProps) {
 
           if (validationResult.isValid) {
             toast.success(
-              `All ${validationResult.validCount} records validated successfully!`
+              `${t.translations.ALL} ${validationResult.validCount} ${t.translations.RECORDS_VALIDATED_SUCCESSFULLY}`
             );
           } else {
             toast.error(
-              `Validation failed: ${validationResult.invalidCount} of ${validationResult.totalRows} records have errors`
+              `${t.translations.VALIDATION_FAILED}: ${validationResult.invalidCount} ${t.translations.OF} ${validationResult.totalRows} ${t.translations.RECORDS_HAVE_ERRORS}`
             );
           }
         } catch (error) {
           console.error("Validation error:", error);
-          toast.error("Error validating records");
+          toast.error(t.translations.ERROR_VALIDATING_RECORDS);
         } finally {
           props.setIsValidating(false);
         }
       } else {
         props.setCsvParseErrors(parseResult.errors);
-        toast.error("Failed to parse CSV file");
+        toast.error(t.translations.FAILED_TO_PARSE_CSV_FILE);
       }
     } catch (error) {
       console.error("Error parsing CSV:", error);
       props.setCsvParseErrors(["Unexpected error while parsing CSV file"]);
-      toast.error("Error parsing CSV file");
+      toast.error(t.translations.ERROR_PARSING_CSV_FILE);
     } finally {
       props.setIsParsing(false);
     }
@@ -145,7 +145,7 @@ export default function BulkUploadSection(props: BulkUploadSectionProps) {
           {/* Step 1: Download Template */}
           <label className="label flex-col items-start">
             <span className="label-text font-semibold">
-              Step 1: Download Template
+              {t.translations.STEP_1_DOWNLOAD_TEMPLATE}
             </span>
             <CsvTemplateDownload />
           </label>
@@ -154,7 +154,7 @@ export default function BulkUploadSection(props: BulkUploadSectionProps) {
           <div>
             <label className="label flex-col items-start">
               <span className="label-text font-semibold">
-                Step 2: Upload Your CSV
+                {t.translations.STEP_2_UPLOAD_YOUR_CSV}
               </span>
               <input
                 type="file"
@@ -175,12 +175,12 @@ export default function BulkUploadSection(props: BulkUploadSectionProps) {
             {props.csvFile && (
               <div className="mt-2 text-sm text-base-content/70 flex items-center gap-2">
                 <span>
-                  Selected:{" "}
+                  {t.translations.SELECTED}:{" "}
                   <span className="font-semibold">{props.csvFile.name}</span>
                 </span>
                 {(!props.projectId || !props.dataSourceId) && (
                   <div className="badge badge-warning badge-sm">
-                    Select project and data source first
+                    {t.translations.PLEASE_SELECT_PROJECT_AND_DATASOURCE}
                   </div>
                 )}
               </div>

@@ -386,17 +386,20 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
         bulkUploadState.validationResult && (
           <div className="modal modal-open">
             <div className="modal-box">
-              <h3 className="font-bold text-lg">Confirm Bulk Upload</h3>
+              <h3 className="font-bold text-lg">
+                {t.translations.CONFIRM_BULK_UPLOAD}
+              </h3>
               <p className="py-4">
-                You are about to upload{" "}
+                {t.translations.YOUR_ABOUT_TO_UPLOAD}{" "}
                 <span className="font-bold">
-                  {bulkUploadState.validationResult.validCount} records
+                  {bulkUploadState.validationResult.validCount}{" "}
+                  {t.translations.L_RECORDS}
                 </span>{" "}
-                to the system.
+                {t.translations.TO_THE_SYSTEM}
               </p>
               <div className="bg-base-200 p-3 rounded text-sm space-y-1">
                 <p>
-                  <strong>Project:</strong>{" "}
+                  <strong>{t.translations.PROJECT}:</strong>{" "}
                   {
                     projectResources.projects.find(
                       (p) => p.id === Number(projectResources.projectId)
@@ -404,7 +407,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                   }
                 </p>
                 <p>
-                  <strong>Data Source:</strong>{" "}
+                  <strong>{t.translations.DATA_SOURCE}:</strong>{" "}
                   {
                     projectResources.dataSources.find(
                       (d) => d.id === Number(projectResources.dataSourceId)
@@ -412,16 +415,13 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                   }
                 </p>
               </div>
-              <p className="text-sm text-base-content/70 mt-4">
-                This action cannot be undone. Are you sure you want to proceed?
-              </p>
               <div className="modal-action">
                 <button
                   className="btn btn-ghost"
                   onClick={() => bulkUploadState.setShowUploadConfirm(false)}
                   disabled={bulkUploadState.isUploading}
                 >
-                  Cancel
+                  {t.translations.CANCEL}
                 </button>
                 <button
                   className="btn btn-primary"
@@ -434,7 +434,7 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                   {bulkUploadState.isUploading ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>
-                      Uploading...
+                      {t.translations.UPLOADING}
                     </>
                   ) : (
                     "Confirm Upload"

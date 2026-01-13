@@ -9,7 +9,10 @@ import {
 } from "@heroicons/react/24/outline";
 import RecordPreviewTable from "./RecordPreviewTable";
 import UploadProgressBar from "./UploadProgressBar";
-import type { ValidationError, ValidationResult } from "../../types/bulk_upload_types";
+import type {
+  ValidationError,
+  ValidationResult,
+} from "../../types/bulk_upload_types";
 
 interface ValidationResultsProps {
   isParsing: boolean;
@@ -85,7 +88,7 @@ export default function ValidationResults({
 
             <div className="space-y-3">
               {backendErrors.map((error, idx) => (
-                <div key={idx} className="bg-base-100 p-3 rounded">
+                <div key={idx} className="bg-base-100 text-error p-3 rounded">
                   <div className="flex items-start gap-2 mb-2">
                     {error.type === "not_found" && (
                       <span className="badge badge-warning badge-sm">
@@ -113,7 +116,7 @@ export default function ValidationResults({
 
                   {error.suggestion && (
                     <p className="text-sm text-base-content/70 italic">
-                      💡 {error.suggestion}
+                      {error.suggestion}
                     </p>
                   )}
                 </div>
