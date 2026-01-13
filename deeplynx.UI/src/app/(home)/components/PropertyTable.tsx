@@ -140,7 +140,7 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
                   )}
                 </button>
               )}
-              <span className="truncate">{row.label}</span>
+              <span className="truncate ml-2">{row.label}</span>
             </div>
           </div>
           <div className="col-span-7 p-3 text-sm text-base-content break-words">

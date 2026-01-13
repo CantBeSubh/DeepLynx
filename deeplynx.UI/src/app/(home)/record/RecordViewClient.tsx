@@ -56,7 +56,7 @@ interface PropertyRow {
  * @returns Array of PropertyRow objects
  */
 function parseNestedProperties(
-  obj: any,
+  obj: JSON,
   parentKey: string = ""
 ): PropertyRow[] {
   if (!obj || typeof obj !== "object") {
