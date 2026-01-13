@@ -35,6 +35,62 @@ import { RelatedRecordsResponseDto } from "../types/responseDTOs";
 import RecordTagsPanel from "./components/RecordTagsPanel";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
 
+// ============= HELPER FUNCTIONS =============
+interface PropertyRow {
+  label: string;
+  value: React.ReactNode;
+  editable?: boolean;
+  onEdit?: (newValue: string) => void;
+  isNested?: boolean;
+  nestedRows?: PropertyRow[];
+}
+
+/**
+ * Converts a nested object structure into PropertyRow format
+ * @param obj - The object to parse
+ * @param parentKey - Optional parent key for nested properties
+ * @returns Array of PropertyRow objects
+ */
+function parseNestedProperties(
+  obj: any,
+  parentKey: string = ""
+): PropertyRow[] {
+  if (!obj || typeof obj !== "object") {
+    return [];
+  }
+
+  return Object.entries(obj).map(([key, value]) => {
+    const label = key
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    // Check if value is an object (but not null or array)
+    const isNestedObject =
+      value !== null && typeof value === "object" && !Array.isArray(value);
+
+    if (isNestedObject) {
+      return {
+        label,
+        value: "", // Won't be displayed for nested objects
+        isNested: true,
+        nestedRows: parseNestedProperties(value, key),
+      };
+    } else {
+      // Handle arrays and primitive values
+      const displayValue = Array.isArray(value)
+        ? JSON.stringify(value)
+        : String(value);
+
+      return {
+        label,
+        value: displayValue,
+        isNested: false,
+      };
+    }
+  });
+}
+
 // ============= TYPE DEFINITIONS =============
 interface Props {
   projectId: number;
@@ -414,19 +470,12 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   const additionalPropertiesRows = useMemo(() => {
     if (!record?.properties) return [];
 
-    // Check if properties is a string and parse it, otherwise use it directly
     const parsedProperties =
       typeof record.properties === "string"
         ? JSON.parse(record.properties)
         : record.properties;
 
-    return Object.entries(parsedProperties).map(([key, value]) => ({
-      label: key
-        .split("_")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" "),
-      value: typeof value === "object" ? JSON.stringify(value) : String(value),
-    }));
+    return parseNestedProperties(parsedProperties);
   }, [record?.properties]);
 
   const relatedRecordsColumns: CardColumn<RelatedRecordViewModel>[] = [
