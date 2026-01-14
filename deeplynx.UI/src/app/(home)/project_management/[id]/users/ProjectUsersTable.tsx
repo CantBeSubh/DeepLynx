@@ -10,7 +10,10 @@ import {
   addMemberToProject,
   removeMemberFromProject,
   updateProjectMemberRole,
+  inviteUserToProject,
+  getProjectMembers,
 } from "@/app/lib/client_service/projects_services.client";
+import { InviteUserToProjectRequestDto } from "@/app/(home)/types/requestDTOs";
 import {
   ProjectMemberResponseDto,
   UserResponseDto,
@@ -23,6 +26,7 @@ import ProjectUsersListTable from "./ProjectUsersListTable";
 import AddProjectMemberModal from "./AddProjectMemberModal";
 import RemoveProjectMemberModal from "./RemoveProjectMemberModal";
 import EditProjectMemberRoleModal from "./EditProjectMemberRoleModal";
+import InviteProjectUserModal from "./InviteProjectUserModal";
 import {
   AddMemberModalState,
   ConfirmModalState,
@@ -51,6 +55,15 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
     buildTableData(members)
   );
   const [loading, setLoading] = useState(false);
+
+  /* ------------------------------------------------------------------------ */
+  /*                           Invite Modal State                             */
+  /* ------------------------------------------------------------------------ */
+
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRoleId, setInviteRoleId] = useState("");
+  const [inviteModalLoading, setInviteModalLoading] = useState(false);
 
   /* ------------------------------------------------------------------------ */
   /*                           Add Member Modal State                         */
@@ -127,6 +140,73 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
     [tableData]
   );
 
+  /* ------------------------------------------------------------------------ */
+  /*                     Invite User: Open Modal & Send                       */
+  /* ------------------------------------------------------------------------ */
+
+  const handleOpenInviteModal = () => {
+    setShowInviteModal(true);
+  };
+
+  const handleInviteUser = async () => {
+    if (!inviteEmail) {
+      toast.error("Please enter an email address");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (!inviteRoleId) {
+      toast.error("Please select a role");
+      return;
+    }
+
+    if (!organizationId || !projectId) {
+      toast.error("Missing organization or project");
+      return;
+    }
+
+    try {
+      setInviteModalLoading(true);
+
+      const inviteData: InviteUserToProjectRequestDto = {
+        userEmail: inviteEmail,
+        userName: inviteEmail.split("@")[0],
+        roleId: Number(inviteRoleId),
+      };
+
+      await inviteUserToProject(organizationId, projectId, inviteData);
+
+      toast.success(`Invitation sent to ${inviteEmail}`);
+
+      // Refresh the members list
+      try {
+        const updatedMembers = await getProjectMembers(
+          organizationId,
+          projectId
+        );
+
+        setTableData(buildTableData(updatedMembers));
+      } catch (refreshError) {
+        console.error("Failed to refresh members list:", refreshError);
+        // Don't show error to user - invite was successful
+      }
+
+      setShowInviteModal(false);
+      setInviteEmail("");
+      setInviteRoleId("");
+    } catch (error) {
+      console.error("Error inviting user to project:", error);
+      toast.error("Failed to send invitation");
+    } finally {
+      setInviteModalLoading(false);
+    }
+  };
+  console.log("Project Members:", tableData);
   /* ------------------------------------------------------------------------ */
   /*                     Edit Role: open & save handlers                      */
   /* ------------------------------------------------------------------------ */
@@ -397,6 +477,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             loading={loading}
             onAddUser={() => handleOpenAddMemberModal("user")}
             onAddGroup={() => handleOpenAddMemberModal("group")}
+            onInviteUser={handleOpenInviteModal}
           />
 
           <ProjectUsersListTable
@@ -414,6 +495,24 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             }
           />
 
+          {/* Invite User Modal */}
+          <InviteProjectUserModal
+            isOpen={showInviteModal}
+            inviteEmail={inviteEmail}
+            selectedRoleId={inviteRoleId}
+            roles={roles}
+            modalLoading={inviteModalLoading}
+            onClose={() => {
+              setShowInviteModal(false);
+              setInviteEmail("");
+              setInviteRoleId("");
+            }}
+            onInvite={handleInviteUser}
+            onChangeEmail={setInviteEmail}
+            onChangeRole={setInviteRoleId}
+          />
+
+          {/* Remove Member Modal */}
           <RemoveProjectMemberModal
             confirmModal={confirmModal}
             loading={loading}
@@ -429,6 +528,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             onConfirm={handleRemoveMember}
           />
 
+          {/* Add Member Modal */}
           <AddProjectMemberModal
             addModal={addModal}
             roles={roles}
@@ -447,6 +547,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             onConfirm={handleAddMember}
           />
 
+          {/* Edit Role Modal */}
           <EditProjectMemberRoleModal
             editRoleModal={editRoleModal}
             roles={roles}

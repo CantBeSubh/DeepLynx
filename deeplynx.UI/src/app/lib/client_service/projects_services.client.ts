@@ -1,10 +1,21 @@
-// src/app/lib/projects_services.client.ts
+// src/app/lib/client_service/projects_services.client.ts
 "use client";
 
-import { CreateProjectRequestDto, UpdateProjectRequestDto } from "@/app/(home)/types/requestDTOs";
-import { ProjectResponseDto, ProjectStatResponseDto, ProjectMemberResponseDto } from "@/app/(home)/types/responseDTOs";
+import { 
+  CreateProjectRequestDto, 
+  UpdateProjectRequestDto,
+  InviteUserToProjectRequestDto 
+} from "@/app/(home)/types/requestDTOs";
+import { 
+  ProjectResponseDto, 
+  ProjectStatResponseDto, 
+  ProjectMemberResponseDto 
+} from "@/app/(home)/types/responseDTOs";
 import api from "./api";
 
+/* -------------------------------------------------------------------------- */
+/*                         Project CRUD Operations                            */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Get all projects for an organization
@@ -167,6 +178,10 @@ export async function getProjectStats(
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                         Project Member Management                          */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Get all members of a project
  * @param organizationId - The ID of the organization
@@ -189,12 +204,40 @@ export async function getProjectMembers(
 }
 
 /**
+ * Invite a user to a project
+ * @param organizationId - The ID of the organization
+ * @param projectId - The ID of the project
+ * @param inviteData - The invite request data (userEmail, userName, roleId)
+ * @returns Promise<void>
+ */
+export async function inviteUserToProject(
+  organizationId: number,
+  projectId: number,
+  inviteData: InviteUserToProjectRequestDto
+): Promise<void> {
+  try {
+    await api.post(
+      `/organizations/${organizationId}/projects/${projectId}/invite`,
+      null,
+      {
+        params: {
+          userEmail: inviteData.userEmail,
+          ...(inviteData.userName && { userName: inviteData.userName }),
+          ...(inviteData.roleId && { roleId: inviteData.roleId })
+        }
+      }
+    );
+  } catch (error) {
+    console.error(`Error inviting user to project ${projectId}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Add a user or group to a project
  * @param organizationId - The ID of the organization
  * @param projectId - The ID of the project
- * @param roleId - Optional role ID
- * @param userId - Optional user ID (required if not providing groupId)
- * @param groupId - Optional group ID (required if not providing userId)
+ * @param data - Object containing roleId and either userId or groupId
  * @returns Promise with success message
  */
 export async function addMemberToProject(
@@ -218,7 +261,6 @@ export async function addMemberToProject(
     throw error;
   }
 }
-
 
 /**
  * Update a member's role in a project
