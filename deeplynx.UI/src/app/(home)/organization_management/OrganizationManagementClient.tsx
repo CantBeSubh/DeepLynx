@@ -96,7 +96,7 @@ const OrganizationManagementClient = ({
     {
       label: t.translations.SETTINGS,
       content: organization ? (
-        <OrganizationSettings organization={organization} />
+        <OrganizationSettings />
       ) : (
         <div>{t.translations.NO_ORG_SELECTED}</div>
       ),

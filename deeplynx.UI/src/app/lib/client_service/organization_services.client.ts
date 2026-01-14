@@ -1,6 +1,7 @@
 import { CreateOrganizationRequestDto, UpdateOrganizationRequestDto } from "@/app/(home)/types/requestDTOs";
 import { OrganizationResponseDto } from "@/app/(home)/types/responseDTOs";
 import api from "./api";
+import { UploadLogoRequest, UploadLogoResponse, RemoveLogoRequest, RemoveLogoResponse } from "@/app/(home)/types/org_setting_types";
 
 
 /**
@@ -219,4 +220,62 @@ export const removeUserFromOrganization = async (
         console.error(`Error removing user ${userId} from organization ${organizationId}:`, error);
         throw error;
     }
+};
+
+/**
+ * Upload organization logo
+ * Saves the logo to /public/images/org-{organizationId}-logo.{ext}
+ */
+export const uploadOrganizationLogo = async (
+  request: UploadLogoRequest
+): Promise<UploadLogoResponse> => {
+  const formData = new FormData();
+  formData.append("file", request.file);
+
+  const response = await fetch(
+    `/api/organization/${request.organizationId}/logo`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to upload logo");
+  }
+
+  return response.json();
+};
+
+/**
+ * Remove organization logo
+ * Deletes the logo file from /public/images
+ */
+export const removeOrganizationLogo = async (
+  request: RemoveLogoRequest
+): Promise<RemoveLogoResponse> => {
+  const response = await fetch(
+    `/api/organization/${request.organizationId}/logo`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to remove logo");
+  }
+
+  return response.json();
+};
+
+/**
+ * Get organization logo URL
+ * Returns the logo URL if it exists
+ */
+export const getOrganizationLogoUrl = (organizationId: number): string | null => {
+  // Check if logo exists (we'll verify this on the server in Phase 2)
+  // For now, return the expected path
+  return `/images/org-${organizationId}-logo.png`;
 };

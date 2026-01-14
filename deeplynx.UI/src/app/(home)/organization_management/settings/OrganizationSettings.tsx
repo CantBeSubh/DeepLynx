@@ -1,126 +1,176 @@
+// src/app/(home)/organization_management/settings/OrganizationSettings.tsx
 "use client";
 
-import { useLanguage } from "@/app/contexts/Language";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import {
-  OrganizationSession,
-  useOrganizationSession,
-} from "@/app/contexts/OrganizationSessionProvider";
-import { updateOrganization } from "@/app/lib/client_service/organization_services.client";
-import { PencilIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+  getOrganizationLogoUrl,
+  uploadOrganizationLogo,
+  removeOrganizationLogo,
+} from "@/app/lib/client_service/organization_services.client";
 
-interface OrganizationSettingsProps {
-  organization: OrganizationSession;
-}
+const OrganizationSettings = () => {
+  const { organization } = useOrganizationSession();
 
-const OrganizationSettings = ({ organization }: OrganizationSettingsProps) => {
-  const { t } = useLanguage();
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState(organization.organizationName);
-  const [currentOrganization, setCurrentOrganization] = useState(organization);
-  const { setOrganization } = useOrganizationSession();
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleSaveName = async () => {
-    setIsEditingName(true);
+  // Load existing logo on mount
+  useEffect(() => {
+    if (organization?.organizationId) {
+      const logoUrl = getOrganizationLogoUrl(
+        organization.organizationId as number
+      );
+      // We'll verify if the file exists in Phase 2
+      setLogoPreview(logoUrl);
+    }
+  }, [organization?.organizationId]);
+
+  const handleLogoChange = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+
+    const file = fileList[0];
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file (PNG recommended).");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    setLogoFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
+  };
+
+  const handleUploadLogo = async () => {
+    if (!organization?.organizationId || !logoFile) {
+      toast.error("No file selected");
+      return;
+    }
+
     try {
-      updateOrganization(organization.organizationId as number, {
-        name: editedName,
+      setIsUploading(true);
+
+      const result = await uploadOrganizationLogo({
+        organizationId: organization.organizationId as number,
+        file: logoFile,
       });
-      setOrganization({
-        organizationName: editedName,
-        organizationId: organization.organizationId,
-      });
+
+      setLogoPreview(result.logoUrl);
+      setLogoFile(null);
+      toast.success("Logo uploaded successfully!");
     } catch (error) {
-      console.error("Failed to create organization", error);
+      console.error("Failed to upload logo:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload logo"
+      );
     } finally {
-      setIsEditingName(false);
+      setIsUploading(false);
     }
   };
 
-  const handleCancelEdit = () => {
-    setEditedName(organization.organizationName);
-    setIsEditingName(false);
+  const handleRemoveLogo = async () => {
+    if (!organization?.organizationId) return;
+
+    try {
+      await removeOrganizationLogo({
+        organizationId: organization.organizationId as number,
+      });
+
+      setLogoFile(null);
+      setLogoPreview(null);
+      toast.success("Logo removed successfully!");
+    } catch (error) {
+      console.error("Failed to remove logo:", error);
+      toast.error("Failed to remove logo");
+    }
   };
 
   return (
     <div className="p-6">
-      <div className="max-w-md space-y-6">
-        <div className="shadow-md card-body rounded-md">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Organization Name
-          </label>
-          {isEditingName ? (
-            <div className="space-y-2">
-              <input
-                type="text"
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                placeholder="Enter organization name"
-              />
-              <div className="flex space-x-2">
-                <button
-                  onClick={handleSaveName}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
-                >
-                  Cancel
-                </button>
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-base-content mb-6">
+          Organization Settings
+        </h2>
+
+        <div className="card bg-base-100 border border-primary/40 shadow-sm">
+          <div className="card-body">
+            <h3 className="card-title text-lg mb-4">Organization Logo</h3>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="avatar">
+                <div className="w-24 h-24 rounded-xl bg-base-200 flex items-center justify-center overflow-hidden">
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Organization Logo"
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <span className="text-base-content/40 text-sm">
+                      No Logo
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 flex-1">
+                <span className="font-semibold text-lg">
+                  {organization?.organizationName || "Organization"}
+                </span>
+
+                <div className="flex gap-2">
+                  <label className="btn btn-sm btn-primary">
+                    Select Logo
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml"
+                      className="hidden"
+                      onChange={(e) => handleLogoChange(e.target.files)}
+                    />
+                  </label>
+
+                  {logoFile && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-success"
+                      onClick={handleUploadLogo}
+                      disabled={isUploading}
+                    >
+                      {isUploading && (
+                        <span className="loading loading-spinner loading-xs" />
+                      )}
+                      Upload
+                    </button>
+                  )}
+
+                  {logoPreview && !logoFile && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost"
+                      onClick={handleRemoveLogo}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <p className="text-xs text-base-content/60">
+                  Appears next to the organization name in the header.
+                  Recommended: PNG, 256×256, transparent background. Max size:
+                  5MB.
+                </p>
               </div>
             </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold text-gray-900">
-                {organization.organizationName}
-              </span>
-              <PencilIcon
-                className="text-primary hover:text-primary-focus size-6 cursor-pointer transition-colors"
-                onClick={() => setIsEditingName(true)}
-              />
-            </div>
-          )}
-
-          <label
-            htmlFor="org-logo"
-            className="block text-sm font-medium text-gray-700 mt-4"
-          >
-            Organization Logo
-          </label>
-          <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <label htmlFor="org-logo" className="cursor-pointer">
-              <span className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-gray-100 text-gray-500 cursor-not-allowed">
-                Choose File
-              </span>
-              <input
-                id="org-logo"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                disabled
-              />
-            </label>
           </div>
-          <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
         </div>
       </div>
     </div>
