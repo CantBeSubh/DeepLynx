@@ -40,21 +40,6 @@ type ConfirmModalState = {
 /* -------------------------------------------------------------------------- */
 
 const buildTableData = (users: UserResponseDto[]): UsersTableRow[] => {
-  // TODO: Replace mock with real pending invites from backend
-  const mockPendingInvites: UsersTableRow[] = [
-    {
-      id: 9999,
-      name: "",
-      email: "pending@example.com",
-      username: null,
-      isActive: false,
-      isArchived: false,
-      isSysAdmin: false,
-      isPending: true,
-      invitedAt: new Date().toISOString(),
-    },
-  ];
-
   const activeUsers: UsersTableRow[] = users.map((user) => ({
     id: user.id,
     name: user.name || "",
@@ -66,7 +51,7 @@ const buildTableData = (users: UserResponseDto[]): UsersTableRow[] => {
     isPending: false,
   }));
 
-  return [...mockPendingInvites, ...activeUsers];
+  return [...activeUsers];
 };
 
 /* -------------------------------------------------------------------------- */
@@ -279,7 +264,7 @@ const UsersTable = ({ members }: Props) => {
   const activeUserCount = tableData.filter(
     (u) => !u.isPending && u.isActive && !u.isArchived
   ).length;
-  const pendingCount = tableData.filter((u) => u.isPending).length;
+  const pendingCount = tableData.filter((u) => u.isActive === false).length;
   const totalCount = activeUserCount + pendingCount;
 
   /* ------------------------------------------------------------------------ */

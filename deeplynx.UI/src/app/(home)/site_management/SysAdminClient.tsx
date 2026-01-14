@@ -8,13 +8,13 @@ import {
   OrganizationResponseDto,
   UserResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "../components/users/UsersTable";
 import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
 import SiteOrganizationManagement from "../components/SiteManagementPortal/SiteOrgTable";
 import { getAllOrganizations } from "@/app/lib/client_service/organization_services.client";
 import { getAllOauthApplications } from "@/app/lib/client_service/oauth_services.client";
 import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import EventsHistoryClient from "../event_management/EventHistoryClient";
+import UsersTable from "../organization_management/users/UsersTable";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
@@ -32,8 +32,10 @@ const SysAdminClient = ({
   initialSelectedProjects,
 }: SysAdminProps) => {
   const [activeTab, setActiveTab] = useState("");
-  const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>(initialOrganizations);
-  const [applications, setApplications] = useState<OauthApplicationResponseDto[]>(initialApplications);
+  const [organizations, setOrganizations] =
+    useState<OrganizationResponseDto[]>(initialOrganizations);
+  const [applications, setApplications] =
+    useState<OauthApplicationResponseDto[]>(initialApplications);
   const [members, setMembers] = useState<UserResponseDto[]>(initialMembers);
 
   const refreshOrganizations = async () => {
@@ -84,19 +86,12 @@ const SysAdminClient = ({
     },
     {
       label: "Member Management",
-      content: (
-        <UsersTable
-          initialMembers={members}
-          header={"Site Users"}
-          description={"Manage users for the site. Invite new users via email."}
-          onUsersChange={refreshUsers}
-        />
-      ),
+      content: <UsersTable members={members} />,
     },
     {
       label: "Event History",
       content: (
-        <EventsHistoryClient 
+        <EventsHistoryClient
           initialProjects={initialProjects}
           initialSelectedProjects={initialSelectedProjects}
         />
