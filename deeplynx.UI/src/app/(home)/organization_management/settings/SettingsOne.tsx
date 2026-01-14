@@ -1,7 +1,7 @@
 // src/app/(home)/organization_management/settings/OrganizationSettingsGridApproach.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import toast from "react-hot-toast";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import {
