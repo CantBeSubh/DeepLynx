@@ -55,14 +55,15 @@ const UsersHeaderStats: React.FC<UsersHeaderStatsProps> = ({
           </div>
           <div className="stat-title">Active Users</div>
           <div className="stat-value text-primary">{activeUserCount}</div>
+          <div className="stat-desc">Users with active access</div>
         </div>
         <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-warning">
             <EnvelopeIcon className="w-8 h-8" />
           </div>
           <div className="stat-title">Pending Invites</div>
-          {/* <div className="stat-value text-warning">{pendingCount}</div> */}
-          <div className="stat-value text-warning">0</div>
+          <div className="stat-value text-warning">{pendingCount}</div>
+          <div className="stat-desc">Awaiting acceptance</div>
         </div>
         <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-secondary">
@@ -70,6 +71,7 @@ const UsersHeaderStats: React.FC<UsersHeaderStatsProps> = ({
           </div>
           <div className="stat-title">Total</div>
           <div className="stat-value text-secondary">{totalCount}</div>
+          <div className="stat-desc">Active + Pending</div>
         </div>
       </div>
     </>

@@ -5,18 +5,15 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 import EditSysUser from "../../components/SiteManagementPortal/EditSysUser";
-import {
-  ProjectResponseDto,
-  RoleResponseDto,
-  UserResponseDto,
-} from "../../types/responseDTOs";
+import { UserResponseDto } from "../../types/responseDTOs";
 
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { sendEmail } from "@/app/lib/client_service/notification_services.client";
-import { removeUserFromOrganization } from "@/app/lib/client_service/organization_services.client";
-import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
-import { getAllRoles } from "@/app/lib/client_service/role_services.client";
+import {
+  removeUserFromOrganization,
+  inviteUserToOrganization,
+} from "@/app/lib/client_service/organization_services.client";
 import { getAllUsers } from "@/app/lib/client_service/user_services.client";
+import { InviteUserToOrganizationRequestDto } from "../../types/requestDTOs";
 import DeleteModal from "./DeleteModal";
 import InviteUserModal from "./InviteUserModal";
 import UsersHeaderStats from "./UsersHeaderStats";
@@ -55,8 +52,6 @@ const buildTableData = (users: UserResponseDto[]): UsersTableRow[] => {
       isSysAdmin: false,
       isPending: true,
       invitedAt: new Date().toISOString(),
-      projectName: "Alpha Project",
-      roleName: "Developer",
     },
   ];
 
@@ -94,12 +89,6 @@ const UsersTable = ({ members }: Props) => {
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState("");
-  const [selectedRoleId, setSelectedRoleId] = useState("");
-  const [availableProjects, setAvailableProjects] = useState<
-    ProjectResponseDto[]
-  >([]);
-  const [availableRoles, setAvailableRoles] = useState<RoleResponseDto[]>([]);
   const [modalLoading, setModalLoading] = useState(false);
 
   /* ------------------------------------------------------------------------ */
@@ -131,7 +120,7 @@ const UsersTable = ({ members }: Props) => {
   /* ------------------------------------------------------------------------ */
 
   const loadAllData = async () => {
-    if (!organization?.organizationId) return; // guard
+    if (!organization?.organizationId) return;
 
     try {
       const users: UserResponseDto[] = await getAllUsers(
@@ -143,61 +132,21 @@ const UsersTable = ({ members }: Props) => {
     }
   };
 
-  // ✅ When server-side members prop changes, sync local state (no extra fetch)
+  // When server-side members prop changes, sync local state
   useEffect(() => {
     setTableData(buildTableData(members));
   }, [members]);
 
   /* ------------------------------------------------------------------------ */
-  /*                        Invite Flow: Open & Options                       */
+  /*                        Invite Flow: Open Modal                           */
   /* ------------------------------------------------------------------------ */
 
-  const handleOpenInviteModal = async () => {
+  const handleOpenInviteModal = () => {
     setShowInviteModal(true);
-    setModalLoading(true);
-
-    try {
-      if (!organization?.organizationId) {
-        throw new Error("No organization selected");
-      }
-
-      const projects = await getAllProjects(
-        organization.organizationId as number
-      );
-      setAvailableProjects(projects);
-    } catch (error) {
-      console.error("Failed to fetch projects:", error);
-      toast.error("Unable to load projects");
-    } finally {
-      setModalLoading(false);
-    }
   };
 
-  // Load roles when project selection changes
-  useEffect(() => {
-    const fetchRolesForProject = async () => {
-      if (!selectedProjectId || !organization?.organizationId) {
-        setAvailableRoles([]);
-        return;
-      }
-
-      try {
-        const roles = await getAllRoles(
-          organization.organizationId as number,
-          Number(selectedProjectId)
-        );
-        setAvailableRoles(roles);
-      } catch (error) {
-        console.error("Failed to fetch roles:", error);
-        toast.error("Unable to load roles for selected project");
-      }
-    };
-
-    fetchRolesForProject();
-  }, [selectedProjectId, organization?.organizationId]);
-
   /* ------------------------------------------------------------------------ */
-  /*                          Invite Flow: Send Email                         */
+  /*                          Invite Flow: Send Invitation                    */
   /* ------------------------------------------------------------------------ */
 
   const handleInviteUser = async () => {
@@ -212,31 +161,34 @@ const UsersTable = ({ members }: Props) => {
       return;
     }
 
-    if (selectedProjectId && !selectedRoleId) {
-      toast.error("Please select a role for the project");
+    if (!organization?.organizationId) {
+      toast.error("No organization selected");
       return;
     }
 
     try {
       setModalLoading(true);
 
-      await sendEmail(inviteEmail, "New User");
+      // Prepare organization invite data
+      const inviteData: InviteUserToOrganizationRequestDto = {
+        userEmail: inviteEmail,
+        userName: inviteEmail.split("@")[0], // Extract username from email
+      };
 
-      if (selectedProjectId && selectedRoleId) {
-        toast.success(
-          `Invitation sent to ${inviteEmail}. They will be added to the selected project upon accepting.`
-        );
-      } else {
-        toast.success(`Invitation sent to ${inviteEmail}`);
-      }
+      // Call organization invite API
+      await inviteUserToOrganization(
+        organization.organizationId as number,
+        inviteData
+      );
 
-      // ✅ Now re-fetch from API (already org-scoped)
+      toast.success(`Invitation sent to ${inviteEmail}`);
+
+      // Refresh the user list
       await loadAllData();
 
+      // Close modal and reset form
       setShowInviteModal(false);
       setInviteEmail("");
-      setSelectedProjectId("");
-      setSelectedRoleId("");
     } catch (error) {
       console.error("Error inviting user:", error);
       toast.error("Failed to send invitation");
@@ -246,9 +198,24 @@ const UsersTable = ({ members }: Props) => {
   };
 
   const handleResendInvite = async (email: string) => {
+    if (!organization?.organizationId) {
+      toast.error("No organization selected");
+      return;
+    }
+
     try {
       setLoading(true);
-      await sendEmail(email, "Resend Invitation");
+
+      const inviteData: InviteUserToOrganizationRequestDto = {
+        userEmail: email,
+        userName: email.split("@")[0], // Extract username from email
+      };
+
+      await inviteUserToOrganization(
+        organization.organizationId as number,
+        inviteData
+      );
+
       toast.success(`Invitation resent to ${email}`);
     } catch (error) {
       console.error("Failed to resend invite:", error);
@@ -284,7 +251,7 @@ const UsersTable = ({ members }: Props) => {
         toast.success("User removed from organization");
       }
 
-      // ✅ Refresh org-scoped list
+      // Refresh org-scoped list
       await loadAllData();
 
       setConfirmModal({
@@ -350,24 +317,13 @@ const UsersTable = ({ members }: Props) => {
       <InviteUserModal
         isOpen={showInviteModal}
         inviteEmail={inviteEmail}
-        selectedProjectId={selectedProjectId}
-        selectedRoleId={selectedRoleId}
-        availableProjects={availableProjects}
-        availableRoles={availableRoles}
         modalLoading={modalLoading}
         onClose={() => {
           setShowInviteModal(false);
           setInviteEmail("");
-          setSelectedProjectId("");
-          setSelectedRoleId("");
         }}
         onInvite={handleInviteUser}
         onChangeEmail={setInviteEmail}
-        onChangeProject={(value) => {
-          setSelectedProjectId(value);
-          setSelectedRoleId("");
-        }}
-        onChangeRole={setSelectedRoleId}
       />
 
       {/* Edit User Modal */}

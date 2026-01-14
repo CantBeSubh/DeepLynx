@@ -1,7 +1,14 @@
-import { CreateOrganizationRequestDto, UpdateOrganizationRequestDto } from "@/app/(home)/types/requestDTOs";
+import { 
+    CreateOrganizationRequestDto, 
+    InviteUserToOrganizationRequestDto, 
+    UpdateOrganizationRequestDto 
+} from "@/app/(home)/types/requestDTOs";
 import { OrganizationResponseDto } from "@/app/(home)/types/responseDTOs";
 import api from "./api";
 
+/* -------------------------------------------------------------------------- */
+/*                         Organization CRUD Operations                        */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Get all organizations
@@ -149,6 +156,10 @@ export const archiveOrganization = async (
     }
 };
 
+/* -------------------------------------------------------------------------- */
+/*                      Organization User Management                          */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Add a user to an organization
  * @param organizationId - The ID of the organization
@@ -217,6 +228,33 @@ export const removeUserFromOrganization = async (
         return res.data;
     } catch (error) {
         console.error(`Error removing user ${userId} from organization ${organizationId}:`, error);
+        throw error;
+    }
+};
+
+/**
+ * Invite a user to an organization
+ * @param organizationId - The ID of the organization
+ * @param inviteData - The invite request data (userEmail, optional userName)
+ * @returns Promise<void>
+ */
+export const inviteUserToOrganization = async (
+    organizationId: number,
+    inviteData: InviteUserToOrganizationRequestDto
+): Promise<void> => {
+    try {
+        await api.post(
+            `/organizations/${organizationId}/invite`,
+            null,
+            {
+                params: {
+                    userEmail: inviteData.userEmail,
+                    ...(inviteData.userName && { userName: inviteData.userName })
+                }
+            }
+        );
+    } catch (error) {
+        console.error(`Error inviting user to organization ${organizationId}:`, error);
         throw error;
     }
 };
