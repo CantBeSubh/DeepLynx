@@ -1,10 +1,10 @@
 "use client";
 
-import { ApiRecord } from "../../types/bulk_upload_types";
+import { BulkRecord } from "../../types/bulk_upload_types";
 import { useState } from "react";
 
 interface RecordPreviewTableProps {
-  records: ApiRecord[];
+  records: BulkRecord[];
   maxVisible?: number;
 }
 

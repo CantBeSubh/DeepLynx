@@ -1,5 +1,5 @@
 import { CsvRowSchema } from "../schemas/bulk_record_schema";
-import { ParsedCsvRow, ValidationResult, ValidationError, ApiRecord } from "../(home)/types/bulk_upload_types";
+import { ParsedCsvRow, ValidationResult, ValidationError, BulkRecord } from "../(home)/types/bulk_upload_types";
 
 /**
  * Validates parsed CSV rows using Zod schema
@@ -11,7 +11,7 @@ export function validateCsvRecords(
   dataSourceId: string,
   organizationId: number
 ): ValidationResult {
-  const validRecords: ApiRecord[] = [];
+  const validRecords: BulkRecord[] = [];
   const errors: ValidationError[] = [];
 
   parsedRows.forEach((row, index) => {
@@ -37,7 +37,7 @@ export function validateCsvRecords(
         // Transform validated data to API format (snake_case)
         const validatedData = result.data;
 
-        const apiRecord: ApiRecord = {
+        const apiRecord: BulkRecord = {
           name: validatedData.name,
           description: validatedData.description,
           original_id: validatedData.original_id,

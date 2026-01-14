@@ -1,7 +1,7 @@
 "use client";
 
 
-import { ApiRecord, BulkMetadataPayload } from "@/app/(home)/types/bulk_upload_types";
+import { BulkRecord, BulkMetadataPayload } from "@/app/(home)/types/bulk_upload_types";
 import api from "./api";
 
 /**
@@ -11,7 +11,7 @@ export async function uploadBulkMetadata(
   organizationId: number,
   projectId: number,
   dataSourceId: number,
-  validRecords: ApiRecord[]
+  validRecords: BulkRecord[]
 ): Promise<unknown> {
   try {
     // Build the payload

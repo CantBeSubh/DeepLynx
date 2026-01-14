@@ -1,11 +1,11 @@
 // API Payload Types
 
-export interface ApiTag {
+export interface BulkTag {
   id?: number;
   name: string;
 }
 
-export interface ApiClass {
+export interface BulkClass {
   id?: number;
   name: string;
   description?: string | null;
@@ -17,7 +17,7 @@ export interface ApiClass {
   is_archived?: boolean;
 }
 
-export interface ApiRelationship {
+export interface BulkRelationship {
   id?: number;
   name: string;
   description?: string | null;
@@ -31,7 +31,7 @@ export interface ApiRelationship {
   destination_id?: number | null;
 }
 
-export interface ApiRecord {
+export interface BulkRecord {
   id?: number;
   name: string; // required
   description: string; // required
@@ -52,7 +52,7 @@ export interface ApiRecord {
   sensitivity_labels?: string[];
 }
 
-export interface ApiEdge {
+export interface BulkEdge {
   id?: number;
   origin_id?: number | null;
   destination_id?: number | null;
@@ -69,11 +69,11 @@ export interface ApiEdge {
 }
 
 export interface BulkMetadataPayload {
-  classes: ApiClass[];
-  relationships: ApiRelationship[];
-  tags: ApiTag[];
-  records: ApiRecord[];
-  edges: ApiEdge[];
+  classes: BulkClass[];
+  relationships: BulkRelationship[];
+  tags: BulkTag[];
+  records: BulkRecord[];
+  edges: BulkEdge[];
 }
 
 // Parsed CSV Row Type (before validation, with human-readable field names)
@@ -100,7 +100,7 @@ export interface ValidationError {
 
 export interface ValidationResult {
   isValid: boolean;
-  validRecords: ApiRecord[];
+  validRecords: BulkRecord[];
   errors: ValidationError[];
   totalRows: number;
   validCount: number;
