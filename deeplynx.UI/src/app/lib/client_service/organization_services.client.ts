@@ -271,11 +271,41 @@ export const removeOrganizationLogo = async (
 };
 
 /**
- * Get organization logo URL
- * Returns the logo URL if it exists
+ * Get organization logo URL and check if it exists
+ * Returns the logo URL if the file exists, null otherwise
  */
-export const getOrganizationLogoUrl = (organizationId: number): string | null => {
-  // Check if logo exists (we'll verify this on the server in Phase 2)
-  // For now, return the expected path
-  return `/images/org-${organizationId}-logo.png`;
+export const getOrganizationLogoUrl = async (
+  organizationId: number
+): Promise<string | null> => {
+  try {
+    const response = await fetch(`/api/organization/${organizationId}/logo`, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.exists ? data.logoUrl : null;
+  } catch (error) {
+    console.error("Error getting logo URL:", error);
+    return null;
+  }
+};
+
+/**
+ * Check if organization logo exists
+ * Returns true if a logo file exists for the organization
+ */
+export const checkLogoExists = async (
+  organizationId: number
+): Promise<boolean> => {
+  try {
+    const logoUrl = await getOrganizationLogoUrl(organizationId);
+    return logoUrl !== null;
+  } catch (error) {
+    console.error("Error checking logo existence:", error);
+    return false;
+  }
 };
