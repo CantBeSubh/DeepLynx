@@ -177,11 +177,7 @@ const ProjectTagAndLabelManagementClient: React.FC<Props> = ({
           name: nameInput.trim(),
         };
 
-        const updated = await updateTagOrg(
-          orgId,
-          editingTag.id,
-          updatePayload
-        );
+        const updated = await updateTagOrg(orgId, editingTag.id, updatePayload);
 
         setTags((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
         toast.success("Project tag updated.");
@@ -191,10 +187,7 @@ const ProjectTagAndLabelManagementClient: React.FC<Props> = ({
           name: nameInput.trim(),
         };
 
-        const created = await createTagOrg(
-          orgId,
-          createPayload
-        );
+        const created = await createTagOrg(orgId, createPayload);
         setTags((prev) => [...prev, created]);
         toast.success("Project tag created.");
       }
@@ -259,11 +252,11 @@ const ProjectTagAndLabelManagementClient: React.FC<Props> = ({
   return (
     <div className="p-6">
       {/* Page Header */}
-      <div className="mb-4">
+      <div className="mb-4 border-b border-base-300 pb-4">
         <h2 className="text-2xl font-bold text-base-content">
           Project Tag Management
         </h2>
-        <p className="text-base-content/70 mt-1 max-w-3xl text-sm">
+        <p className="text-base-content/70 mt-1 max-w-3xl">
           Define project-level tags for classification, workflows, and search.
           Organization-level locks determine whether this project can define
           additional tags beyond those inherited from the organization.

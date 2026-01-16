@@ -31,10 +31,10 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 border-b border-base-300 pb-4">
         <div>
           <h2 className="text-2xl font-bold">Project Members</h2>
-          <p className="text-base-content/70 text-sm mt-1">
+          <p className="text-base-content/70 mt-1">
             Manage users and groups assigned to this project. A role is required
             for each member.
           </p>

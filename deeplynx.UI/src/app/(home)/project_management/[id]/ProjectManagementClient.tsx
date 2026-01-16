@@ -4,11 +4,9 @@
 
 import React, { useState } from "react";
 import Tabs from "@/app/(home)/components/Tabs";
-import SideMenu from "@/app/(home)/components/SideMenu";
 import {
   GroupResponseDto,
   ProjectResponseDto,
-  UserResponseDto,
   RoleResponseDto,
   PermissionResponseDto,
   ProjectMemberResponseDto,
@@ -18,11 +16,8 @@ import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import ProjectUsersTable from "./users/ProjectUsersTable";
 import ProjectRolesAndPermissions from "./roles_and_permissions/ProjectRolesAndPermissions";
 import DataSources from "./data_source/DataSourcesClient";
-import ProjectSecurityLabelsPanel from "./tag_management/ProjectTagAndLabelManagementClient";
 import ProjectTagAndLabelManagementClient from "./tag_management/ProjectTagAndLabelManagementClient";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { archiveProject } from "@/app/lib/client_service/projects_services.client"
-import ArchiveDelete from "../../components/ArchiveDelete";
+import ProjectSettings from "./settings/ProjectSettings";
 
 interface ProjectManagementProps {
   project: ProjectResponseDto | null;
@@ -40,17 +35,12 @@ const ProjectManagementClient = ({
   projectPermissions,
 }: ProjectManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const { t } = useLanguage();
-  const { project: sessionProject, clearProject } = useProjectSession();
-  const { organization, hasLoaded } = useOrganizationSession();
+  const { project: sessionProject } = useProjectSession();
 
   const handleTabChange = (label: string) => {
     setActiveTab(label);
   };
-
-  // Match SideMenu widths: w-22 (collapsed) vs w-64 (expanded)
-  const contentMarginLeft = isSidebarCollapsed ? "ml-32" : "ml-72";
 
   const tabData = [
     {
@@ -88,36 +78,7 @@ const ProjectManagementClient = ({
     },
     {
       label: "Settings",
-      content: project ? (
-        <div className="space-y-2">
-
-          <div className="border-b border-base-300 pb-4 mt-4">
-            <h1 className="text-2xl font-semibold text-base-content">Project Settings</h1>
-            <p className="text-sm text-base-content mt-1">
-              Manage your project
-            </p>
-          </div>
-
-          <ArchiveDelete
-            actionType="archive"
-            itemType="Project"
-            itemName={sessionProject?.projectName || ""}
-            onConfirm={async () => {
-              if (organization && project) {
-                await archiveProject(
-                  organization.organizationId as number,
-                  project.id as number,
-                  true
-                );
-              }
-              clearProject();
-              window.location.href = '/';
-            }}
-          />
-        </div>
-      ) : (
-        <div>No project selected</div>
-      ),
+      content: <ProjectSettings project={project} />,
     },
   ];
 
