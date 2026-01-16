@@ -2,6 +2,7 @@
 
 import React from "react";
 import { EnvelopeIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useLanguage } from "@/app/contexts/Language";
 
 /* -------------------------------------------------------------------------- */
 /*                     Invite User to Organization Dialog                     */
@@ -27,6 +28,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const { t } = useLanguage();
   const inviteDisabled = !inviteEmail || modalLoading;
 
   return (
@@ -34,7 +36,9 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
       <div className="modal-box max-w-xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-2xl">Invite User to Organization</h3>
+          <h3 className="font-bold text-2xl">
+            {t.translations.INVITE_USER_TO_ORG}
+          </h3>
           <button
             className="btn btn-sm btn-circle btn-ghost"
             onClick={onClose}
@@ -55,7 +59,8 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-semibold">
-                    Email Address <span className="text-error mr-2">*</span>
+                    {t.translations.EMAIL_ADDRESS}{" "}
+                    <span className="text-error mr-2">*</span>
                   </span>
                 </label>
                 <input
@@ -77,11 +82,11 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
               <div className="alert alert-info">
                 <EnvelopeIcon className="w-6 h-6" />
                 <div>
-                  <h4 className="font-semibold">Email Notification</h4>
+                  <h4 className="font-semibold">
+                    {t.translations.EMAIL_NOTIFICATIONS}
+                  </h4>
                   <p className="text-sm">
-                    An invitation email will be sent with instructions to join
-                    the organization. The user will be able to access all
-                    organization resources once they accept the invitation.
+                    {t.translations.EMAIL_INVITATION_DESCRIPTION}
                   </p>
                 </div>
               </div>
@@ -94,7 +99,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
                 onClick={onClose}
                 disabled={modalLoading}
               >
-                Cancel
+                {t.translations.CANCEL}
               </button>
               <button
                 className={`btn btn-primary gap-2 ${
@@ -108,7 +113,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
                 ) : (
                   <EnvelopeIcon className="w-5 h-5" />
                 )}
-                Send Invitation
+                {t.translations.SEND_INVITATION}
               </button>
             </div>
           </>

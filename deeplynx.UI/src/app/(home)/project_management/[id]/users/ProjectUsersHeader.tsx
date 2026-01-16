@@ -7,6 +7,7 @@ import {
   UsersIcon,
   EnvelopeIcon,
 } from "@heroicons/react/24/outline";
+import { useLanguage } from "@/app/contexts/Language";
 
 /* -------------------------------------------------------------------------- */
 /*                        Project Users Header Component                      */
@@ -31,14 +32,17 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
   onAddGroup,
   onInviteUser,
 }) => {
+  const { t } = useLanguage();
   return (
     <>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold">Project Members</h2>
+          <h2 className="text-2xl font-bold">
+            {t.translations.PROJECT_MEMBERS}
+          </h2>
           <p className="text-base-content/70 text-sm mt-1">
-            Manage users and groups with access to this project
+            {t.translations.MANAGE_USERS_AND_GROUPS_WITH_ACCESS_TO_THIS_PROJECT}
           </p>
         </div>
         <div className="flex gap-2">
@@ -48,7 +52,7 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
             disabled={loading}
           >
             <EnvelopeIcon className="w-5 h-5" />
-            Invite User
+            {t.translations.INVITE_USER}
           </button>
           <div className="dropdown dropdown-end">
             <button
@@ -57,7 +61,7 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
               disabled={loading}
             >
               <UserIcon className="w-5 h-5" />
-              Add Member
+              {t.translations.ADD_MEMBER}
             </button>
             <ul
               tabIndex={0}
@@ -66,13 +70,13 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
               <li>
                 <a onClick={onAddUser}>
                   <UserIcon className="w-4 h-4" />
-                  Add Existing User
+                  {t.translations.ADD_EXISTING_USER}
                 </a>
               </li>
               <li>
                 <a onClick={onAddGroup}>
                   <UserGroupIcon className="w-4 h-4" />
-                  Add Group
+                  {t.translations.ADD_GROUP}
                 </a>
               </li>
             </ul>
@@ -86,25 +90,25 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
           <div className="stat-figure text-secondary">
             <UsersIcon className="w-8 h-8" />
           </div>
-          <div className="stat-title">Total Members</div>
+          <div className="stat-title">{t.translations.TOTAL_MEMBERS}</div>
           <div className="stat-value text-secondary">{totalMembers}</div>
-          <div className="stat-desc">Users + Groups</div>
+          <div className="stat-desc">{t.translations.USERS_PLUS_GROUP}</div>
         </div>
         <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-primary">
             <UserIcon className="w-8 h-8" />
           </div>
-          <div className="stat-title">Users</div>
+          <div className="stat-title">{t.translations.USERS}</div>
           <div className="stat-value text-primary">{userCount}</div>
-          <div className="stat-desc">Individual members</div>
+          <div className="stat-desc">{t.translations.INDIVIDUAL_MEMBERS}</div>
         </div>
         <div className="stat bg-base-200 rounded-lg">
           <div className="stat-figure text-accent">
             <UserGroupIcon className="w-8 h-8" />
           </div>
-          <div className="stat-title">Groups</div>
+          <div className="stat-title">{t.translations.GROUPS}</div>
           <div className="stat-value text-accent">{groupCount}</div>
-          <div className="stat-desc">Group memberships</div>
+          <div className="stat-desc">{t.translations.GROUP_MEMBERSHIP}</div>
         </div>
       </div>
     </>

@@ -15,6 +15,7 @@ import { getAllOauthApplications } from "@/app/lib/client_service/oauth_services
 import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import EventsHistoryClient from "../event_management/EventHistoryClient";
 import UsersTable from "../organization_management/users/UsersTable";
+import { useLanguage } from "@/app/contexts/Language";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
@@ -37,7 +38,7 @@ const SysAdminClient = ({
   const [applications, setApplications] =
     useState<OauthApplicationResponseDto[]>(initialApplications);
   const [members, setMembers] = useState<UserResponseDto[]>(initialMembers);
-
+  const { t } = useLanguage();
   const refreshOrganizations = async () => {
     try {
       const updatedData = await getAllOrganizations();
@@ -107,7 +108,7 @@ const SysAdminClient = ({
     <div>
       <div className="bg-base-200/40 pl-12 p-6">
         <h1 className="text-2xl font-bold text-base-content">
-          Site Management
+          {t.translations.SITE_MANAGEMENT}
         </h1>
       </div>
       <div className="p-2">

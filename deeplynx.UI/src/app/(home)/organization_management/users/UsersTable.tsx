@@ -19,6 +19,7 @@ import InviteUserModal from "./InviteUserModal";
 import UsersHeaderStats from "./UsersHeaderStats";
 import UsersListTable from "./UsersListTable";
 import { UsersTableRow } from "../../types/types";
+import { useLanguage } from "@/app/contexts/Language";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -67,6 +68,7 @@ const UsersTable = ({ members }: Props) => {
     buildTableData(members)
   );
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   /* ------------------------------------------------------------------------ */
   /*                           Invite Modal State                             */
@@ -136,18 +138,18 @@ const UsersTable = ({ members }: Props) => {
 
   const handleInviteUser = async () => {
     if (!inviteEmail) {
-      toast.error("Please enter an email address");
+      toast.error(t.translations.PLEASE_ENTER_EMAIL_ADDRESS);
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteEmail)) {
-      toast.error("Please enter a valid email address");
+      toast.error(t.translations.PLEASE_ENTER_VALID_EMAIL_ADDRESS);
       return;
     }
 
     if (!organization?.organizationId) {
-      toast.error("No organization selected");
+      toast.error(t.translations.NO_ORG_SELECTED);
       return;
     }
 
@@ -166,7 +168,7 @@ const UsersTable = ({ members }: Props) => {
         inviteData
       );
 
-      toast.success(`Invitation sent to ${inviteEmail}`);
+      toast.success(`${t.translations.INVITATION_SENT_TO_} ${inviteEmail}`);
 
       // Refresh the user list
       await loadAllData();
@@ -176,7 +178,7 @@ const UsersTable = ({ members }: Props) => {
       setInviteEmail("");
     } catch (error) {
       console.error("Error inviting user:", error);
-      toast.error("Failed to send invitation");
+      toast.error(t.translations.FAILED_TO_SEND_INVITATION);
     } finally {
       setModalLoading(false);
     }
@@ -184,7 +186,7 @@ const UsersTable = ({ members }: Props) => {
 
   const handleResendInvite = async (email: string) => {
     if (!organization?.organizationId) {
-      toast.error("No organization selected");
+      toast.error(t.translations.NO_ORG_SELECTED);
       return;
     }
 
@@ -201,10 +203,10 @@ const UsersTable = ({ members }: Props) => {
         inviteData
       );
 
-      toast.success(`Invitation resent to ${email}`);
+      toast.success(`${t.translations.INVITATION_RESENT_TO_} ${email}`);
     } catch (error) {
       console.error("Failed to resend invite:", error);
-      toast.error("Failed to resend invitation");
+      toast.error(t.translations.FAILED_TO_RESEND_INVITATION);
     } finally {
       setLoading(false);
     }
@@ -222,7 +224,7 @@ const UsersTable = ({ members }: Props) => {
 
       if (confirmModal.isPending) {
         // TODO: API call to cancel invite
-        toast.success("Invitation cancelled");
+        toast.success(t.translations.INVITATION_CANCELED);
       } else {
         if (!organization?.organizationId) {
           throw new Error("No organization selected");
@@ -233,7 +235,7 @@ const UsersTable = ({ members }: Props) => {
           confirmModal.itemId
         );
 
-        toast.success("User removed from organization");
+        toast.success(t.translations.USER_REMOVED_FROM_ORG);
       }
 
       // Refresh org-scoped list
@@ -249,8 +251,8 @@ const UsersTable = ({ members }: Props) => {
       console.error("Failed to remove/cancel:", error);
       toast.error(
         confirmModal.isPending
-          ? "Failed to cancel invitation"
-          : "Failed to remove user"
+          ? t.translations.FAILED_TO_CANCEL_INVITATION
+          : t.translations.FAILED_TO_REMOVE_USER
       );
     } finally {
       setLoading(false);
@@ -337,14 +339,26 @@ const UsersTable = ({ members }: Props) => {
           })
         }
         onConfirm={handleRemoveOrCancel}
-        title={confirmModal.isPending ? "Cancel Invitation?" : "Remove User?"}
+        title={
+          confirmModal.isPending
+            ? t.translations.CANCEL_INVITATION
+            : t.translations.REMOVE_USER
+        }
         message={
           confirmModal.isPending
-            ? `Are you sure you want to cancel the invitation for ${confirmModal.itemName}? They will not be able to join with this invite link.`
-            : `Are you sure you want to remove ${confirmModal.itemName} from this organization? They will lose access to all projects.`
+            ? `${t.translations.SURE_YOU_WANT_TO_CANCEL_INVITATION_FOR_} ${confirmModal.itemName}? ${t.translations.THEY_WILL_NOT_BE_ABLE_TO_JOIN_WITH_LINK}`
+            : `${t.translations.ARE_YOU_SURE_YOU_WANT_TO_REMOVE_} ${confirmModal.itemName} ${t.translations.THEY_WILL_LOSE_ACCESS_FROM_ALL_PROJECTS}`
         }
-        confirmText={confirmModal.isPending ? "Cancel Invite" : "Remove"}
-        cancelText={confirmModal.isPending ? "Keep Invite" : "Cancel"}
+        confirmText={
+          confirmModal.isPending
+            ? t.translations.CANCEL_INVITE
+            : t.translations.REMOVE
+        }
+        cancelText={
+          confirmModal.isPending
+            ? t.translations.KEEP_INVITE
+            : t.translations.CANCEL
+        }
         isDestructive={true}
         loading={loading}
       />

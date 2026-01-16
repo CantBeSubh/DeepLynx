@@ -3,6 +3,7 @@
 import React from "react";
 import { EnvelopeIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { RoleResponseDto } from "@/app/(home)/types/responseDTOs";
+import { useLanguage } from "@/app/contexts/Language";
 
 /* -------------------------------------------------------------------------- */
 /*                     Invite User to Project Dialog                          */
@@ -33,7 +34,7 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
   onChangeRole,
 }) => {
   if (!isOpen) return null;
-
+  const { t } = useLanguage();
   const inviteDisabled = !inviteEmail || !selectedRoleId || modalLoading;
 
   return (
@@ -41,7 +42,9 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
       <div className="modal-box max-w-xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h3 className="font-bold text-2xl">Invite User to Project</h3>
+          <h3 className="font-bold text-2xl">
+            {t.translations.INVITE_USER_TO_PROJECT}
+          </h3>
           <button
             className="btn btn-sm btn-circle btn-ghost"
             onClick={onClose}
@@ -62,7 +65,8 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-semibold">
-                    Email Address <span className="text-error mr-2">*</span>
+                    {t.translations.EMAIL_ADDRESS}{" "}
+                    <span className="text-error mr-2">*</span>
                   </span>
                 </label>
                 <input
@@ -84,7 +88,8 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-semibold">
-                    Project Role <span className="text-error mr-2">*</span>
+                    {t.translations.PROJECT_ROLES}{" "}
+                    <span className="text-error mr-2">*</span>
                   </span>
                 </label>
                 <select
@@ -92,7 +97,7 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
                   value={selectedRoleId}
                   onChange={(e) => onChangeRole(e.target.value)}
                 >
-                  <option value="">Select a role...</option>
+                  <option value="">{t.translations.SELECT_A_ROLE_}</option>
                   {roles.map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.name}
@@ -105,11 +110,11 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
               <div className="alert alert-info">
                 <EnvelopeIcon className="w-6 h-6" />
                 <div>
-                  <h4 className="font-semibold">Email Notification</h4>
+                  <h4 className="font-semibold">
+                    {t.translations.EMAIL_NOTIFICATIONS}
+                  </h4>
                   <p className="text-sm">
-                    An invitation email will be sent with instructions to join
-                    the project. The user will be assigned the selected role
-                    upon accepting the invitation.
+                    {t.translations.EMAIL_INVITATION_DESCRIPTION}
                   </p>
                 </div>
               </div>
@@ -122,7 +127,7 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
                 onClick={onClose}
                 disabled={modalLoading}
               >
-                Cancel
+                {t.translations.CANCEL}
               </button>
               <button
                 className={`btn btn-primary gap-2 ${
@@ -136,7 +141,7 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
                 ) : (
                   <EnvelopeIcon className="w-5 h-5" />
                 )}
-                Send Invitation
+                {t.translations.SEND_INVITATION}
               </button>
             </div>
           </>

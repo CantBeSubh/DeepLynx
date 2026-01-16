@@ -35,6 +35,7 @@ import {
   ProjectMemberTableRow,
   buildTableData,
 } from "../../types/projectUsersTypes";
+import { useLanguage } from "@/app/contexts/Language";
 
 /* -------------------------------------------------------------------------- */
 /*                         ProjectUsersTable Component                        */
@@ -55,6 +56,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
     buildTableData(members)
   );
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   /* ------------------------------------------------------------------------ */
   /*                           Invite Modal State                             */
@@ -150,23 +152,23 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleInviteUser = async () => {
     if (!inviteEmail) {
-      toast.error("Please enter an email address");
+      toast.error(t.translations.PLEASE_ENTER_EMAIL_ADDRESS);
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteEmail)) {
-      toast.error("Please enter a valid email address");
+      toast.error(t.translations.PLEASE_ENTER_VALID_EMAIL_ADDRESS);
       return;
     }
 
     if (!inviteRoleId) {
-      toast.error("Please select a role");
+      toast.error(t.translations.PLEASE_SELECT_A_ROLE);
       return;
     }
 
     if (!organizationId || !projectId) {
-      toast.error("Missing organization or project");
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
       return;
     }
 
@@ -181,7 +183,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
       await inviteUserToProject(organizationId, projectId, inviteData);
 
-      toast.success(`Invitation sent to ${inviteEmail}`);
+      toast.success(`${t.translations.INVITATION_SENT_TO_} ${inviteEmail}`);
 
       // Refresh the members list
       try {
@@ -201,12 +203,11 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       setInviteRoleId("");
     } catch (error) {
       console.error("Error inviting user to project:", error);
-      toast.error("Failed to send invitation");
+      toast.error(t.translations.FAILED_TO_SEND_INVITATION);
     } finally {
       setInviteModalLoading(false);
     }
   };
-  console.log("Project Members:", tableData);
   /* ------------------------------------------------------------------------ */
   /*                     Edit Role: open & save handlers                      */
   /* ------------------------------------------------------------------------ */
@@ -224,7 +225,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleSaveMemberRole = async () => {
     if (!organizationId || !projectId) {
-      toast.error("Missing organization or project");
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
       return;
     }
 
@@ -233,7 +234,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       !editRoleModal.memberType ||
       !editRoleSelectedId
     ) {
-      toast.error("Please select a role");
+      toast.error(t.translations.PLEASE_SELECT_A_ROLE);
       return;
     }
 
@@ -271,10 +272,10 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
         )
       );
 
-      toast.success("Member role updated");
+      toast.success(t.translations.MEMBER_ROLE_UPDATED);
     } catch (error) {
       console.error("Failed to update member role:", error);
-      toast.error("Failed to update member role");
+      toast.error(t.translations.FAILED_TO_UPDATE_MEMBER_ROLE);
     } finally {
       setLoading(false);
       setEditRoleModal({
@@ -294,7 +295,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleOpenAddMemberModal = async (memberType: MemberType = "user") => {
     if (!organizationId) {
-      toast.error("No organization selected");
+      toast.error(t.translations.NO_ORG_SELECTED);
       return;
     }
 
@@ -310,7 +311,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       setAvailableGroups(groups);
     } catch (error) {
       console.error("Failed to load options for Add Member:", error);
-      toast.error("Unable to load users or groups");
+      toast.error(t.translations.UNABLE_TO_LOAD_USERS_TO_GROUPS);
     } finally {
       setModalLoading(false);
     }
@@ -322,21 +323,21 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleAddMember = async () => {
     if (!organizationId || !projectId) {
-      toast.error("Missing organization or project");
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
       return;
     }
 
     if (!selectedMemberId) {
       toast.error(
         addModal.memberType === "user"
-          ? "Please select a user"
-          : "Please select a group"
+          ? t.translations.PLEASE_SELECT_A_USER
+          : t.translations.PLEASE_SELECT_A_GROUP
       );
       return;
     }
 
     if (!selectedRoleId) {
-      toast.error("Please select a role for this member");
+      toast.error(t.translations.PLEASE_SELECT_A_ROLE_FOR_THIS_MEMEBER);
       return;
     }
 
@@ -364,7 +365,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
           try {
             await sendEmail(
               user.email,
-              "You've been added to a project in DeepLynx Nexus"
+              t.translations.YOU_HAVE_BEEN_ADDED_TO_A_PROJECT_IN_NEXUS
             );
           } catch (emailError) {
             console.error("Failed to send notification email:", emailError);
@@ -372,7 +373,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
         }
       }
 
-      toast.success("Member added to project");
+      toast.success(t.translations.MEMBER_ADDED_TO_PROJECT);
 
       const selectedRole = roles.find((r) => r.id === roleId);
       const nameSource =
@@ -402,7 +403,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       setSelectedRoleId("");
     } catch (error) {
       console.error("Failed to add member to project:", error);
-      toast.error("Failed to add member");
+      toast.error(t.translations.FAILED_TO_ADD_MEMBER);
     } finally {
       setModalLoading(false);
     }
@@ -414,12 +415,12 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleRemoveMember = async () => {
     if (!organizationId || !projectId) {
-      toast.error("Missing organization or project");
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
       return;
     }
 
     if (!confirmModal.memberId || !confirmModal.memberType) {
-      toast.error("No member selected to remove");
+      toast.error(t.translations.NO_MEMBER_SELECTED_TO_REMOVE);
       return;
     }
 
@@ -446,10 +447,10 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
       setTableData((prev) => prev.filter((row) => row.memberId !== memberId));
 
-      toast.success("Member removed from project");
+      toast.success(t.translations.MEMBER_REMOVED_FROM_PROJECT);
     } catch (error) {
       console.error("Failed to remove member from project:", error);
-      toast.error("Failed to remove member");
+      toast.error(t.translations.FAILED_TO_REMOVE_MEMBER);
     } finally {
       setLoading(false);
       setConfirmModal({

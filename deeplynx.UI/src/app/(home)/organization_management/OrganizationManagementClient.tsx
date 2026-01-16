@@ -1,26 +1,22 @@
 // src/app/(home)/organization_management/OrganizationManagementClient.tsx
 "use client";
 
-import React, { useState } from "react";
+import { useLanguage } from "@/app/contexts/Language";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { useState } from "react";
 import Tabs from "../components/Tabs";
 import {
   GroupResponseDto,
-  ProjectResponseDto,
-  UserResponseDto,
-  RoleResponseDto,
   PermissionResponseDto,
+  ProjectResponseDto,
+  RoleResponseDto,
+  UserResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "./users/UsersTable";
-import { useLanguage } from "@/app/contexts/Language";
-import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import InlineGroupsTable from "./groups/InlineGroupsTable";
 import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
 import OrganizationSettings from "./settings/OrganizationSettings";
-import TagManagementClient from "./tag_management/TagManagementClient";
 import OptionThree from "./tag_management/OptionThree";
-import SettingsOne from "./settings/SettingsOne";
-import SettingsTwo from "./settings/SettingsTwo";
-import SettingsThree from "./settings/SettingsThree";
+import UsersTable from "./users/UsersTable";
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
@@ -68,19 +64,13 @@ const OrganizationManagementClient = ({
     },
     {
       label: t.translations.TAGS_AND_SECURITY_LABELS,
-      // content: <TagManagementClient />,
-      // content: <OptionOne />,
-      // content: <OptionTwo />,
       content: <OptionThree projects={initialProjects} />,
     },
     {
       label: t.translations.SETTINGS,
       content: organization ? (
-        // <OrganizationSettings organization={organization} />
-        <SettingsOne />
+        <OrganizationSettings />
       ) : (
-        // <SettingsTwo />
-        // <SettingsThree />
         <div>{t.translations.NO_ORG_SELECTED}</div>
       ),
     },
