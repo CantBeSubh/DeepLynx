@@ -250,7 +250,7 @@ const OrganizationSettings = () => {
                         {logoFile ? "Change Logo" : "Select Logo"}
                         <input
                           type="file"
-                          accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                          accept=".png,.jpg,.jpeg,.svg,.webp"
                           className="hidden"
                           onChange={(e) => handleLogoChange(e.target.files)}
                         />
