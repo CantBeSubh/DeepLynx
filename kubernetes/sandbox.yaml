@@ -43,7 +43,7 @@ spec:
     - ReadWriteMany # Allows multiple pods to access the same volume
   resources:
     requests:
-      storage: 20Gi # Adjust size based on your timeseries data needs
+      storage: 60Gi # Adjust size based on your timeseries data needs
   storageClassName: azurefile-duckdb
 
 ---
