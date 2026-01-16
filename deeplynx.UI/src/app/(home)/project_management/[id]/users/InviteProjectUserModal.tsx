@@ -33,8 +33,9 @@ const InviteProjectUserModal: React.FC<InviteProjectUserModalProps> = ({
   onChangeEmail,
   onChangeRole,
 }) => {
-  if (!isOpen) return null;
   const { t } = useLanguage();
+  if (!isOpen) return null;
+
   const inviteDisabled = !inviteEmail || !selectedRoleId || modalLoading;
 
   return (

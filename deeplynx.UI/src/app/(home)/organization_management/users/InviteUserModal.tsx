@@ -26,9 +26,9 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
   onInvite,
   onChangeEmail,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
-  const { t } = useLanguage();
   const inviteDisabled = !inviteEmail || modalLoading;
 
   return (
