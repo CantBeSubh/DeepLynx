@@ -976,6 +976,37 @@ public class RecordBusiness : IRecordBusiness
         return maxDepth + 1;
     }
 
+     /// <summary>
+    ///     Make sure every object storage ID exists, filtering in memory with one DB trip
+    /// </summary>
+    /// <param name="projectId">
+    ///     Shared project ID of the object storages
+    ///     <param name="records">
+    ///         Records with object storages to check
+    ///         <exception cref="KeyNotFoundException">If an object storage ID is not found</exception>
+    ///         <returns>Exception if obj storage ID not exist</returns>
+    private async Task EnsureMultipleObjectStoragesExistOnce(long projectId, List<CreateRecordRequestDto> records)
+    {
+        var ids = records.Where(r => r.ObjectStorageId.HasValue)
+            .Select(r => r.ObjectStorageId!.Value)
+            .Distinct()
+            .ToArray();
+        if (ids.Length == 0) return;
+
+        // One database round trip                                                                                                            
+        var ok = await _context.ObjectStorages
+            .Where(os => os.ProjectId == projectId && ids.Contains(os.Id))
+            .Select(os => os.Id)
+            .ToListAsync();
+
+        if (ok.Count != ids.Length)
+        {
+            var missing = ids.Except(ok).Take(5);
+            throw new KeyNotFoundException(
+                $"One or more object storage IDs do not exist in project {projectId} (e.g., {string.Join(",", missing)}).");
+        }
+    }
+
     private async Task CheckObjectStorageExists(long projectId, long objectStorageId)
     {
         var referencedObjectStorage =

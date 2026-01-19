@@ -467,6 +467,61 @@ public class EdgeBusiness : IEdgeBusiness
     }
 
     /// <summary>
+    ///     Processes a list of edges, adding new nodes and links to our graph data structures
+    /// </summary>
+    /// <param name="edges">The edges to process</param>
+    /// <param name="nodes">Dictionary of all nodes in the graph (we add to this)</param>
+    /// <param name="links">List of all links in the graph (we add to this)</param>
+    /// <param name="visitedEdges">Set of edge IDs we've already processed (prevents duplicates)</param>
+    /// <param name="nextLevelRecords">List to add newly discovered node IDs to (for next depth level)</param>
+    /// <param name="isOutgoing">True if these are outgoing edges, False if incoming</param>
+    private void ProcessEdges(
+        List<Edge> edges,
+        Dictionary<long, GraphNode> nodes,
+        List<GraphLink> links,
+        HashSet<long> visitedEdges,
+        List<long> nextLevelRecords,
+        bool isOutgoing)
+    {
+        foreach (var edge in edges)
+        {
+            // Skip if edge already visited
+            if (visitedEdges.Contains(edge.Id)) continue;
+
+            visitedEdges.Add(edge.Id);
+
+            // Figure out which record is on the other side of this edge
+            var connectedRecordId = isOutgoing ? edge.DestinationId : edge.OriginId;
+            var connectedRecord = isOutgoing ? edge.Destination : edge.Origin;
+
+            // If this is a new node, add it to the graph
+            if (!nodes.ContainsKey(connectedRecordId))
+            {
+                nodes[connectedRecordId] = new GraphNode
+                {
+                    Id = connectedRecordId,
+                    Label = connectedRecord.Name,
+                    Type = "node"
+                };
+
+                // Add this node to the list of nodes to explore in the next depth level
+                nextLevelRecords.Add(connectedRecordId);
+            }
+
+            // Add the link between nodes to the graph
+            // Note: we always store Source -> Target in the original edge direction
+            links.Add(new GraphLink
+            {
+                Source = edge.OriginId,
+                Target = edge.DestinationId,
+                RelationshipId = edge.RelationshipId,
+                RelationshipName = edge.Relationship?.Name,
+                EdgeId = edge.Id
+            });
+        }
+    }
+
+    /// <summary>
     ///     Private method to facilitate boilerplate code for finding edges by ID or origin/destination
     /// </summary>
     /// <param name="organizationId">The ID of the organization under which project exists</param>
@@ -506,22 +561,6 @@ public class EdgeBusiness : IEdgeBusiness
         }
 
         return edge;
-    }
-
-    /// <summary>
-    /// Determine if datasource exists
-    /// </summary>
-    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if datasource does not exist</returns>
-    private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
-    {
-        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
-                : _context.DataSources.Any(p => p.Id == datasourceId);
-        if (!datasource)
-        {
-            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
-        }
     }
 
 
