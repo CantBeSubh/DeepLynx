@@ -14,6 +14,10 @@ import {
 import ArchiveDelete from "@/app/(home)/components/ArchiveDelete";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
 import { useLanguage } from "@/app/contexts/Language";
+import {
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+} from "@heroicons/react/24/outline";
 
 interface ProjectSettingsProps {
   project: ProjectResponseDto | null;
@@ -110,11 +114,6 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
   const handleRemoveLogo = async () => {
     if (!organization?.organizationId || !project?.id) return;
 
-    // Show confirmation dialog
-    if (!confirm("Are you sure you want to remove the project logo?")) {
-      return;
-    }
-
     try {
       await removeProjectLogo({
         organizationId: organization.organizationId as number,
@@ -123,10 +122,10 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
 
       setLogoFile(null);
       setLogoPreview(null);
-      toast.success("Logo removed successfully!");
+      toast.success(t.translations.LOGO_REMOVED_SECCESSFULLY);
     } catch (error) {
       console.error("Failed to remove logo:", error);
-      toast.error("Failed to remove logo");
+      toast.error(t.translations.FAILED_TO_REMOVE_LOGO);
     }
   };
 
@@ -154,20 +153,8 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
     return (
       <div className="p-6">
         <div className="alert alert-warning">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-          <span>No project selected</span>
+          <ExclamationTriangleIcon className="size-6" />
+          <span>{t.translations.NO_PROJECT_SELECTED}</span>
         </div>
       </div>
     );
@@ -179,17 +166,19 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
         {/* Page Header */}
         <div className="border-b border-base-300 pb-4">
           <h2 className="text-2xl font-bold text-base-content">
-            Project Settings
+            {t.translations.PROJECT_SETTINGS}
           </h2>
           <p className="text-base-content/70 text-sm mt-1">
-            Configure branding and manage your project
+            {t.translations.CONFIGURE_BRANDING_AND_MANAGE_YOUR_PROJECT}
           </p>
         </div>
 
         {/* Logo Section */}
         <div className="card bg-base-100 border border-primary/40 shadow-sm max-w-[40%]">
           <div className="card-body">
-            <h3 className="card-title text-lg mb-4">Project Logo</h3>
+            <h3 className="card-title text-lg mb-4">
+              {t.translations.PROJECT_LOGO}
+            </h3>
 
             <div className="flex items-start gap-6 mb-6">
               {/* Logo Preview */}
@@ -201,14 +190,13 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
                       alt="Project Logo"
                       className="object-contain w-full h-full p-2"
                       onError={() => {
-                        // If image fails to load, clear preview
                         setLogoPreview(null);
                       }}
                     />
                   ) : (
                     <div className="text-center p-4">
                       <span className="text-base-content/40 text-sm">
-                        No Logo
+                        {t.translations.NO_LOGO}
                       </span>
                     </div>
                   )}
@@ -222,7 +210,7 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
                     {project?.name || "Project"}
                   </span>
                   <span className="text-sm text-base-content/60">
-                    Project Logo
+                    {t.translations.PROJECT_LOGO}
                   </span>
                 </div>
 
@@ -248,7 +236,7 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
                         {isUploading && (
                           <span className="loading loading-spinner loading-xs" />
                         )}
-                        Upload
+                        {t.translations.UPLOAD}
                       </button>
 
                       <button
@@ -257,51 +245,50 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
                         onClick={handleCancelSelection}
                         disabled={isUploading}
                       >
-                        Cancel
+                        {t.translations.CANCEL}
                       </button>
                     </>
                   )}
 
                   {logoPreview && !logoFile && (
-                    <button
-                      type="button"
+                    <label
+                      htmlFor="remove_project_logo"
                       className="btn btn-sm btn-error btn-outline"
-                      onClick={handleRemoveLogo}
                     >
-                      Remove Logo
-                    </button>
+                      {t.translations.REMOVE_LOGO}
+                    </label>
                   )}
                 </div>
 
                 {logoFile && (
                   <div className="alert alert-info">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      className="stroke-current shrink-0 w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      ></path>
-                    </svg>
+                    <InformationCircleIcon className="size-6" />
                     <span className="text-sm">
-                      Click "Upload" to save your changes
+                      {t.translations.CLICK_UPLOAD_TO_SAVE_YOUR_CHANGES}
                     </span>
                   </div>
                 )}
 
                 <div className="text-xs text-base-content/60 bg-base-200 p-3 rounded-lg">
-                  <p className="font-semibold mb-1">Logo Guidelines:</p>
+                  <p className="font-semibold mb-1">
+                    {t.translations.LOGO_GUIDLINES}:
+                  </p>
                   <ul className="list-disc list-inside space-y-1">
-                    <li>Replaces the folder icon next to the project name</li>
-                    <li>Recommended: PNG with transparent background</li>
-                    <li>Optimal size: 256×256 pixels</li>
-                    <li>Maximum file size: 5MB</li>
-                    <li>Supported formats: PNG, JPG, SVG, WebP</li>
+                    <li>
+                      {
+                        t.translations
+                          .REPLACES_THE_FOLDER_ICON_NEXT_TO_THE_PROJECT_NAME
+                      }
+                    </li>
+                    <li>
+                      {
+                        t.translations
+                          .RECOMMENDED_PNG_WITH_TRANSPARENT_BACKGROUND
+                      }
+                    </li>
+                    <li>{t.translations.OPTIMAL_SIZE_FOR_LOGO}</li>
+                    <li>{t.translations.FILE_SIZE_MUST_BE_5MB}</li>
+                    <li>{t.translations.SUPPORTED_FORMATS_FOR_LOGO}</li>
                   </ul>
                 </div>
               </div>
@@ -327,6 +314,33 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
               window.location.href = "/";
             }}
           />
+        </div>
+      </div>
+
+      {/* Remove Logo Modal */}
+      <input
+        type="checkbox"
+        id="remove_project_logo"
+        className="modal-toggle"
+      />
+      <div className="modal" role="dialog">
+        <div className="modal-box">
+          <h3 className="text-lg font-bold">{t.translations.REMOVE_LOGO}</h3>
+          <p className="py-4">
+            {t.translations.ARE_YOU_SURE_YOU_WANT_TO_REMOVE_LOGO_FROM_PROJECT}
+          </p>
+          <div className="modal-action">
+            <label htmlFor="remove_project_logo" className="btn">
+              {t.translations.CANCEL}
+            </label>
+            <label
+              htmlFor="remove_project_logo"
+              className="btn btn-outline btn-secondary"
+              onClick={handleRemoveLogo}
+            >
+              {t.translations.REMOVE}
+            </label>
+          </div>
         </div>
       </div>
     </div>

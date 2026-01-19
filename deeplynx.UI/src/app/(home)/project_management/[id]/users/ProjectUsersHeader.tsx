@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/app/contexts/Language";
 import {
   UserGroupIcon,
   UserIcon,
@@ -28,15 +29,20 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
   onAddUser,
   onAddGroup,
 }) => {
+  const { t } = useLanguage();
   return (
     <>
       {/* Header */}
       <div className="flex justify-between items-center mb-6 border-b border-base-300 pb-4">
         <div>
-          <h2 className="text-2xl font-bold">Project Members</h2>
+          <h2 className="text-2xl font-bold">
+            {t.translations.PROJECT_MEMBERS}
+          </h2>
           <p className="text-base-content/70 mt-1">
-            Manage users and groups assigned to this project. A role is required
-            for each member.
+            {
+              t.translations
+                .MANAGE_USERS_AND_GROUPS_ASSIGNED_TO_THIS_PROJECT_A_ROLE_IS_REQUIRED_FOR_EACH_MEMBER
+            }
           </p>
         </div>
         <div className="flex gap-2">
@@ -45,14 +51,14 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
             disabled={loading}
             onClick={onAddGroup}
           >
-            Add Group
+            {t.translations.ADD_GROUP}
           </button>
           <button
             className="btn btn-primary btn-sm"
             disabled={loading}
             onClick={onAddUser}
           >
-            Add User
+            {t.translations.ADD_USER}
           </button>
         </div>
       </div>
@@ -60,7 +66,7 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="stat bg-base-200 rounded-lg text-secondary border-none">
-          <div className="stat-title">Total Members</div>
+          <div className="stat-title">{t.translations.TOTAL_MEMBERS}</div>
           <div className="flex justify-between">
             <div className="stat-value">{totalMembers}</div>
             <UserGroupIcon className="size-8" />
@@ -68,7 +74,7 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
         </div>
 
         <div className="stat bg-base-200 rounded-lg text-secondary border-none">
-          <div className="stat-title">Users</div>
+          <div className="stat-title">{t.translations.USERS}</div>
           <div className="flex justify-between">
             <div className="stat-value">{userCount}</div>
             <UserIcon className="size-8" />
@@ -76,7 +82,7 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
         </div>
 
         <div className="stat bg-base-200 rounded-lg text-secondary border-none">
-          <div className="stat-title">Groups</div>
+          <div className="stat-title">{t.translations.GROUPS}</div>
           <div className="flex justify-between">
             <div className="stat-value">{groupCount}</div>
             <UsersIcon className="size-8" />
