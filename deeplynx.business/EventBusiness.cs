@@ -707,8 +707,6 @@ public class EventBusiness : IEventBusiness
         List<CreateEventRequestDto> events
     )
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, false);
-
         foreach (var dto in events)
         {
             ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
@@ -758,103 +756,4 @@ public class EventBusiness : IEventBusiness
 
         return response;
     }
-     /// <summary>
-    ///     Create a new record
-    /// </summary>
-    /// <param name="currentUserId">ID of the User executing this method.</param>
-    /// <param name="organizationId">The ID of the organization to which the project belongs</param>
-    /// <param name="projectId">The ID of the project under which to create the record</param>
-    /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
-    /// <param name="dto">The data transfer object containing details on the record to be created</param>
-    /// <returns>The newly created metadata record</returns>
-    /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
-    /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
-    public async Task<RecordResponseDto> CreateRecord(long currentUserId, long organizationId, long projectId,
-        long dataSourceId,
-        CreateRecordRequestDto dto)
-    {
-        ValidationHelper.ValidateModel(dto);
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-
-        if (dto.Properties == null)
-            throw new ArgumentNullException(nameof(dto.Properties), "Properties cannot be null");
-
-        var maxDepth = CalculateJsonMaxDepth(dto.Properties);
-        if (maxDepth > 3)
-            throw new Exception(
-                $"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
-
-        if (dto.ObjectStorageId != null) await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
-
-        await using var transaction = await _context.Database.BeginTransactionAsync();
-
-        try
-        {
-            var record = new Record
-            {
-                ProjectId = projectId,
-                DataSourceId = dataSourceId,
-                Uri = dto.Uri,
-                ObjectStorageId = dto.ObjectStorageId,
-                Properties = dto.Properties.ToString()!,
-                OriginalId = dto.OriginalId,
-                Name = dto.Name,
-                Description = dto.Description,
-                ClassId = dto.ClassId,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = currentUserId,
-                FileType = dto.FileType,
-                OrganizationId = organizationId
-            };
-
-            _context.Records.Add(record);
-            await _context.SaveChangesAsync();
-
-            // We need to handle tag creation/linking separate of record object save
-            var tags = await ProcessTags(currentUserId, organizationId, projectId, record.Id, dto.Tags);
-
-            // Log Record Create Event
-            await _eventBusiness.CreateEvent(
-                currentUserId,
-                organizationId,
-                projectId,
-                new CreateEventRequestDto
-                {
-                    EntityType = "record",
-                    EntityId = record.Id,
-                    EntityName = record.Name,
-                    Operation = "create",
-                    Properties = "{}",
-                    DataSourceId = record.DataSourceId
-                });
-
-            await transaction.CommitAsync();
-
-            return new RecordResponseDto
-            {
-                Id = record.Id,
-                Description = record.Description,
-                Uri = record.Uri,
-                Properties = record.Properties,
-                ObjectStorageId = record.ObjectStorageId,
-                OriginalId = record.OriginalId,
-                Name = record.Name,
-                ClassId = record.ClassId,
-                DataSourceId = record.DataSourceId,
-                ProjectId = record.ProjectId,
-                OrganizationId = record.OrganizationId,
-                LastUpdatedBy = record.LastUpdatedBy,
-                LastUpdatedAt = record.LastUpdatedAt,
-                IsArchived = record.IsArchived,
-                FileType = record.FileType,
-                Tags = tags
-            };
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw new Exception("Unable to create record and/or create/attach tags");
-        }
-    }
-    
 }

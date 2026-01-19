@@ -373,7 +373,7 @@ public class RecordBusiness : IRecordBusiness
         }).ToList();
     }
 
-     /// <summary>
+    /// <summary>
     ///     Create a new record
     /// </summary>
     /// <param name="currentUserId">ID of the User executing this method.</param>
@@ -443,23 +443,29 @@ public class RecordBusiness : IRecordBusiness
                     DataSourceId = record.DataSourceId
                 });
 
-        return new RecordResponseDto
+            return new RecordResponseDto
+            {
+                Id = record.Id,
+                Description = record.Description,
+                Uri = record.Uri,
+                Properties = record.Properties,
+                ObjectStorageId = record.ObjectStorageId,
+                OriginalId = record.OriginalId,
+                Name = record.Name,
+                ClassId = record.ClassId,
+                DataSourceId = record.DataSourceId,
+                ProjectId = record.ProjectId,
+                LastUpdatedBy = record.LastUpdatedBy,
+                LastUpdatedAt = record.LastUpdatedAt,
+                IsArchived = record.IsArchived,
+                FileType = record.FileType
+            };
+        }
+        catch
         {
-            Id = record.Id,
-            Description = record.Description,
-            Uri = record.Uri,
-            Properties = record.Properties,
-            ObjectStorageId = record.ObjectStorageId,
-            OriginalId = record.OriginalId,
-            Name = record.Name,
-            ClassId = record.ClassId,
-            DataSourceId = record.DataSourceId,
-            ProjectId = record.ProjectId,
-            LastUpdatedBy = record.LastUpdatedBy,
-            LastUpdatedAt = record.LastUpdatedAt,
-            IsArchived = record.IsArchived,
-            FileType = record.FileType
-        };
+            await transaction.RollbackAsync();
+            throw new Exception("Unable to create record and/or create/attach tags");
+        }
     }
 
     /// <summary>
@@ -480,7 +486,6 @@ public class RecordBusiness : IRecordBusiness
         long dataSourceId,
         List<CreateRecordRequestDto> records)
     {
-       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
        if (records.Count == 0) throw new Exception("Unable to bulk create records: no records selected for creation");
@@ -577,87 +582,14 @@ public class RecordBusiness : IRecordBusiness
         var events = new List<CreateEventRequestDto>(inserted.Count);
         events.AddRange(inserted.Select(r => new CreateEventRequestDto
         {
-            Operation = "create", EntityType = "record",
-            EntityId = r.Id, EntityName = r.Name, ProjectId = r.ProjectId,
-            DataSourceId = r.DataSourceId, Properties = "{}"
+            Operation = "create",
+            EntityType = "record",
+            DataSourceId = dataSourceId
         }));
         await _eventBusiness.BulkInsertEventsWithCopyAsync(conn, tx, events, projectId, UserContextStorage.UserId);
 
         await tx.CommitAsync();
         return inserted;
-    }
-
-    /// <summary>
-    ///     Archive a metadata record.
-    /// </summary>
-    /// <param name="projectId">The ID of the project to which the record belongs</param>
-    /// <param name="recordId">The ID of the record to be updated</param>
-    /// <param name="dto">The data transfer object containing details on the record to be updated</param>
-    /// <returns>The newly updated metadata record</returns>
-    /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, UpdateRecordRequestDto dto)
-    {
-        var record= await _context.Records.FindAsync(recordId);
-        if (record == null || record.ProjectId != projectId || record.IsArchived)
-        {
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-        }
-        
-        var maxDepth = CalculateJsonMaxDepth(dto.Properties);
-        if (maxDepth > 3)
-        {
-            throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
-        }
-
-        if (dto.ObjectStorageId != null)
-        {
-            await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
-        }
-        
-        record.Uri = dto.Uri ?? record.Uri;
-        record.Properties = dto.Properties != null ? dto.Properties.ToString() : record.Properties;
-        record.OriginalId = dto.OriginalId ?? record.OriginalId;
-        record.ObjectStorageId = dto.ObjectStorageId ?? record.ObjectStorageId;
-        record.Name = dto.Name ?? record.Name;
-        record.Description = dto.Description ?? record.Description;
-        record.ClassId = dto.ClassId ?? record.ClassId;
-        record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        record.LastUpdatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
-        record.FileType = dto.FileType ?? record.FileType;
-        
-        _context.Records.Update(record);
-        await _context.SaveChangesAsync();
-        
-        // Log Record Update Event
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            ProjectId = record.ProjectId,
-            EntityType = "record",
-            EntityId = record.Id,
-            EntityName = record.Name,
-            Operation = "update",
-            Properties = "{}",
-            DataSourceId = record.DataSourceId,
-        });
-        
-        return new RecordResponseDto
-        {
-            Id = record.Id,
-            Description = record.Description,
-            Uri = record.Uri,
-            Properties = record.Properties,
-            ObjectStorageId = record.ObjectStorageId,
-            OriginalId = record.OriginalId,
-            Name = record.Name,
-            ClassId = record.ClassId,
-            DataSourceId = record.DataSourceId,
-            ProjectId = record.ProjectId,
-            LastUpdatedBy = record.LastUpdatedBy,
-            LastUpdatedAt = record.LastUpdatedAt,
-            IsArchived = record.IsArchived,
-            FileType = record.FileType
-        };
-        
     }
 
     /// <summary>
@@ -670,7 +602,6 @@ public class RecordBusiness : IRecordBusiness
     /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId)
