@@ -40,11 +40,12 @@ const OrganizationSettings = () => {
 
   // Placeholder states (disabled)
   const [bannerText, setBannerText] = useState(
-    "This organization space may contain sensitive data that must be protected accordingly."
+    t.translations.THIS_ORG_SPACE_MAY_CONTAIN_SENSATIVE_DATA,
   );
   const [storageLocation, setStorageLocation] = useState<string>("org-default");
   const [expandedService, setExpandedService] = useState<string | null>(null);
 
+  // TODO: This is just place fillers for now
   const services: Service[] = [
     {
       id: "insight",
@@ -80,7 +81,7 @@ const OrganizationSettings = () => {
       try {
         setIsCheckingLogo(true);
         const logoUrl = await getOrganizationLogoUrl(
-          organization.organizationId as number
+          organization.organizationId as number,
         );
 
         if (logoUrl) {
@@ -142,7 +143,7 @@ const OrganizationSettings = () => {
       toast.error(
         error instanceof Error
           ? error.message
-          : t.translations.FAILED_TO_UPLOAD_LOGO
+          : t.translations.FAILED_TO_UPLOAD_LOGO,
       );
     } finally {
       setIsUploading(false);
@@ -172,7 +173,7 @@ const OrganizationSettings = () => {
     // Restore previous logo if it exists
     if (organization?.organizationId) {
       const logoUrl = await getOrganizationLogoUrl(
-        organization.organizationId as number
+        organization.organizationId as number,
       );
       setLogoPreview(logoUrl);
     } else {
@@ -347,7 +348,7 @@ const OrganizationSettings = () => {
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="card-title text-lg flex items-center gap-2">
-                    Storage Settings
+                    {t.translations.STORAGE_SETTINGS}
                     <span className="badge badge-warning badge-sm">
                       {t.translations.COMING_SOON}
                     </span>

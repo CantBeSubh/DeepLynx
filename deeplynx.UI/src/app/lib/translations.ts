@@ -246,7 +246,7 @@ export const translations = {
             CREATE_OBJECT_STORAGE: "Create Object Storage",
             CONNECTION_STRING: "Connection String",
             ROLES_AND_PERMISSIONS: "Roles & Permissions",
-            TAGS_AND_SECURITY_LABELS: "Tags and Security Labels",
+            TAGS_AND_SECURITY_LABELS: "Tags & Security Labels",
             NO_ORG_SELECTED: "No organization selected",
             CREATE_NEW_GROUP: "Create New Group",
             GROUP_NAME_STAR: "Group Name *",
@@ -325,9 +325,22 @@ export const translations = {
             SERVICE_CONFIG_WILL_BE_AVAILABLE_SOON: "Service configuration will be available in a future release",
             ARE_YOU_SURE_TO_REMOVE_LOGO_FROM_ORG: "Are you sure you want to remove the organization logo?",
 
-
-
-
+            SWITCH_ORGANIZATION: "Switch Organization",
+            CURRENT: "Current",
+            VIEW_ALL_ORGANIZATIONS: "View All Organizations",
+            MANAGE_USERS_IN_YOUR_ORG_INVITE_VIA_EMAIL: "Manage users in your organization. Invite new users via email or add them directly.",
+            THIS_ORG_SPACE_MAY_CONTAIN_SENSATIVE_DATA: "This organization space may contain sensitive data that must be protected accordingly.",
+            STORAGE_SETTINGS: "Storage Settings",
+            DATA_SOURCES: "Data Sources",
+            MANAGING_SETTINGS_FOR_PROJECT: "Managing settings for project",
+            PROJECT_ROLES_AND_PERMISSIONS: "Project Roles & Permissions",
+            VIEW_PROJECT_LEVEL_ROLES_AND_PERMISSIONS: "View project-level roles and their permissions. Standard roles are defined by the system and are read-only in this release.",
+            ROLES_LOCKED_BY_ORG: "Roles Locked by Organization",
+            PROJECT_LEVEL_ROLE_CREATION_AND_PERMISSION_MODIFICATION_DESCRIPTION: "Project-level role creation and permission modification is disabled. Contact your organization administrator to unlock.",
+            VIEW_LAYOUT: "View Layout",
+            SPLIT_VIEW: "Split View",
+            MATRIX_VIEW: "Matrix View",
+            
 
 
         }

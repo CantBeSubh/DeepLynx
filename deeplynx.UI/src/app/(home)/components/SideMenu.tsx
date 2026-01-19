@@ -78,7 +78,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       setLoadingProjects(true);
       const data = await getAllProjects(
         organization.organizationId as number,
-        true
+        true,
       );
       setProjects(data);
     } catch (error) {
@@ -107,7 +107,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   useEffect(() => {
     if (project?.projectId && projects.length > 0) {
       const foundProject = projects.find(
-        (p) => p.id.toString() === project.projectId
+        (p) => p.id.toString() === project.projectId,
       );
       if (foundProject) {
         setActiveProject(foundProject);
@@ -187,7 +187,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
   const handleItemClick = (
     item: string,
-    event: React.MouseEvent<HTMLElement>
+    event: React.MouseEvent<HTMLElement>,
   ) => {
     if (isDisabled(item)) {
       event.preventDefault();
@@ -259,7 +259,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                         alt={activeProject?.name || "Project"}
                         className="object-contain w-full h-full p-1"
                         onError={() => {
-                          // If image fails to load, clear logo URL to show folder icon
                           setProjectLogoUrl(null);
                         }}
                       />
@@ -369,11 +368,11 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 onClick={(e) =>
                   handleItemClick(
                     `/project_management/${project?.projectId || ""}`,
-                    e
+                    e,
                   )
                 }
                 className={getItemClass(
-                  `/project_management/${project?.projectId || ""}`
+                  `/project_management/${project?.projectId || ""}`,
                 )}
               >
                 <AdjustmentsHorizontalIcon className="size-6" />

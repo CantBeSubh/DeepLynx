@@ -44,7 +44,7 @@ const ProjectManagementClient = ({
 
   const tabData = [
     {
-      label: "Users",
+      label: t.translations.USERS,
       content: (
         <ProjectUsersTable
           members={projectMembers}
@@ -54,7 +54,7 @@ const ProjectManagementClient = ({
       ),
     },
     {
-      label: "Roles & Permissions",
+      label: t.translations.ROLES_AND_PERMISSIONS,
       content: (
         <ProjectRolesAndPermissions
           initialRoles={projectRoles}
@@ -64,11 +64,11 @@ const ProjectManagementClient = ({
       ),
     },
     {
-      label: "Data Sources",
+      label: t.translations.DATA_SOURCES,
       content: <DataSources projectId={project?.id as number} />,
     },
     {
-      label: "Tags & Security Labels",
+      label: t.translations.TAGS_AND_SECURITY_LABELS,
       content: (
         <ProjectTagAndLabelManagementClient
           project={project as ProjectResponseDto}
@@ -77,7 +77,7 @@ const ProjectManagementClient = ({
       ),
     },
     {
-      label: "Settings",
+      label: t.translations.SETTINGS,
       content: <ProjectSettings project={project} />,
     },
   ];
@@ -90,7 +90,7 @@ const ProjectManagementClient = ({
         </h1>
         {(project || sessionProject) && (
           <p className="text-sm text-base-content/70 mt-1">
-            Managing settings for project:{" "}
+            {t.translations.MANAGING_SETTINGS_FOR_PROJECT}:{" "}
             <span className="font-semibold">
               {project?.name || sessionProject?.projectName}
             </span>

@@ -13,6 +13,7 @@ import {
 } from "@/app/lib/client_service/projects_services.client";
 import ArchiveDelete from "@/app/(home)/components/ArchiveDelete";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
+import { useLanguage } from "@/app/contexts/Language";
 
 interface ProjectSettingsProps {
   project: ProjectResponseDto | null;
@@ -21,7 +22,7 @@ interface ProjectSettingsProps {
 const ProjectSettings = ({ project }: ProjectSettingsProps) => {
   const { clearProject } = useProjectSession();
   const { organization } = useOrganizationSession();
-
+  const { t } = useLanguage();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -59,14 +60,14 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload a valid image file (PNG recommended).");
+      toast.error(t.translations.PLEASE_UPLOAD_VALID_IMAGE);
       return;
     }
 
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB in bytes
     if (file.size > maxSize) {
-      toast.error("File size must be less than 5MB");
+      toast.error(t.translations.FILE_SIZE_MUST_BE_5MB);
       return;
     }
 
@@ -77,7 +78,7 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
 
   const handleUploadLogo = async () => {
     if (!organization?.organizationId || !project?.id || !logoFile) {
-      toast.error("No file selected");
+      toast.error(t.translations.NO_FILE_SELECTED);
       return;
     }
 
@@ -93,11 +94,13 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
       // Add timestamp to force browser to reload the image
       setLogoPreview(`${result.logoUrl}?t=${Date.now()}`);
       setLogoFile(null);
-      toast.success("Logo uploaded successfully!");
+      toast.success(t.translations.LOGO_UPLOADED_SUCCESSFULLY);
     } catch (error) {
       console.error("Failed to upload logo:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to upload logo"
+        error instanceof Error
+          ? error.message
+          : t.translations.FAILED_TO_UPLOAD_LOGO,
       );
     } finally {
       setIsUploading(false);
@@ -317,7 +320,7 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
                 await archiveProject(
                   organization.organizationId as number,
                   project.id as number,
-                  true
+                  true,
                 );
               }
               clearProject();

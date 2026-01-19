@@ -46,7 +46,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>(
-    []
+    [],
   );
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
@@ -83,7 +83,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
       try {
         const logoUrl = await getOrganizationLogoUrl(
-          organization.organizationId as number
+          organization.organizationId as number,
         );
         setOrgLogoUrl(logoUrl);
       } catch (error) {
@@ -152,7 +152,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Function to handle item click events
   const handleItemClick = (
     item: string,
-    event: React.MouseEvent<HTMLElement>
+    event: React.MouseEvent<HTMLElement>,
   ) => {
     event.preventDefault();
     setSelectedItem(item);
@@ -190,7 +190,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               )}
 
               <div className="flex flex-col">
-                <span className="text-xs opacity-70">Organization</span>
+                <span className="text-xs opacity-70">
+                  {t.translations.ORGANIZATION}
+                </span>
                 <h1 className="text-lg font-bold truncate">
                   {organization?.organizationName || "No Organization"}
                 </h1>
@@ -223,7 +225,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <>
                   <li className="menu-title">
                     <span className="text-base-content/70">
-                      Switch Organization
+                      {t.translations.SWITCH_ORGANIZATION}
                     </span>
                   </li>
                   {organizations.map((org) => (
@@ -248,7 +250,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         </div>
                         {organization?.organizationId === org.id && (
                           <span className="badge badge-sm shrink-0 whitespace-nowrap !text-base-content">
-                            Current
+                            {t.translations.CURRENT}
                           </span>
                         )}
                       </a>
@@ -262,7 +264,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       onClick={() => setIsOrgDropdownOpen(false)}
                     >
                       <UserGroupIcon className="size-5" />
-                      View All Organizations
+                      {t.translations.VIEW_ALL_ORGANIZATIONS}
                     </Link>
                   </li>
                 </>

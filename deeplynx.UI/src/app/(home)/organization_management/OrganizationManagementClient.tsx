@@ -1,26 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
-import Tabs from "../components/Tabs";
-import {
-  GroupResponseDto,
-  ProjectResponseDto,
-  UserResponseDto,
-  RoleResponseDto,
-  PermissionResponseDto,
-} from "../types/responseDTOs";
-import UsersTable from "../components/users/UsersTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getAllGroups } from "@/app/lib/client_service/group_services.client"; // Add this import
+import { useState } from "react";
+import Tabs from "../components/Tabs";
+import UsersTable from "../components/users/UsersTable";
+import {
+  GroupResponseDto,
+  PermissionResponseDto,
+  ProjectResponseDto,
+  RoleResponseDto,
+  UserResponseDto,
+} from "../types/responseDTOs";
 import InlineGroupsTable from "./groups/InlineGroupsTable";
 import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
 import OrganizationSettings from "./settings/OrganizationSettings";
 import TagManagementClient from "./tag_management/TagManagementClient";
-import OptionThree from "./tag_management/OptionThree";
-import SettingsOne from "./settings/SettingsOne";
-import SettingsTwo from "./settings/SettingsTwo";
-import SettingsThree from "./settings/SettingsThree";
-import { getAllGroups } from "@/app/lib/client_service/group_services.client"; // Add this import
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
@@ -48,7 +44,7 @@ const OrganizationManagementClient = ({
 
     try {
       const updatedGroups = await getAllGroups(
-        organization.organizationId as number
+        organization.organizationId as number,
       );
       setGroups(updatedGroups);
     } catch (err) {
@@ -63,9 +59,7 @@ const OrganizationManagementClient = ({
         <UsersTable
           initialMembers={members}
           header={"Organization Users"}
-          description={
-            "Manage users in your organization. Invite new users via email or add them directly."
-          }
+          description={t.translations.MANAGE_USERS_IN_YOUR_ORG_INVITE_VIA_EMAIL}
         />
       ),
     },
@@ -91,7 +85,7 @@ const OrganizationManagementClient = ({
     },
     {
       label: t.translations.TAGS_AND_SECURITY_LABELS,
-      content: <OptionThree projects={initialProjects} />,
+      content: <TagManagementClient projects={initialProjects} />,
     },
     {
       label: t.translations.SETTINGS,
