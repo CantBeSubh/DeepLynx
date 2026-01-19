@@ -8,8 +8,7 @@ import api from "./api";
 // CONSTANTS
 // ============================================================================
 
-const CHUNK_THRESHOLD = 500 * 1024 * 1024; // 500MB
-const CHUNK_SIZE = 100 * 1024 * 1024;      // 100MB per chunk
+const CHUNK_THRESHOLD = 500 * 1024 * 1024; // 500MB threshold to determine regular or chunked upload
 const MAX_CONCURRENT_CHUNKS = 4;            // Upload 4 chunks simultaneously
 const MAX_RETRIES = 3;                      // Retry failed chunks up to 3 times
 
@@ -131,7 +130,15 @@ async function uploadFileChunked({
 
     uploadId = session.uploadId;
 
-    const chunks = splitFileIntoChunks(file, CHUNK_SIZE);
+    const chunks = splitFileIntoChunks(file, session.chunkSize);
+
+    // Verify the chunk count matches backend expectation
+    if (chunks.length !== session.totalChunks) {
+      console.warn(
+          `Chunk count mismatch: frontend calculated ${chunks.length}, ` +
+          `backend expected ${session.totalChunks}. Using backend value.`
+      );
+    }
 
     await uploadChunksInBatches(chunks, uploadId, {
       organizationId,
@@ -147,7 +154,7 @@ async function uploadFileChunked({
       objectStorageId,
       uploadId,
       fileName: file.name,
-      totalChunks: chunks.length,
+      totalChunks: session.totalChunks,
     });
 
     onProgress?.({
@@ -173,7 +180,7 @@ async function uploadFileChunked({
     }
     throw error;
   } finally {
-    currentUploadAbortController = null; // ADD THIS
+    currentUploadAbortController = null;
   }
 }
 

@@ -12,12 +12,12 @@ namespace deeplynx.business;
 
 public class FileBusiness
 {
-    private const long RecommendedChunkSize = 100_000_000;
     private readonly IClassBusiness _classBusiness;
     private readonly DeeplynxContext _context;
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly IFileBusinessFactory _factory;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
+    private readonly long _recommendedChunkSize;
     private readonly IRecordBusiness _recordBusiness;
 
     // NOTE: Chunked upload methods currently only support filesystem storage.
@@ -37,6 +37,16 @@ public class FileBusiness
         _dataSourceBusiness = dataSourceBusiness;
         _classBusiness = classBusiness;
         _recordBusiness = recordBusiness;
+
+        // Initialize recommended chunk size from environment variable
+        var chunkSizeStr = Environment.GetEnvironmentVariable("RECOMMENDED_CHUNK_SIZE")
+                           ?? throw new InvalidOperationException(
+                               "RECOMMENDED_CHUNK_SIZE environment variable is not set");
+
+        if (!long.TryParse(chunkSizeStr, out var chunkSize) || chunkSize <= 0)
+            throw new InvalidOperationException("RECOMMENDED_CHUNK_SIZE must be a positive number");
+
+        _recommendedChunkSize = chunkSize;
     }
 
     /// <summary>
@@ -263,12 +273,12 @@ public class FileBusiness
         Directory.CreateDirectory(uploadPath);
 
         // Calculate total chunks needed
-        var totalChunks = (int)Math.Ceiling((double)request.FileSize / RecommendedChunkSize);
+        var totalChunks = (int)Math.Ceiling((double)request.FileSize / _recommendedChunkSize);
 
         return new FileUploadSessionResponseDto
         {
             UploadId = uploadId,
-            ChunkSize = RecommendedChunkSize,
+            ChunkSize = _recommendedChunkSize,
             TotalChunks = totalChunks
         };
     }
