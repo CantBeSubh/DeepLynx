@@ -1,20 +1,42 @@
 "use client";
-import { TagResponseDto } from "../../types/responseDTOs";
-import React, { useEffect, useMemo, useState } from "react";
-import { CustomQueryRequestDto } from "../../types/requestDTOs";
-import { HistoricalRecordResponseDto } from "../../types/responseDTOs";
-import { FileViewerTableRow, QueryBuilderQuery } from "@/app/(home)/types/types";
-import ProjectDropdown from "../../components/ProjectDropdown";
-import { translations } from "@/app/lib/translations";
-import AdvancedSearchBar from "../../components/AdvancedSearchBar";
-import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  QueryBuilderQuery,
+} from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { translations } from "@/app/lib/translations";
+import {
+  MagnifyingGlassIcon,
+  PlusIcon,
+  XMarkIcon,
+  FunnelIcon,
+  CalendarIcon,
+  TagIcon,
+  CircleStackIcon,
+  Squares2X2Icon,
+  TrashIcon,
+  ChevronDownIcon,
+  BoltIcon
+} from "@heroicons/react/24/outline";
+import { useEffect, useMemo, useState } from "react";
 import { DatePicker } from "../../components/DatePicker";
-import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
-import { queryBuilder } from "@/app/lib/query_services.client";
-import ListView from "../../components/ListView";
-import { ClassResponseDto } from "../../types/responseDTOs";
-import { DataSourceResponseDto } from "../../types/responseDTOs";
+import ProjectDropdown from "../../components/ProjectDropdown";
+import {
+  ClassResponseDto,
+  DataSourceResponseDto,
+  HistoricalRecordResponseDto,
+  TagResponseDto,
+} from "../../types/responseDTOs";
+import { getAllClassesOrg } from "@/app/lib/client_service/class_services.client";
+import { getAllDataSourcesOrg } from "@/app/lib/client_service/data_source_services.client";
+import { getAllTagsOrg } from "@/app/lib/client_service/tag_services.client";
+import { fullTextSearch, queryBuilder } from "@/app/lib/client_service/query_services.client";
+import RecordSearchList from "../../components/RecordSearchList";
+import { useLanguage } from "@/app/contexts/Language";
+
+// ============================================================================
+// Types & Constants
+// ============================================================================
+
 type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
@@ -23,44 +45,563 @@ type Props = {
   filters?: { name: string; value: string }[];
   operators?: string[];
   values?: string[];
-  queriedRecords: FileViewerTableRow[];
+  organizationId: number;
 };
 
-
+const FILTER_TYPES = [
+  { icon: Squares2X2Icon, label: 'Class', value: 'class_name', color: 'primary' },
+  { icon: TagIcon, label: 'Tags', value: 'tags', color: 'success' },
+  { icon: CircleStackIcon, label: 'Data Source', value: 'data_source_name', color: 'secondary' },
+  { icon: CalendarIcon, label: 'Time Range', value: 'last_updated_at', color: 'warning' },
+] as const;
 
 const newId = () => Math.random().toString(36).slice(2, 10);
-const emptyRow = (): QueryBuilderQuery => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "", jsonKey: "", jsonValue: "" } });
+const emptyRow = (): QueryBuilderQuery => ({
+  id: newId(),
+  query: {
+    connector: "",
+    filter: "",
+    operator: "",
+    value: "",
+    jsonKey: "",
+    jsonValue: "",
+  },
+});
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+interface SearchBarProps {
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  onSearch: () => void;
+  showFilters: boolean;
+  onToggleFilters: () => void;
+  activeFilterCount: number;
+  onClearAll: () => void;
+  canSearch: boolean;
+}
+
+function SearchBar({
+  searchTerm,
+  onSearchChange,
+  onSearch,
+  showFilters,
+  onToggleFilters,
+  activeFilterCount,
+  onClearAll,
+  canSearch,
+}: SearchBarProps) {
+  const { t } = useLanguage();
+  return (
+    <div className="p-6 bg-base-200 rounded-lg">
+      <div className="relative">
+        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-base-content/40" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+          placeholder="Search across all records..."
+          className="input input-bordered w-full pl-12 pr-4"
+        />
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onToggleFilters}
+            className={`btn btn-sm gap-2 ${showFilters ? 'btn-primary' : 'btn-ghost'
+              }`}
+          >
+            <FunnelIcon className="w-4 h-4" />
+            {t.translations.ADDITIONAL_FILTERS}
+            {activeFilterCount > 0 && (
+              <span className="badge badge-sm">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          {activeFilterCount > 0 && (
+            <button
+              onClick={onClearAll}
+              className="btn btn-sm btn-ghost btn-error gap-2"
+            >
+              <XMarkIcon className="w-4 h-4" />
+              {t.translations.DELETE_ALL_FILTERS}
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={onSearch}
+          disabled={!canSearch}
+          className="btn btn-primary btn-sm gap-2"
+        >
+          <BoltIcon className="w-4 h-4" />
+          {t.translations.SEARCH_RECORDS}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface FilterRowProps {
+  row: QueryBuilderQuery;
+  index: number;
+  showConnector: boolean;
+  connectors: string[];
+  filters: { name: string; value: string }[];
+  operators: string[];
+  classes: ClassResponseDto[];
+  datasources: DataSourceResponseDto[];
+  tags: TagResponseDto[];
+  isLoadingClasses: boolean;
+  isLoadingDataSources: boolean;
+  isLoadingTags: boolean;
+  onUpdate: (id: string, patch: Partial<QueryBuilderQuery>) => void;
+  onRemove: (id: string) => void;
+  onFieldChange: (field: string) => void;
+}
+
+function FilterRow({
+  row,
+  index,
+  showConnector,
+  connectors,
+  filters,
+  operators,
+  classes,
+  datasources,
+  tags,
+  isLoadingClasses,
+  isLoadingDataSources,
+  isLoadingTags,
+  onUpdate,
+  onRemove,
+  onFieldChange,
+}: FilterRowProps) {
+  const getFilterIcon = (field: string) => {
+    const type = FILTER_TYPES.find(t => t.value === field);
+    return type ? type.icon : FunnelIcon;
+  };
+
+  const getFilterColor = (field: string) => {
+    const type = FILTER_TYPES.find(t => t.value === field);
+    return type ? type.color : 'base-content';
+  };
+
+  const getFilteredOperators = () => {
+    if (row.query.filter === "properties") return ["KEY_VALUE"];
+    if (row.query.filter === "last_updated_at") return ["<", ">", "="];
+    if (["class_name", "original_id", "data_source_name", "tags"].includes(row.query.filter)) {
+      return operators.filter(op => op !== "<" && op !== ">" && op !== "KEY_VALUE");
+    }
+    return operators;
+  };
+
+  const Icon = getFilterIcon(row.query.filter);
+  const color = getFilterColor(row.query.filter);
+  const { t } = useLanguage();
+
+  return (
+    <div className="card bg-base-200 border border-base-300 hover:border-primary/50 transition-colors">
+      <div className="card-body p-4">
+        <div className="flex items-start gap-3">
+          {/* Connector */}
+          {showConnector && (
+            <div className="pt-1">
+              <select
+                className="select select-sm select-bordered font-semibold"
+                value={row.query.connector ?? ""}
+                onChange={(e) =>
+                  onUpdate(row.id, {
+                    query: { ...row.query, connector: e.target.value },
+                  })
+                }
+              >
+                <option value="" disabled>{t.translations.CONNECTOR}</option>
+                {connectors.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Main Filter Row */}
+          <div className="flex-1 grid grid-cols-12 gap-3">
+            {/* Field Selector */}
+            <div className="col-span-4">
+              <div className="relative">
+                {row.query.filter && (
+                  <div className={`absolute left-3 top-1/2 -translate-y-1/2 p-1 bg-${color}/10 rounded`}>
+                    <Icon className={`w-3 h-3 text-${color}`} />
+                  </div>
+                )}
+                <select
+                  className="select select-sm select-bordered w-full pl-10 appearance-none"
+                  value={row.query.filter}
+                  onChange={(e) => {
+                    onUpdate(row.id, {
+                      query: { ...row.query, filter: e.target.value },
+                    });
+                    onFieldChange(e.target.value);
+                  }}
+                >
+                  <option value="" disabled>{t.translations.FILTER}</option>
+                  {filters.map((opt) => (
+                    <option key={opt.name} value={opt.value}>{opt.name}</option>
+                  ))}
+                </select>
+                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Operator */}
+            <div className="col-span-3">
+              <select
+                className="select select-sm select-bordered w-full"
+                value={row.query.operator}
+                onChange={(e) =>
+                  onUpdate(row.id, {
+                    query: { ...row.query, operator: e.target.value },
+                  })
+                }
+              >
+                <option value="" disabled>{t.translations.OPERATOR}</option>
+                {getFilteredOperators().map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Value Input */}
+            <ValueInput
+              row={row}
+              classes={classes}
+              datasources={datasources}
+              tags={tags}
+              isLoadingClasses={isLoadingClasses}
+              isLoadingDataSources={isLoadingDataSources}
+              isLoadingTags={isLoadingTags}
+              onUpdate={onUpdate}
+            />
+          </div>
+
+          {/* Delete Button */}
+          {index > 0 && (
+            <button
+              onClick={() => onRemove(row.id)}
+              className="btn btn-ghost btn-sm btn-error"
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface ValueInputProps {
+  row: QueryBuilderQuery;
+  classes: ClassResponseDto[];
+  datasources: DataSourceResponseDto[];
+  tags: TagResponseDto[];
+  isLoadingClasses: boolean;
+  isLoadingDataSources: boolean;
+  isLoadingTags: boolean;
+  onUpdate: (id: string, patch: Partial<QueryBuilderQuery>) => void;
+}
+
+function ValueInput({
+  row,
+  classes,
+  datasources,
+  tags,
+  isLoadingClasses,
+  isLoadingDataSources,
+  isLoadingTags,
+  onUpdate,
+}: ValueInputProps) {
+  const baseInputClass = "input input-sm input-bordered";
+  const { t } = useLanguage();
+  // Time Range - DatePicker
+  if (row.query.filter === "last_updated_at") {
+    return (
+      <div className="col-span-5">
+        <DatePicker
+          row={row}
+          onChange={(dateTime: string) =>
+            onUpdate(row.id, {
+              query: { ...row.query, value: dateTime },
+            })
+          }
+        />
+      </div>
+    );
+  }
+
+  // Properties - Key/Value inputs
+  if (row.query.filter === "properties") {
+    return (
+      <div className="col-span-5 grid grid-cols-2 gap-2">
+        <input
+          type="text"
+          placeholder="Key"
+          value={row.query.jsonKey ?? ""}
+          onChange={(e) =>
+            onUpdate(row.id, {
+              query: { ...row.query, jsonKey: e.target.value },
+            })
+          }
+          className={`${baseInputClass} w-full`}
+        />
+        <input
+          type="text"
+          placeholder="Value"
+          value={row.query.jsonValue ?? ""}
+          onChange={(e) =>
+            onUpdate(row.id, {
+              query: { ...row.query, jsonValue: e.target.value },
+            })
+          }
+          className={`${baseInputClass} w-full`}
+        />
+      </div>
+    );
+  }
+
+  // Original ID - Always text input
+  if (row.query.filter === "original_id") {
+    return (
+      <div className="col-span-5">
+        <input
+          type="text"
+          placeholder={t.translations.VALUE}
+          value={row.query.value ?? ""}
+          onChange={(e) =>
+            onUpdate(row.id, {
+              query: { ...row.query, value: e.target.value },
+            })
+          }
+          className={`${baseInputClass} w-full`}
+        />
+      </div>
+    );
+  }
+
+  // For class_name, data_source_name, and tags:
+  // Use dropdown if operator is '=', text input if operator is 'LIKE'
+  if (["class_name", "data_source_name", "tags"].includes(row.query.filter)) {
+    // Text input for LIKE operator (free-form search)
+    if (row.query.operator === "LIKE") {
+      return (
+        <div className="col-span-5">
+          <input
+            type="text"
+            placeholder={t.translations.VALUE}
+            value={row.query.value ?? ""}
+            onChange={(e) =>
+              onUpdate(row.id, {
+                query: { ...row.query, value: e.target.value },
+              })
+            }
+            className={`${baseInputClass} w-full`}
+          />
+        </div>
+      );
+    } else {
+      // Dropdown for '=' operator and others
+      return (
+        <div className="col-span-5">
+          <select
+            className={`select select-sm select-bordered w-full`}
+            value={row.query.value}
+            onChange={(e) =>
+              onUpdate(row.id, {
+                query: { ...row.query, value: e.target.value },
+              })
+            }
+            disabled={
+              (row.query.filter === "class_name" && isLoadingClasses) ||
+              (row.query.filter === "data_source_name" && isLoadingDataSources) ||
+              (row.query.filter === "tags" && isLoadingTags)
+            }
+          >
+            <option value="" disabled>{t.translations.VALUE}</option>
+            {row.query.filter === "class_name" ? (
+              classes.length ? (
+                classes.map((opt) => (
+                  <option key={opt.id} value={opt.name}>{opt.name}</option>
+                ))
+              ) : (
+                <option disabled value="">
+                  {isLoadingClasses ? "Loading classes..." : "No classes found"}
+                </option>
+              )
+            ) : row.query.filter === "data_source_name" ? (
+              datasources.length ? (
+                datasources.map((opt) => (
+                  <option key={opt.id} value={opt.name}>{opt.name}</option>
+                ))
+              ) : (
+                <option disabled value="">
+                  {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
+                </option>
+              )
+            ) : row.query.filter === "tags" ? (
+              tags.length ? (
+                tags.map((opt) => (
+                  <option key={opt.id} value={opt.name}>{opt.name}</option>
+                ))
+              ) : (
+                <option disabled value="">
+                  {isLoadingTags ? "Loading tags..." : "No tags found"}
+                </option>
+              )
+            ) : null}
+          </select>
+        </div>
+      );
+    }
+  }
+
+  // Default fallback (shouldn't reach here normally)
+  return null;
+}
+
+function EmptyResultsState({ }) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="card bg-base-100">
+      <div className="card-body">
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-base-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CircleStackIcon className="w-8 h-8 text-base-content/40" />
+          </div>
+          <h4 className="text-lg font-semibold mb-2">{t.translations.NO_RECORDS}</h4>
+          <p className="text-sm text-base-content/60 max-w-md mx-auto">
+            Try adjusting your search terms or filters
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Custom Hooks
+// ============================================================================
+
+function useFilterData(organizationId: number, selectedProjects: string[], hasLoaded: boolean, currentProjectId: string) {
+  const [classes, setClasses] = useState<ClassResponseDto[]>([]);
+  const [datasources, setDataSources] = useState<DataSourceResponseDto[]>([]);
+  const [tags, setTags] = useState<TagResponseDto[]>([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+
+  useEffect(() => {
+    if (!hasLoaded || !currentProjectId) return;
+
+    const projects = selectedProjects.map(Number);
+
+    const loadClasses = async () => {
+      try {
+        setIsLoadingClasses(true);
+        const data = await getAllClassesOrg(organizationId, projects);
+        setClasses(data);
+      } catch (error) {
+        console.error("Failed to fetch classes:", error);
+        setClasses([]);
+      } finally {
+        setIsLoadingClasses(false);
+      }
+    };
+
+    const loadDataSources = async () => {
+      try {
+        setIsLoadingDataSources(true);
+        const data = await getAllDataSourcesOrg(organizationId, projects);
+        setDataSources(data);
+      } catch (error) {
+        console.error("Failed to fetch datasources:", error);
+        setDataSources([]);
+      } finally {
+        setIsLoadingDataSources(false);
+      }
+    };
+
+    const loadTags = async () => {
+      try {
+        setIsLoadingTags(true);
+        const data = await getAllTagsOrg(organizationId, projects);
+        setTags(data);
+      } catch (error) {
+        console.error("Failed to fetch tags:", error);
+        setTags([]);
+      } finally {
+        setIsLoadingTags(false);
+      }
+    };
+
+    loadClasses();
+    loadDataSources();
+    loadTags();
+  }, [hasLoaded, currentProjectId, selectedProjects, organizationId]);
+
+  return {
+    classes,
+    datasources,
+    tags,
+    isLoadingClasses,
+    isLoadingDataSources,
+    isLoadingTags,
+    setClasses,
+    setDataSources,
+    setTags,
+  };
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 export default function QueryBuilderClient({
   initialProjects,
   initialSelectedProjects,
   initialSearchTerm,
-  connectors = ["AND", "OR"], //TODO: Add NOT
-  filters = [{ name: "Class", value: "class_name" }, { name: "Tag", value: "tags" }, { name: "Original Data ID", value: "original_id" }, { name: "Time Range", value: "last_updated_at" }, { name: "Data Source", value: "data_source_name" }, { name: "Properties", value: "properties" }],
+  connectors = ["AND", "OR"],
+  filters = [
+    { name: "Class", value: "class_name" },
+    { name: "Tag", value: "tags" },
+    { name: "Original Data ID", value: "original_id" },
+    { name: "Time Range", value: "last_updated_at" },
+    { name: "Data Source", value: "data_source_name" },
+    { name: "Properties", value: "properties" },
+  ],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = [],
-  queriedRecords
+  organizationId
 }: Props) {
-
   const locale = "en";
-  const t = translations[locale];
+  const t = translations[locale].translations;
 
+  // State
   const [projects] = useState(initialProjects);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(initialSelectedProjects);
-  const [classes, setClasses] = useState<ClassResponseDto[]>([]);
-  const [datasources, setDataSources] = useState<DataSourceResponseDto[]>([]);
-  const [tags, setTags] = useState<TagResponseDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isLoadingClasses, setIsLoadingClasses] = useState(false);
-  const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
-  const [isLoadingTags, setIsLoadingTags] = useState(false);
-  const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(queriedRecords);
+  const [records, setQueriedRecords] = useState<HistoricalRecordResponseDto[] | null>();
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
-  const [activeFilters, setActiveFilters] = useState<Array<{ id: number; term: string }>>([]);
+  const [showFilters, setShowFilters] = useState(true);
   const [rows, setRows] = useState<QueryBuilderQuery[]>([emptyRow()]);
+
   const { project, hasLoaded } = useProjectSession();
 
-
+  // Computed values
   const currentProjectId = useMemo<string>(() => {
     const firstProjectId = projects.length > 0 ? String(projects[0].id) : "";
     if (
@@ -73,459 +614,186 @@ export default function QueryBuilderClient({
     return String(selectedProjects[0]);
   }, [projects, selectedProjects]);
 
+  const activeFilterCount = useMemo(
+    () => rows.filter(r => r.query.filter !== "").length,
+    [rows]
+  );
+
+  // Custom hook for filter data
+  const {
+    classes,
+    datasources,
+    tags,
+    isLoadingClasses,
+    isLoadingDataSources,
+    isLoadingTags,
+    setClasses,
+    setDataSources,
+    setTags,
+  } = useFilterData(organizationId, selectedProjects, hasLoaded, currentProjectId);
+
+  // Row management
   const addRow = () => setRows((r) => [...r, emptyRow()]);
-  const removeRow = (id: string) => setRows((r) => (r.length > 1 ? r.filter((x) => x.id !== id) : r));
+  const removeRow = (id: string) =>
+    setRows((r) => (r.length > 1 ? r.filter((x) => x.id !== id) : r));
   const updateRow = (id: string, patch: Partial<QueryBuilderQuery>) =>
     setRows((r) => r.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+
   const reset = () => {
     setRows([emptyRow()]);
     setQueriedRecords(null);
-    setSearchTerm("")
-  }
-
-
-
-
-  useEffect(() => {
-    async function loadClasses() {
-      try {
-        setIsLoadingClasses(true);
-        const data = await getClassesForProjects(selectedProjects);
-        setClasses(data);
-      } catch (error) {
-        console.error("Failed to fetch classes:", error);
-        setClasses([]);
-      } finally {
-        setIsLoadingClasses(false);
-        setLoading(false);
-      }
-    }
-
-    if (hasLoaded && currentProjectId) {
-      loadClasses();
-    }
-  }, [hasLoaded, currentProjectId, selectedProjects]);
-
-  useEffect(() => {
-    async function loadDataSources() {
-      try {
-        setIsLoadingDataSources(true);
-        const data = await getDataSourcesForProjects(selectedProjects);
-        setDataSources(data);
-      } catch (error) {
-        console.error("Failed to fetch classes:", error);
-        setDataSources([]);
-      } finally {
-        setIsLoadingDataSources(false);
-        setLoading(false);
-      }
-    }
-    if (hasLoaded && currentProjectId) {
-      loadDataSources();
-    }
-  }, [hasLoaded, currentProjectId, selectedProjects]);
-
-  useEffect(() => {
-    async function loadTags() {
-      try {
-        setIsLoadingTags(true);
-        const data = await getTagsForProjects(selectedProjects);
-        setTags(data);
-      } catch (error) {
-        console.error("Failed to fetch classes:", error);
-        setTags([]);
-      } finally {
-        setIsLoadingTags(false);
-        setLoading(false);
-      }
-    }
-
-    if (hasLoaded && currentProjectId) {
-      loadTags();
-    }
-  }, [hasLoaded, currentProjectId, selectedProjects]);
+    setSearchTerm("");
+  };
 
   const hasValidQueries = (): boolean => {
-    const queryDtos = rows.map(r => r.query);
-    return queryDtos.some(query => {
-      return (query.filter !== "") || (query.operator !== "") || (query.value !== "") || (query.jsonKey !== "") || (query.jsonValue !== "");
+    const queryDtos = rows.map((r) => r.query);
+    return queryDtos.some((query) => {
+      return (
+        query.filter !== "" ||
+        query.operator !== "" ||
+        query.value !== "" ||
+        query.jsonKey !== "" ||
+        query.jsonValue !== ""
+      );
     });
   };
 
-
   const handleSubmit = async () => {
     try {
-      const queryDtos = rows.map(r => r.query);
+      const queryDtos = rows.map((r) => r.query);
+      const projects = selectedProjects.map(Number);
+
       if (hasValidQueries()) {
-        const data = await queryBuilder(queryDtos, searchTerm, selectedProjects);
-        if (data) {
-          setQueriedRecords(data);
-        }
+        const data = await queryBuilder(organizationId, queryDtos, projects, searchTerm);
+        if (data) setQueriedRecords(data);
       } else {
-        const data = await fullTextSearch(searchTerm, selectedProjects);
-        if (data) {
-          setQueriedRecords(data);
-        }
+        const data = await fullTextSearch(organizationId, searchTerm, projects);
+        if (data) setQueriedRecords(data);
       }
     } catch (error) {
-      console.error("Failed to send query")
+      console.error("Failed to send query", error);
     }
-
   };
 
+  const handleFieldChange = async (field: string) => {
+    const projects = selectedProjects.map(Number);
+
+    if (field === "class_name") {
+      try {
+        const data = await getAllClassesOrg(organizationId, projects);
+        setClasses(data);
+      } catch (err) {
+        console.error("Failed to fetch classes:", err);
+      }
+    } else if (field === "data_source_name") {
+      try {
+        const data = await getAllDataSourcesOrg(organizationId, projects);
+        setDataSources(data);
+      } catch (err) {
+        console.error("Failed to fetch datasources:", err);
+      }
+    } else if (field === "tags") {
+      try {
+        const data = await getAllTagsOrg(organizationId, projects);
+        setTags(data);
+      } catch (err) {
+        console.error("Failed to fetch tags:", err);
+      }
+    }
+  };
 
   return (
-    <div>
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-info-content">
-            {t.translations.DATA_CATALOG}
-          </h1>
-
-          <ProjectDropdown
-            projects={projects}
-            onSelectionChange={setSelectedProjects}
-            defaultSelected={
-              initialSelectedProjects.length
-                ? initialSelectedProjects
-                : undefined
-            }
-          />
+    <div className="min-h-screen bg-base-100">
+      {/* Header */}
+      <div className="bg-base-200 px-12 py-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">
+              {t.DATA_CATALOG}
+            </h1>
+            <ProjectDropdown
+              projects={projects}
+              onSelectionChange={setSelectedProjects}
+              defaultSelected={
+                initialSelectedProjects.length
+                  ? initialSelectedProjects
+                  : undefined
+              }
+            />
+          </div>
         </div>
       </div>
-      <div className="gap-4 mb-4 pt-4 pl-8 w-full">
-        <div className="text-info-content p-4 text-xl"> {t.translations.ADDITIONAL_FILTERS}</div>
-        <div className="shadow-md rounded-md mr-6">
-          <div className="flex justify-between p-8 gap-7 ">
-            {/* Advanced Search */}
-            <div className="rounded-md py-4">
-              {/* Full text search */}
-              <div className="flex w-full justify-left p-8">
-                <AdvancedSearchBar
-                  placeholder="Enter Search Term"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  activeFilters={activeFilters}
-                  onRemoveFilter={(id) =>
-                    setActiveFilters((prev) => prev.filter((f) => f.id !== id))
-                  }
-                  showResultsMessage={activeFilters.length > 0}
-                  className="w-full max-w-3xl"
-                  onSubmit={handleSubmit}
-                />
-              </div>
-              {/* Query Builder */}
-              <div className="text-info-content pl-8 text-lg">
-                {t.translations.SELECT_FILTERS}
-              </div>
-              <div>
-                <div>
+
+      {/* Main Content */}
+      <div className="px-8 py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Search Section */}
+          <div className="card bg-base-100 rounded-lg mb-6">
+            <SearchBar
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onSearch={handleSubmit}
+              showFilters={showFilters}
+              onToggleFilters={() => setShowFilters(!showFilters)}
+              activeFilterCount={activeFilterCount}
+              onClearAll={reset}
+              canSearch={!!searchTerm || hasValidQueries()}
+            />
+
+            {/* Filters Section */}
+            {showFilters && (
+              <div className="rounded-lg shadow-xl mt-2 bg-base-200 p-6">
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider mb-1">
+                    {t.SELECT_FILTERS}
+                  </h3>
+                  <p className="text-xs text-base-content/60">Build complex queries by combining multiple conditions</p>
+                </div>
+
+                <div className="space-y-3">
                   {rows.map((row, idx) => (
-                    <div key={row.id} className="card">
-                      <div className="card-body grid grid-cols-1 sm:grid-cols-6 gap-2 w-full">
-                        {/* Connector */}
-                        <select
-                          className="select select-sm select-bordered w-full"
-                          value={row.query.connector ?? ""}
-                          onChange={(e) =>
-                            updateRow(row.id, {
-                              query: {
-                                ...row.query,
-                                connector: e.target.value,
-                              },
-                            })
-                          }
-                          disabled={idx === 0 && !searchTerm.trim()} // Disable for first row when no search term
-                        >
-                          <option value="" disabled>
-                            {t.translations.CONNECTOR}
-                          </option>
-                          {connectors.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* Filter */}
-                        <select
-                          className="select select-sm select-bordered w-full"
-                          value={row.query.filter}
-                          onChange={async (e) => {
-                            const value = e.target.value;
-                            updateRow(row.id, {
-                              query: {
-                                ...row.query,
-                                filter: e.target.value,
-                              },
-                            });
-
-                            if (value === "class_name") {
-                              getClassesForProjects(selectedProjects)
-                                .then(setClasses)
-                                .catch((err: Error) => console.error("Failed to fetch classes:", err));
-                            }
-                            if (value === "data_source_name") {
-                              getDataSourcesForProjects(selectedProjects)
-                                .then(setDataSources)
-                                .catch((err: Error) => console.error("Failed to fetch datasources:", err));
-                            }
-                            if (value === "tags") {
-                              getTagsForProjects(selectedProjects)
-                                .then(setTags)
-                                .catch((err) => console.error("Failed to fetch tags:", err));
-                            }
-                          }}
-                        >
-                          <option value="" disabled>
-                            {t.translations.FILTER}
-                          </option>
-                          {filters.map((opt) => (
-                            <option key={opt.name} value={opt.value}>
-                              {opt.name}
-                            </option>
-                          ))}
-                        </select>
-
-                        {/* Operator */}
-                        <select
-                          className="select select-sm select-bordered w-full"
-                          value={
-                            row.query.operator
-                          }
-                          onChange={(e) =>
-                            updateRow(row.id, {
-                              query: {
-                                ...row.query,
-                                operator: e.target.value,
-                              },
-                            })
-                          }
-
-                        >
-                          <option value="" disabled>
-                            {t.translations.OPERATOR}
-                          </option>
-
-                          {operators
-                            // filter logic
-                            .filter((opt) => {
-                              if (row.query.filter === "properties") {
-                                return opt === "KEY_VALUE";
-                              }
-                              if (row.query.filter === "last_updated_at") {
-                                return opt === "<" || opt === ">" || opt === '='; // only show < or >
-                              }
-                              if (row.query.filter === "class_name" || row.query.filter === "original_id" || row.query.filter === "data_source_name" || row.query.filter === "tags") {
-                                return opt !== "<" && opt !== ">" && opt !== 'KEY_VALUE'; // hide < and >
-                              }
-                              return true; // otherwise allow all
-                            })
-                            .map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                        </select>
-
-                        {/* Text input for Property Field; select for others (except Time Range) */}
-                        {/* Value */}
-                        {row.query.filter !== "last_updated_at" && (
-                          (row.query.filter === "properties" || row.query.filter === "original_id") ? (
-                            (row.query.filter === "properties") ? (
-                              <div className="grid grid-cols-2 gap-2 w-full">
-                                <input
-                                  type="text"
-                                  className="input input-sm input-bordered w-full"
-                                  value={row.query.jsonKey ?? ""}
-                                  onChange={(e) =>
-                                    updateRow(row.id, {
-                                      query: {
-                                        ...row.query,
-                                        jsonKey: e.target.value,
-                                      },
-                                    })
-                                  }
-                                  placeholder={"Key"}
-                                />
-
-                                <input
-                                  type="text"
-                                  className="input input-sm input-bordered w-full"
-                                  value={row.query.jsonValue ?? ""}
-                                  onChange={(e) =>
-                                    updateRow(row.id, {
-                                      query: {
-                                        ...row.query,
-                                        jsonValue: e.target.value,
-                                      },
-                                    })
-                                  }
-                                  placeholder={"Value"}
-                                />
-                              </div>
-                            ) : (
-                              <input
-                                type="text"
-                                className="input input-sm input-bordered w-full"
-                                value={row.query.value ?? ""}
-                                onChange={(e) => updateRow(row.id, {
-                                  query: {
-                                    ...row.query,
-                                    value: e.target.value
-                                  },
-                                })}
-                                placeholder={t.translations.VALUE}
-                              />
-                            )) : (
-                            <select
-                              className="select select-sm select-bordered w-full"
-                              value={row.query.value}
-                              onChange={(e) => updateRow(row.id, {
-                                query: {
-                                  ...row.query,
-                                  value: e.target.value,
-                                },
-                              })}
-                              disabled={
-                                (row.query.filter === "class_name" && isLoadingClasses) ||
-                                (row.query.filter === "data_source_name" && isLoadingDataSources) ||
-                                (row.query.filter === "tags" && isLoadingTags)
-                              }
-                            >
-                              <option value="" disabled>{t.translations.VALUE}</option>
-
-                              {row.query.filter === "class_name" ? (
-                                classes.length ? (
-                                  classes.map((opt) => (
-                                    <option key={opt.id} value={opt.name}>
-                                      {opt.name}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option disabled value="">
-                                    {isLoadingClasses ? "Loading classes..." : "No classes found"}
-                                  </option>
-                                )
-                              ) : row.query.filter === "data_source_name" ? (
-                                datasources.length ? (
-                                  datasources.map((opt) => (
-                                    <option key={opt.id} value={opt.name}>
-                                      {opt.name}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option disabled value="">
-                                    {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
-                                  </option>
-                                )
-                              ) : row.query.filter === "tags" ? (
-                                tags.length ? (
-                                  tags.map((opt) => (
-                                    <option key={opt.id} value={opt.name}>
-                                      {opt.name}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option disabled value="">
-                                    {isLoadingTags ? "Loading tags..." : "No tags found"}
-                                  </option>
-                                )
-                              ) : (
-                                values.map((opt) => (
-                                  <option key={opt} value={opt}>
-                                    {opt}
-                                  </option>
-                                ))
-                              )}
-                            </select>
-                          )
-                        )}
-
-                        {/* Time Range*/}
-                        {row.query.filter === "last_updated_at" ? (
-                          <DatePicker
-                            row={row}
-                            onChange={(dateTime: string) =>
-                              updateRow(row.id, {
-                                query: {
-                                  ...row.query,
-                                  value: dateTime,
-                                },
-                              }) // store datetime in row.value
-                            }
-                          />
-                        ) : null}
-
-                        <div className="w-full"></div>
-
-                        <div className="w-full">
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-error btn-sm"
-                            onClick={() => removeRow(row.id)}
-                            hidden={idx === 0}
-                          >
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-
-                        {idx === rows.length - 1 && (
-                          <div className="md:col-span-6 flex items-center justify-between pt-2 pr-15">
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-sm"
-                              onClick={addRow}
-                            >
-                              <PlusIcon className="w-4 h-4" /> {t.translations.FILTER}
-                            </button>
-                            <button onClick={reset} className="btn btn-error btn-outline btn-sm">
-                              <XMarkIcon className="w-4 h-4" />{t.translations.DELETE_ALL_FILTERS}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                    </div>
+                    <FilterRow
+                      key={row.id}
+                      row={row}
+                      index={idx}
+                      showConnector={idx > 0 || !!searchTerm.trim()}
+                      connectors={connectors}
+                      filters={filters}
+                      operators={operators}
+                      classes={classes}
+                      datasources={datasources}
+                      tags={tags}
+                      isLoadingClasses={isLoadingClasses}
+                      isLoadingDataSources={isLoadingDataSources}
+                      isLoadingTags={isLoadingTags}
+                      onUpdate={updateRow}
+                      onRemove={removeRow}
+                      onFieldChange={handleFieldChange}
+                    />
                   ))}
                 </div>
+
+                <div className="flex items-center gap-3 mt-4">
+                  <button
+                    onClick={addRow}
+                    className="btn btn-sm btn-ghost gap-2"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                    {t.FILTER}
+                  </button>
+                </div>
               </div>
-            </div>
-            {/* Other search controls */}
-            {/* <div className="max-h-60 shadow-md w-1/4 text-info-content rounded-lg flex flex-col">
-              <div className="p-6 text-sm">Other Search Controls and Options</div> */}
-
-            {/* Saved searches */}
-            {/* <div className="flex items-center justify-between text-xs px-6">
-                <span className="hidden sm:inline">Add to saved searches</span>
-                <button onClick={reset} className="btn btn-ghost btn-sm">
-                  <PlusCircleIcon className="w-4 h-4" />
-                </button>
-              </div> */}
-
-            {/* Favorites */}
-            {/* <div className="flex items-center justify-between text-xs px-6">
-                <span className="hidden sm:inline">Add to favorites searches</span>
-                <button onClick={reset} className="btn btn-ghost btn-sm">
-                  <StarIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div> */}
-
-
+            )}
           </div>
-          {/* Submit search */}
-          <div className="grid justify-items-start p-4">
-            <button onClick={handleSubmit} className="btn btn-primary btn-sm" disabled={!searchTerm && !hasValidQueries()}>{t.translations.SEARCH_RECORDS}
-            </button>
-          </div>
+
+          {/* Results Section */}
+          {records && records.length > 0 ? (
+            <RecordSearchList data={records} />
+          ) : (
+            records && <EmptyResultsState />
+          )}
         </div>
       </div>
-      {records && records?.length > 0 ? (
-        <ListView data={records} />
-      ) : (records &&
-        <div className="p-10">{t.translations.NO_RECORDS}</div>
-      )}
     </div>
   );
 }

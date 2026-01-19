@@ -3,13 +3,14 @@ import { peopleData } from "@/app/(home)/dummy_data/data";
 import { Column, TeamMember } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { getAllUsers } from "@/app/lib/user_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import React, { useEffect, useState } from "react";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 
 const TeamMembersWidget: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
@@ -17,6 +18,7 @@ const TeamMembersWidget: React.FC = () => {
   const [users, setUsers] = useState<{ name: string; email: string }[]>([]);
   const { project } = useProjectSession();
   const { t } = useLanguage();
+  const { organization } = useOrganizationSession();
 
   const handleToggle = () => {
     setShowTable((prev) => !prev);
@@ -25,7 +27,10 @@ const TeamMembersWidget: React.FC = () => {
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const data = await getAllUsers(Number(project?.projectId));
+        const data = await getAllUsers(
+          organization?.organizationId,
+          project?.projectId
+        );
         setUsers(data);
       } catch (error) {
         console.error("Failed to fetch projects:", error);

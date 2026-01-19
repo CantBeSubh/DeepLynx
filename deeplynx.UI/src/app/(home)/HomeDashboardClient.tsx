@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useLanguage } from "../contexts/Language";
-import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 import { format } from "date-fns";
@@ -20,6 +19,8 @@ import { ProjectResponseDto } from "./types/responseDTOs";
 import { useOrganizationSession } from "../contexts/OrganizationSessionProvider";
 import { useRBAC } from "./rbac/useRBAC";
 import { useSafeSession } from "../hooks/useSafeSession";
+import { useProjectSession } from "../contexts/ProjectSessionProvider";
+import { getAllProjects } from "../lib/client_service/projects_services.client";
 
 type Props = { initialProjects: ProjectResponseDto[] };
 
@@ -33,19 +34,13 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   const { data: session } = useSafeSession();
   const { user } = useRBAC();
   const { organization, hasLoaded } = useOrganizationSession();
-
+  const { setProject } = useProjectSession();
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [projects, setProjects] =
     useState<ProjectResponseDto[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
-  const [canCustomize, setCanCustomize] = useState(false);
-  const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
-    "Links",
-    "DataOverview",
-    "Graph",
-  ]);
 
   const isRefreshing = useRef(false);
 
@@ -54,7 +49,10 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
 
     isRefreshing.current = true;
     try {
-      const data = await getAllProjects(organization.organizationId, true);
+      const data = await getAllProjects(
+        organization.organizationId as number,
+        true
+      );
       setProjects(data);
     } catch (err) {
       console.error("Failed to refresh projects:", err);
@@ -90,6 +88,10 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   });
 
   const onExplore = (row: ProjectResponseDto) => {
+    setProject({
+      projectId: row.id.toString(),
+      projectName: row.name,
+    });
     router.push(`/project/${row.id}`);
   };
 
@@ -99,6 +101,14 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       data: (row: ProjectResponseDto) => (
         <Link
           href={`/project/${row.id}`}
+          onClick={(e) => {
+            e.preventDefault();
+            setProject({
+              projectId: row.id.toString(),
+              projectName: row.name,
+            });
+            router.push(`/project/${row.id}`);
+          }}
           className="font-bold text-secondary hover:text-base-content/80 underline underline-offset-2 transition-colors"
         >
           {row.name}
@@ -121,10 +131,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     },
   ];
 
-  const handleSave = (newWidgets: WidgetType[]) => {
-    setHomeWidgets(newWidgets);
-    setCanCustomize(false);
-  };
 
   const formatUserName = (fullName?: string | null): string => {
     if (!fullName) return "";
@@ -156,7 +162,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 mt-3">
+    <div className="min-h-screen bg-base-100">
       <header className="bg-base-200/50 border-b border-base-300/30 sticky z-10 backdrop-blur-sm">
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
           <div className="flex items-center gap-3">

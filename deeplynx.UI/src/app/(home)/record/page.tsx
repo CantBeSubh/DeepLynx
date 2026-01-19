@@ -1,6 +1,6 @@
 // app/(home)/(routes)/data_catalog/record/page.tsx
 import RecordViewClient from "./RecordViewClient";
-import { getRecordServer } from "@/app/lib/record_services.server";
+import { getRecordServer } from "@/app/lib/server_service/record_services.server";
 
 export const dynamic = "force-dynamic"; // optional if behind auth
 

@@ -1,6 +1,5 @@
 import React from "react";
-import NewRoleClient from "./NewRoleClient";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { notFound } from "next/navigation";
 
 type ProjectDTO = { id: number | string; name: string };
@@ -18,12 +17,9 @@ export default async function Page({
   if (!id) return notFound();
 
   const roleId = typeof search.roleId === "string" ? search.roleId : "";
-  const fromProject = typeof search.fromProject === "string" ? search.fromProject : "";
+  const fromProject =
+    typeof search.fromProject === "string" ? search.fromProject : "";
   const initialSearch = typeof search.search === "string" ? search.search : "";
 
-  return (
-    <NewRoleClient
-      projectId={id}
-    />
-  )
+  return <div>Place holder</div>;
 }

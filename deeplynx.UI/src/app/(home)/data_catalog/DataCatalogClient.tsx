@@ -1,12 +1,11 @@
 // src/app/(home)/data_catalog/DataCatalogClient.tsx
 "use client";
 
+import { RecordTableRow } from "@/app/(home)/types/types";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
-import { fullTextSearch } from "@/app/lib/query_services.client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
+import SearchBar from "@/app/(home)/components/SearchBar";
 import { useLanguage } from "@/app/contexts/Language";
 import {
   EyeIcon,
@@ -14,17 +13,19 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import SearchBar from "@/app/(home)/components/SearchBar";
+import AddRecordModal from "../components/AddRecordModal";
+import ListView from "../components/ListView";
 import ProjectDropdown from "../components/ProjectDropdown";
 import RecentRecordsCard from "../components/RecentRecordsCard";
-import ListView from "../components/ListView";
-import AddRecordModal from "../components/AddRecordModal";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { fullTextSearch, getMultiProjectRecords } from "@/app/lib/client_service/query_services.client";
+import { HistoricalRecordResponseDto, RecordResponseDto } from "../types/responseDTOs";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
   initialSearchTerm: string;
-  initialRecords: FileViewerTableRow[];
+  initialRecords: RecordTableRow[];
 };
 
 export default function DataCatalogClient({
@@ -34,7 +35,7 @@ export default function DataCatalogClient({
   initialRecords,
 }: Props) {
   const { t } = useLanguage();
-  const { hasLoaded, setProject: setProjectSession } = useProjectSession();
+  const { organization } = useOrganizationSession();
 
   // Use ref to store initial values to prevent re-renders
   const initialSelectedProjectsRef = useRef(initialSelectedProjects);
@@ -50,10 +51,10 @@ export default function DataCatalogClient({
 
   const [hasInitialSearchRun, setHasInitialSearchRun] = useState(false);
 
-  const [tableData, setTableData] = useState<FileViewerTableRow[]>(
+  const [tableData, setTableData] = useState<RecordTableRow[]>(
     initialRecords ?? []
   );
-  const [records, setQueriedRecords] = useState<FileViewerTableRow[]>(
+  const [records, setQueriedRecords] = useState<RecordTableRow[]>(
     initialRecords ?? []
   );
 
@@ -94,10 +95,17 @@ export default function DataCatalogClient({
         return;
       }
 
-      const data = await getAllRecordsForMultipleProjects(idsNum, true, {
-        signal,
-      });
-      setTableData(data);
+      const data = await getMultiProjectRecords(organization?.organizationId as number, idsNum, true);
+      const mappedData: RecordTableRow[] = data.map((dto: HistoricalRecordResponseDto) => ({
+          ...dto,
+          fileType: '',
+          timeseries: undefined,
+          fileSize: undefined,
+          select: false,
+          associatedRecords: undefined,
+          archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+        }));
+      setTableData(mappedData);
       setViewMode("list");
     },
     [effectiveProjectIds]
@@ -110,7 +118,7 @@ export default function DataCatalogClient({
     setQueriedRecords([]);
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Clear all fetch failed:", e);
       }
@@ -122,11 +130,21 @@ export default function DataCatalogClient({
     async (searchValue: string, projectIds: string[]) => {
       try {
         setIsSearching(true);
-        const data = await fullTextSearch(searchValue, projectIds);
-
+        const projects = projectIds.map(Number)
+        const data = await fullTextSearch(organization?.organizationId as number, searchValue, projects);
+        
         if (data) {
-          setQueriedRecords(data);
-          setTableData(data);
+          const mappedData: RecordTableRow[] = data.map((dto: HistoricalRecordResponseDto) => ({
+          ...dto,
+          fileType: '',
+          timeseries: undefined,
+          fileSize: undefined,
+          select: false,
+          associatedRecords: undefined,
+          archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+        }));
+          setQueriedRecords(mappedData);
+          setTableData(mappedData);
           setSearchTerm("");
           setViewMode("list");
 
@@ -165,34 +183,9 @@ export default function DataCatalogClient({
     await performFullTextSearch(searchTerm, selectedProjects);
   };
 
-  useEffect(() => {
-    if (!hasLoaded) return;
-
-    // Determine which project to set - prioritize current selection, fall back to initial
-    const projectToSet =
-      selectedProjects.length > 0
-        ? selectedProjects[0]
-        : initialSelectedProjectsRef.current.length > 0
-        ? initialSelectedProjectsRef.current[0]
-        : null;
-
-    if (projectToSet && projectToSet !== "ALL") {
-      const selectedProject = projects.find(
-        (project) => project.id === projectToSet
-      );
-
-      if (selectedProject) {
-        setProjectSession({
-          projectId: selectedProject.id,
-          projectName: selectedProject.name,
-        });
-      }
-    }
-  }, [hasLoaded, selectedProjects, projects, setProjectSession]);
-
   // Handle initial search term
   useEffect(() => {
-    if (!hasLoaded || hasInitialSearchRun) return;
+    if (hasInitialSearchRun) return;
 
     const initialTerm = initialSearchTermRef.current;
     const initialProjects = initialSelectedProjectsRef.current;
@@ -201,14 +194,14 @@ export default function DataCatalogClient({
       setHasInitialSearchRun(true);
       performFullTextSearch(initialTerm, initialProjects);
     }
-  }, [hasLoaded, hasInitialSearchRun, performFullTextSearch]);
+  }, [hasInitialSearchRun, performFullTextSearch]);
 
   // Fetch records when selection changes (if no active filters)
   useEffect(() => {
-    if (!hasLoaded || activeFilters.length > 0) return;
+    if (activeFilters.length > 0) return;
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Fetch on selection change failed:", e);
       }
@@ -216,13 +209,10 @@ export default function DataCatalogClient({
 
     return () => ctrl.abort();
   }, [
-    hasLoaded,
     activeFilters.length,
     selectedProjectsToken,
     fetchRecordsForSelection,
   ]);
-
-  if (!hasLoaded) return null;
 
   return (
     <div className="mt-3">
@@ -288,17 +278,15 @@ export default function DataCatalogClient({
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${
-                  viewMode === "list" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="h-7 w-7" />
               </button>
               <button
-                className={`btn btn-sm ${
-                  viewMode === "table" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="h-7 w-7" />

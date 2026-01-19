@@ -1,43 +1,55 @@
 // src/app/(home)/organization_management/groups/InlineGroupsTable.tsx
-
 "use client";
 
 import React, { useState } from "react";
-import { GroupResponseDto, UserResponseDto } from "../../types/responseDTOs";
-import {
-  createGroup,
-  updateGroup,
-  deleteGroup,
-  addUserToGroup,
-  removeUserFromGroup,
-  getGroupMembers,
-} from "@/app/lib/group_services.client";
-import {
-  TrashIcon,
-  PencilIcon,
-  UserGroupIcon,
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  CheckIcon,
-} from "@heroicons/react/24/outline";
-import AvatarCell from "../../components/Avatar";
+import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
+
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import {
+  addUserToGroup,
+  archiveGroup,
+  createGroup,
+  getGroupMembers,
+  removeUserFromGroup,
+  updateGroup,
+} from "@/app/lib/client_service/group_services.client";
+
+import {
+  CreateGroupRequestDto,
+  UpdateGroupRequestDto,
+} from "../../types/requestDTOs";
+import { GroupResponseDto, UserResponseDto } from "../../types/responseDTOs";
+
+import GroupArchiveModal from "./GroupArchiveModal";
+import CreateGroupInlineForm from "./CreateGroupInlineForm";
+import GroupsTable from "./GroupsTable";
+
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
 
 interface InlineGroupsTableProps {
   initialGroups: GroupResponseDto[];
   availableUsers: UserResponseDto[];
   organizationId?: number | string;
+  onGroupsChange?: () => Promise<void>; // Add this prop
 }
+
+/* -------------------------------------------------------------------------- */
+/*                           InlineGroupsTable Component                      */
+/* -------------------------------------------------------------------------- */
 
 const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   initialGroups,
   availableUsers,
   organizationId,
+  onGroupsChange
 }) => {
-  // State management
+  /* ------------------------------------------------------------------------ */
+  /*                               Core State                                */
+  /* ------------------------------------------------------------------------ */
+
   const [groups, setGroups] = useState<GroupResponseDto[]>(initialGroups);
   const [expandedGroup, setExpandedGroup] = useState<string | number | null>(
     null
@@ -47,11 +59,12 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   );
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
-  console.log("Inline table members: ", availableUsers);
+  /* ------------------------------------------------------------------------ */
+  /*                         Member Management State                          */
+  /* ------------------------------------------------------------------------ */
 
-  // Member management state
   const [groupMembers, setGroupMembers] = useState<
     Map<string | number, UserResponseDto[]>
   >(new Map());
@@ -60,43 +73,81 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
   );
   const [memberSearchTerm, setMemberSearchTerm] = useState("");
 
-  // Create form state
+  /* ------------------------------------------------------------------------ */
+  /*                             Create Group State                           */
+  /* ------------------------------------------------------------------------ */
+
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
 
-  // Edit form state
+  /* ------------------------------------------------------------------------ */
+  /*                              Edit Group State                            */
+  /* ------------------------------------------------------------------------ */
+
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
 
-  // Selection state
+  /* ------------------------------------------------------------------------ */
+  /*                           Selection / Context                            */
+  /* ------------------------------------------------------------------------ */
+
   const [selectedGroups, setSelectedGroups] = useState<Set<string | number>>(
     new Set()
   );
+  const { organization } = useOrganizationSession();
 
-  // Fetch members for a group
+  /* ------------------------------------------------------------------------ */
+  /*                           Archive Group Modal                            */
+  /* ------------------------------------------------------------------------ */
+
+  const [archiveModal, setArchiveModal] = useState<{
+    isOpen: boolean;
+    groupIds: Array<string | number>;
+    groupNames: string[];
+    totalMembers?: number;
+  }>({
+    isOpen: false,
+    groupIds: [],
+    groupNames: [],
+    totalMembers: undefined,
+  });
+
+  /* ------------------------------------------------------------------------ */
+  /*                      Fetching & Syncing Group Members                    */
+  /* ------------------------------------------------------------------------ */
+
   const fetchGroupMembers = async (groupId: string | number) => {
-    // Check if we already have the members cached
-    if (groupMembers.has(groupId)) {
-      return;
-    }
-
-    const newLoadingMembers = new Set(loadingMembers).add(groupId);
-    setLoadingMembers(newLoadingMembers);
+    setLoadingMembers((prev) => new Set(prev).add(groupId));
 
     try {
-      const members = await getGroupMembers(groupId);
-      setGroupMembers(new Map(groupMembers).set(groupId, members));
+      const members = await getGroupMembers(
+        organization?.organizationId as number,
+        groupId as number
+      );
+
+      setGroupMembers((prev) => {
+        const copy = new Map(prev);
+        copy.set(groupId, members);
+        return copy;
+      });
+
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, memberCount: members.length } : g
+        )
+      );
     } catch (err) {
       console.error("Failed to fetch group members:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch members");
     } finally {
-      const updatedLoadingMembers = new Set(loadingMembers);
-      updatedLoadingMembers.delete(groupId);
-      setLoadingMembers(updatedLoadingMembers);
+      setLoadingMembers((prev) => {
+        const copy = new Set(prev);
+        copy.delete(groupId);
+        return copy;
+      });
     }
   };
 
-  // Toggle expand/collapse and fetch members
   const toggleExpand = async (groupId: string | number) => {
     if (expandedGroup === groupId) {
       setExpandedGroup(null);
@@ -104,26 +155,26 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     } else {
       setExpandedGroup(groupId);
       setEditingGroup(null);
-      // Fetch members when expanding
       await fetchGroupMembers(groupId);
     }
   };
 
-  // Start editing
+  /* ------------------------------------------------------------------------ */
+  /*                          Create / Edit Group Handlers                    */
+  /* ------------------------------------------------------------------------ */
+
   const startEdit = (group: GroupResponseDto) => {
     setEditingGroup(group.id);
     setEditName(group.name);
     setEditDescription(group.description || "");
   };
 
-  // Cancel editing
   const cancelEdit = () => {
     setEditingGroup(null);
     setEditName("");
     setEditDescription("");
   };
 
-  // Create group
   const handleCreateGroup = async () => {
     if (!newGroupName.trim() || !organizationId) {
       setError("Group name is required");
@@ -133,17 +184,22 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setLoading(true);
     setError(null);
 
+    const dto: CreateGroupRequestDto = {
+      name: newGroupName,
+      description: newGroupDescription,
+    };
+
     try {
-      const newGroup = await createGroup(
-        organizationId,
-        newGroupName,
-        newGroupDescription
-      );
-      setGroups([...groups, newGroup]);
+      const newGroup = await createGroup(organizationId as number, dto);
+      setGroups((prev) => [...prev, newGroup]);
       setNewGroupName("");
       setNewGroupDescription("");
       setShowCreateForm(false);
       toast.success("Group created");
+
+      if (onGroupsChange) {
+        await onGroupsChange();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create group");
       toast.error("Group not created");
@@ -152,7 +208,6 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
-  // Update group
   const handleUpdateGroup = async (groupId: string | number) => {
     if (!editName.trim()) {
       setError("Group name is required");
@@ -162,16 +217,29 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setLoading(true);
     setError(null);
 
+    const dto: UpdateGroupRequestDto = {
+      name: editName,
+      description: editDescription,
+    };
+
     try {
       const updatedGroup = await updateGroup(
-        groupId,
-        editName,
-        editDescription
+        organization?.organizationId as number,
+        groupId as number,
+        dto
       );
-      setGroups(groups.map((g) => (g.id === groupId ? updatedGroup : g)));
+
+      setGroups((prev) =>
+        prev.map((g) => (g.id === groupId ? updatedGroup : g))
+      );
+
       setEditingGroup(null);
       setEditName("");
       setEditDescription("");
+
+      if (onGroupsChange) {
+        await onGroupsChange();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update group");
     } finally {
@@ -179,57 +247,107 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
-  // Delete single group
-  const handleDeleteGroup = async (groupId: string | number) => {
-    if (!confirm("Are you sure you want to delete this group?")) return;
+  /* ------------------------------------------------------------------------ */
+  /*                          Archive / Bulk Archive Logic                    */
+  /* ------------------------------------------------------------------------ */
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      await deleteGroup(groupId);
-      setGroups(groups.filter((g) => g.id !== groupId));
-      if (expandedGroup === groupId) {
-        setExpandedGroup(null);
-      }
-      // Clear cached members
-      const newGroupMembers = new Map(groupMembers);
-      newGroupMembers.delete(groupId);
-      setGroupMembers(newGroupMembers);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete group");
-    } finally {
-      setLoading(false);
-    }
+  const handleArchiveGroup = (groupId: string | number) => {
+    openArchiveModalForGroups([groupId]);
   };
 
-  // Delete multiple groups
-  const handleDeleteSelected = async () => {
+  const handleArchiveSelected = () => {
     if (selectedGroups.size === 0) return;
-    if (
-      !confirm(
-        `Are you sure you want to delete ${selectedGroups.size} group(s)?`
-      )
-    )
+    openArchiveModalForGroups(Array.from(selectedGroups));
+  };
+
+  const handleConfirmArchiveModal = async () => {
+    if (!archiveModal.groupIds.length) {
+      setArchiveModal((prev) => ({ ...prev, isOpen: false }));
       return;
+    }
 
     setLoading(true);
     setError(null);
+
+    const selectedIds = new Set(archiveModal.groupIds);
+
+    // Optimistic: remove them from the list immediately
+    setGroups((prev) => prev.filter((g) => !selectedIds.has(g.id)));
 
     try {
       await Promise.all(
-        Array.from(selectedGroups).map((id) => deleteGroup(id))
+        archiveModal.groupIds.map((id) =>
+          archiveGroup(
+            organization?.organizationId as number,
+            id as number,
+            true
+          )
+        )
       );
-      setGroups(groups.filter((g) => !selectedGroups.has(g.id)));
-      setSelectedGroups(new Set());
+
+      setSelectedGroups((prev) => {
+        const copy = new Set(prev);
+        archiveModal.groupIds.forEach((id) => copy.delete(id));
+        return copy;
+      });
+
+      if (expandedGroup && selectedIds.has(expandedGroup)) {
+        setExpandedGroup(null);
+      }
+      if (editingGroup && selectedIds.has(editingGroup)) {
+        setEditingGroup(null);
+        setEditName("");
+        setEditDescription("");
+      }
+
+      toast.success(
+        archiveModal.groupIds.length === 1
+          ? "Group archived"
+          : "Groups archived"
+      );
+      if (onGroupsChange) {
+        await onGroupsChange();
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete groups");
+      setError(err instanceof Error ? err.message : "Failed to archive groups");
+      toast.error("Failed to archive groups");
     } finally {
       setLoading(false);
+      setArchiveModal({
+        isOpen: false,
+        groupIds: [],
+        groupNames: [],
+        totalMembers: undefined,
+      });
     }
   };
 
-  // Add member to group
+  const openArchiveModalForGroups = (groupIds: Array<string | number>) => {
+    if (groupIds.length === 0) return;
+
+    const selected = groups.filter((g) => groupIds.includes(g.id));
+    const groupNames = selected.map((g) => g.name);
+
+    let totalMembers: number | undefined = undefined;
+    if (groupIds.length === 1) {
+      const groupId = groupIds[0];
+      const currentMembers = getCurrentMembers(groupId);
+      const fromState = groups.find((g) => g.id === groupId)?.memberCount;
+      totalMembers = currentMembers.length || fromState || 0;
+    }
+
+    setArchiveModal({
+      isOpen: true,
+      groupIds,
+      groupNames,
+      totalMembers,
+    });
+  };
+
+  /* ------------------------------------------------------------------------ */
+  /*                           Member Management Logic                        */
+  /* ------------------------------------------------------------------------ */
+
   const handleAddMember = async (
     groupId: string | number,
     userId: string | number
@@ -238,10 +356,13 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await addUserToGroup(groupId, userId);
-      // Refetch members after adding
-      const members = await getGroupMembers(groupId);
-      setGroupMembers(new Map(groupMembers).set(groupId, members));
+      await addUserToGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        userId as number
+      );
+
+      await fetchGroupMembers(groupId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add member");
     } finally {
@@ -249,7 +370,6 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
-  // Remove member from group
   const handleRemoveMember = async (
     groupId: string | number,
     userId: string | number
@@ -258,20 +378,26 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setError(null);
 
     try {
-      await removeUserFromGroup(groupId, userId);
-      // Refetch members after removing
-      const members = await getGroupMembers(groupId);
-      setGroupMembers(new Map(groupMembers).set(groupId, members));
+      await removeUserFromGroup(
+        organization?.organizationId as number,
+        groupId as number,
+        userId as number
+      );
+
+      await fetchGroupMembers(groupId);
       toast.success("Removed member");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove member");
-      toast.error("Falied to remove member");
+      toast.error("Failed to remove member");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle checkbox selection
+  /* ------------------------------------------------------------------------ */
+  /*                        Selection / Helper Computations                   */
+  /* ------------------------------------------------------------------------ */
+
   const toggleSelectGroup = (groupId: string | number) => {
     const newSelection = new Set(selectedGroups);
     if (newSelection.has(groupId)) {
@@ -282,7 +408,6 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     setSelectedGroups(newSelection);
   };
 
-  // Select all
   const toggleSelectAll = () => {
     if (selectedGroups.size === groups.length) {
       setSelectedGroups(new Set());
@@ -291,25 +416,24 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     }
   };
 
-  // Get current members for a group
   const getCurrentMembers = (groupId: string | number): UserResponseDto[] => {
     return groupMembers.get(groupId) || [];
   };
 
-  // Get available users (not in group)
   const getAvailableUsers = (groupId: string | number): UserResponseDto[] => {
     const currentMembers = getCurrentMembers(groupId);
     const memberIds = new Set(currentMembers.map((m) => m.id));
+
     return availableUsers.filter(
       (u) => !memberIds.has(u.id) && u.isActive && !u.isArchived
     );
   };
 
-  // Filter users by search term
   const filterUsersBySearch = (users: UserResponseDto[]): UserResponseDto[] => {
     if (!memberSearchTerm.trim()) return users;
 
     const searchLower = memberSearchTerm.toLowerCase();
+
     return users.filter(
       (u) =>
         u.name?.toLowerCase().includes(searchLower) ||
@@ -317,9 +441,13 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
     );
   };
 
+  /* ------------------------------------------------------------------------ */
+  /*                               Main Render                                */
+  /* ------------------------------------------------------------------------ */
+
   return (
     <div className="p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -341,405 +469,67 @@ const InlineGroupsTable: React.FC<InlineGroupsTableProps> = ({
         </div>
 
         {/* Create Group Inline Form */}
-        {showCreateForm && (
-          <div className="bg-base-200 rounded-lg shadow-lg p-6 mb-4 border-2 border-primary">
-            <h3 className="font-bold text-xl mb-4">Create New Group</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Group Name *</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Engineering Team"
-                  className="input input-bordered w-full"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">Description</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Brief description"
-                  className="input input-bordered w-full"
-                  value={newGroupDescription}
-                  onChange={(e) => setNewGroupDescription(e.target.value)}
-                  disabled={loading}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                className="btn btn-ghost"
-                onClick={() => {
-                  setShowCreateForm(false);
-                  setNewGroupName("");
-                  setNewGroupDescription("");
-                }}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleCreateGroup}
-                disabled={loading || !newGroupName.trim()}
-              >
-                {loading ? (
-                  <span className="loading loading-spinner loading-sm"></span>
-                ) : (
-                  "Create Group"
-                )}
-              </button>
-            </div>
-          </div>
-        )}
+        <CreateGroupInlineForm
+          show={showCreateForm}
+          loading={loading}
+          newGroupName={newGroupName}
+          newGroupDescription={newGroupDescription}
+          onChangeName={setNewGroupName}
+          onChangeDescription={setNewGroupDescription}
+          onCancel={() => {
+            setShowCreateForm(false);
+            setNewGroupName("");
+            setNewGroupDescription("");
+          }}
+          onSubmit={handleCreateGroup}
+        />
 
         {/* Groups Table */}
-        <div className=" rounded-lg shadow-xl overflow-hidden border-2 border-primary ">
-          <table className="table w-full">
-            <thead className="">
-              <tr>
-                <th className="w-12">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-sm"
-                    checked={
-                      selectedGroups.size === groups.length && groups.length > 0
-                    }
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th>Group Name</th>
-                <th>Description</th>
-                <th>Members</th>
-                <th className="w-32">
-                  {selectedGroups.size > 0 && (
-                    <button
-                      onClick={handleDeleteSelected}
-                      className="btn btn-ghost btn-sm text-error"
-                      disabled={loading}
-                    >
-                      <TrashIcon className="size-6" />
-                      Delete ({selectedGroups.size})
-                    </button>
-                  )}
-                </th>
-                <th className="w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {groups.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center py-8 text-base-content/70"
-                  >
-                    No groups found. Create your first group to get started.
-                  </td>
-                </tr>
-              ) : (
-                groups.map((group) => {
-                  const currentMembers = getCurrentMembers(group.id);
-                  const availableUsersForGroup = getAvailableUsers(group.id);
-                  const filteredAvailable = filterUsersBySearch(
-                    availableUsersForGroup
-                  );
-                  const isLoadingMembers = loadingMembers.has(group.id);
+        <GroupsTable
+          groups={groups}
+          loading={loading}
+          selectedGroups={selectedGroups}
+          expandedGroup={expandedGroup}
+          editingGroup={editingGroup}
+          loadingMembers={loadingMembers}
+          memberSearchTerm={memberSearchTerm}
+          editName={editName}
+          editDescription={editDescription}
+          groupMembers={groupMembers}
+          availableUsers={availableUsers}
+          getAvailableUsers={getAvailableUsers}
+          filterUsersBySearch={filterUsersBySearch}
+          onToggleSelectAll={toggleSelectAll}
+          onToggleSelectGroup={toggleSelectGroup}
+          onArchiveSelected={handleArchiveSelected}
+          onToggleExpand={toggleExpand}
+          onStartEdit={startEdit}
+          onCancelEdit={cancelEdit}
+          onUpdateGroup={handleUpdateGroup}
+          onChangeEditName={setEditName}
+          onChangeEditDescription={setEditDescription}
+          onRemoveMember={handleRemoveMember}
+          onAddMember={handleAddMember}
+          onChangeMemberSearch={setMemberSearchTerm}
+          onArchiveGroup={handleArchiveGroup}
+        />
 
-                  return (
-                    <React.Fragment key={group.id}>
-                      {/* Main Row */}
-                      <tr
-                        className={`hover cursor-pointer ${
-                          expandedGroup === group.id ? "bg-base-200" : ""
-                        }`}
-                        onClick={() => toggleExpand(group.id)}
-                      >
-                        <td onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            className="checkbox checkbox-sm"
-                            checked={selectedGroups.has(group.id)}
-                            onChange={() => toggleSelectGroup(group.id)}
-                          />
-                        </td>
-                        <td className="font-semibold">{group.name}</td>
-                        <td className="text-base-content/70">
-                          {group.description || "No description"}
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-2">
-                            <UserGroupIcon className="size-6" />
-                            <span className="badge badge-ghost">
-                              {group.memberCount}
-                            </span>
-                          </div>
-                        </td>
-                        <td onClick={(e) => e.stopPropagation()}>
-                          <div className="flex gap-2">
-                            <button
-                              className="btn btn-ghost btn-sm"
-                              onClick={() => {
-                                setExpandedGroup(group.id);
-                                startEdit(group);
-                              }}
-                              disabled={loading}
-                            >
-                              <PencilIcon className="size-6" />
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-sm"
-                              onClick={() => handleDeleteGroup(group.id)}
-                              disabled={loading}
-                            >
-                              <TrashIcon className="size-6 text-error" />
-                            </button>
-                          </div>
-                        </td>
-                        <td>
-                          {expandedGroup === group.id ? (
-                            <ChevronUpIcon className="size-6" />
-                          ) : (
-                            <ChevronDownIcon className="size-6" />
-                          )}
-                        </td>
-                      </tr>
-
-                      {/* Expanded Row */}
-                      {expandedGroup === group.id && (
-                        <tr>
-                          <td colSpan={6} className="bg-base-100 p-0">
-                            <div className="p-6 border-t-2 border-primary/20">
-                              {/* Edit Mode */}
-                              {editingGroup === group.id ? (
-                                <div className="space-y-4">
-                                  <div className="flex justify-between items-center mb-4">
-                                    <h4 className="font-bold text-lg">
-                                      Edit Group Details
-                                    </h4>
-                                    <div className="flex gap-2">
-                                      <button
-                                        className="btn btn-sm btn-ghost"
-                                        onClick={cancelEdit}
-                                        disabled={loading}
-                                      >
-                                        Cancel
-                                      </button>
-                                      <button
-                                        className="btn btn-sm btn-primary"
-                                        onClick={() =>
-                                          handleUpdateGroup(group.id)
-                                        }
-                                        disabled={loading || !editName.trim()}
-                                      >
-                                        {loading ? (
-                                          <span className="loading loading-spinner loading-sm"></span>
-                                        ) : (
-                                          <>
-                                            <CheckIcon className="w-4 h-4" />
-                                            Save Changes
-                                          </>
-                                        )}
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="form-control">
-                                      <label className="label">
-                                        <span className="label-text font-semibold">
-                                          Group Name
-                                        </span>
-                                      </label>
-                                      <input
-                                        type="text"
-                                        className="input input-bordered w-full"
-                                        value={editName}
-                                        onChange={(e) =>
-                                          setEditName(e.target.value)
-                                        }
-                                        disabled={loading}
-                                      />
-                                    </div>
-                                    <div className="form-control">
-                                      <label className="label">
-                                        <span className="label-text font-semibold">
-                                          Description
-                                        </span>
-                                      </label>
-                                      <input
-                                        type="text"
-                                        className="input input-bordered w-full"
-                                        value={editDescription}
-                                        onChange={(e) =>
-                                          setEditDescription(e.target.value)
-                                        }
-                                        disabled={loading}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex justify-between items-start mb-4">
-                                  <div>
-                                    <h4 className="font-bold text-lg">
-                                      {group.name}
-                                    </h4>
-                                    <p className="text-base-content/70">
-                                      {group.description || "No description"}
-                                    </p>
-                                  </div>
-                                  <button
-                                    className="btn btn-sm btn-ghost"
-                                    onClick={() => startEdit(group)}
-                                    disabled={loading}
-                                  >
-                                    <PencilIcon className="w-4 h-4" />
-                                    Edit Details
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* Member Management Section */}
-                              <div className="divider my-4">
-                                Member Management
-                              </div>
-
-                              {isLoadingMembers ? (
-                                <div className="flex justify-center items-center py-8">
-                                  <span className="loading loading-spinner loading-lg"></span>
-                                </div>
-                              ) : (
-                                <div className="grid grid-cols-2 gap-6 max-h-96">
-                                  {/* Current Members */}
-                                  <div className="flex flex-col">
-                                    <div className="flex justify-between items-center mb-3">
-                                      <h5 className="font-semibold flex items-center gap-2">
-                                        <UserGroupIcon className="w-5 h-5" />
-                                        Current Members ({currentMembers.length}
-                                        )
-                                      </h5>
-                                    </div>
-                                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                                      {currentMembers.length === 0 ? (
-                                        <div className="text-center py-4 text-base-content/60">
-                                          No members in this group yet
-                                        </div>
-                                      ) : (
-                                        currentMembers.map((user) => (
-                                          <div
-                                            key={user.id}
-                                            className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-300 transition"
-                                          >
-                                            <div className="flex items-center gap-3">
-                                              <AvatarCell name={user.name} />
-                                              <div>
-                                                <p className="font-medium">
-                                                  {user.name}
-                                                </p>
-                                                <p className="text-sm text-base-content/60">
-                                                  {user.email}
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <button
-                                              className="btn btn-ghost btn-sm text-error hover:bg-error/20"
-                                              onClick={() =>
-                                                handleRemoveMember(
-                                                  group.id,
-                                                  user.id!
-                                                )
-                                              }
-                                              disabled={loading}
-                                            >
-                                              <XMarkIcon className="size-6" />
-                                            </button>
-                                          </div>
-                                        ))
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Add Members */}
-                                  <div className="flex flex-col">
-                                    <div className="flex justify-between items-center mb-3">
-                                      <h5 className="font-semibold">
-                                        Add Members
-                                      </h5>
-                                    </div>
-                                    <div className="form-control mb-3">
-                                      <div className="input-group">
-                                        <span className="bg-base-300"></span>
-                                        <input
-                                          type="text"
-                                          placeholder="Search users..."
-                                          className="input input-bordered w-full"
-                                          value={memberSearchTerm}
-                                          onChange={(e) =>
-                                            setMemberSearchTerm(e.target.value)
-                                          }
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                      {filteredAvailable.length === 0 ? (
-                                        <div className="text-center py-4 text-base-content/60">
-                                          {availableUsersForGroup.length === 0
-                                            ? "All users are already in this group"
-                                            : "No users found"}
-                                        </div>
-                                      ) : (
-                                        filteredAvailable.map((user) => (
-                                          <div
-                                            key={user.id}
-                                            className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-300 transition"
-                                          >
-                                            <div className="flex items-center gap-3">
-                                              <AvatarCell name={user.name} />
-                                              <div>
-                                                <p className="font-medium">
-                                                  {user.name}
-                                                </p>
-                                                <p className="text-sm text-base-content/60">
-                                                  {user.email}
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <button
-                                              className="btn btn-ghost btn-sm text-success hover:bg-success/20"
-                                              onClick={() =>
-                                                handleAddMember(
-                                                  group.id,
-                                                  user.id!
-                                                )
-                                              }
-                                              disabled={loading}
-                                            >
-                                              <PlusIcon className="size-6" />
-                                            </button>
-                                          </div>
-                                        ))
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Confirm Archive Modal */}
+        <GroupArchiveModal
+          isOpen={archiveModal.isOpen}
+          groupNames={archiveModal.groupNames}
+          totalMembers={archiveModal.totalMembers}
+          loading={loading}
+          onClose={() =>
+            setArchiveModal({
+              isOpen: false,
+              groupIds: [],
+              groupNames: [],
+              totalMembers: undefined,
+            })
+          }
+          onConfirm={handleConfirmArchiveModal}
+        />
       </div>
     </div>
   );

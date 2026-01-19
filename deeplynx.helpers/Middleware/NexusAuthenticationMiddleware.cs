@@ -38,10 +38,10 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         // Extract token
         var token = ExtractToken(Request);
-        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
+        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
 
         // If local bypass is enabled, try to use the token but fall back to superuser on any issues
-        if (disableAuth)
+        if (disableAuth == "true")
         {
             // No token provided - use superuser
             if (string.IsNullOrEmpty(token))
@@ -396,6 +396,28 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     await dbContext.SaveChangesAsync();
                     Log.Information($"Updated SSO ID for existing user {email}");
                 }
+                
+                // Add user to the default org if not already a member
+                var defaultOrg = await dbContext.Organizations
+                    .Where(o => o.DefaultOrg).FirstOrDefaultAsync();
+
+                if (defaultOrg != null)
+                {
+                    var isMember = await dbContext.OrganizationUsers
+                        .AnyAsync(ou => ou.OrganizationId == defaultOrg.Id && ou.UserId == existingUser.Id);
+    
+                    if (!isMember)
+                    {
+                        var orgUser = new OrganizationUser
+                        {
+                            OrganizationId = defaultOrg.Id,
+                            UserId = existingUser.Id,
+                        };
+        
+                        dbContext.OrganizationUsers.Add(orgUser);
+                        await dbContext.SaveChangesAsync();
+                    }
+                }
             }
             else
             {
@@ -412,6 +434,22 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 dbContext.Users.Add(newUser);
                 await dbContext.SaveChangesAsync();
                 Log.Information($"User with email {email} created successfully");
+                
+                // Add user to the default org
+                var defaultOrg = await dbContext.Organizations
+                    .Where(o => o.DefaultOrg).FirstOrDefaultAsync();
+
+                if (defaultOrg != null)
+                {
+                    var orgUser = new OrganizationUser
+                    {
+                        OrganizationId = defaultOrg.Id,
+                        UserId = newUser.Id,
+                    };
+                    
+                    dbContext.OrganizationUsers.Add(orgUser);
+                    await dbContext.SaveChangesAsync();
+                }
             }
         }
         catch (Exception ex)
@@ -446,6 +484,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 dbContext.Users.Add(newUser);
                 await dbContext.SaveChangesAsync();
                 Log.Information($"Local development sys admin created: {email}");
+                existingUser = newUser;
             }
             else if (!existingUser.IsSysAdmin)
             {
@@ -455,6 +494,28 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 existingUser.IsArchived = false;
                 await dbContext.SaveChangesAsync();
                 Log.Information($"Existing user {email} promoted to sys admin for local development");
+            }
+            
+            // Add user to the default org if not already a member
+            var defaultOrg = await dbContext.Organizations
+                .Where(o => o.DefaultOrg).FirstOrDefaultAsync();
+
+            if (defaultOrg != null)
+            {
+                var isMember = await dbContext.OrganizationUsers
+                    .AnyAsync(ou => ou.OrganizationId == defaultOrg.Id && ou.UserId == existingUser.Id);
+    
+                if (!isMember)
+                {
+                    var orgUser = new OrganizationUser
+                    {
+                        OrganizationId = defaultOrg.Id,
+                        UserId = existingUser.Id,
+                    };
+        
+                    dbContext.OrganizationUsers.Add(orgUser);
+                    await dbContext.SaveChangesAsync();
+                }
             }
         }
         catch (Exception ex)

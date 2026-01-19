@@ -53,28 +53,25 @@ export type GroupResponseDto = {
   memberCount?: number;
 }
 
-export type HistoricalRecordResponseDto = {
-  Id?: number;
-  Uri?: string;
-  Properties: string;
-  OriginalId?: string;
-  Name?: string;
-  Description?: string;
-  ClassId?: number;
-  ClassName?: string;
-  DataSourceId?: number;
-  DataSourceName?: string;
-  ObjectStorageId?: number;
-  ObjectStorageName?: string;
-  ProjectId: number;
-  ProjectName: string;
-  Tags?: string;
-  LastUpdatedAt?: Date;
-  LastUpdateBy?: string;
-  isArchived: boolean
-  CreatedBy?: string;
-  CreatedAt?: Date;
-  ArchivedAt?: Date;
+export interface HistoricalRecordResponseDto {
+  id: number;
+  uri?: string | null;
+  properties?: string | null;
+  originalId?: string | null;
+  name?: string | null;
+  description?: string | null;
+  classId?: number;
+  className?: string | null;
+  dataSourceId?: number;
+  dataSourceName: string;
+  projectId?: number;
+  projectName: string;
+  tags?: string | null;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: string | null;
+  isArchived: boolean;
+  objectStorageId?: number;
+  objectStorageName?: string | null;
 }
 
 export type RecordResponseDto = {
@@ -159,18 +156,16 @@ export type ProjectStatResponseDto = {
 }
 
 //which one
-export type RoleResponseDto =
-  {
-    roleId: number;
-    id: number;
-    name: string;
-    description?: string | null;
-    lastUpdatedAt?: string | null;
-    lastUpdatedBy?: string | null;
-    isArchived?: boolean;
-    projectId: number;
-    organizationId?: number | null;
-  }
+export type RoleResponseDto = {
+  id: number;
+  name: string;
+  description: string | null;
+  lastUpdatedAt: string;
+  lastUpdatedBy: number;
+  isArchived: boolean;
+  projectId: number;
+  organizationId: number;
+}
 
 export type TagResponseDto = {
   id: number;
@@ -193,6 +188,30 @@ export type UserResponseDto =
     isActive: boolean;
     role?: string;
   }
+
+  export type UserAdminInfoDto = {
+  id: number;
+  name: string;
+  email: string;
+  username: string | null;
+  isSysAdmin: boolean;
+  isArchived: boolean;
+  isActive: boolean;
+  isOrgAdmin: boolean | null;
+  isProjectAdmin: boolean | null;
+};
+
+export type PendingInviteDto = {
+  id: number;
+  email: string;
+  invitedAt: string;
+  expiresAt: string;
+  projectId?: number;
+  projectName?: string;
+  roleId?: number;
+  roleName?: string;
+  status: 'pending' | 'expired';
+}
 
 export type GraphResponseDto = {
   nodes: Array<{
@@ -237,20 +256,53 @@ export type PaginatedEventsResponseDto =
     totalCount: number;
   };
 
-export type EventResponseDto =
-  {
+export type EventResponseDto = {
     id: number;
     operation: string;
     entityType: string;
     entityId?: number | null;
-    entityName: string;
-    projectId?: number;
-    projectName?: string;
+    projectId: number;
     organizationId?: number | null;
+    organizationName: string;
     dataSourceId?: number | null;
-    dataSourceName?: string | null;
     properties?: JSON | string | null;
+    projectName?: string | null;
+    entityName?: string | null;
+    dataSourceName?: string | null;
     lastUpdatedAt?: string | null;
-    lastUpdatedBy?: string | null;
+    lastUpdatedBy?: number | null;
     lastUpdatedByUserName?: string | null;
-  };
+};
+
+export type EdgeResponseDto = {
+  id: number;
+  originId: number;
+  destinationId: number;
+  relationshipId?: number;
+  dataSourceId: number;
+  projectId: number;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+  isArchived: boolean;
+};
+
+export type RelationshipResponseDto = {
+  id: number;
+  name: string;
+  description?: string;
+  uuid?: string;
+  projectId: number;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+  isArchived: boolean;
+  originId?: number;
+  destinationId?: number;
+};
+
+export type ProjectMemberResponseDto = {
+  name: string;
+  memberId?: number;
+  email: string;
+  role?: string;
+  roleId?: number;
+};

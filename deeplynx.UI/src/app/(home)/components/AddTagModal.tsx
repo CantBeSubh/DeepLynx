@@ -2,10 +2,17 @@
 "use client";
 
 import React, { useState } from "react";
+import toast from "react-hot-toast";
+
 import { useLanguage } from "@/app/contexts/Language";
-import type { Tag } from "@/app/(home)/types/types";
-import { createTag } from "@/app/lib/tag_services.client";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+
 import { TagResponseDto } from "@/app/(home)/types/responseDTOs";
+import { createTag } from "@/app/lib/client_service/tag_services.client";
+
+/* -------------------------------------------------------------------------- */
+/*                                   Types                                    */
+/* -------------------------------------------------------------------------- */
 
 type Props = {
   isOpen: boolean;
@@ -14,6 +21,16 @@ type Props = {
   onTagCreated?: (newTag: TagResponseDto) => void;
 };
 
+// Minimal payload for creating a tag.
+// Adjust this to match your actual API contract if needed.
+type CreateTagPayload = {
+  name: string;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                               AddTagModal                                  */
+/* -------------------------------------------------------------------------- */
+
 const AddTagModal: React.FC<Props> = ({
   isOpen,
   onClose,
@@ -21,10 +38,14 @@ const AddTagModal: React.FC<Props> = ({
   onTagCreated,
 }) => {
   const { t } = useLanguage();
+  const { organization } = useOrganizationSession();
+
+  const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Required fields
-  const [name, setName] = useState("");
+  /* ------------------------------------------------------------------------ */
+  /*                               Helpers                                    */
+  /* ------------------------------------------------------------------------ */
 
   const resetForm = () => {
     setName("");
@@ -36,31 +57,49 @@ const AddTagModal: React.FC<Props> = ({
     onClose();
   };
 
+  /* ------------------------------------------------------------------------ */
+  /*                              Submit Logic                                */
+  /* ------------------------------------------------------------------------ */
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
 
-    const payload: Tag = {
+    if (!organization?.organizationId) {
+      toast.error("No organization selected.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const payload: CreateTagPayload = {
       name,
     };
 
     try {
-      const newTag = await createTag(projectId, payload); // Capture the returned tag
+      const newTag = await createTag(
+        projectId,
+        payload
+      );
 
-      // Call the callback with the newly created tag
       if (onTagCreated && newTag) {
-        onTagCreated(newTag);
+        onTagCreated(newTag as TagResponseDto);
       }
 
+      toast.success("Tag created");
       resetForm();
       onClose();
     } catch (error) {
       console.error("Error creating tag:", error);
+      toast.error("Failed to create tag");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  /* ------------------------------------------------------------------------ */
+  /*                               Main Render                                */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
@@ -68,6 +107,7 @@ const AddTagModal: React.FC<Props> = ({
         <h3 className="text-base-content font-bold text-lg mb-4">
           {t.translations.ADD_A_TAG}
         </h3>
+
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           <input
             type="text"
@@ -77,6 +117,7 @@ const AddTagModal: React.FC<Props> = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+
           <div className="modal-action">
             <button type="button" className="btn" onClick={handleClose}>
               {t.translations.CANCEL}

@@ -1,81 +1,104 @@
-// src/app/(home)/organization_management/OrganizationManagementClient.tsx
 "use client";
 
 import React, { useState } from "react";
 import Tabs from "../components/Tabs";
 import {
   GroupResponseDto,
-  OrganizationResponseDto,
   ProjectResponseDto,
   UserResponseDto,
+  RoleResponseDto,
+  PermissionResponseDto,
 } from "../types/responseDTOs";
-import UsersTable from "../components/SiteManagementPortal/UsersTable";
-import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
+import UsersTable from "../components/users/UsersTable";
 import { useLanguage } from "@/app/contexts/Language";
-import ObjectStorageTable from "../components/OrganizationManagementPortal/ObjectStorageTable";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import TagManagementClient from "../tag_management/TagManagementClient";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import InlineGroupsTable from "./groups/InlineGroupsTable";
+import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
+import OrganizationSettings from "./settings/OrganizationSettings";
+import TagManagementClient from "./tag_management/TagManagementClient";
+import OptionThree from "./tag_management/OptionThree";
+import SettingsOne from "./settings/SettingsOne";
+import SettingsTwo from "./settings/SettingsTwo";
+import SettingsThree from "./settings/SettingsThree";
+import { getAllGroups } from "@/app/lib/client_service/group_services.client"; // Add this import
 
 interface OrganizationManagementProps {
   members: UserResponseDto[];
   initialProjects: ProjectResponseDto[];
   initialGroups: GroupResponseDto[];
+  initialRoles: RoleResponseDto[];
   initialSelectedProject?: ProjectResponseDto;
+  initialPermissions: PermissionResponseDto[];
 }
 
 const OrganizationManagementClient = ({
   members,
-  initialProjects,
   initialGroups,
-  initialSelectedProject,
+  initialRoles,
+  initialPermissions,
+  initialProjects,
 }: OrganizationManagementProps) => {
   const [activeTab, setActiveTab] = useState("");
+  const [groups, setGroups] = useState<GroupResponseDto[]>(initialGroups);
   const { t } = useLanguage();
-  const { organization, setOrganization } = useOrganizationSession();
-  const { project } = useProjectSession();
-  console.log("Groups", initialGroups);
-  console.log("Members", members);
+  const { organization } = useOrganizationSession();
+
+  const refreshGroups = async () => {
+    if (!organization?.organizationId) return;
+
+    try {
+      const updatedGroups = await getAllGroups(
+        organization.organizationId as number
+      );
+      setGroups(updatedGroups);
+    } catch (err) {
+      console.error("Failed to refresh groups:", err);
+    }
+  };
 
   const tabData = [
     {
-      label: "Users",
-      content: <UsersTable members={members} />,
+      label: t.translations.USERS,
+      content: (
+        <UsersTable
+          initialMembers={members}
+          header={"Organization Users"}
+          description={
+            "Manage users in your organization. Invite new users via email or add them directly."
+          }
+        />
+      ),
     },
     {
-      label: "Roles & Permissions",
-      content: "content here",
+      label: t.translations.ROLES_AND_PERMISSIONS,
+      content: (
+        <RolesAndPermissions
+          initialRoles={initialRoles}
+          initialPermissions={initialPermissions}
+        />
+      ),
     },
     {
-      label: "Groups",
+      label: t.translations.GROUPS,
       content: (
         <InlineGroupsTable
-          initialGroups={initialGroups}
+          initialGroups={groups}
           availableUsers={members}
           organizationId={organization?.organizationId}
+          onGroupsChange={refreshGroups}
         />
       ),
     },
     {
-      label: "Tags and Security Labels",
-      content: (
-        <TagManagementClient
-          initialProjects={initialProjects}
-          initialSelectedProject={initialSelectedProject}
-        />
-      ),
+      label: t.translations.TAGS_AND_SECURITY_LABELS,
+      content: <OptionThree projects={initialProjects} />,
     },
-    // {
-    //   label: "Object Storage",
-    //   content: <ObjectStorageTable organization={organization} />
-    // }, //TODO: Object storage org level management backend not finished yet
     {
-      label: "Settings",
+      label: t.translations.SETTINGS,
       content: organization ? (
         <OrganizationSettings organization={organization} />
       ) : (
-        <div>No organization selected</div>
+        <div>{t.translations.NO_ORG_SELECTED}</div>
       ),
     },
   ];

@@ -86,7 +86,7 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
     <div>
       {/* Action Buttons Bar */}
       <div className="flex justify-end items-center mb-4 gap-2">
-        {!canCustomize && (
+        {/* {!canCustomize && (
           <button
             onClick={() => setCanCustomize(true)}
             className="btn btn-sm btn-outline btn-secondary"
@@ -94,7 +94,7 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
             <Cog6ToothIcon className="h-5 w-5" />
             <span>{t.translations.CUSTOMIZE}</span>
           </button>
-        )}
+        )} */}
         {canCustomize && (
           <>
             <button
@@ -137,10 +137,9 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
               shadow-sm 
               hover:shadow-md 
               transition-all
-              ${
-                canCustomize
-                  ? "cursor-grab active:cursor-grabbing hover:bg-base-200/50"
-                  : "cursor-default"
+              ${canCustomize
+                ? "cursor-grab active:cursor-grabbing hover:bg-base-200/50"
+                : "cursor-default"
               }
             `}
             style={{ pointerEvents: canCustomize ? "auto" : "none" }}

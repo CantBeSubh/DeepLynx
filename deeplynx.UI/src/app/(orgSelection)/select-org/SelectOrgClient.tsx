@@ -7,10 +7,12 @@ import { CreateOrganizationRequestDto } from "@/app/(home)/types/requestDTOs";
 import { OrganizationResponseDto } from "@/app/(home)/types/responseDTOs";
 import { useLanguage } from "@/app/contexts/Language";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
-import { getAllOrganizations } from "@/app/lib/organization_services.client";
-import { createOrganization } from "@/app/lib/organization_services.client";
-import { getAllProjects } from "@/app/lib/projects_services.client";
-import { getAllUsers } from "@/app/lib/user_services.client";
+import {
+  createOrganization,
+  getAllOrganizationsForUser,
+} from "@/app/lib/client_service/organization_services.client";
+import { getAllProjects } from "@/app/lib/client_service/projects_services.client";
+import { getAllUsers } from "@/app/lib/client_service/user_services.client";
 import {
   ArrowRightIcon,
   Cog6ToothIcon,
@@ -57,14 +59,14 @@ const SelectOrgClient = ({ session }: Props) => {
       setLoading(true);
 
       // Fetch all organizations
-      const orgs = await getAllOrganizations(true);
+      const orgs = await getAllOrganizationsForUser(true);
 
       // Fetch project and user counts for each organization
       const orgsWithCounts = await Promise.all(
         orgs.map(async (org) => {
           try {
             const [projects, users] = await Promise.all([
-              getAllProjects(org.id, true),
+              getAllProjects(org.id as number, true),
               getAllUsers(org.id),
             ]);
 
@@ -162,7 +164,7 @@ const SelectOrgClient = ({ session }: Props) => {
             height={213.9}
             priority
           />
-          <div className="card bg-base-100 shadow-xl w-full mt-6">
+          <div className="card bg-base-100 shadow-xl w-full">
             {/* Header */}
             <div className="card-body p-6">
               <div className="flex items-center justify-between mb-4">

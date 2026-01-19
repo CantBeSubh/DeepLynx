@@ -4,25 +4,25 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import SearchBar from "@/app/(home)/components/SearchBar";
-import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
+import { RecordTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { queryRecords } from "@/app/lib/filter_services.client";
-import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
-
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getMultiProjectRecords } from "@/app/lib/client_service/query_services.client";
 import GridView from "../../components/GridView";
 import ListView from "../../components/ListView";
+import { HistoricalRecordResponseDto } from "../../types/responseDTOs";
 import ProjectDropdown from "../../components/ProjectDropdown";
 
 import { useLanguage } from "@/app/contexts/Language";
 import {
-  AdjustmentsHorizontalIcon,
   ArrowUturnLeftIcon,
+  ChevronDownIcon,
   EyeIcon,
   QueueListIcon,
   TableCellsIcon,
-  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
-import { fullTextSearch } from "@/app/lib/query_services.client";
+import { TagResponseDto } from "../../types/responseDTOs";
+import { fullTextSearch } from "@/app/lib/client_service/query_services.client";
 
 /* ----------------------------- Types & utils ----------------------------- */
 
@@ -30,7 +30,7 @@ type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
   initialSearchTerm: string;
-  initialRecords: FileViewerTableRow[];
+  initialRecords: RecordTableRow[];
 };
 
 type ColumnKey = "id" | "name" | "class" | "tags" | "lastEdit";
@@ -72,13 +72,15 @@ export default function DataCatalogClient({
 
   // Project session (client provider)
   const { hasLoaded } = useProjectSession();
+  const { organization } = useOrganizationSession();
 
   // Local state
   const [projects] = useState(initialProjects);
+
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
-  const [tableData, setTableData] = useState<FileViewerTableRow[]>(
+  const [tableData, setTableData] = useState<RecordTableRow[]>(
     initialRecords ?? []
   );
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
@@ -120,11 +122,27 @@ export default function DataCatalogClient({
         setTableData([]);
         return;
       }
-
-      const data = await getAllRecordsForMultipleProjects(idsNum, true, {
-        signal,
-      });
-      setTableData(data);
+      const data = await getMultiProjectRecords(organization?.organizationId as number, idsNum, true);
+      const transformedData: RecordTableRow[] = data.map((record) => ({
+        id: record.id || 0,
+        name: record.name,
+        description: record.description ?? undefined,
+        uri: record.uri ?? undefined,
+        properties: typeof record.properties === 'string' ? record.properties : JSON.stringify(record.properties),
+        originalId: record.originalId ?? undefined,
+        classId: record.classId ?? undefined,
+        className: undefined,
+        dataSourceId: record.dataSourceId ?? undefined,
+        dataSourceName: '',
+        projectId: record.projectId ?? undefined,
+        projectName: projects.find((p) => Number(p.id) === record.projectId)?.name || '',
+        tags: typeof record.tags === 'string' ? record.tags : JSON.stringify(record.tags),
+        lastUpdatedAt: record.lastUpdatedAt || '',
+        lastUpdatedBy: record.lastUpdatedBy ?? undefined,
+        isArchived: record.isArchived || false,
+        fileType: '',
+      }));
+      setTableData(transformedData);
       setViewMode("list");
     },
     [effectiveProjectIds]
@@ -136,7 +154,7 @@ export default function DataCatalogClient({
     setSearchTerm("");
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Clear all fetch failed:", e);
       }
@@ -150,15 +168,26 @@ export default function DataCatalogClient({
       if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
 
       const newFilter = { id: nextFilterId, term: trimmed };
-      const results = await queryRecords(trimmed);
+      const results = await fullTextSearch(organization?.organizationId as number, trimmed, projects.map((p) => Number(p.id)));
+
+      // Convert HistoricalRecordResponseDto[] to RecordTableRow[]
+      const convertedResults: RecordTableRow[] = results.map((dto: HistoricalRecordResponseDto) => ({
+        ...dto,
+        fileType: '', // TODO: Determine file type from uri/name
+        timeseries: undefined,
+        fileSize: undefined,
+        select: false,
+        associatedRecords: undefined,
+        archivedAt: dto.isArchived ? dto.lastUpdatedAt : null
+      }));
 
       const selectedNums = effectiveProjectIds.map(Number);
       const scoped =
         selectedNums.length === projects.length
-          ? results
-          : results.filter((r: FileViewerTableRow) =>
-              selectedNums.includes(Number(r.projectId))
-            );
+          ? convertedResults
+          : convertedResults.filter((r: RecordTableRow) =>
+            selectedNums.includes(Number(r.projectId))
+          );
 
       setTableData(scoped);
       setActiveFilters((prev) => [...prev, newFilter]);
@@ -183,7 +212,7 @@ export default function DataCatalogClient({
     if (activeFilters.length > 0) return; // search takes precedence
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: RecordTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Fetch on selection change failed:", e);
       }
@@ -205,7 +234,7 @@ export default function DataCatalogClient({
       const parsed = JSON.parse(tags);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
 
-      const values = arr.flatMap((item: Tags) => {
+      const values = arr.flatMap((item: TagResponseDto) => {
         if (item && typeof item === "object") {
           if (typeof item.name === "string") return [item.name];
           return Object.values(item).filter((v) => typeof v === "string");
@@ -235,7 +264,7 @@ export default function DataCatalogClient({
   /* ------------------------ Column visibility wiring ------------------------ */
 
   // Define all possible columns with stable keys
-  const ALL_COLUMNS: ColumnDef<FileViewerTableRow>[] = useMemo(
+  const ALL_COLUMNS: ColumnDef<RecordTableRow>[] = useMemo(
     () => [
       { key: "id", header: "ID", data: "id", sortable: true },
       {
@@ -314,8 +343,8 @@ export default function DataCatalogClient({
 
   const handleSubmit = async () => {
     try {
-      const data = await fullTextSearch(searchTerm, selectedProjects);
-      if (data) setTableData(data);
+      // const data = await fullTextSearch(searchTerm, selectedProjects);
+      // if (data) setTableData(data);
     } catch (error) {
       console.error("Failed to send query", error);
     }
@@ -384,9 +413,8 @@ export default function DataCatalogClient({
             </div>
 
             <button
-              className={`btn btn-sm ${
-                viewMode === "list" ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
               onClick={() => setViewMode("list")}
               title="List view"
             >
@@ -394,9 +422,8 @@ export default function DataCatalogClient({
             </button>
 
             <button
-              className={`btn btn-sm ${
-                viewMode === "table" ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
               onClick={() => setViewMode("table")}
               title="Table view"
             >
@@ -419,9 +446,8 @@ export default function DataCatalogClient({
                     {visibleCols.length - 1}/{ALL_COLUMNS.length - 1}
                   </span>
                   <ChevronDownIcon
-                    className={`h-4 w-4 transition-transform ${
-                      open ? "rotate-180" : ""
-                    }`}
+                    className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
 

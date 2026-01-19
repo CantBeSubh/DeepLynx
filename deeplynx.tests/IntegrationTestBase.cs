@@ -1,19 +1,18 @@
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
+using deeplynx.interfaces;
 using deeplynx.tests;
 using DotNetEnv;
+using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
-using Microsoft.EntityFrameworkCore;
 
 // Fixture to allow setting up and breaking down what is needed for each test suite
 public class TestSuiteFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgresContainer;
     private readonly RedisContainer _redisContainer;
-    public string PostgresConnectionString { get; private set; }
-    public string RedisConnectionString { get; private set; }
-    public DeeplynxContext Context { get; private set; }
 
     public TestSuiteFixture()
     {
@@ -25,6 +24,10 @@ public class TestSuiteFixture : IAsyncLifetime
             .WithImage("redis:7-alpine")
             .Build();
     }
+
+    public string PostgresConnectionString { get; private set; }
+    public string RedisConnectionString { get; private set; }
+    public DeeplynxContext Context { get; private set; }
 
     // Runs at the beginning of every test suite
     public async Task InitializeAsync()
@@ -79,9 +82,7 @@ public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
 [Collection("Test Suite Collection")]
 public class IntegrationTestBase : IAsyncLifetime
 {
-    protected DeeplynxContext Context { get; private set; }
     private readonly TestSuiteFixture _fixture;
-    protected CacheBusiness _cacheBusiness;
 
     protected IntegrationTestBase(TestSuiteFixture fixture)
     {
@@ -89,8 +90,9 @@ public class IntegrationTestBase : IAsyncLifetime
         Context = new DeeplynxContext(new DbContextOptionsBuilder<DeeplynxContext>()
             .UseNpgsql(_fixture.PostgresConnectionString)
             .Options);
-        _cacheBusiness = CacheBusiness.Instance;
     }
+
+    protected DeeplynxContext Context { get; }
 
     // Runs before every test in the test suite
     public virtual async Task InitializeAsync()
@@ -103,11 +105,21 @@ public class IntegrationTestBase : IAsyncLifetime
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
         await Context.DisposeAsync();
-        await _cacheBusiness.FlushAsync();
+        await CacheService.Instance.FlushAsync();
+    }
+    
+    /// <summary>
+    /// Switch cache type for testing - just create a new instance
+    /// </summary>
+    protected void SwitchCacheType(string cacheType)
+    {
+        Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", cacheType);
+        Environment.SetEnvironmentVariable("REDIS_CONNECTION_STRING", _fixture.RedisConnectionString);
+        CacheService.ResetCacheService();
     }
 
     /// <summary>
-    /// Clean database between tests
+    ///     Clean database between tests
     /// </summary>
     protected async Task CleanDatabaseAsync()
     {
@@ -122,17 +134,21 @@ public class IntegrationTestBase : IAsyncLifetime
         var events = await Context.Events.ToListAsync();
         Context.Events.RemoveRange(events);
         await Context.SaveChangesAsync();
-        
+
         var tokens = await Context.OauthTokens.ToListAsync();
         Context.OauthTokens.RemoveRange(tokens);
         await Context.SaveChangesAsync();
-        
+
         var apiKeys = await Context.ApiKeys.ToListAsync();
         Context.ApiKeys.RemoveRange(apiKeys);
         await Context.SaveChangesAsync();
-        
+
         var oauthApplications = await Context.OauthApplications.ToListAsync();
         Context.OauthApplications.RemoveRange(oauthApplications);
+        await Context.SaveChangesAsync();
+
+        var savedSearches = await Context.SavedSearches.ToListAsync();
+        Context.SavedSearches.RemoveRange(savedSearches);
         await Context.SaveChangesAsync();
 
         var permissions = await Context.Permissions.ToListAsync();
@@ -170,11 +186,11 @@ public class IntegrationTestBase : IAsyncLifetime
         var roles = await Context.Roles.ToListAsync();
         Context.Roles.RemoveRange(roles);
         await Context.SaveChangesAsync();
-        
+
         var objectStorages = await Context.ObjectStorages.ToListAsync();
         Context.ObjectStorages.RemoveRange(objectStorages);
         await Context.SaveChangesAsync();
-        
+
         var projects = await Context.Projects.ToListAsync();
         Context.Projects.RemoveRange(projects);
         await Context.SaveChangesAsync();
@@ -188,7 +204,7 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Organizations.RemoveRange(organizations);
         await Context.SaveChangesAsync();
 
-        await _cacheBusiness.FlushAsync();
+        await CacheService.Instance.FlushAsync();
     }
 
     protected virtual async Task SeedTestDataAsync()

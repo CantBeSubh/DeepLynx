@@ -1,7 +1,7 @@
 // app/(home)/project/[id]/page.tsx
 import { notFound, redirect } from "next/navigation";
 import ProjectDetailClient from "./ProjectDetailClient";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { getAllProjectsServer } from "@/app/lib/server_service/projects_services.server";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
 import { cookies } from "next/headers";
 
@@ -45,7 +45,7 @@ export default async function ProjectPage({ params }: Props) {
 
   // Fetch projects filtered by organization
   const ProjectResponseDtos = (await getAllProjectsServer(
-    organizationId,
+    organizationId as number,
     true
   )) as ProjectResponseDto[];
   const initialProjects = ProjectResponseDtos.map((p) =>

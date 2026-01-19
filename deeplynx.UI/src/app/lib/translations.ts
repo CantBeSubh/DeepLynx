@@ -244,7 +244,66 @@ export const translations = {
             EDIT_OAUTH_APP: "Edit OAuth Application",
             ORGANIZATION_MANAGEMENT: "Organization Management",
             CREATE_OBJECT_STORAGE: "Create Object Storage",
-            CONNECTION_STRING: "Connection String"
+            CONNECTION_STRING: "Connection String",
+            ROLES_AND_PERMISSIONS: "Roles & Permissions",
+            TAGS_AND_SECURITY_LABELS: "Tags and Security Labels",
+            NO_ORG_SELECTED: "No organization selected",
+            CREATE_NEW_GROUP: "Create New Group",
+            GROUP_NAME_STAR: "Group Name *",
+            BRIEF_DESCRIPTION: "Brief description",
+            CREATE_GROUP: "Create Group",
+            EG_ENGINEERING_TEAM: "e.g., Engineering Team",
+
+            ARCHIVE_THIS_GROUP: "Archive this group?",
+            ARCHIVE_SELECTED_GROUPS: "Archive selected groups?",
+            GROUP_WILL_BE_ARCHIVED_MEMBERS_WILL_BE_REMOVED: "This group will be archived. Members will be removed from this group but will remain in the organization.",
+            SELECTED_GROUP_WILL_BE_ARCHIVED_MEMBERS_WILL_BE_REMOVED: "The selected groups will be archived. Members will be removed from those groups but will remain in the organization.",
+            IN_THIS_GROUP: "in this group",
+            GROUPS_SELECTED: "groups selected",
+            MORE_: "more ...",
+            WHAT_HAPPENS_NEXT: "What happens next?",
+            GROUP_NO_LONGER_APPEAR: "The group will no longer appear in group lists. Users will not lose access to the organization itself, only this group association.",
+            ARCHIVE: "Archive",
+
+            NO_PROJECT: "No Project",
+            ACTIVE: "Active",
+            PROJECT_DASHBOARD: "Project Dashboard",
+            EVENT_MANAGEMENT: "Event Management",
+
+            DOWNLOAD_CSV_TEMPLATE: "Download CSV Template",
+            BULK_CSV_UPLOAD: "Bulk CSV Upload",
+            CSV_UPLOAD_INSTRUCTIONS: "Upload multiple records at once using our CSV template",
+
+            UPLOAD_MODE: "Upload Mode",
+            FILE_UPLOAD: "File Upload",
+            BULK_METADATA: "Bulk Metadata",
+            BULK_METADATA_UPLOAD: "Bulk Metadata Upload",
+            BULK_METADATA_INSTRUCTIONS: "Create multiple records at once by uploading a CSV file with metadata. No actual files are uploaded - only record metadata is created.",
+
+            CONFIRM_BULK_UPLOAD: "Confirm Bulk Upload",
+            YOUR_ABOUT_TO_UPLOAD: "You are about to upload",
+            L_RECORDS: "records",
+            TO_THE_SYSTEM: "to the system.",
+            SUCESSFULLY_PARSED: "Successfully parsed",
+            ROWS_FROM_CSV: "rows from CSV",
+            PLEASE_SELECT_PROJECT_AND_DATASOURCE: "Please select project and data source first",
+            ALL: "All",
+            RECORDS_VALIDATED_SUCCESSFULLY: "records validated successfully!",
+            VALIDATION_FAILED: "Validation failed",
+            RECORDS_HAVE_ERRORS: "records have errors",
+            ERROR_VALIDATING_RECORDS: "Error validating records",
+            FAILED_TO_PARSE_CSV_FILE: "Failed to parse CSV file",
+            ERROR_PARSING_CSV_FILE: "Error parsing CSV file",
+            STEP_1_DOWNLOAD_TEMPLATE: "Step 1: Download Template",
+            STEP_2_UPLOAD_YOUR_CSV: "Step 2: Upload Your CSV",
+            SELECTED: "Selected",
+
+
+
+
+
+
+
         }
     },
     es: {
@@ -501,7 +560,61 @@ export const translations = {
             EDIT_OAUTH_APP: "Editar aplicación OAuth",
             ORGANIZATION_MANAGEMENT: "Organization Management",
             CREATE_OBJECT_STORAGE: "Create Object Storage",
-            CONNECTION_STRING: "Connection String"
+            CONNECTION_STRING: "Cadena de conexión",
+            ROLES_AND_PERMISSIONS: "Roles y permisos",
+            TAGS_AND_SECURITY_LABELS: "Tags y etiquetas de seguridad",
+            NO_ORG_SELECTED: "Ninguna organización seleccionada",
+            CREATE_NEW_GROUP: "Crear nuevo grupo",
+            GROUP_NAME_STAR: "Nombre del grupo *",
+            BRIEF_DESCRIPTION: "Descripción breve",
+            CREATE_GROUP: "Crear grupo",
+            EG_ENGINEERING_TEAM: "p. ej., Equipo de Ingeniería",
+            ARCHIVE_THIS_GROUP: "¿Archivar este grupo?",
+            ARCHIVE_SELECTED_GROUPS: "¿Archivar los grupos seleccionados?",
+            GROUP_WILL_BE_ARCHIVED_MEMBERS_WILL_BE_REMOVED: "Este grupo será archivado. Los miembros serán removidos de este grupo, pero permanecerán en la organización.",
+            SELECTED_GROUP_WILL_BE_ARCHIVED_MEMBERS_WILL_BE_REMOVED: "Los grupos seleccionados serán archivados. Los miembros serán removidos de esos grupos, pero permanecerán en la organización.",
+            IN_THIS_GROUP: "en este grupo",
+            GROUPS_SELECTED: "grupos seleccionados",
+            MORE_: "más ...",
+            WHAT_HAPPENS_NEXT: "¿Qué sigue?",
+            GROUP_NO_LONGER_APPEAR: "El grupo ya no aparecerá en las listas de grupos. Los usuarios no perderán acceso a la organización, solo a la asociación con este grupo.",
+            ARCHIVE: "Archivar",
+            NO_PROJECT: "Sin proyecto",
+            ACTIVE: "Activo",
+            PROJECT_DASHBOARD: "Tablero del proyecto",
+            EVENT_MANAGEMENT: "Gestión de eventos",
+
+            DOWNLOAD_CSV_TEMPLATE: "Descargar plantilla CSV",
+            BULK_CSV_UPLOAD: "Carga masiva de CSV",
+            CSV_UPLOAD_INSTRUCTIONS: "Cargue múltiples registros a la vez usando nuestra plantilla CSV",
+
+            UPLOAD_MODE: "Modo de carga",
+            SINGLE_FILE_UPLOAD: "Carga de un solo archivo",
+
+            FILE_UPLOAD: "Carga de archivos",
+            BULK_METADATA: "Metadatos masivos",
+            BULK_METADATA_UPLOAD: "Carga masiva de metadatos",
+            BULK_METADATA_INSTRUCTIONS: "Cree múltiples registros a la vez cargando un archivo CSV con metadatos. No se cargan archivos reales; solo se crean los metadatos de los registros.",
+
+            CONFIRM_BULK_UPLOAD: "Confirmar carga masiva",
+            YOUR_ABOUT_TO_UPLOAD: "Está a punto de cargar",
+            L_RECORDS: "registros",
+            TO_THE_SYSTEM: "al sistema.",
+            SUCESSFULLY_PARSED: "Analizado correctamente",
+            ROWS_FROM_CSV: "filas del CSV",
+            PLEASE_SELECT_PROJECT_AND_DATASOURCE: "Por favor, seleccione primero el proyecto y la fuente de datos",
+            ALL: "Todos",
+            RECORDS_VALIDATED_SUCCESSFULLY: "¡registros validados correctamente!",
+            VALIDATION_FAILED: "La validación falló",
+            RECORDS_HAVE_ERRORS: "los registros tienen errores",
+            ERROR_VALIDATING_RECORDS: "Error al validar los registros",
+            FAILED_TO_PARSE_CSV_FILE: "No se pudo analizar el archivo CSV",
+            ERROR_PARSING_CSV_FILE: "Error al analizar el archivo CSV",
+            STEP_1_DOWNLOAD_TEMPLATE: "Paso 1: Descargar plantilla",
+            STEP_2_UPLOAD_YOUR_CSV: "Paso 2: Cargue su CSV",
+            SELECTED: "Seleccionado",
+
+
         }
     }
 }

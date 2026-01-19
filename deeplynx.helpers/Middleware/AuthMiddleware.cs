@@ -4,23 +4,19 @@ using Microsoft.AspNetCore.Routing;
 
 namespace deeplynx.helpers;
 
-// Attribute to decorate controllers/actions
-// Example usage: 
-// Multiple Separate Attributes
-// [Auth("read", "document")]
-// [Auth("write", "document")]
-// [Auth("delete", "document")]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class AuthAttribute : Attribute
 {
-    public AuthAttribute(string action, string resource)
+    public AuthAttribute(string action, string resource, bool includeArchived = false)
     {
         Action = action;
         Resource = resource;
+        IncludeArchived = includeArchived;
     }
 
-    public string Action { get; set; } 
-    public string Resource { get; set; } 
+    public string Action { get; set; }
+    public string Resource { get; set; }
+    public bool IncludeArchived { get; set; }
 }
 
 public class AuthMiddleware
@@ -32,7 +28,9 @@ public class AuthMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IOrgRolePermissionService orgRolePermissionService, IProjectRolePermissionService projectRolePermissionService, ISysAdminService sysAdminService)
+    public async Task InvokeAsync(HttpContext context, IOrgRolePermissionService orgRolePermissionService,
+        IProjectRolePermissionService projectRolePermissionService, ISysAdminService sysAdminService,
+        IOrganizationService organizationService)
     {
         var endpoint = context.GetEndpoint();
         if (endpoint == null)
@@ -41,17 +39,15 @@ public class AuthMiddleware
             return;
         }
 
-        // Get all AuthInOrg attributes from the endpoint
         var authAttributes = endpoint.Metadata
             .GetOrderedMetadata<AuthAttribute>();
-        
-        // If no auth attributes, return
+
         if (!authAttributes.Any())
         {
             await _next(context);
             return;
         }
-        
+
         var userId = UserContextStorage.UserId;
 
         if (userId <= 0)
@@ -61,99 +57,114 @@ public class AuthMiddleware
             return;
         }
 
-        bool isSysAdmin = await sysAdminService.SysAdminCheck(userId);
+        var isSysAdmin = await sysAdminService.SysAdminCheck(userId);
 
-        if (!isSysAdmin)
-        {
-            // Extract both organizationId and projectId from route or query
-            int orgId = 0;
-            int projectId = 0;
+        int? organizationId = null;
+        var projectIds = new List<int>();
 
-            // Try to get organizationId
-            var routeOrgId = context.GetRouteValue("organizationId")?.ToString();
-            if (!string.IsNullOrEmpty(routeOrgId) && int.TryParse(routeOrgId, out orgId))
-            {
-                // Found organizationId in route
-            }
-            else if (context.Request.Query.TryGetValue("organizationId", out var queryOrgId)
-                     && int.TryParse(queryOrgId.FirstOrDefault(), out orgId))
-            {
-                // Found organizationId in query
-            }
+        var routeOrgId = context.GetRouteValue("organizationId")?.ToString();
+        if (!string.IsNullOrEmpty(routeOrgId) && int.TryParse(routeOrgId, out var tempOrgId))
+            organizationId = tempOrgId;
 
-            // Try to get projectId
-            var routeProjectId = context.GetRouteValue("projectId")?.ToString();
-            if (!string.IsNullOrEmpty(routeProjectId) && int.TryParse(routeProjectId, out projectId))
-            {
-                // Found projectId in route
-            }
-            else if (context.Request.Query.TryGetValue("projectId", out var queryProjectId)
-                     && int.TryParse(queryProjectId.FirstOrDefault(), out projectId))
-            {
-                // Found projectId in query
-            }
+        var routeProjectId = context.GetRouteValue("projectId")?.ToString();
+        if (!string.IsNullOrEmpty(routeProjectId) && int.TryParse(routeProjectId, out var tempProjectId))
+            projectIds.Add(tempProjectId);
 
-            // Must have at least one of organizationId or projectId
-            if (orgId <= 0 && projectId <= 0)
-            {
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsJsonAsync(new
-                    { error = "Bad Request: Invalid or missing organization or project ID value" });
-                return;
-            }
-
-            // Check each permission requirement
-            foreach (var authAttr in authAttributes)
-            {
-                bool hasOrgPermission = false;
-                bool hasProjectPermission = false;
-
-                // Check organization permission if orgId is present
-                if (orgId > 0)
+        if (context.Request.Query.TryGetValue("projectIds", out var queryProjectIds))
+            foreach (var idValue in queryProjectIds)
+                if (!string.IsNullOrEmpty(idValue))
                 {
-                    hasOrgPermission = await orgRolePermissionService.PermissionInOrg(
-                        userId,
-                        orgId,
-                        authAttr.Action,
-                        authAttr.Resource
-                    );
+                    var ids = idValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var id in ids)
+                        if (int.TryParse(id.Trim(), out var parsedId) && !projectIds.Contains(parsedId))
+                            projectIds.Add(parsedId);
                 }
 
-                // Check project permission if projectId is present
-                if (projectId > 0)
+        if (!isSysAdmin && !organizationId.HasValue && !projectIds.Any())
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(new
+                { error = "Forbidden: Non-admin users require organization or project context" });
+            return;
+        }
+
+        // Determine if any auth attribute is for unarchive/restore operations
+        var firstAuthAttr = authAttributes.FirstOrDefault();
+        var includeArchived = firstAuthAttr?.IncludeArchived ?? false;
+
+        long? capturedOrgId = null;
+        if (projectIds.Any() || organizationId.HasValue)
+        {
+            foreach (var projectId in projectIds)
+                capturedOrgId = await organizationService.CheckExistence(
+                    projectId,
+                    organizationId,
+                    includeArchived
+                );
+
+            if (!projectIds.Any() && organizationId.HasValue)
+                capturedOrgId = await organizationService.CheckExistence(
+                    null,
+                    organizationId,
+                    includeArchived
+                );
+
+            if (capturedOrgId.HasValue) UserContextStorage.OrganizationId = capturedOrgId.Value;
+        }
+
+        if (isSysAdmin)
+        {
+            await _next(context);
+            return;
+        }
+
+        foreach (var authAttr in authAttributes)
+        {
+            var hasPermission = false;
+
+            if (projectIds.Any())
+            {
+                var hasPermissionInAllProjects = true;
+
+                foreach (var projectId in projectIds)
                 {
-                    hasProjectPermission = await projectRolePermissionService.PermissionInProject(
+                    var projectPermission = await projectRolePermissionService.PermissionInProject(
                         userId,
                         projectId,
                         authAttr.Action,
                         authAttr.Resource
                     );
-                }
 
-                // User needs permission in at least one scope (org OR project)
-                // Only fail if they have neither org permission nor project permission
-                bool hasPermission = hasOrgPermission || hasProjectPermission;
-
-                if (!hasPermission)
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    await context.Response.WriteAsJsonAsync(new
+                    if (!projectPermission)
                     {
-                        error = "Forbidden: User role does not have required permissions in organization or project",
-                        required = new
-                        {
-                            orgId = orgId > 0 ? orgId : (int?)null,
-                            projectId = projectId > 0 ? projectId : (int?)null,
-                            action = authAttr.Action,
-                            resource = authAttr.Resource
-                        }
-                    });
-                    return;
+                        hasPermissionInAllProjects = false;
+                        break;
+                    }
                 }
+
+                hasPermission = hasPermissionInAllProjects;
+            }
+            else if (organizationId.HasValue)
+            {
+                hasPermission = await orgRolePermissionService.PermissionInOrg(
+                    userId,
+                    organizationId.Value,
+                    authAttr.Action,
+                    authAttr.Resource
+                );
+            }
+
+            if (!hasPermission)
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = "Forbidden: User role does not have required permissions in organization or project(s)"
+                });
+                return;
             }
         }
 
-        // All permission checks passed
         await _next(context);
     }
 }

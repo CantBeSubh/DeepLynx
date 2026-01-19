@@ -1,25 +1,23 @@
-using deeplynx.datalayer.Models; 
-using deeplynx.helpers; 
-using deeplynx.interfaces; 
-using deeplynx.models; 
-using Microsoft.EntityFrameworkCore; 
+using deeplynx.datalayer.Models;
+using deeplynx.helpers;
+using deeplynx.interfaces;
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace deeplynx.business;
 
-public class SubscriptionBusiness : ISubscriptionBusiness { 
-    
+public class SubscriptionBusiness : ISubscriptionBusiness
+{
     private readonly DeeplynxContext _context;
-    private readonly ICacheBusiness _cacheBusiness;
-        
-    public SubscriptionBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
+
+    public SubscriptionBusiness(DeeplynxContext context)
     {
         _context = context;
-        _cacheBusiness = cacheBusiness;
     }
 
     /// <summary>
-    /// Retrieves all subscriptions with a particular userId and projectId
+    ///     Retrieves all subscriptions with a particular userId and projectId
     /// </summary>
     /// <param name="userId">The ID of the user to which the subscription belongs</param>
     /// <param name="projectId">The ID of the project to which the subscription belongs</param>
@@ -28,21 +26,17 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// TODO: CACHE ALL SUBSCRIPTIONS TO MAKE THE NOTIFICATION SERVICE MORE EFFICIENT
     public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long userId, long projectId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-
         var subscriptions = await _context.Subscriptions
             .Where(s => s.UserId == userId && s.ProjectId == projectId)
             .ToListAsync();
-        
-        if (hideArchived)
-        {
-            subscriptions = subscriptions.Where(s => !s.IsArchived).ToList();
-        }
+
+        if (hideArchived) subscriptions = subscriptions.Where(s => !s.IsArchived).ToList();
 
         return subscriptions.Select(s => new SubscriptionResponseDto
         {
             Id = s.Id,
             UserId = s.UserId,
+            OrganizationId = s.OrganizationId,
             ProjectId = s.ProjectId,
             ActionId = s.ActionId,
             Operation = s.Operation,
@@ -56,7 +50,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     }
 
     /// <summary>
-    /// Retrieves a single subscription with a particular userId, projectId, and subscriptionId
+    ///     Retrieves a single subscription with a particular userId, projectId, and subscriptionId
     /// </summary>
     /// <param name="userId">The ID of the user to which the subscription belongs</param>
     /// <param name="projectId">The ID of the project to which the subscription belongs</param>
@@ -64,10 +58,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of subscriptions</returns>
     /// <exception cref="KeyNotFoundException">Returned if subscription is not found or is archived</exception>
-    public async Task<SubscriptionResponseDto> GetSubscription(long userId, long projectId, long subscriptionId, bool hideArchived)
+    public async Task<SubscriptionResponseDto> GetSubscription(long userId, long projectId, long subscriptionId,
+        bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-
         var subscription = await _context.Subscriptions
             .Where(s => s.UserId == userId && s.ProjectId == projectId && s.Id == subscriptionId)
             .SingleOrDefaultAsync();
@@ -75,14 +68,13 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         if (subscription == null) throw new KeyNotFoundException($"Subscription with id {subscriptionId} not found");
 
         if (hideArchived && subscription.IsArchived)
-        {
             throw new KeyNotFoundException($"Subscription with id {subscriptionId} is archived");
-        }
 
         return new SubscriptionResponseDto
         {
             Id = subscription.Id,
             UserId = subscription.UserId,
+            OrganizationId = subscription.OrganizationId,
             ProjectId = subscription.ProjectId,
             ActionId = subscription.ActionId,
             Operation = subscription.Operation,
@@ -96,32 +88,27 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     }
 
     /// <summary>
-    /// Bulk creates subscriptions
+    ///     Bulk creates subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscription belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long userId, long projectId,
+    public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long currentUserId, long organizationId,
+        long projectId,
         List<CreateSubscriptionRequestDto> dtos)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         foreach (var dto in dtos)
         {
             ValidationHelper.ValidateModel(dto);
-            
+
             // Validate the Operation property if it is not null
-            if (dto.Operation != null)
-            {
-                ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-            }
+            if (dto.Operation != null) ValidationHelper.ValidateTypes(dto.Operation, "Operation");
 
             // Ensure both EntityType and EntityId are either both not null or both null
             if ((dto.EntityType != null && dto.EntityId != null) || (dto.EntityType == null && dto.EntityId == null))
             {
-                if (dto.EntityType != null)
-                {
-                    ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
-                }
+                if (dto.EntityType != null) ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
             }
             else
             {
@@ -131,25 +118,26 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
         // Bulk insert into subscriptions; if there is a conflict, do nothing
         var sql = @"
-        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id, last_updated_at, is_archived)
+        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, organization_id, project_id, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived)
         VALUES {0}
         ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
-        RETURNING id, user_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
+        RETURNING id, user_id, organization_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
     ";
-
 
         // Establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@lastUpdatedBy", currentUserId)
         };
 
         // Establish "dynamic" parameters (new for each dto in the list)
         parameters.AddRange(dtos.SelectMany((dto, i) => new[]
         {
-            new NpgsqlParameter($"@p{i}_userId", userId),
+            new NpgsqlParameter($"@p{i}_userId", currentUserId),
             new NpgsqlParameter($"@p{i}_actionId", dto.ActionId),
             new NpgsqlParameter($"@p{i}_operation", (object?)dto.Operation ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_organizationId", organizationId),
             new NpgsqlParameter($"@p{i}_projectId", projectId),
             new NpgsqlParameter($"@p{i}_dataSourceId", (object?)dto.DataSourceId ?? DBNull.Value),
             new NpgsqlParameter($"@p{i}_entityType", (object?)dto.EntityType ?? DBNull.Value),
@@ -158,7 +146,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
         // Stringify the params and comma separate them
         var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, false)"));
+            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_organizationId, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @lastUpdatedBy, false)"));
 
         // Put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -173,6 +161,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
             Id = s.Id,
             UserId = s.UserId,
             ProjectId = s.ProjectId,
+            OrganizationId = s.OrganizationId,
             ActionId = s.ActionId,
             Operation = s.Operation,
             DataSourceId = s.DataSourceId,
@@ -185,41 +174,36 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     }
 
     /// <summary>
-    /// Bulk updates subscriptions
+    ///     Bulk updates subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="organizationId">The ID of the organization to which the subscription belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <returns>A list of updated subscriptions</returns>
-   public async Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
-    long userId,
-    long projectId,
-    List<UpdateSubscriptionRequestDto> dtos)
+    public async Task<List<SubscriptionResponseDto>> BulkUpdateSubscriptions(
+        long currentUserId,
+        long organizationId,
+        long projectId,
+        List<UpdateSubscriptionRequestDto> dtos)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         foreach (var dto in dtos)
         {
             ValidationHelper.ValidateModel(dto);
-            
+
             // Validate the Operation property if it is not null
-            if (dto.Operation != null)
-            {
-                ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-            }
+            if (dto.Operation != null) ValidationHelper.ValidateTypes(dto.Operation, "Operation");
 
             // Ensure both EntityType and EntityId are either both not null or both null
             if ((dto.EntityType != null && dto.EntityId != null) || (dto.EntityType == null && dto.EntityId == null))
             {
-                if (dto.EntityType != null)
-                {
-                    ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
-                }
+                if (dto.EntityType != null) ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
             }
             else
             {
                 throw new ArgumentException("EntityType and EntityId must either both be null or both have values.");
             }
         }
-        
+
         // Build the SQL statement
         var sql = @"
         UPDATE deeplynx.subscriptions AS subs
@@ -229,13 +213,15 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
             data_source_id = data.data_source_id,
             entity_type = data.entity_type,
             entity_id = data.entity_id,
-            last_updated_at = @now
+            last_updated_at = @now,
+            last_updated_by = @userId
         FROM (VALUES {0}) AS data (id, action_id, operation, data_source_id, entity_type, entity_id)
         WHERE 
             subs.id = data.id 
             AND subs.user_id = @userId 
+            AND subs.organization_id = @organizationId
             AND subs.project_id = @projectId
-        RETURNING subs.id, subs.user_id, subs.project_id, subs.action_id, subs.operation, 
+        RETURNING subs.id, subs.user_id, subs.organization_id, subs.project_id, subs.action_id, subs.operation, 
             subs.data_source_id, subs.entity_type, subs.entity_id, 
             subs.last_updated_at, subs.is_archived, subs.last_updated_by;
         ";
@@ -243,7 +229,8 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new("@userId", userId),
+            new("@userId", currentUserId),
+            new("@organizationId", organizationId),
             new("@projectId", projectId),
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
@@ -275,6 +262,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         {
             Id = s.Id,
             UserId = s.UserId,
+            OrganizationId = s.OrganizationId,
             ProjectId = s.ProjectId,
             ActionId = s.ActionId,
             Operation = s.Operation,
@@ -289,15 +277,15 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
 
     /// <summary>
-    /// Bulk deletes subscriptions
+    ///     Bulk deletes subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be deleted</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<bool> BulkDeleteSubscriptions(long userId, long projectId, List<long> subscriptionIds)
+    public async Task<bool> BulkDeleteSubscriptions(long currentUserId, long projectId, List<long> subscriptionIds)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
         // Build the SQL statement
         var sql = @"
@@ -311,9 +299,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray())
+            new("@userId", currentUserId),
+            new("@projectId", projectId),
+            new("@subscriptionIds", subscriptionIds.ToArray())
         };
 
         // Execute the query
@@ -321,28 +309,29 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
         // Check if the number of affected rows matches the number of IDs provided
         if (result != subscriptionIds.Count)
-        {
             throw new InvalidOperationException("Some subscriptions were not deleted because they do not exist.");
-        }
 
         return true;
     }
 
     /// <summary>
-    /// Bulk archives subscriptions
+    ///     Bulk archives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be archived</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<bool> BulkArchiveSubscriptions(long userId, long projectId, List<long> subscriptionIds)
+    public async Task<bool> BulkArchiveSubscriptions(long currentUserId, long projectId, List<long> subscriptionIds)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
         // Build the SQL statement
         var sql = @"
         UPDATE deeplynx.subscriptions
-        SET is_archived = true
+        SET 
+            is_archived = true,
+            last_updated_at = @now,
+            last_updated_by = @userId
         WHERE 
             user_id = @userId 
             AND project_id = @projectId 
@@ -352,10 +341,10 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray()),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new("@userId", currentUserId),
+            new("@projectId", projectId),
+            new("@subscriptionIds", subscriptionIds.ToArray()),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
 
         // Execute the query
@@ -363,28 +352,29 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
         // Check if the number of affected rows matches the number of IDs provided
         if (result != subscriptionIds.Count)
-        {
             throw new InvalidOperationException("Some subscriptions were not archived because they do not exist.");
-        }
 
         return true;
     }
 
     /// <summary>
-    /// Bulk unarchives subscriptions
+    ///     Bulk unarchives subscriptions
     /// </summary>
-    /// <param name="userId">The ID of the user to which the subscriptions belong</param>
+    /// <param name="currentUserId">The ID of the user to which the subscriptions belong</param>
     /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
     /// <param name="subscriptionIds">The ID of the subscriptions to be unarchived</param>
     /// <returns>A list of created subscriptions</returns>
-    public async Task<bool> BulkUnarchiveSubscriptions(long userId, long projectId, List<long> subscriptionIds)
+    public async Task<bool> BulkUnarchiveSubscriptions(long currentUserId, long projectId, List<long> subscriptionIds)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
         // Build the SQL statement
         var sql = @"
     UPDATE deeplynx.subscriptions
-    SET is_archived = false
+    SET 
+        is_archived = false,
+        last_updated_at = @now,
+        last_updated_by = @userId
     WHERE 
         user_id = @userId 
         AND project_id = @projectId 
@@ -394,9 +384,10 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Establish parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new NpgsqlParameter("@userId", userId),
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@subscriptionIds", subscriptionIds.ToArray())
+            new("@userId", currentUserId),
+            new("@projectId", projectId),
+            new("@subscriptionIds", subscriptionIds.ToArray()),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
 
         // Execute the query
@@ -404,9 +395,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
 
         // Check if the number of affected rows matches the number of IDs provided
         if (result != subscriptionIds.Count)
-        {
             throw new InvalidOperationException("Some subscriptions were not unarchived because they do not exist.");
-        }
 
         return true;
     }

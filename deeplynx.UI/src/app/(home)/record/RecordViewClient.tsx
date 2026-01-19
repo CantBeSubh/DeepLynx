@@ -1,45 +1,99 @@
+// src/app/(home)/record/RecordViewClient.tsx
+
 "use client";
-import React, { useCallback, useState, useEffect, useMemo } from "react";
-import Link from "next/link";
-import toast from "react-hot-toast";
-import {
-  updateRecord,
-  unAttachTagFromRecord,
-  getRecord,
-} from "@/app/lib/record_services.client";
-import { getTagsForProjects } from "@/app/lib/query_services.client";
-import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
-import { TagResponseDto } from "../types/responseDTOs";
-import {
-  XMarkIcon,
-  PencilIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import PropertyTable from "../components/PropertyTable";
+import { RecordResponseDto, TagResponseDto } from "../types/responseDTOs";
 import RecordLoading from "./loading";
 
 // Components
-import TagButton from "@/app/(home)/components/TagButton";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RelatedRecordsCard, {
   CardColumn,
 } from "./components/RelatedRecordsCard";
 
-// Services
-import {
-  archiveEdge,
-  getEdge,
-  getEdgesByRecord,
-} from "@/app/lib/edge_services.client";
-
 // Types & Context
-import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
-import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
-import { RelatedRecordsResponseDto } from "../types/responseDTOs";
-import { RelatedRecordsRequestDto } from "../types/requestDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import {
+  archiveEdgeByRelationship,
+  getEdgeByRelationship,
+} from "@/app/lib/client_service/edge_services.client";
+import {
+  getEdgesByRecord,
+  getRecord,
+  unattachTagFromRecord,
+  updateRecord,
+} from "@/app/lib/client_service/record_services.client";
+import { getClass } from "@/app/lib/client_service/class_services.client";
+import { getAllTagsOrg } from "@/app/lib/client_service/tag_services.client";
 import GraphClientPage from "../graph/GraphClientPage";
+import {
+  ClassResponseDto,
+  RelatedRecordsResponseDto,
+} from "../types/responseDTOs";
+import RecordTagsPanel from "./components/RecordTagsPanel";
+import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
+
+// ============= HELPER FUNCTIONS =============
+interface PropertyRow {
+  label: string;
+  value: React.ReactNode;
+  editable?: boolean;
+  onEdit?: (newValue: string) => void;
+  isNested?: boolean;
+  nestedRows?: PropertyRow[];
+}
+
+/**
+ * Converts a nested object structure into PropertyRow format
+ * @param obj - The object to parse
+ * @param parentKey - Optional parent key for nested properties
+ * @returns Array of PropertyRow objects
+ */
+function parseNestedProperties(
+  obj: JSON,
+  parentKey: string = ""
+): PropertyRow[] {
+  if (!obj || typeof obj !== "object") {
+    return [];
+  }
+
+  return Object.entries(obj).map(([key, value]) => {
+    const label = key
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    // Check if value is an object (but not null or array)
+    const isNestedObject =
+      value !== null && typeof value === "object" && !Array.isArray(value);
+
+    if (isNestedObject) {
+      return {
+        label,
+        value: "", // Won't be displayed for nested objects
+        isNested: true,
+        nestedRows: parseNestedProperties(value, key),
+      };
+    } else {
+      // Handle arrays and primitive values
+      const displayValue = Array.isArray(value)
+        ? JSON.stringify(value)
+        : String(value);
+
+      return {
+        label,
+        value: displayValue,
+        isNested: false,
+      };
+    }
+  });
+}
 
 // ============= TYPE DEFINITIONS =============
 interface Props {
@@ -53,7 +107,7 @@ interface RelatedRecordViewModel extends RelatedRecordsResponseDto {
 
 interface ModalState {
   isOpen: boolean;
-  type: "tag" | "relatedRecord" | null;
+  type: "relatedRecord" | null;
   nameToRemove: string;
   recordNameToRemove?: string;
   idToRemove: string | null;
@@ -64,15 +118,15 @@ interface ModalState {
 // ============= MAIN COMPONENT =============
 export default function RecordViewClient({ projectId, recordId }: Props) {
   const { t } = useLanguage();
+  const { organization, hasLoaded } = useOrganizationSession();
 
   // ============= STATE MANAGEMENT =============
   // Record & Tags State
-  const [record, setRecord] = useState<FileViewerTableRow | null>(null);
+  const [record, setRecord] = useState<RecordResponseDto | null>(null);
+  const [recordClass, setRecordClass] = useState<ClassResponseDto | null>(null);
   const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagResponseDto[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
 
   // Pagination State
   const [originPage, setOriginPage] = useState(1);
@@ -108,25 +162,33 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   // ============= HANDLERS =============
   const handleUpdateRecord = useCallback(
     async (field: string, value: string, successMessage: string) => {
+      if (!organization?.organizationId) return;
+
       try {
-        const update = await updateRecord(projectId, recordId, {
-          [field]: value,
-        });
+        const update = await updateRecord(
+          organization.organizationId as number,
+          projectId,
+          recordId,
+          { [field]: value }
+        );
         setRecord((prev) => (prev ? { ...prev, ...update } : update));
         toast.success(successMessage);
       } catch (error) {
         toast.error(`${t.translations.FAILED_TO_UPDATE} ${field}`);
       }
     },
-    [projectId, recordId, t.translations.FAILED_TO_UPDATE]
+    [
+      organization?.organizationId,
+      projectId,
+      recordId,
+      t.translations.FAILED_TO_UPDATE,
+    ]
   );
 
   const resetAllState = useCallback(() => {
     setRecord(null);
     setSelectedTags([]);
     setSelectedIds([]);
-    setIsEditing(false);
-    setTagsToRemove([]);
     setOriginPage(1);
     setDestinationPage(1);
     setOriginRecords([]);
@@ -144,22 +206,20 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
       setHasMore: (val: boolean) => void,
       setRecords: React.Dispatch<React.SetStateAction<RelatedRecordViewModel[]>>
     ) => {
-      if (!recordId || !projectId || !record) return;
+      if (!recordId || !projectId || !record || !organization?.organizationId)
+        return;
 
       try {
         setLoading(true);
 
-        const params: RelatedRecordsRequestDto = {
-          recordId: recordId,
-          isOrigin: isOrigin,
-          page: page,
-          pageSize: pageSize,
-          hideArchived: true,
-        };
-
-        const edges: RelatedRecordsResponseDto[] = await getEdgesByRecord(
-          projectId.toString(),
-          params
+        const edges = await getEdgesByRecord(
+          organization.organizationId as number,
+          projectId,
+          recordId,
+          isOrigin,
+          page,
+          true,
+          pageSize
         );
 
         if (!edges || edges.length === 0) {
@@ -217,78 +277,48 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
         setLoading(false);
       }
     },
-    [recordId, projectId, record, pageSize, t.translations.EDGE]
+    [
+      recordId,
+      projectId,
+      record,
+      pageSize,
+      t.translations.EDGE,
+      organization?.organizationId,
+    ]
   );
 
   const handleCloseModal = () => {
     setModal((prev) => ({ ...prev, isOpen: false }));
   };
 
-  const handleTagSelectionChange = async (selected: string[]) => {
+  const handleTagSelectionChange = (selected: string[]) => {
     const newTags = tags.filter((tag) => selected.includes(tag.id.toString()));
-
-    // Only return early if both IDs and the actual tag objects are the same
-    if (
-      JSON.stringify(selected) === JSON.stringify(selectedIds) &&
-      JSON.stringify(newTags) === JSON.stringify(selectedTags)
-    ) {
-      return;
-    }
-
     setSelectedTags(newTags);
     setSelectedIds(selected);
-    setRecord((prev) =>
-      prev ? { ...prev, tags: JSON.stringify(newTags) } : prev
-    );
-  };
-
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-    if (isEditing) setTagsToRemove([]);
-  };
-
-  const handleSaveTagChanges = async () => {
-    try {
-      for (const tagId of tagsToRemove) {
-        await unAttachTagFromRecord(projectId, recordId, Number(tagId));
-      }
-
-      setSelectedTags((prev) =>
-        prev.filter((tag) => !tagsToRemove.includes(tag.id.toString()))
-      );
-      setSelectedIds((prev) => prev.filter((id) => !tagsToRemove.includes(id)));
-      setTagsToRemove([]);
-      setIsEditing(false);
-      toast.success(t.translations.TAGS_UPDATED_SUCCESS);
-    } catch (error) {
-      console.error("Error saving tags:", error);
-      toast.error(t.translations.FAILED_TO_UPDATE_TAGS);
-    }
   };
 
   const handleConfirmUnlink = async () => {
-    const { type, idToRemove, nameToRemove, originId, destinationId } = modal;
+    if (!organization?.organizationId) return;
 
-    if (type === "tag" && idToRemove) {
-      setTagsToRemove((prev) =>
-        prev.includes(idToRemove)
-          ? prev.filter((id) => id !== idToRemove)
-          : [...prev, idToRemove]
-      );
-      toast.success(
-        `${t.translations.TAG_} ${nameToRemove} ${t.translations._MARKED_FOR_REMOVAL}`
-      );
-    } else if (type === "relatedRecord" && originId && destinationId) {
+    const { type, idToRemove, originId, destinationId } = modal;
+
+    if (type === "relatedRecord" && originId && destinationId) {
       try {
-        const edgeExists = await getEdge(
+        const edgeExists = await getEdgeByRelationship(
+          organization.organizationId as number,
           projectId,
-          null,
-          String(originId),
-          String(destinationId)
+          originId,
+          destinationId
         );
 
         if (edgeExists) {
-          await archiveEdge(projectId, null, originId, destinationId);
+          await archiveEdgeByRelationship(
+            organization.organizationId as number,
+            projectId,
+            originId,
+            destinationId,
+            true
+          );
 
           if (originId === recordId) {
             setOriginRecords((prev) =>
@@ -316,7 +346,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
       id: string,
       name: string,
       recordName: string | undefined,
-      type: "tag" | "relatedRecord"
+      type: "relatedRecord"
     ) => {
       setModal({
         isOpen: true,
@@ -339,16 +369,24 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   // Fetch main record data
   useEffect(() => {
     const fetchRecord = async () => {
-      if (!recordId || !projectId) return;
+      if (!recordId || !projectId || !organization?.organizationId) return;
 
       try {
-        const data = await getRecord(projectId, recordId);
+        const data = await getRecord(
+          organization.organizationId as number,
+          projectId,
+          recordId
+        );
         setRecord(data);
-
         if (data.tags) {
-          const parsedTags = JSON.parse(data.tags);
+          // Check if tags is a string (JSON) or already an array
+          const parsedTags =
+            typeof data.tags === "string" ? JSON.parse(data.tags) : data.tags;
+
           setSelectedTags(parsedTags);
-          setSelectedIds(parsedTags.map((tag: { id: string }) => tag.id));
+          setSelectedIds(
+            parsedTags.map((tag: { id: number | null }) => String(tag.id))
+          );
         }
       } catch (error) {
         console.error("Error fetching record:", error);
@@ -357,15 +395,49 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     };
 
     fetchRecord();
-  }, [recordId, projectId, t.translations.FAILED_TO_FETCH_RECORD]);
+  }, [
+    recordId,
+    projectId,
+    organization?.organizationId,
+    t.translations.FAILED_TO_FETCH_RECORD,
+  ]);
+
+  // Fetch class info for the record (if present)
+  useEffect(() => {
+    if (!record?.classId || !projectId) {
+      setRecordClass(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchClass = async () => {
+      try {
+        const data = await getClass(projectId, Number(record.classId), true);
+        if (!cancelled) setRecordClass(data);
+      } catch (error) {
+        console.error("Error fetching class:", error);
+        if (!cancelled) setRecordClass(null);
+      }
+    };
+
+    fetchClass();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [record?.classId, projectId]);
 
   // Fetch available tags
   useEffect(() => {
     const fetchTags = async () => {
-      if (!projectId) return;
+      if (!projectId || !organization?.organizationId) return;
 
       try {
-        const data = await getTagsForProjects([projectId.toString()]);
+        const data = await getAllTagsOrg(
+          organization.organizationId as number,
+          [projectId]
+        );
         setTags(data);
       } catch (error) {
         console.error("Error fetching tags:", error);
@@ -373,7 +445,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     };
 
     fetchTags();
-  }, [projectId]);
+  }, [projectId, organization?.organizationId]);
 
   // Fetch origin records
   useEffect(() => {
@@ -419,18 +491,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
             t.translations.RECORD_NAME_UPDATED
           ),
       },
-      { label: t.translations.DATA_SOURCE_NAME, value: record.dataSourceName },
       { label: t.translations.URI, value: record.uri },
-      {
-        label: t.translations.CLASS_NAME,
-        value: record.className,
-        onEdit: (value: string) =>
-          handleUpdateRecord(
-            "class_name",
-            value,
-            t.translations.CLASS_NAME_UPDATED
-          ),
-      },
       { label: t.translations.ORIGINAL_ID, value: record.originalId },
       { label: t.translations.LAST_UPDATED_AT, value: record.lastUpdatedAt },
     ];
@@ -438,11 +499,13 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
 
   const additionalPropertiesRows = useMemo(() => {
     if (!record?.properties) return [];
-    const parsedProperties = JSON.parse(record.properties);
-    return Object.entries(parsedProperties).map(([key, value]) => ({
-      label: key,
-      value: typeof value === "object" ? JSON.stringify(value) : String(value),
-    }));
+
+    const parsedProperties =
+      typeof record.properties === "string"
+        ? JSON.parse(record.properties)
+        : record.properties;
+
+    return parseNestedProperties(parsedProperties);
   }, [record?.properties]);
 
   const relatedRecordsColumns: CardColumn<RelatedRecordViewModel>[] = [
@@ -470,7 +533,32 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     { key: "actions", label: t.translations.ACTIONS },
   ];
 
+  const handleRemoveTag = async (tagId: number) => {
+    if (!organization?.organizationId) return;
+
+    try {
+      await unattachTagFromRecord(
+        organization.organizationId as number,
+        projectId,
+        recordId,
+        tagId
+      );
+
+      setSelectedTags((prev) => prev.filter((t) => t.id !== tagId));
+      setSelectedIds((prev) => prev.filter((id) => id !== String(tagId)));
+
+      toast.success("Tag(s) removed!");
+    } catch (error) {
+      console.error("Error removing tag:", error);
+      toast.error(t.translations.FAILED_TO_UPDATE_TAGS);
+    }
+  };
+
   // ============= RENDER HELPERS =============
+  if (!hasLoaded || !organization) {
+    return <RecordLoading />;
+  }
+
   if (!record) {
     return <RecordLoading />;
   }
@@ -501,66 +589,19 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
           {/* Right Column - Tags & Relations */}
           <div className="flex-1 space-y-4">
             {/* Tags Card */}
-            <div className="card bg-base-100 shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-base-content">
-                  {t.translations.TAGS}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <TagButton
-                    tags={tags}
-                    onSelectionChange={handleTagSelectionChange}
-                    projectId={projectId}
-                    recordId={recordId}
-                    selectedIds={selectedIds}
-                    setSelectedIds={setSelectedIds}
-                    setTags={setTags}
-                    setSelectedTags={setSelectedTags}
-                  />
-                  {!isEditing ? (
-                    <PencilIcon
-                      className="w-6 h-6 cursor-pointer text-primary hover:text-primary-content"
-                      onClick={toggleEditMode}
-                    />
-                  ) : (
-                    <>
-                      <CheckCircleIcon
-                        className="w-6 h-6 cursor-pointer text-success hover:text-success-content"
-                        onClick={handleSaveTagChanges}
-                      />
-                      <XCircleIcon
-                        className="w-6 h-6 cursor-pointer text-error hover:text-error-content"
-                        onClick={toggleEditMode}
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {selectedTags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="flex items-center border-2 border-primary text-primary rounded-full px-3 py-1 hover:bg-primary hover:text-primary-content transition-colors"
-                  >
-                    {tag.name}
-                    {isEditing && !tagsToRemove.includes(tag.id.toString()) && (
-                      <XMarkIcon
-                        className="w-4 h-4 ml-1 cursor-pointer text-error hover:text-error-content"
-                        onClick={() =>
-                          handleOpenModal(
-                            tag.id.toString(),
-                            tag.name,
-                            record.name,
-                            "tag"
-                          )
-                        }
-                      />
-                    )}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <RecordTagsPanel
+              tags={tags}
+              selectedTags={selectedTags}
+              selectedIds={selectedIds}
+              onSelectionChange={handleTagSelectionChange}
+              onRemoveTag={handleRemoveTag}
+              projectId={projectId}
+              recordId={recordId}
+              setTags={setTags}
+              setSelectedTags={setSelectedTags}
+              setSelectedIds={setSelectedIds}
+              title={t.translations.TAGS}
+            />
 
             {/* Related Records Card - Origins */}
             {isLoadingOrigins && originPage === 1 ? (
@@ -605,17 +646,20 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     },
     {
       label: "Graph",
-      content: (
-        <GraphClientPage projectId={String(projectId)} recordId={recordId} />
-      ),
+      content: <GraphClientPage projectId={projectId} recordId={recordId} />,
     },
   ];
 
   // ============= MAIN RENDER =============
   return (
-    <div>
+    <div className="mr-4">
       <div className="bg-base-200/40 pl-12 p-4">
         <h1 className="text-2xl font-bold text-base-content">{record.name}</h1>
+        {record.classId && (
+          <span className="badge badge-primary">
+            {recordClass?.name || <div className="loading size-3" />}
+          </span>
+        )}
       </div>
 
       <Tabs
