@@ -4,7 +4,6 @@ using System.Text.Json;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.interfaces;
-using deeplynx.helpers.Context;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -15,7 +14,6 @@ namespace deeplynx.business;
 public class EdgeBusiness : IEdgeBusiness
 {
     private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
-    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
 
@@ -25,7 +23,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="context">The database context used for the edge operations.</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
     public EdgeBusiness(
-        DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness,
+        DeeplynxContext context, IEventBusiness eventBusiness,
         IBulkCopyUpsertExecutor bulkCopyUpsertExecutor)
     {
         _context = context;
@@ -162,9 +160,9 @@ public class EdgeBusiness : IEdgeBusiness
 
         // log edge create event
         await _eventBusiness.CreateEvent(
-            currentUserId, 
-            organizationId, 
-            projectId, 
+            currentUserId,
+            organizationId,
+            projectId,
             new CreateEventRequestDto
             {
                 Operation = "create",
@@ -175,7 +173,7 @@ public class EdgeBusiness : IEdgeBusiness
                 {
                     origin = edge.OriginId,
                     destination = edge.DestinationId
-                }), // TODO: Determine the extent of data edge properties need
+                }) // TODO: Determine the extent of data edge properties need
             });
 
         return new EdgeResponseDto
@@ -261,11 +259,11 @@ public class EdgeBusiness : IEdgeBusiness
         );
 
         // events logging
-         var createEvent = new CreateEventRequestDto
+        var createEvent = new CreateEventRequestDto
         {
             Operation = "create",
             EntityType = "edge",
-            DataSourceId = dataSourceId,
+            DataSourceId = dataSourceId
         };
         await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, createEvent, result.Count);
 
@@ -313,16 +311,16 @@ public class EdgeBusiness : IEdgeBusiness
 
         // log edge update event
         await _eventBusiness.CreateEvent(
-            currentUserId, 
-            organizationId, 
-            projectId, 
+            currentUserId,
+            organizationId,
+            projectId,
             new CreateEventRequestDto
             {
                 Operation = "update",
                 EntityType = "edge",
                 EntityId = edge.Id,
                 DataSourceId = edge.DataSourceId,
-                Properties = "{}", // TODO: Determine the extent of data edge properties need
+                Properties = "{}" // TODO: Determine the extent of data edge properties need
             });
 
         return new EdgeResponseDto
@@ -412,16 +410,16 @@ public class EdgeBusiness : IEdgeBusiness
 
         // Log Edge soft Delete Event
         await _eventBusiness.CreateEvent(
-            currentUserId, 
-            organizationId, 
-            projectId, 
+            currentUserId,
+            organizationId,
+            projectId,
             new CreateEventRequestDto
             {
                 Operation = "archive",
                 EntityType = "edge",
                 EntityId = edgeId,
                 DataSourceId = edge.DataSourceId,
-                Properties = "{}", // TODO: Determine the extent of data edge properties need
+                Properties = "{}" // TODO: Determine the extent of data edge properties need
             });
 
         return edge.Id;

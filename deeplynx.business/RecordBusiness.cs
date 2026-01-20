@@ -16,7 +16,6 @@ namespace deeplynx.business;
 public class RecordBusiness : IRecordBusiness
 {
     private readonly IBulkCopyUpsertExecutor _bulkCopyUpsertExecutor;
-    private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
     private readonly ITagBusiness _tagBusiness;
@@ -26,17 +25,16 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
-    /// /// <param name="tagBusiness">Used for creating tags related to a record.</param>
-    public RecordBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness,
-        IBulkCopyUpsertExecutor bulkCopyUpsertExecutor,  ITagBusiness tagBusiness)
-    
+    /// ///
+    /// <param name="tagBusiness">Used for creating tags related to a record.</param>
+    public RecordBusiness(DeeplynxContext context, IEventBusiness eventBusiness,
+        IBulkCopyUpsertExecutor bulkCopyUpsertExecutor, ITagBusiness tagBusiness)
     {
         _context = context;
         _eventBusiness = eventBusiness;
         _tagBusiness = tagBusiness;
         _bulkCopyUpsertExecutor = bulkCopyUpsertExecutor;
     }
-
 
     /// <summary>
     ///     Retrieves all records for a specific project and datasource.
@@ -486,10 +484,10 @@ public class RecordBusiness : IRecordBusiness
         long dataSourceId,
         List<CreateRecordRequestDto> records)
     {
-       await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
-       if (records.Count == 0) throw new Exception("Unable to bulk create records: no records selected for creation");
-       
+        if (records.Count == 0) throw new Exception("Unable to bulk create records: no records selected for creation");
+
         await EnsureMultipleObjectStoragesExistOnce(projectId, records);
 
         var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
@@ -593,28 +591,7 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Delete a metadata record.
-    /// </summary>
-    /// <param name="projectId">The project to which the record belongs</param>
-    /// <param name="recordId">The record in question</param>
-    /// <returns>Boolean indicating record was deleted</returns>
-    /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
-    /// TODO: return warning that historical data will be entirely wiped with this action
-    public async Task<bool> DeleteRecord(long projectId, long recordId)
-    {
-        var record = await _context.Records.FindAsync(recordId);
-        
-        if (record == null || record.ProjectId != projectId)
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-        
-        _context.Records.Remove(record);
-        await _context.SaveChangesAsync();
-        
-        return true;
-    }
-    
-    /// <summary>
-    /// Archive a metadata record.
+    ///     Archive a metadata record.
     /// </summary>
     /// <param name="projectId">The project to which the record belongs</param>
     /// <param name="recordId">The record to be archived</param>
@@ -879,6 +856,27 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
+    ///     Delete a metadata record.
+    /// </summary>
+    /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="recordId">The record in question</param>
+    /// <returns>Boolean indicating record was deleted</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
+    /// TODO: return warning that historical data will be entirely wiped with this action
+    public async Task<bool> DeleteRecord(long projectId, long recordId)
+    {
+        var record = await _context.Records.FindAsync(recordId);
+
+        if (record == null || record.ProjectId != projectId)
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+
+        _context.Records.Remove(record);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    /// <summary>
     ///     Private method used to calculate json depth of properties (should be less than three)
     /// </summary>
     /// <param name="node"></param>
@@ -907,7 +905,7 @@ public class RecordBusiness : IRecordBusiness
         return maxDepth + 1;
     }
 
-     /// <summary>
+    /// <summary>
     ///     Make sure every object storage ID exists, filtering in memory with one DB trip
     /// </summary>
     /// <param name="projectId">
@@ -992,7 +990,7 @@ public class RecordBusiness : IRecordBusiness
         return inserted.ToDictionary(t => t.Name, t => t);
     }
 
-      /// <summary>
+    /// <summary>
     ///     Map an NPGSQL data reader to a return DTO usually during high scale read operations
     /// </summary>
     /// <param name="r">NPGSQL reader object containing DTO params</param>
