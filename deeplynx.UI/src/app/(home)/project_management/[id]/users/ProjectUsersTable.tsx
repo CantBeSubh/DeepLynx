@@ -10,7 +10,10 @@ import {
   addMemberToProject,
   removeMemberFromProject,
   updateProjectMemberRole,
+  inviteUserToProject,
+  getProjectMembers,
 } from "@/app/lib/client_service/projects_services.client";
+import { InviteUserToProjectRequestDto } from "@/app/(home)/types/requestDTOs";
 import {
   ProjectMemberResponseDto,
   UserResponseDto,
@@ -23,6 +26,7 @@ import ProjectUsersListTable from "./ProjectUsersListTable";
 import AddProjectMemberModal from "./AddProjectMemberModal";
 import RemoveProjectMemberModal from "./RemoveProjectMemberModal";
 import EditProjectMemberRoleModal from "./EditProjectMemberRoleModal";
+import InviteProjectUserModal from "./InviteProjectUserModal";
 import {
   AddMemberModalState,
   ConfirmModalState,
@@ -53,6 +57,16 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
   );
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
+
+  /* ------------------------------------------------------------------------ */
+  /*                           Invite Modal State                             */
+  /* ------------------------------------------------------------------------ */
+
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRoleId, setInviteRoleId] = useState("");
+  const [inviteModalLoading, setInviteModalLoading] = useState(false);
+
   /* ------------------------------------------------------------------------ */
   /*                           Add Member Modal State                         */
   /* ------------------------------------------------------------------------ */
@@ -129,6 +143,72 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
   );
 
   /* ------------------------------------------------------------------------ */
+  /*                     Invite User: Open Modal & Send                       */
+  /* ------------------------------------------------------------------------ */
+
+  const handleOpenInviteModal = () => {
+    setShowInviteModal(true);
+  };
+
+  const handleInviteUser = async () => {
+    if (!inviteEmail) {
+      toast.error(t.translations.PLEASE_ENTER_EMAIL_ADDRESS);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail)) {
+      toast.error(t.translations.PLEASE_ENTER_VALID_EMAIL_ADDRESS);
+      return;
+    }
+
+    if (!inviteRoleId) {
+      toast.error(t.translations.PLEASE_SELECT_A_ROLE);
+      return;
+    }
+
+    if (!organizationId || !projectId) {
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
+      return;
+    }
+
+    try {
+      setInviteModalLoading(true);
+
+      const inviteData: InviteUserToProjectRequestDto = {
+        userEmail: inviteEmail,
+        userName: inviteEmail.split("@")[0],
+        roleId: Number(inviteRoleId),
+      };
+
+      await inviteUserToProject(organizationId, projectId, inviteData);
+
+      toast.success(`${t.translations.INVITATION_SENT_TO_} ${inviteEmail}`);
+
+      // Refresh the members list
+      try {
+        const updatedMembers = await getProjectMembers(
+          organizationId,
+          projectId,
+        );
+
+        setTableData(buildTableData(updatedMembers));
+      } catch (refreshError) {
+        console.error("Failed to refresh members list:", refreshError);
+        // Don't show error to user - invite was successful
+      }
+
+      setShowInviteModal(false);
+      setInviteEmail("");
+      setInviteRoleId("");
+    } catch (error) {
+      console.error("Error inviting user to project:", error);
+      toast.error(t.translations.FAILED_TO_SEND_INVITATION);
+    } finally {
+      setInviteModalLoading(false);
+    }
+  };
+  /* ------------------------------------------------------------------------ */
   /*                     Edit Role: open & save handlers                      */
   /* ------------------------------------------------------------------------ */
 
@@ -145,7 +225,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleSaveMemberRole = async () => {
     if (!organizationId || !projectId) {
-      toast.error(t.translations.MISSING_ORGANIZATION_OR_PROJECT);
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
       return;
     }
 
@@ -192,7 +272,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
         ),
       );
 
-      toast.success("Member role updated");
+      toast.success(t.translations.MEMBER_ROLE_UPDATED);
     } catch (error) {
       console.error("Failed to update member role:", error);
       toast.error(t.translations.FAILED_TO_UPDATE_MEMBER_ROLE);
@@ -215,7 +295,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleOpenAddMemberModal = async (memberType: MemberType = "user") => {
     if (!organizationId) {
-      toast.error("No organization selected");
+      toast.error(t.translations.NO_ORG_SELECTED);
       return;
     }
 
@@ -243,7 +323,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleAddMember = async () => {
     if (!organizationId || !projectId) {
-      toast.error(t.translations.MISSING_ORGANIZATION_OR_PROJECT);
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
       return;
     }
 
@@ -335,7 +415,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const handleRemoveMember = async () => {
     if (!organizationId || !projectId) {
-      toast.error(t.translations.MISSING_ORGANIZATION_OR_PROJECT);
+      toast.error(t.translations.MISSING_ORG_OR_PROJECT);
       return;
     }
 
@@ -398,6 +478,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             loading={loading}
             onAddUser={() => handleOpenAddMemberModal("user")}
             onAddGroup={() => handleOpenAddMemberModal("group")}
+            onInviteUser={handleOpenInviteModal}
           />
 
           <ProjectUsersListTable
@@ -415,6 +496,24 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             }
           />
 
+          {/* Invite User Modal */}
+          <InviteProjectUserModal
+            isOpen={showInviteModal}
+            inviteEmail={inviteEmail}
+            selectedRoleId={inviteRoleId}
+            roles={roles}
+            modalLoading={inviteModalLoading}
+            onClose={() => {
+              setShowInviteModal(false);
+              setInviteEmail("");
+              setInviteRoleId("");
+            }}
+            onInvite={handleInviteUser}
+            onChangeEmail={setInviteEmail}
+            onChangeRole={setInviteRoleId}
+          />
+
+          {/* Remove Member Modal */}
           <RemoveProjectMemberModal
             confirmModal={confirmModal}
             loading={loading}
@@ -430,6 +529,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             onConfirm={handleRemoveMember}
           />
 
+          {/* Add Member Modal */}
           <AddProjectMemberModal
             addModal={addModal}
             roles={roles}
@@ -448,6 +548,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
             onConfirm={handleAddMember}
           />
 
+          {/* Edit Role Modal */}
           <EditProjectMemberRoleModal
             editRoleModal={editRoleModal}
             roles={roles}
