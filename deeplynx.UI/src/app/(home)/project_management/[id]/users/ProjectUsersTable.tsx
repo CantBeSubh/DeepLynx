@@ -53,7 +53,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
   /* ------------------------------------------------------------------------ */
 
   const [tableData, setTableData] = useState<ProjectMemberTableRow[]>(() =>
-    buildTableData(members)
+    buildTableData(members),
   );
   const [loading, setLoading] = useState(false);
   const { t } = useLanguage();
@@ -80,7 +80,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   const [availableUsers, setAvailableUsers] = useState<UserResponseDto[]>([]);
   const [availableGroups, setAvailableGroups] = useState<GroupResponseDto[]>(
-    []
+    [],
   );
   const [modalLoading, setModalLoading] = useState(false);
 
@@ -135,11 +135,11 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
   const totalMembers = tableData.length;
   const userCount = useMemo(
     () => tableData.filter((m) => m.memberType === "user").length,
-    [tableData]
+    [tableData],
   );
   const groupCount = useMemo(
     () => tableData.filter((m) => m.memberType === "group").length,
-    [tableData]
+    [tableData],
   );
 
   /* ------------------------------------------------------------------------ */
@@ -189,7 +189,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       try {
         const updatedMembers = await getProjectMembers(
           organizationId,
-          projectId
+          projectId,
         );
 
         setTableData(buildTableData(updatedMembers));
@@ -250,7 +250,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
           projectId,
           roleId,
           memberId,
-          undefined
+          undefined,
         );
       } else {
         await updateProjectMemberRole(
@@ -258,7 +258,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
           projectId,
           roleId,
           undefined,
-          memberId
+          memberId,
         );
       }
 
@@ -268,8 +268,8 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
         prev.map((row) =>
           row.memberId === memberId
             ? { ...row, role: selectedRole?.name ?? null, roleId }
-            : row
-        )
+            : row,
+        ),
       );
 
       toast.success(t.translations.MEMBER_ROLE_UPDATED);
@@ -311,7 +311,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       setAvailableGroups(groups);
     } catch (error) {
       console.error("Failed to load options for Add Member:", error);
-      toast.error(t.translations.UNABLE_TO_LOAD_USERS_TO_GROUPS);
+      toast.error(t.translations.UNABLE_TO_LOAD_USERS_OR_GROUPS);
     } finally {
       setModalLoading(false);
     }
@@ -331,13 +331,13 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       toast.error(
         addModal.memberType === "user"
           ? t.translations.PLEASE_SELECT_A_USER
-          : t.translations.PLEASE_SELECT_A_GROUP
+          : t.translations.PLEASE_SELECT_A_GROUP,
       );
       return;
     }
 
     if (!selectedRoleId) {
-      toast.error(t.translations.PLEASE_SELECT_A_ROLE_FOR_THIS_MEMEBER);
+      toast.error(t.translations.PLEASE_SELECT_A_ROLE_FOR_MEMBER);
       return;
     }
 
@@ -365,7 +365,7 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
           try {
             await sendEmail(
               user.email,
-              t.translations.YOU_HAVE_BEEN_ADDED_TO_A_PROJECT_IN_NEXUS
+              t.translations.YOUVE_BEEN_ADDED_TO_A_PROJECT_IN_DEEPLYNX_NEXUS,
             );
           } catch (emailError) {
             console.error("Failed to send notification email:", emailError);
@@ -378,12 +378,12 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
       const selectedRole = roles.find((r) => r.id === roleId);
       const nameSource =
         addModal.memberType === "user"
-          ? availableUsers.find((u) => u.id === memberId)?.name ?? ""
-          : availableGroups.find((g) => g.id === memberId)?.name ?? "";
+          ? (availableUsers.find((u) => u.id === memberId)?.name ?? "")
+          : (availableGroups.find((g) => g.id === memberId)?.name ?? "");
 
       const emailSource =
         addModal.memberType === "user"
-          ? availableUsers.find((u) => u.id === memberId)?.email ?? null
+          ? (availableUsers.find((u) => u.id === memberId)?.email ?? null)
           : null;
 
       setTableData((prev) => [
@@ -434,14 +434,14 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
           organizationId,
           projectId,
           memberId,
-          undefined
+          undefined,
         );
       } else {
         await removeMemberFromProject(
           organizationId,
           projectId,
           undefined,
-          memberId
+          memberId,
         );
       }
 
@@ -469,8 +469,8 @@ const ProjectUsersTable = ({ members, roles, project }: Props) => {
 
   return (
     <div className="p-6">
-      <div className="card bg-base-100 border border-primary">
-        <div className="card-body">
+      <div className="">
+        <div className="">
           <ProjectUsersHeader
             totalMembers={totalMembers}
             userCount={userCount}

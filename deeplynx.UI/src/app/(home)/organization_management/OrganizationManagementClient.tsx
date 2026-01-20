@@ -15,7 +15,7 @@ import {
 import InlineGroupsTable from "./groups/InlineGroupsTable";
 import RolesAndPermissions from "./roles_and_permissions/RolesAndPermissions";
 import OrganizationSettings from "./settings/OrganizationSettings";
-import OptionThree from "./tag_management/OptionThree";
+import TagManagementClient from "./tag_management/TagManagementClient";
 import UsersTable from "./users/UsersTable";
 
 interface OrganizationManagementProps {
@@ -64,7 +64,7 @@ const OrganizationManagementClient = ({
     },
     {
       label: t.translations.TAGS_AND_SECURITY_LABELS,
-      content: <OptionThree projects={initialProjects} />,
+      content: <TagManagementClient projects={initialProjects} />,
     },
     {
       label: t.translations.SETTINGS,

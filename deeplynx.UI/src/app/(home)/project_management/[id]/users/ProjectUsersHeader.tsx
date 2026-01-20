@@ -1,13 +1,13 @@
 // src/app/(home)/project_management/[id]/users/ProjectUsersHeader.tsx
 
 import React from "react";
-import {
-  UserIcon,
-  UserGroupIcon,
-  UsersIcon,
-  EnvelopeIcon,
-} from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
+import {
+  EnvelopeIcon,
+  UserGroupIcon,
+  UserIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
 
 /* -------------------------------------------------------------------------- */
 /*                        Project Users Header Component                      */
@@ -36,7 +36,7 @@ const ProjectUsersHeader: React.FC<ProjectUsersHeaderProps> = ({
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 border-b border-base-300 pb-4">
         <div>
           <h2 className="text-2xl font-bold">
             {t.translations.PROJECT_MEMBERS}
