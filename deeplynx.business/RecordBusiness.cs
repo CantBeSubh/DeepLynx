@@ -545,7 +545,7 @@ public class RecordBusiness : IRecordBusiness
               last_updated_at   = EXCLUDED.last_updated_at,
               file_type         = COALESCE(EXCLUDED.file_type, records.file_type), 
               last_updated_by   = EXCLUDED.last_updated_by
-        RETURNING id, organization_id, project_id, data_source_id, original_id, name, class_id, object_storage_id, file_type, last_updated_by;";
+        RETURNING id, organization_id, project_id, data_source_id, original_id, name, class_id, object_storage_id, file_type, last_updated_by, description, properties;";
 
         var inserted = await _bulkCopyUpsertExecutor.CopyUpsertAsync(
             conn, tx,
@@ -911,14 +911,12 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    ///     Make sure every object storage ID exists, filtering in memory with one DB trip
+    /// Make sure every object storage ID exists, filtering in memory with one DB trip
     /// </summary>
-    /// <param name="projectId">
-    ///     Shared project ID of the object storages
-    ///     <param name="records">
-    ///         Records with object storages to check
-    ///         <exception cref="KeyNotFoundException">If an object storage ID is not found</exception>
-    ///         <returns>Exception if obj storage ID not exist</returns>
+    /// <param name="projectId"> Shared project ID of the object storages </param>
+    ///<param name="records"> Records with object storages to check</param>
+    ///<exception cref="KeyNotFoundException">If an object storage ID is not found</exception>
+    ///<returns>Exception if obj storage ID not exist</returns>
     private async Task EnsureMultipleObjectStoragesExistOnce(long projectId, List<CreateRecordRequestDto> records)
     {
         var ids = records.Where(r => r.ObjectStorageId.HasValue)
@@ -1011,6 +1009,8 @@ public class RecordBusiness : IRecordBusiness
         var iObj = r.GetOrdinal("object_storage_id");
         var iType = r.GetOrdinal("file_type");
         var iUser = r.GetOrdinal("last_updated_by");
+        var iDesc = r.GetOrdinal("description");
+        var iProp = r.GetOrdinal("properties");
 
         return new RecordResponseDto
         {
@@ -1022,7 +1022,9 @@ public class RecordBusiness : IRecordBusiness
             ClassId = r.IsDBNull(iCls) ? null : r.GetInt64(iCls),
             ObjectStorageId = r.IsDBNull(iObj) ? null : r.GetInt64(iObj),
             FileType = r.IsDBNull(iType) ? null : r.GetString(iType), 
-            LastUpdatedBy = r.IsDBNull(iUser) ? null : r.GetInt64(iUser)
+            LastUpdatedBy = r.IsDBNull(iUser) ? null : r.GetInt64(iUser), 
+            Description = r.IsDBNull(iDesc) ? null : r.GetString(iDesc),
+            Properties = r.IsDBNull(iProp) ? null : r.GetString(iProp)
         };
     }
 }

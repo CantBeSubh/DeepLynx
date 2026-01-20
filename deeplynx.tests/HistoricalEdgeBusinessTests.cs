@@ -22,7 +22,7 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
     private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
     private INotificationBusiness _notificationBusiness = null!;
-    private Mock<IBulkCopyUpsertExecutor> _mockBulkCopyUpsertExecutor = null!;
+    private BulkCopyUpsertExecutor _mockBulkCopyUpsertExecutor = null!;
     
     public long destinationRecordId;
     public long destinationRecordId2;
@@ -52,10 +52,10 @@ public class HistoricalEdgeBusinessTests : IntegrationTestBase
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _mockBulkCopyUpsertExecutor = new Mock<IBulkCopyUpsertExecutor>();
-        _eventBusiness = new EventBusiness(Context, _notificationBusiness, _mockBulkCopyUpsertExecutor.Object);
+        _mockBulkCopyUpsertExecutor = new BulkCopyUpsertExecutor();
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness, _mockBulkCopyUpsertExecutor);
         _historicalEdgeBusiness = new HistoricalEdgeBusiness(Context);
-        _edgeBusiness = new EdgeBusiness(Context, _eventBusiness, _mockBulkCopyUpsertExecutor.Object);
+        _edgeBusiness = new EdgeBusiness(Context, _eventBusiness, _mockBulkCopyUpsertExecutor);
     }
 
     protected override async Task SeedTestDataAsync()
