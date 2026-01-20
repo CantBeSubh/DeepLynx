@@ -199,64 +199,67 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
     /// <param name="edges">Enumerable list of edge request data transfer objects containing edge details</param>
     /// <returns>Enumerable list of created edges</returns>
-    public async Task<List<EdgeResponseDto>> BulkCreateEdges(
-        long currentUserId,
-        long organizationId,
-        long projectId,
-        long dataSourceId,
-        List<CreateEdgeRequestDto> edges)
-    {
-        var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
-        if (conn.State != ConnectionState.Open) await conn.OpenAsync();
-        await using var tx = await conn.BeginTransactionAsync();
+   public async Task<List<EdgeResponseDto>> BulkCreateEdges(
+    long currentUserId,
+    long organizationId,
+    long projectId,
+    long dataSourceId,
+    List<CreateEdgeRequestDto> edges)
+{
+    await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
+    var conn = (NpgsqlConnection)_context.Database.GetDbConnection();
+    if (conn.State != ConnectionState.Open) await conn.OpenAsync();
+    await using var tx = await conn.BeginTransactionAsync();
 
-        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+    var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-        var createTempSql = @"
-        CREATE TEMP TABLE tmp_edges
-        (
-            project_id        BIGINT NOT NULL,
-            data_source_id    BIGINT NOT NULL,
-            origin_id         BIGINT NOT NULL,
-            destination_id    BIGINT NOT NULL,
-            relationship_id   BIGINT NULL,
-            last_updated_at   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-            is_archived       BOOLEAN NOT NULL
-        ) ON COMMIT DROP;";
+    var createTempSql = @"
+    CREATE TEMP TABLE tmp_edges
+    (
+        organization_id   BIGINT NOT NULL,
+        project_id        BIGINT NOT NULL,
+        data_source_id    BIGINT NOT NULL,
+        origin_id         BIGINT NOT NULL,
+        destination_id    BIGINT NOT NULL,
+        relationship_id   BIGINT NULL,
+        last_updated_at   TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+        is_archived       BOOLEAN NOT NULL
+    ) ON COMMIT DROP;";
 
-        var copyCmd = @"
-        COPY tmp_edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived)
-        FROM STDIN (FORMAT BINARY)";
+    var copyCmd = @"
+    COPY tmp_edges (organization_id, project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived)
+    FROM STDIN (FORMAT BINARY)";
 
-        var upsertSql = @"
-        INSERT INTO deeplynx.edges
-        (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived)
-        SELECT project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived
-        FROM tmp_edges
-        ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE
-          SET relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),
-              last_updated_at = EXCLUDED.last_updated_at
-        RETURNING id, project_id, data_source_id, origin_id, destination_id, relationship_id;";
+    var upsertSql = @"
+    INSERT INTO deeplynx.edges
+    (organization_id, project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived)
+    SELECT organization_id, project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at, is_archived
+    FROM tmp_edges
+    ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE
+      SET relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),
+          last_updated_at = EXCLUDED.last_updated_at
+    RETURNING id, organization_id, project_id, data_source_id, origin_id, destination_id, relationship_id;";
 
-        var result = await _bulkCopyUpsertExecutor.CopyUpsertAsync(
-            conn, tx,
-            createTempSql,
-            copyCmd,
-            edges,
-            (w, e) =>
-            {
-                w.Write(projectId, NpgsqlDbType.Bigint);
-                w.Write(dataSourceId, NpgsqlDbType.Bigint);
-                w.Write(e.OriginId!.Value, NpgsqlDbType.Bigint);
-                w.Write(e.DestinationId!.Value, NpgsqlDbType.Bigint);
-                if (e.RelationshipId.HasValue) w.Write(e.RelationshipId.Value, NpgsqlDbType.Bigint);
-                else w.WriteNull();
-                w.Write(now, NpgsqlDbType.Timestamp);
-                w.Write(false, NpgsqlDbType.Boolean);
-            },
-            upsertSql,
-            MapEdge
-        );
+    var result = await _bulkCopyUpsertExecutor.CopyUpsertAsync(
+        conn, tx,
+        createTempSql,
+        copyCmd,
+        edges,
+        (w, e) =>
+        {
+            w.Write(organizationId, NpgsqlDbType.Bigint);
+            w.Write(projectId, NpgsqlDbType.Bigint);
+            w.Write(dataSourceId, NpgsqlDbType.Bigint);
+            w.Write(e.OriginId!.Value, NpgsqlDbType.Bigint);
+            w.Write(e.DestinationId!.Value, NpgsqlDbType.Bigint);
+            if (e.RelationshipId.HasValue) w.Write(e.RelationshipId.Value, NpgsqlDbType.Bigint);
+            else w.WriteNull();
+            w.Write(now, NpgsqlDbType.Timestamp);
+            w.Write(false, NpgsqlDbType.Boolean);
+        },
+        upsertSql,
+        MapEdge
+    );
 
         // events logging
         var createEvent = new CreateEventRequestDto
@@ -267,9 +270,9 @@ public class EdgeBusiness : IEdgeBusiness
         };
         await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, createEvent, result.Count);
 
-        await tx.CommitAsync();
-        return result;
-    }
+    await tx.CommitAsync();
+    return result;
+}
 
     /// <summary>
     ///     Updates an existing edge by its ID or origin/destination.

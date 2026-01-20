@@ -441,6 +441,8 @@ public class RecordBusiness : IRecordBusiness
                     DataSourceId = record.DataSourceId
                 });
 
+            await transaction.CommitAsync();
+
             return new RecordResponseDto
             {
                 Id = record.Id,
@@ -453,10 +455,12 @@ public class RecordBusiness : IRecordBusiness
                 ClassId = record.ClassId,
                 DataSourceId = record.DataSourceId,
                 ProjectId = record.ProjectId,
+                OrganizationId = record.OrganizationId,
                 LastUpdatedBy = record.LastUpdatedBy,
                 LastUpdatedAt = record.LastUpdatedAt,
                 IsArchived = record.IsArchived,
-                FileType = record.FileType
+                FileType = record.FileType,
+                Tags = tags
             };
         }
         catch
@@ -499,6 +503,7 @@ public class RecordBusiness : IRecordBusiness
         const string createTempSql = @"
         CREATE TEMP TABLE tmp_records
         (
+            organization_id     BIGINT NOT NULL,
             project_id          BIGINT NOT NULL,
             data_source_id      BIGINT NOT NULL,
             name                TEXT NULL,
@@ -516,17 +521,17 @@ public class RecordBusiness : IRecordBusiness
 
         const string copyCmd = @"
         COPY tmp_records
-        (project_id, data_source_id, name, description, uri,
+        (organization_id, project_id, data_source_id, name, description, uri,
          original_id, properties, class_id, object_storage_id, file_type,
          last_updated_at, is_archived, last_updated_by)
         FROM STDIN (FORMAT BINARY)";
 
         const string upsertSql = @"
         INSERT INTO deeplynx.records
-        (project_id, data_source_id, name, description, uri,
+        (organization_id, project_id, data_source_id, name, description, uri,
          original_id, properties, class_id, object_storage_id, file_type,
          last_updated_at, is_archived, last_updated_by)
-        SELECT project_id, data_source_id, name, description, uri,
+        SELECT organization_id, project_id, data_source_id, name, description, uri,
                original_id, properties, class_id, object_storage_id, file_type,
                last_updated_at, is_archived, last_updated_by
         FROM tmp_records
@@ -538,8 +543,9 @@ public class RecordBusiness : IRecordBusiness
               class_id          = COALESCE(EXCLUDED.class_id, records.class_id),
               object_storage_id = COALESCE(EXCLUDED.object_storage_id, records.object_storage_id),
               last_updated_at   = EXCLUDED.last_updated_at,
-              file_type         = COALESCE(EXCLUDED.file_type, records.file_type)
-        RETURNING id, project_id, data_source_id, original_id, name, class_id, object_storage_id, file_type;";
+              file_type         = COALESCE(EXCLUDED.file_type, records.file_type), 
+              last_updated_by   = EXCLUDED.last_updated_by
+        RETURNING id, organization_id, project_id, data_source_id, original_id, name, class_id, object_storage_id, file_type, last_updated_by;";
 
         var inserted = await _bulkCopyUpsertExecutor.CopyUpsertAsync(
             conn, tx,
@@ -548,6 +554,7 @@ public class RecordBusiness : IRecordBusiness
             records,
             (w, dto) =>
             {
+                w.Write(organizationId, NpgsqlDbType.Bigint);
                 w.Write(projectId, NpgsqlDbType.Bigint);
                 w.Write(dataSourceId, NpgsqlDbType.Bigint);
                 if (dto.Name is null) w.WriteNull();
@@ -557,7 +564,6 @@ public class RecordBusiness : IRecordBusiness
                 if (dto.Uri is null) w.WriteNull();
                 else w.Write(dto.Uri, NpgsqlDbType.Text);
                 w.Write(dto.OriginalId, NpgsqlDbType.Text);
-
                 if (dto.Properties is null) w.WriteNull();
                 else w.Write(JsonSerializer.Serialize(dto.Properties), NpgsqlDbType.Jsonb);
 
@@ -570,21 +576,20 @@ public class RecordBusiness : IRecordBusiness
 
                 w.Write(now, NpgsqlDbType.Timestamp);
                 w.Write(false, NpgsqlDbType.Boolean);
-                w.WriteNull();
+                w.Write(currentUserId, NpgsqlDbType.Bigint);
             },
             upsertSql,
             MapRecord
         );
 
         // events logging
-        var events = new List<CreateEventRequestDto>(inserted.Count);
-        events.AddRange(inserted.Select(r => new CreateEventRequestDto
+        var events = new CreateEventRequestDto
         {
             Operation = "create",
             EntityType = "record",
             DataSourceId = dataSourceId
-        }));
-        await _eventBusiness.BulkInsertEventsWithCopyAsync(conn, tx, events, projectId, UserContextStorage.UserId);
+        };
+        await _eventBusiness.CreateEvent(currentUserId, organizationId, projectId, events, 1);
 
         await tx.CommitAsync();
         return inserted;
@@ -1005,6 +1010,7 @@ public class RecordBusiness : IRecordBusiness
         var iCls = r.GetOrdinal("class_id");
         var iObj = r.GetOrdinal("object_storage_id");
         var iType = r.GetOrdinal("file_type");
+        var iUser = r.GetOrdinal("last_updated_by");
 
         return new RecordResponseDto
         {
@@ -1015,7 +1021,8 @@ public class RecordBusiness : IRecordBusiness
             Name = r.IsDBNull(iName) ? null : r.GetString(iName),
             ClassId = r.IsDBNull(iCls) ? null : r.GetInt64(iCls),
             ObjectStorageId = r.IsDBNull(iObj) ? null : r.GetInt64(iObj),
-            FileType = r.IsDBNull(iType) ? null : r.GetString(iType)
+            FileType = r.IsDBNull(iType) ? null : r.GetString(iType), 
+            LastUpdatedBy = r.IsDBNull(iUser) ? null : r.GetInt64(iUser)
         };
     }
 }
