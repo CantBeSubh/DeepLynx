@@ -11,6 +11,7 @@ public class CreateRecordRequestDto
     public string Name { get; set; }
         
     [JsonPropertyName("description")]
+    [Required]
     public string Description { get; set; }
     
     [JsonPropertyName("object_storage_id")]
