@@ -206,6 +206,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
 
         var uploadPath = Path.Combine(
             _testDirectory,
+            $"org_{oid}",
             $"project_{pid}",
             $"datasource_{did}",
             "uploads",
@@ -236,6 +237,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         // Verify upload directory was created (sign of chunking)
         var uploadPath = Path.Combine(
             _testDirectory,
+            $"org_{oid}",
             $"project_{pid}",
             $"datasource_{did}",
             "uploads",
@@ -265,6 +267,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
 
         var expectedChunkPath = Path.Combine(
             _testDirectory,
+            $"org_{oid}",
             $"project_{pid}",
             $"datasource_{did}",
             "uploads",
@@ -635,6 +638,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
 
         var uploadPath = Path.Combine(
             _testDirectory,
+            $"org_{oid}",
             $"project_{pid}",
             $"datasource_{did}",
             "uploads",
