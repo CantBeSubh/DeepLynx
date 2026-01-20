@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import toast from "react-hot-toast";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
@@ -183,12 +184,14 @@ const ProjectSettings = ({ project }: ProjectSettingsProps) => {
             <div className="flex items-start gap-6 mb-6">
               {/* Logo Preview */}
               <div className="avatar">
-                <div className="w-32 h-32 rounded-xl bg-base-200 flex items-center justify-center overflow-hidden border-2 border-base-300">
+                <div className="w-32 h-32 rounded-xl bg-base-200 flex items-center justify-center overflow-hidden border-2 border-base-300 relative">
                   {logoPreview ? (
-                    <img
+                    <Image
                       src={logoPreview}
                       alt="Project Logo"
-                      className="object-contain w-full h-full p-2"
+                      fill
+                      sizes="128px"
+                      className="object-contain p-2"
                       onError={() => {
                         setLogoPreview(null);
                       }}
