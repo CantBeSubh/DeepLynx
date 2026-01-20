@@ -30,6 +30,7 @@ public class EdgeBusinessTests : IntegrationTestBase
     private Mock<IRoleBusiness> _mockRoleBusiness = null!;
     private INotificationBusiness _notificationBusiness = null!;
     private ProjectBusiness _projectBusiness = null!;
+    private Mock<IBulkCopyUpsertExecutor> _mockBulkCopyExecutor = null!;
     public long destinationRecordId;
     public long destinationRecordId2;
     public long destinationRecordId3;
@@ -60,10 +61,11 @@ public class EdgeBusinessTests : IntegrationTestBase
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(Context, _notificationBusiness);
+        _mockBulkCopyExecutor = new Mock<IBulkCopyUpsertExecutor>();
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness, _mockBulkCopyExecutor.Object);
         _mockOrganizationBusiness = new Mock<IOrganizationBusiness>();
 
-        _edgeBusiness = new EdgeBusiness(Context, _eventBusiness);
+        _edgeBusiness = new EdgeBusiness(Context, _eventBusiness, _mockBulkCopyExecutor.Object);
         _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness, _mockRecordBusiness.Object,
             _eventBusiness);
         _classBusiness = new ClassBusiness(

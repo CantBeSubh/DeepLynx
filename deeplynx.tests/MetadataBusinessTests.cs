@@ -30,6 +30,7 @@ public class MetadataBusinessTests : IntegrationTestBase
     private RecordBusiness _recordBusiness = null!;
     private RelationshipBusiness _relationshipBusiness = null!;
     private TagBusiness _tagBusiness = null!;
+    private Mock<IBulkCopyUpsertExecutor> _mockBulkCopyUpsertExecutor = null!;
     public long cid; // origin class ID
     public long cid2; // destination class ID
     public long did;
@@ -54,7 +55,8 @@ public class MetadataBusinessTests : IntegrationTestBase
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(Context, _notificationBusiness);
+        _mockBulkCopyUpsertExecutor = new Mock<IBulkCopyUpsertExecutor>();
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness, _mockBulkCopyUpsertExecutor.Object);
 
         _classBusiness = new ClassBusiness(
             Context, _mockRecordBusiness.Object,
@@ -64,8 +66,8 @@ public class MetadataBusinessTests : IntegrationTestBase
             Context, _mockEdgeBusiness.Object, _eventBusiness);
 
         _tagBusiness = new TagBusiness(Context, _eventBusiness);
-        _recordBusiness = new RecordBusiness(Context, _eventBusiness, _tagBusiness);
-        _edgeBusiness = new EdgeBusiness(Context, _eventBusiness);
+        _recordBusiness = new RecordBusiness(Context, _eventBusiness, _mockBulkCopyUpsertExecutor.Object, _tagBusiness);
+        _edgeBusiness = new EdgeBusiness(Context, _eventBusiness, _mockBulkCopyUpsertExecutor.Object);
 
         _metadataBusiness = new MetadataBusiness(
             Context,
