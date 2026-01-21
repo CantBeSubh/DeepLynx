@@ -5,7 +5,7 @@ import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvid
 import {
   uploadFile,
   uploadFilesBatch,
-  cancelChunkedUpload, 
+  cancelChunkedUpload,
   cancelCurrentUpload
 } from "@/app/lib/client_service/file_upload_services.client";
 import { uploadBulkMetadata } from "@/app/lib/client_service/metadata_service.client";
@@ -119,10 +119,10 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
       toast.error("Select a project and at least one file.");
       return;
     }
-    
+
     fileUploadState.setIsUploading(true);
     fileUploadState.setUploadProgress(null);
-    
+
     try {
       if (fileUploadState.selectedFiles.length === 1) {
         const file = fileUploadState.selectedFiles[0];
@@ -187,8 +187,6 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     } catch (err) {
       console.error("Failed to cleanup cancelled upload:", err);
     }
-
-    // DON'T reset isCancelling here - let handleUpload do it
   };
 
   // ============================================================================
@@ -384,9 +382,23 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
               onClear={fileUploadState.clearAll}
               onUpload={handleFileUpload}
               canUpload={canUpload}
+              isUploading={fileUploadState.isUploading}
             />
-            {/* Progress Bar with Cancel Button */}
-            {fileUploadState.isUploading && fileUploadState.uploadProgress && (
+            {/* Upload Status: Spinner + Progress */}
+            {fileUploadState.isUploading && (
+              <>
+                {/* Show spinner while waiting for progress to start */}
+                {!fileUploadState.uploadProgress && (
+                    <div className="mt-4 p-4 bg-base-200 rounded-lg flex flex-col items-center justify-center space-y-3">
+                      <span className="loading loading-spinner loading-lg text-primary"></span>
+                      <p className="text-sm text-base-content/70 text-center">
+                        Preparing upload...
+                      </p>
+                    </div>
+                )}
+
+              {/* Show progress bar once chunked upload starts */}
+              {fileUploadState.uploadProgress && (
                 <div className="mt-4 p-4 bg-base-200 rounded-lg">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium">
@@ -416,6 +428,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
                     )}
                   </button>
                 </div>
+                )}
+            </>
             )}
           </div>
         )}
