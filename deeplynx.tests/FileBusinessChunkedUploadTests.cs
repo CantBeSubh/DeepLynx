@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.BigData;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -30,6 +31,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
     private RecordBusiness _recordBusiness = null!;
     private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
     private TagBusiness _tagBusiness = null!;
+    private BulkCopyUpsertExecutor _mockBulkCopyExecutor = null!;
 
     public long did; // datasource ID
     public long oid; // organization ID
@@ -52,7 +54,8 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness =
             new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(Context, _notificationBusiness);
+        _mockBulkCopyExecutor = new BulkCopyUpsertExecutor();
+        _eventBusiness = new EventBusiness(Context, _notificationBusiness, _mockBulkCopyExecutor);
 
 
         _fileBusinessFactory = new Mock<IFileBusinessFactory>();
@@ -62,7 +65,7 @@ public class FileBusinessChunkedUploadTests : IntegrationTestBase
         _objectStorageBusiness = new ObjectStorageBusiness(Context);
 
         _tagBusiness = new TagBusiness(Context, _eventBusiness);
-        _recordBusiness = new RecordBusiness(Context, _eventBusiness, _tagBusiness);
+        _recordBusiness = new RecordBusiness(Context, _eventBusiness, _mockBulkCopyExecutor,_tagBusiness);
         _classBusiness = new ClassBusiness(Context, _recordBusiness, _relationshipBusiness.Object, _eventBusiness);
 
         var realFileFilesystemBusiness =
