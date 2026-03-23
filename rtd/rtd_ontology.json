@@ -1,0 +1,45 @@
+{
+    "metatypes": [
+      {
+        "name": "RawMaterial",
+        "description": "Raw materials (platinum wire, ceramic, steel)",
+        "properties": [
+          {"name": "material_id", "data_type": "string"},
+          {"name": "lot_number", "data_type": "string"},
+          {"name": "supplier", "data_type": "string"},
+          {"name": "purity_percent", "data_type": "number"}
+        ]
+      },
+      {
+        "name": "PlatinumElement",
+        "description": "Core sensing element",
+        "properties": [
+          {"name": "element_id", "data_type": "string"},
+          {"name": "resistance_at_0C", "data_type": "number"},
+          {"name": "accuracy_class", "data_type": "string"}
+        ]
+      },
+      {
+        "name": "RTDSensor",
+        "description": "Complete RTD assembly",
+        "properties": [
+          {"name": "serial_number", "data_type": "string"},
+          {"name": "model_number", "data_type": "string"},
+          {"name": "ai_decision", "data_type": "string"},
+          {"name": "human_decision", "data_type": "string"}
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "madeFrom",
+        "source": "PlatinumElement",
+        "destination": "RawMaterial"
+      },
+      {
+        "name": "assembledInto",
+        "source": "PlatinumElement",
+        "destination": "RTDSensor"
+      }
+    ]
+  }

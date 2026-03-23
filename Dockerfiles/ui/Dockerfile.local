@@ -31,8 +31,8 @@ ENV NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${NEXT_PUBLIC_DISABLE_FRONTEND_A
 WORKDIR /usr/src/app
 
 # Configure INL certs and environment variables
-RUN apk --no-check-certificate add wget ca-certificates
-RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN apk --no-check-certificate add ca-certificates
+COPY CAINLROOT_B64.crt /usr/local/share/ca-certificates/CAINLROOT_B64.crt
 RUN /usr/sbin/update-ca-certificates
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
@@ -62,8 +62,8 @@ FROM node:lts-alpine3.22 AS final
 WORKDIR /usr/src/app
 
 # Configure INL certs and environment variables
-RUN apk --no-check-certificate add wget ca-certificates
-RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN apk --no-check-certificate add ca-certificates
+COPY CAINLROOT_B64.crt /usr/local/share/ca-certificates/CAINLROOT_B64.crt
 RUN /usr/sbin/update-ca-certificates
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
@@ -77,8 +77,8 @@ RUN npm install -g npm@latest
 # Copy the built frontend code from the previous stage
 COPY --from=frontend-build /usr/src/app .
 
-# Install production dependencies
-RUN npm install --omit=dev
+# Install all dependencies (including dev dependencies for TypeScript support)
+RUN npm install
 
 # Expose the port the app runs on
 EXPOSE 3000
